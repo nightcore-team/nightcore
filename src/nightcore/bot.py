@@ -27,14 +27,14 @@ class Nightcore(Bot):
         if self.initial_cogs:
             for cog in self.initial_cogs:
                 try:
-                    logger.info(f"Loading cog: {cog.__name__}")
+                    logger.info(f"Loading cog: {cog.__cog_name__}")
                     await self.add_cog(cog(self))  # type: ignore
                     logger.info(
-                        f"[success] Successfully loaded {cog.__name__}"
+                        f"[success] Successfully loaded {cog.__cog_name__}"
                     )
                 except Exception as e:
                     logger.error(
-                        f"[failed] Failed to load {cog.__name__}: {e}"
+                        f"[failed] Failed to load {cog.__cog_name__}: {e}"
                     )
         else:
             logger.warning("No cogs to load")

@@ -3,12 +3,13 @@
 from discord.ext.commands import Cog
 
 from src.nightcore.bot import Nightcore
+from src.nightcore.commands.avatar import Avatar
 from src.nightcore.commands.ping import Ping
 
 
 def available_cogs() -> list[Cog]:
     """Return a list of available cogs for the bot."""
-    return [Ping]  # type: ignore
+    return [Ping, Avatar]  # type: ignore
 
 
 async def create_bot() -> Nightcore:
