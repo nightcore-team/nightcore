@@ -1,7 +1,4 @@
-"""Environment configuration module for Nightcore.
-
-This module defines base settings for environment variables loading using Pydantic.
-"""  # noqa: E501
+"""This module defines base settings for environment variables loading using Pydantic."""  # noqa: E501
 
 from pathlib import Path
 
