@@ -1,8 +1,9 @@
 """Ping command for the Nightcore bot."""
 
 import discord
-from discord import app_commands
+from discord import Embed, app_commands
 from discord.ext.commands import Cog
+from discord.interactions import InteractionCallbackResponse
 
 from src.nightcore.bot import Nightcore
 
@@ -15,8 +16,8 @@ class Avatar(Cog):
     async def avatar(
         self,
         interaction: discord.Interaction,
-        member: discord.Member | None = None,
-    ) -> None:
+        member: discord.Member | discord.User | None = None,
+    ) -> InteractionCallbackResponse:
         """Send a message displaying the user's avatar.
 
         Args:
@@ -27,9 +28,16 @@ class Avatar(Cog):
         """  # noqa: E501
 
         if member is None:
-            member = interaction.user  # type: ignore
+            member = interaction.user
 
-        await interaction.response.send_message(
-            f"User's avatar: {member.avatar}",  # type: ignore
+        return await interaction.response.send_message(
+            embed=Embed(
+                title=f"Аватар пользователя {member.display_name}",
+                color=discord.Color.blurple(),
+            ).set_image(
+                url=member.avatar.url
+                if member.avatar
+                else member.default_avatar.url
+            ),
             ephemeral=True,
         )
