@@ -1,4 +1,4 @@
-"""Ping command for the Nightcore bot."""
+"""Avatar command for the Nightcore bot."""
 
 import discord
 from discord import Embed, app_commands
@@ -24,8 +24,8 @@ class Avatar(Cog):
             interaction : discord.Interaction
                 The interaction that triggered the command.
             member :
-                The member whose avatar to display. If None, defaults to the user who invoked the command.
-        """  # noqa: E501
+                Выберите пользователя, чей аватар вы хотите получить.
+        """
 
         if member is None:
             member = interaction.user
