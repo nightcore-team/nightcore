@@ -12,11 +12,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: no
+    env_file:
+      - .env
 
     ports:
-      - "8000:8000"
-
-    restart: no
+      - "${BOT_PORT}:${BOT_PORT}"
 
     volumes:
       - ./src/:/app/src/
@@ -32,3 +33,6 @@ services:
 
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+
+    networks:
+      - nightcore-network

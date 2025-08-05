@@ -5,6 +5,7 @@
 __pycache__/
 .venv/
 .venv
+.env/
 example.env
 .env.development
 .Python
