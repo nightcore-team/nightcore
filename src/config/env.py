@@ -9,7 +9,7 @@ ABS_PATH = Path(__file__).parent.parent.parent
 
 class BaseEnvConfig(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=ABS_PATH / ".env.production",
+        env_file=ABS_PATH / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )

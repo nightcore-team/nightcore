@@ -18,7 +18,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Remove the uv lock file and pyproject.toml, so that the final image does not
 RUN rm -f pyproject.toml uv.lock .python-version
-
 # Then, use a final image without uv
 FROM python:3.13-slim-bookworm
 # It is important to use the image that matches the builder, as the path to the
@@ -33,4 +32,4 @@ WORKDIR /app
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-ENTRYPOINT ["/bin/sh", "./docker/docker-entrypoint.sh"]
+ENTRYPOINT ["python", "main.py"]

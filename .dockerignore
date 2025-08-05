@@ -5,7 +5,6 @@
 __pycache__/
 .venv/
 .venv
-.env/
 example.env
 .env.development
 .Python
@@ -55,9 +54,6 @@ Makefile
 .gitlab-ci.yml
 
 # Docker files
-dev.Dockerfile
-prod.Dockerfile
+Dockerfile
 docker-compose.yml
-dev.dockerignore
-prod.dockerignore
 .dockerignore

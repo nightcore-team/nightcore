@@ -1,0 +1,34 @@
+name: nightcore
+
+networks:
+  nightcore-network:
+    name: nightcore-network
+    driver: bridge
+
+services:
+  nightcore-bot:
+    image: nightcore-bot:latest
+    container_name: nightcore-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - "8000:8000"
+
+    restart: no
+
+    volumes:
+      - ./src/:/app/src/
+    networks:
+      - nightcore-network
+
+  nightcore-db:
+    image: postgres:16-alpine
+    container_name: nightcore-db
+    restart: no
+    env_file:
+      - .env
+
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
