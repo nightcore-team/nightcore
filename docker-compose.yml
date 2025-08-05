@@ -24,6 +24,11 @@ services:
     networks:
       - nightcore-network
 
+    depends_on:
+      nightcore-db:
+        condition: service_healthy
+
+
   nightcore-db:
     image: postgres:16-alpine
     container_name: nightcore-db
@@ -33,6 +38,12 @@ services:
 
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=nightcore --dbname=nightcore"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
 
     networks:
       - nightcore-network

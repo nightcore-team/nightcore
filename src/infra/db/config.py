@@ -1,0 +1,62 @@
+"""Defines the Config class for database environment settings."""
+
+from pydantic import PostgresDsn, field_validator
+from pydantic_core.core_schema import FieldValidationInfo
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+from src.config.env import BaseEnvConfig
+
+
+class Config(BaseEnvConfig):
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
+
+    POSTGRES_ECHO: bool
+    POSTGRES_ECHO_POOL: bool
+    POSTGRES_POOL_MAX_OVERFLOW: int = 15
+    POSTGRES_POOL_SIZE: int = 5
+    POSTGRES_POOL_TIMEOUT: int = 0
+    POSTGRES_POOL_PRE_PING: bool = True
+
+    POSTGRES_DATABASE_URI: str | None = None
+
+    ENGINE: AsyncEngine | None = None
+
+    @field_validator("POSTGRES_DATABASE_URI", mode="before")
+    @classmethod
+    def _assemble_db_connection(
+        cls, v: str | None, info: FieldValidationInfo
+    ) -> str:
+        if isinstance(v, str):
+            return v
+        return str(
+            PostgresDsn.build(
+                scheme="postgresql+asyncpg",
+                username=info.data.get("POSTGRES_USER"),
+                password=info.data.get("POSTGRES_PASSWORD"),
+                host=info.data.get("POSTGRES_HOST"),
+                port=info.data.get("POSTGRES_PORT"),
+                path=f"{info.data.get('POSTGRES_DB') or ''}",
+            )
+        )
+
+    @field_validator("ENGINE", mode="before")
+    @classmethod
+    def _assemble_db_engine(
+        cls, v: AsyncEngine | None, info: FieldValidationInfo
+    ) -> AsyncEngine:
+        if isinstance(v, AsyncEngine):
+            return v
+        return create_async_engine(
+            url=info.data.get("POSTGRES_DATABASE_URI"),  # type: ignore
+            echo=info.data.get("POSTGRES_ECHO"),
+            echo_pool=info.data.get("POSTGRES_ECHO_POOL"),
+            max_overflow=info.data.get("POSTGRES_POOL_MAX_OVERFLOW"),
+            pool_size=info.data.get("POSTGRES_POOL_SIZE"),
+            pool_timeout=info.data.get("POSTGRES_POOL_TIMEOUT"),
+            pool_pre_ping=info.data.get("POSTGRES_POOL_PRE_PING"),
+        )
