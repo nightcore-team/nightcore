@@ -21,13 +21,33 @@ services:
 
     volumes:
       - ./src/:/app/src/
+      - ./main.py:/app/main.py
+      - ./Makefile:/app/Makefile
+      - ./alembic.ini:/app/alembic.ini
+      - ./migrations/:/app/migrations/
     networks:
       - nightcore-network
 
     depends_on:
+      nightcore-db-migration:
+        condition: service_completed_successfully
       nightcore-db:
         condition: service_healthy
 
+  nightcore-db-migration:
+    image: nightcore-bot:latest
+    container_name: nightcore-db-migration
+    env_file:
+      - .env
+    command: alembic upgrade head
+    networks:
+      - nightcore-network
+    depends_on:
+      nightcore-db:
+        condition: service_healthy
+    volumes:
+      - ./alembic.ini:/app/alembic.ini
+      - ./migrations/:/app/migrations/
 
   nightcore-db:
     image: postgres:16-alpine

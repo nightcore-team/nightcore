@@ -1,14 +1,16 @@
 """Main entry point for the Nightcore bot."""
 
+from logging import Logger
+
 from src.config.config import config
 from src.nightcore.bot import Nightcore
 from src.nightcore.setup import create_bot
 from src.utils.logging.setup import setup_logging
 
 
-async def main():
+async def main() -> None:
     """Main function to start the Nightcore bot."""
-    logger = setup_logging()
+    logger: Logger = setup_logging()
     bot: Nightcore = await create_bot()
 
     logger.info("Starting Nightcore bot...")

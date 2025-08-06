@@ -32,4 +32,4 @@ WORKDIR /app
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-ENTRYPOINT ["python", "main.py"]
+CMD ["python", "main.py"]

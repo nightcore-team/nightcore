@@ -57,9 +57,7 @@ class User(IdIntegerMixin, Base):
     battle_pass_points: Mapped[float] = mapped_column(
         nullable=False, default=0.0
     )
-    inventory: Mapped[dict] = mapped_column(
-        JSON, nullable=False, default_factory=dict
-    )
+    inventory: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
     def __repr__(self):  # noqa: D105
         return f"<DbUser user_id={self.user_id} guild_id={self.guild_id} coins={self.coins}>"  # noqa: E501
@@ -150,9 +148,9 @@ class DbConfig(IdIntegerMixin, Base):
     economy_shop_buy_ping_roles_ids: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger)
     )
-    economy_shop: Mapped[dict] = mapped_column(JSON, default_factory=dict)
+    economy_shop: Mapped[dict] = mapped_column(JSON, default=dict)
     economy_products: Mapped[dict[str, float]] = mapped_column(
-        JSON, default_factory=dict
+        JSON, default=dict
     )
     # levels
     count_messages_channel_id: Mapped[int] = mapped_column(BigInteger)
@@ -167,7 +165,7 @@ class DbConfig(IdIntegerMixin, Base):
     clan_payday_channel_id: Mapped[int] = mapped_column(BigInteger)
     clan_shop_channel_id: Mapped[int] = mapped_column(BigInteger)
     clan_shop_products: Mapped[dict[str, float]] = mapped_column(
-        JSON, default_factory=dict
+        JSON, default=dict
     )
     clan_access_roles_ids: Mapped[list[int]] = mapped_column(ARRAY(BigInteger))
     create_clan_role_id: Mapped[int] = mapped_column(BigInteger)
@@ -231,30 +229,24 @@ class DbConfig(IdIntegerMixin, Base):
     create_proposal_channel_id: Mapped[int] = mapped_column(BigInteger)
 
     organizational_roles: Mapped[dict[str, int]] = mapped_column(
-        JSON, default_factory=dict
+        JSON, default=dict
     )
     mpmute_role_id: Mapped[int] = mapped_column(BigInteger)
     vmute_role_id: Mapped[int] = mapped_column(BigInteger)
-    level_roles: Mapped[dict[int, int]] = mapped_column(
-        JSON, default_factory=dict
-    )
+    level_roles: Mapped[dict[int, int]] = mapped_column(JSON, default=dict)
     rules_channel_id: Mapped[int] = mapped_column(BigInteger)
-    fraction_roles: Mapped[dict[str, int]] = mapped_column(
-        JSON, default_factory=dict
-    )
+    fraction_roles: Mapped[dict[str, int]] = mapped_column(JSON, default=dict)
     leader_access_roles_ids: Mapped[list[int]] = mapped_column(
-        ARRAY(BigInteger), default_factory=list
+        ARRAY(BigInteger), default=list
     )
     clan_improvements: Mapped[list[int]] = mapped_column(
-        ARRAY(Integer), default_factory=list
+        ARRAY(Integer), default=list
     )
-    colors: Mapped[dict] = mapped_column(JSON, default_factory=dict)
+    colors: Mapped[dict] = mapped_column(JSON, default=dict)
     drop_from_cases: Mapped[list[str]] = mapped_column(ARRAY(String))
     # battle_pass_rewards: Mapped[dict] = mapped_column(JSONB)
     # guild_rules: Mapped[dict] = mapped_column(JSONB)
-    illegal_roles: Mapped[dict[str, int]] = mapped_column(
-        JSON, default_factory=dict
-    )
+    illegal_roles: Mapped[dict[str, int]] = mapped_column(JSON, default=dict)
     # roles that has permissions to use embed config
     embed_config_access_roles: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger)
@@ -263,7 +255,7 @@ class DbConfig(IdIntegerMixin, Base):
     message_log_ignoring_channels_ids: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger)
     )
-    voice_temp_roles: Mapped[dict] = mapped_column(JSON, default_factory=dict)
+    voice_temp_roles: Mapped[dict] = mapped_column(JSON, default=dict)
     mute_role_id: Mapped[int] = mapped_column(BigInteger)
     mute_type: Mapped[str] = mapped_column(default="role")  # role or timeout
-    faq: Mapped[dict] = mapped_column(JSON, default_factory=dict)
+    faq: Mapped[dict] = mapped_column(JSON, default=dict)
