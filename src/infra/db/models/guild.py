@@ -1,124 +1,13 @@
-# noqa: D100
+"""Guild model for the Nightcore bot database."""
 
-from datetime import datetime
+from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from sqlalchemy import (
-    ARRAY,
-    BigInteger,
-    Float,
-    Integer,
-    String,
-)
-from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    declared_attr,
-    mapped_column,
-)
-from sqlalchemy.types import JSON, DateTime, SmallInteger
-
-from src.infra.db.mixins import CreatedAtMixin, IdIntegerMixin
+from src.infra.db.models.base import Base
+from src.infra.db.models.mixins import IdIntegerMixin
 
 
-class Base(AsyncAttrs, DeclarativeBase):
-    @declared_attr.directive
-    def __tablename__(self) -> str:  # noqa: D105
-        return f"{self.__name__.lower()}"
-
-
-class User(IdIntegerMixin, Base):
-    user_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, unique=True
-    )
-    guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    coins: Mapped[float] = mapped_column(nullable=False, default=0.0)
-    level: Mapped[int] = mapped_column(nullable=False, default=0)
-    current_exp: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
-    )
-    exp_to_level: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
-    )
-    voice_activity: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
-    )
-    temp_voice_activity: Mapped["datetime | None"] = mapped_column(
-        DateTime, nullable=True
-    )
-    reward_time: Mapped[int] = mapped_column(
-        SmallInteger, nullable=False, default=0
-    )
-    ticket_ban: Mapped[bool] = mapped_column(nullable=False, default=False)
-    ban_role_request: Mapped[bool] = mapped_column(
-        nullable=False, default=False
-    )
-    battle_pass_level: Mapped[int] = mapped_column(nullable=False, default=0)
-    battle_pass_points: Mapped[float] = mapped_column(
-        nullable=False, default=0.0
-    )
-    inventory: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-
-    def __repr__(self):  # noqa: D105
-        return f"<DbUser user_id={self.user_id} guild_id={self.guild_id} coins={self.coins}>"  # noqa: E501
-
-
-class Punish(IdIntegerMixin, Base):
-    guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    used_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    category: Mapped[str] = mapped_column(nullable=False)
-    reason: Mapped[str] = mapped_column(nullable=True)
-    duration: Mapped[str] = mapped_column(
-        nullable=True
-    )  # срок выдачи наказания
-    end_time: Mapped[int] = mapped_column(
-        nullable=True
-    )  # время окончания наказания
-    time_now: Mapped[int] = mapped_column(
-        nullable=True
-    )  # время выдачи наказания
-
-    # def __repr__(self):
-    #     return f"<Punish guild_id={self.guild_id} category={self.category} user={self.used_id}>"  # noqa: E501
-
-
-"""
-ClanUser:
-- user_id: int
-- guild_id: int
-- clan_id: int
-- is_leader: bool
-- is_deputy: bool
-"""
-
-
-class Clan(IdIntegerMixin, Base, CreatedAtMixin):
-    guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    leader_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    deputies: Mapped[list[int]] = mapped_column(
-        ARRAY(BigInteger), nullable=False, default=list
-    )  # Array of deputy IDs
-    coins: Mapped[float] = mapped_column(nullable=False, default=0.0)
-    current_exp: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
-    )
-    exp_to_level: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
-    )
-    level: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
-    ## payday for clan
-    max_deputies: Mapped[int] = mapped_column(nullable=False, default=0)
-    max_members: Mapped[int] = mapped_column(nullable=False, default=0)
-    payday_multipler: Mapped[int] = mapped_column(nullable=False, default=1)
-    invite_message: Mapped[str | None] = mapped_column(nullable=True)
-
-    # def __repr__(self):
-    #     return f"<DbClan guild_id={self.guild_id} role_id={self.role_id} leader_id={self.leader_id}>"  # noqa: E501
-
-
-class DbConfig(IdIntegerMixin, Base):
+class GuildConfig(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, unique=True
     )
