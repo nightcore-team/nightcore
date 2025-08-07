@@ -3,6 +3,8 @@
 from logging import Logger
 
 from src.config.config import config
+from src.infra.db.session import SessionFactory
+from src.infra.db.uow import UnitOfWork
 from src.nightcore.bot import Nightcore
 from src.nightcore.setup import create_bot
 from src.utils.logging.setup import setup_logging
@@ -11,7 +13,8 @@ from src.utils.logging.setup import setup_logging
 async def main() -> None:
     """Main function to start the Nightcore bot."""
     logger: Logger = setup_logging()
-    bot: Nightcore = await create_bot()
+    uow = UnitOfWork(SessionFactory(config.db.ENGINE))  # type: ignore
+    bot: Nightcore = await create_bot(uow=uow)
 
     logger.info("Starting Nightcore bot...")
 

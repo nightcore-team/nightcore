@@ -8,12 +8,20 @@ from discord.ext.commands import (
     Cog,
 )
 
+from src.infra.db.uow import UnitOfWork
+
 logger = logging.getLogger(__name__)
 
 
 class Nightcore(Bot):
-    def __init__(self, *, initial_cogs: list[Cog] | None = None):
+    def __init__(
+        self,
+        *,
+        initial_cogs: list[Cog],
+        uow: UnitOfWork,
+    ):
         self.initial_cogs = initial_cogs
+        self.uow = uow
         super().__init__(
             command_prefix=".",
             intents=discord.Intents.all(),
