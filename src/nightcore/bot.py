@@ -1,13 +1,30 @@
 """Nightcore Bot."""
 
+import contextlib
 import logging
 
 import discord
+from discord import app_commands
 from discord.ext.commands import Bot
 
 from src.infra.db.uow import UnitOfWork
 
 logger = logging.getLogger(__name__)
+
+
+class GuildOnlyTree(app_commands.CommandTree):
+    async def interaction_check(
+        self, interaction: discord.Interaction
+    ) -> bool:
+        """Check if the interaction is from a guild."""
+        if interaction.guild is None:
+            with contextlib.suppress(discord.InteractionResponded):
+                await interaction.response.send_message(
+                    "Commands are only available in servers.",
+                    ephemeral=True,
+                )
+            return False
+        return True
 
 
 class Nightcore(Bot):
@@ -23,6 +40,7 @@ class Nightcore(Bot):
             command_prefix=".",
             intents=discord.Intents.all(),
             help_command=None,
+            tree_cls=GuildOnlyTree,
         )
 
     async def load_extensions(self) -> None:
