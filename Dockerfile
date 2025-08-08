@@ -7,8 +7,6 @@ ENV UV_PYTHON_DOWNLOADS=0
 WORKDIR /app
 
 RUN --mount=type=cache,id=s/fc583318-4860-4485-9d22-4802980b51bf,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-dev
 
 COPY . /app
