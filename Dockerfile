@@ -6,6 +6,9 @@ ENV UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
 
+COPY pyproject.toml .
+COPY uv.lock .
+
 RUN --mount=type=cache,id=s/fc583318-4860-4485-9d22-4802980b51bf,target=/root/.cache/uv \
     uv sync --locked --no-install-project --no-dev
 
