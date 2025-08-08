@@ -49,3 +49,8 @@ class Action(Cog):
         return await interaction.response.send_message(
             f"вы выбрали {action} для {member.display_name}"
         )
+
+
+async def setup(bot: Nightcore):
+    """Setup the Action cog."""
+    await bot.add_cog(Action(bot))

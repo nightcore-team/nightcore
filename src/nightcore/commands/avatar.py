@@ -41,3 +41,8 @@ class Avatar(Cog):
             ),
             ephemeral=True,
         )
+
+
+async def setup(bot: Nightcore):
+    """Setup the Avatar cog."""
+    await bot.add_cog(Avatar(bot))

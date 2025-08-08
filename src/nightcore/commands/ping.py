@@ -25,3 +25,8 @@ class Ping(Cog):
         return await interaction.response.send_message(
             f"Pong! Latency: {self.bot.latency * 1000:.2f} ms"
         )
+
+
+async def setup(bot: Nightcore):
+    """Setup the Ping cog."""
+    await bot.add_cog(Ping(bot))

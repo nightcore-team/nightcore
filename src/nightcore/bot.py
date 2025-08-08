@@ -3,10 +3,7 @@
 import logging
 
 import discord
-from discord.ext.commands import (
-    Bot,
-    Cog,
-)
+from discord.ext.commands import Bot
 
 from src.infra.db.uow import UnitOfWork
 
@@ -17,10 +14,10 @@ class Nightcore(Bot):
     def __init__(
         self,
         *,
-        initial_cogs: list[Cog],
+        cog_modules: list[str],
         uow: UnitOfWork,
     ):
-        self.initial_cogs = initial_cogs
+        self.cog_modules = cog_modules
         self.uow = uow
         super().__init__(
             command_prefix=".",
@@ -32,18 +29,14 @@ class Nightcore(Bot):
         """Load all bot extensions (cogs)."""
         logger.info("Starting to load extensions...")
 
-        if self.initial_cogs:
-            for cog in self.initial_cogs:
+        if self.cog_modules:
+            for module in self.cog_modules:
                 try:
-                    logger.info(f"Loading cog: {cog.__cog_name__}")
-                    await self.add_cog(cog(self))  # type: ignore
-                    logger.info(
-                        f"[success] Successfully loaded {cog.__cog_name__}"
-                    )
+                    logger.info(f"Loading cog: {module}")
+                    await self.load_extension(module)
+                    logger.info(f"[success] Successfully loaded {module}")
                 except Exception as e:
-                    logger.error(
-                        f"[failed] Failed to load {cog.__cog_name__}: {e}"
-                    )
+                    logger.error(f"[failed] Failed to load {module}: {e}")
         else:
             logger.warning("No cogs to load")
 

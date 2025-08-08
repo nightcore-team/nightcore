@@ -44,3 +44,8 @@ class Config(Cog):
                 color=discord.Color.green(),
             )
         )
+
+
+async def setup(bot: Nightcore):
+    """Setup the Config cog."""
+    await bot.add_cog(Config(bot))
