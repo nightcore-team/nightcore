@@ -1,6 +1,6 @@
 """Defines the Config class for database environment settings."""
 
-from pydantic import PostgresDsn, field_validator
+from pydantic import AliasChoices, Field, PostgresDsn, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -8,21 +8,39 @@ from src.config.env import BaseEnvConfig
 
 
 class Config(BaseEnvConfig):
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
+    POSTGRES_USER: str | None = Field(
+        default=None, validation_alias=AliasChoices("POSTGRES_USER", "PGUSER")
+    )
+    POSTGRES_PASSWORD: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("POSTGRES_PASSWORD", "PGPASSWORD"),
+    )
+    POSTGRES_HOST: str | None = Field(
+        default=None, validation_alias=AliasChoices("POSTGRES_HOST", "PGHOST")
+    )
+    POSTGRES_PORT: int | None = Field(
+        default=None, validation_alias=AliasChoices("POSTGRES_PORT", "PGPORT")
+    )
+    POSTGRES_DB: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("POSTGRES_DB", "PGDATABASE"),
+    )
 
-    POSTGRES_HOST: str
-    POSTGRES_PORT: int
-    POSTGRES_DB: str
-
-    POSTGRES_ECHO: bool
-    POSTGRES_ECHO_POOL: bool
+    POSTGRES_DATABASE_URI: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "POSTGRES_DATABASE_URI",
+            "DATABASE_URL",
+            "RAILWAY_DATABASE_URL",
+            "POSTGRES_URL",
+        ),
+    )
+    POSTGRES_ECHO: bool = True
+    POSTGRES_ECHO_POOL: bool = True
     POSTGRES_POOL_MAX_OVERFLOW: int = 15
     POSTGRES_POOL_SIZE: int = 5
     POSTGRES_POOL_TIMEOUT: int = 0
     POSTGRES_POOL_PRE_PING: bool = True
-
-    POSTGRES_DATABASE_URI: str | None = None
 
     ENGINE: AsyncEngine | None = None
 
