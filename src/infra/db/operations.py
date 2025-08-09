@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.models.guild import GuildConfig
+from src.infra.db.models.enums import LoggingChannelType
 
 
 async def get_guild_config(
@@ -18,6 +19,23 @@ async def get_guild_config(
     )
     if not result:
         session.add(GuildConfig(guild_id=guild_id))
+
+    return result
+
+
+async def get_specified_logging_channel(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    channel_type: LoggingChannelType,
+) -> int | None:
+    """Get the specified logging channel ID from the database."""
+    result = await session.scalar(
+        select(channel_type).where(GuildConfig.guild_id == guild_id)  # type: ignore
+    )
+
+    if result is None:
+        return None
 
     return result
 

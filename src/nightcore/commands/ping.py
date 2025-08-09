@@ -1,9 +1,8 @@
 """Ping command for the Nightcore bot."""
 
-import discord
 from discord import app_commands
 from discord.ext.commands import Cog
-from discord.interactions import InteractionCallbackResponse
+from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.nightcore.bot import Nightcore
 
@@ -14,7 +13,7 @@ class Ping(Cog):
 
     @app_commands.command(name="ping", description="Check the bot's latency.")
     async def ping(
-        self, interaction: discord.Interaction
+        self, interaction: Interaction
     ) -> InteractionCallbackResponse:
         """Send a message displaying the bot's current latency.
 

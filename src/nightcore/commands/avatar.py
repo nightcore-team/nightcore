@@ -1,11 +1,15 @@
 """Avatar command for the Nightcore bot."""
 
+import logging
+
 import discord
 from discord import Embed, app_commands
 from discord.ext.commands import Cog
-from discord.interactions import InteractionCallbackResponse
+from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.nightcore.bot import Nightcore
+
+logger = logging.getLogger(__name__)
 
 
 class Avatar(Cog):
@@ -15,7 +19,7 @@ class Avatar(Cog):
     @app_commands.command(name="avatar", description="Get user's avatar")
     async def avatar(
         self,
-        interaction: discord.Interaction,
+        interaction: Interaction,
         member: discord.Member | discord.User | None = None,
     ) -> InteractionCallbackResponse:
         """Send a message displaying the user's avatar.
@@ -30,7 +34,7 @@ class Avatar(Cog):
         if member is None:
             member = interaction.user
 
-        return await interaction.response.send_message(
+        response = await interaction.response.send_message(
             embed=Embed(
                 title=f"Аватар пользователя {member.display_name}",
                 color=discord.Color.blurple(),
@@ -41,6 +45,15 @@ class Avatar(Cog):
             ),
             ephemeral=True,
         )
+
+        logger.info(
+            "commands.avatar invoked user=%s guild=%s target=%s",
+            interaction.user.id,
+            interaction.guild.id if interaction.guild else None,
+            member.id,
+        )
+
+        return response
 
 
 async def setup(bot: Nightcore):

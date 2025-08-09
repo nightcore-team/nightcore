@@ -1,9 +1,11 @@
 """Config command for the Nightcore bot."""
 
+import logging
+
 import discord
 from discord import Embed, app_commands
 from discord.ext.commands import Cog
-from discord.interactions import InteractionCallbackResponse
+from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.infra.db.operations import (
     apply_field_mapping_to_model,
@@ -11,6 +13,8 @@ from src.infra.db.operations import (
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import collect_provided_options
+
+logger = logging.getLogger(__name__)
 
 
 class Config(Cog):
@@ -28,7 +32,7 @@ class Config(Cog):
         description="Check if the config is synced with the database.",
     )
     async def check(
-        self, interaction: discord.Interaction
+        self, interaction: Interaction
     ) -> InteractionCallbackResponse:
         """Check if the config is synced with the database."""
         async with self.bot.uow.start() as uow:
@@ -37,10 +41,16 @@ class Config(Cog):
                 guild_id=interaction.guild_id,  # type: ignore
             )
         if config:
-            description = f"Config is synced with the database for guild ID: {interaction.guild_id}.\n"  # type: ignore
+            description = f"Config is synced with the database for guild ID: {interaction.guild_id}.\n"  # type: ignore  # noqa: E501
         else:
             description = "Your config will be added to the database."
 
+        logger.info(
+            "config.check invoked user=%s guild=%s exists=%s",
+            interaction.user.id,
+            interaction.guild.id,
+            bool(config),
+        )
         return await interaction.response.send_message(
             embed=Embed(
                 title="Config Check",
@@ -53,7 +63,7 @@ class Config(Cog):
     @config.command(name="logging", description="Configure logging settings.")
     async def logging(
         self,
-        interaction: discord.Interaction,
+        interaction: Interaction,
         bans: str | None = None,
         voices: str | None = None,
         members: str | None = None,
@@ -80,6 +90,11 @@ class Config(Cog):
         )
 
         if not provided_int and not provided_list:
+            logger.info(
+                "config.logging invoked user=%s guild=%s no_options_supplied",
+                interaction.user.id,
+                interaction.guild.id,
+            )
             return await interaction.response.send_message(
                 embed=Embed(
                     title="Logging Configuration",
@@ -95,10 +110,15 @@ class Config(Cog):
             )
 
             if not guild_config:
+                logger.info(
+                    "config.logging invoked user=%s guild=%s config_missing_will_create",
+                    interaction.user.id,
+                    interaction.guild.id,
+                )
                 return await interaction.response.send_message(
                     embed=Embed(
                         title="Logging Configuration",
-                        description="No config found for this guild, but it will be created now. Please run this command again.",
+                        description="No config found for this guild, but it will be created now. Please run this command again.",  # noqa: E501
                         color=discord.Color.red(),
                     )
                 )
@@ -128,6 +148,15 @@ class Config(Cog):
                 + "\n".join(f"- {s}" for s in skipped_int + skipped_list)
             )
 
+        logger.info(
+            "config.logging invoked user=%s guild=%s updated=%s skipped=%s provided_int=%s provided_list=%s",
+            interaction.user.id,
+            interaction.guild.id,
+            changed_int + changed_list,
+            skipped_int + skipped_list,
+            list(provided_int.keys()),
+            list(provided_list.keys()),
+        )
         return await interaction.response.send_message(
             embed=Embed(
                 title="Logging Configuration",
