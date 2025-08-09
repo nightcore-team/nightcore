@@ -24,6 +24,7 @@ async def get_guild_config(
 
 def apply_field_mapping_to_model(
     obj: Any,
+    *,
     provided: dict[str, str],
     attr_template: str = "{field}",
     cast_type: type | None = int,
@@ -37,7 +38,7 @@ def apply_field_mapping_to_model(
             skipped.append(field)
             continue
 
-        # Визначення чи цільовий тип є списком (включно з параметризованими)
+        # Determine if the target attribute is a list
         is_list_target = cast_type is list or (
             cast_type is not None and get_origin(cast_type) is list
         )
@@ -45,7 +46,7 @@ def apply_field_mapping_to_model(
         new_value_casted: Any
 
         if is_list_target:
-            # якщо передано рядок → розділити по комі
+            # If the new value is a string, split it into a list
             if isinstance(new_value, str):
                 new_value_casted = [
                     int(x.strip()) for x in new_value.split(",") if x.strip()
@@ -56,7 +57,7 @@ def apply_field_mapping_to_model(
                 skipped.append(field)
                 continue
         else:
-            # звичайний кастинг
+            # default casting
             new_value_casted = cast_type(new_value) if cast_type else new_value
 
         old_value = getattr(obj, attr)
