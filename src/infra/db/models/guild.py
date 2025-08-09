@@ -13,19 +13,19 @@ class GuildConfig(IdIntegerMixin, Base):
     )
 
     # log channels - все nullable
-    ban_log_channel_id: Mapped[int | None] = mapped_column(
+    bans_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
     clan_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    members_update_log_channel_id: Mapped[int | None] = mapped_column(
+    members_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
     messages_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    voice_log_channel_id: Mapped[int | None] = mapped_column(
+    voices_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
     moderation_log_channel_id: Mapped[int | None] = mapped_column(
@@ -34,13 +34,16 @@ class GuildConfig(IdIntegerMixin, Base):
     count_moderator_messages_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    ticket_log_channel_id: Mapped[int | None] = mapped_column(
+    tickets_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
     roles_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
     channels_log_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
+    reactions_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
 
