@@ -28,4 +28,6 @@ COPY --from=builder /app /app
 WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["python", "main.py"]
+RUN chmod +x ./docker/*
+
+CMD ["sh", "./docker/docker-entrypoint.sh"]
