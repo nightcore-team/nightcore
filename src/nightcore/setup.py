@@ -11,6 +11,7 @@ async def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.commands.ping",
         "src.nightcore.commands.avatar",
         "src.nightcore.commands.config",
+        "src.nightcore.events.reaction",
         "src.nightcore.events.message",
     ]
 
