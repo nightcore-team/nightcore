@@ -28,29 +28,29 @@ class Avatar(Cog):
             interaction : discord.Interaction
                 The interaction that triggered the command.
             member :
-                Выберите пользователя, чей аватар вы хотите получить.
+                Choose a user to get their avatar.
         """
 
         if member is None:
-            member = interaction.user
+            member = interaction.user  # type: ignore
 
         response = await interaction.response.send_message(
             embed=Embed(
-                title=f"Аватар пользователя {member.display_name}",
+                title=f"Аватар пользователя {member.display_name}",  # type: ignore
                 color=discord.Color.blurple(),
             ).set_image(
-                url=member.avatar.url
-                if member.avatar
-                else member.default_avatar.url
+                url=member.avatar.url  # type: ignore
+                if member.avatar  # type: ignore
+                else member.default_avatar.url  # type: ignore
             ),
             ephemeral=True,
         )
 
         logger.info(
             "commands.avatar invoked user=%s guild=%s target=%s",
-            interaction.user.id,
+            interaction.user.id,  # type: ignore
             interaction.guild.id if interaction.guild else None,
-            member.id,
+            member.id,  # type: ignore
         )
 
         return response

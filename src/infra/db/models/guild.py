@@ -31,9 +31,6 @@ class GuildConfig(IdIntegerMixin, Base):
     moderation_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    count_moderator_messages_channel_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
-    )
     tickets_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
@@ -114,6 +111,9 @@ class GuildConfig(IdIntegerMixin, Base):
     moderation_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
+    count_moderator_messages_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
     ban_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
@@ -134,8 +134,8 @@ class GuildConfig(IdIntegerMixin, Base):
     vmute_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     message_score: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    trackable_moderation_role_id: Mapped[str | None] = mapped_column(
-        String, nullable=True
+    trackable_moderation_role_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
     )
 
     ban_request_ping_role_id: Mapped[int | None] = mapped_column(
