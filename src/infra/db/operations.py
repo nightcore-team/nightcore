@@ -6,8 +6,8 @@ from typing import Any, get_origin
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infra.db.models.guild import GuildConfig
 from src.infra.db.models.enums import LoggingChannelType
+from src.infra.db.models.guild import GuildConfig
 
 
 async def get_guild_config(
@@ -33,9 +33,6 @@ async def get_specified_logging_channel(
     result = await session.scalar(
         select(channel_type).where(GuildConfig.guild_id == guild_id)  # type: ignore
     )
-
-    if result is None:
-        return None
 
     return result
 

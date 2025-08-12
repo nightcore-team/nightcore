@@ -1,6 +1,7 @@
 """Config command for the Nightcore bot."""
 
 import logging
+from typing import Literal
 
 import discord
 from discord import Embed, app_commands
@@ -12,6 +13,7 @@ from src.infra.db.operations import (
     get_guild_config,
 )
 from src.nightcore.bot import Nightcore
+from src.nightcore.components.embed.error import NoConfigFoundEmbed
 from src.nightcore.utils import collect_provided_options
 
 logger = logging.getLogger(__name__)
@@ -25,12 +27,22 @@ class Config(Cog):
         name="config",
         description="Configuration commands for the Nightcore bot.",
     )
+    logging = app_commands.Group(
+        name="logging",
+        description="Configuration commands for the Nightcore bot.",
+        parent=config,
+    )
+    moderation = app_commands.Group(
+        name="moderation",
+        description="Configuration commands for the Nightcore bot.",
+        parent=config,
+    )
 
-    @app_commands.checks.has_permissions(administrator=True)
     @config.command(
         name="check",
         description="Check if the config is synced with the database.",
     )
+    @app_commands.checks.has_permissions(administrator=True)
     async def check(
         self, interaction: Interaction
     ) -> InteractionCallbackResponse:
@@ -56,11 +68,12 @@ class Config(Cog):
                 title="Config Check",
                 description=description,
                 color=discord.Color.green(),
-            )
+            ),
+            ephemeral=True,
         )
 
+    @logging.command(name="setup", description="Configure logging settings.")
     @app_commands.checks.has_permissions(administrator=True)
-    @config.command(name="logging", description="Configure logging settings.")
     @app_commands.describe(
         bans="The channel to log bans.",
         voices="The channel to log voice state changes.",
@@ -69,34 +82,35 @@ class Config(Cog):
         roles="The channel to log role updates.",
         messages="The channel to log message updates.",
         moderation="The channel to log moderation actions.",
+        tickets="The channel to log ticket updates.",
         reactions="The channel to log reaction updates.",
-        ignoring_channels="The channels to ignore for logging.",
+        ignoring_channels="The channels to ignore for logging. Type: `id,id,id,...`",  # noqa: E501
     )
-    async def logging(
+    async def setup(
         self,
         interaction: Interaction,
-        bans: str | None = None,
-        voices: str | None = None,
-        members: str | None = None,
-        channels: str | None = None,
-        roles: str | None = None,
-        messages: str | None = None,
-        moderation: str | None = None,
-        tickets: str | None = None,
-        reactions: str | None = None,
+        bans: discord.TextChannel | None = None,
+        voices: discord.TextChannel | None = None,
+        members: discord.TextChannel | None = None,
+        channels: discord.TextChannel | None = None,
+        roles: discord.TextChannel | None = None,
+        messages: discord.TextChannel | None = None,
+        moderation: discord.TextChannel | None = None,
+        tickets: discord.TextChannel | None = None,
+        reactions: discord.TextChannel | None = None,
         ignoring_channels: str | None = None,
     ) -> InteractionCallbackResponse:
         """Configure logging settings for the guild."""
         provided_int = collect_provided_options(
-            bans_log_channel_id=bans,
-            moderation_log_channel_id=moderation,
-            voices_log_channel_id=voices,
-            members_log_channel_id=members,
-            channels_log_channel_id=channels,
-            roles_log_channel_id=roles,
-            tickets_log_channel_id=tickets,
-            messages_log_channel_id=messages,
-            reactions_log_channel_id=reactions,
+            bans_log_channel_id=bans.id if bans else None,
+            moderation_log_channel_id=moderation.id if moderation else None,
+            voices_log_channel_id=voices.id if voices else None,
+            members_log_channel_id=members.id if members else None,
+            channels_log_channel_id=channels.id if channels else None,
+            roles_log_channel_id=roles.id if roles else None,
+            tickets_log_channel_id=tickets.id if tickets else None,
+            messages_log_channel_id=messages.id if messages else None,
+            reactions_log_channel_id=reactions.id if reactions else None,
         )
         provided_list = collect_provided_options(
             message_log_ignoring_channels_ids=ignoring_channels
@@ -113,7 +127,8 @@ class Config(Cog):
                     title="Logging Configuration",
                     description="No options supplied. Nothing to change.",
                     color=discord.Color.yellow(),
-                )
+                ),
+                ephemeral=True,
             )
 
         async with self.bot.uow.start() as uow:
@@ -122,18 +137,15 @@ class Config(Cog):
                 guild_id=interaction.guild_id,  # type: ignore
             )
 
-            if not guild_config:
+            if guild_config is None:
                 logger.info(
                     "config.logging invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
                     interaction.user.id,  # type: ignore
                     interaction.guild.id,  # type: ignore
                 )
                 return await interaction.response.send_message(
-                    embed=Embed(
-                        title="Logging Configuration",
-                        description="No config found for this guild, but it will be created now. Please run this command again.",  # noqa: E501
-                        color=discord.Color.red(),
-                    )
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
                 )
 
             changed_int, skipped_int = apply_field_mapping_to_model(
@@ -175,13 +187,99 @@ class Config(Cog):
                 title="Logging Configuration",
                 description="\n\n".join(description_parts),
                 color=discord.Color.green(),
-            )
+            ),
+            ephemeral=True,
         )
 
+    @logging.command(name="update_ignoring_channels")
     @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.choices(
+        option=[
+            app_commands.Choice(name="Add", value="add"),
+            app_commands.Choice(name="Remove", value="remove"),
+        ]
+    )
+    async def update_ignore_channel(
+        self,
+        interaction: Interaction,
+        channel: discord.TextChannel,
+        option: Literal["add", "remove"],
+    ) -> InteractionCallbackResponse:
+        """Update the list of channels to ignore for logging."""
+        channel_id = channel.id
+        description: str
+        color: discord.Color
+        changed = False
+
+        async with self.bot.uow.start() as uow:
+            guild_config = await get_guild_config(
+                uow.session,  # type: ignore
+                guild_id=interaction.guild_id,  # type: ignore
+            )
+
+            if not guild_config:
+                logger.info(
+                    "config.logging.update_ignore_channel invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                )
+                return await interaction.response.send_message(
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
+                )
+
+            ids: list[int] = list(
+                guild_config.message_log_ignoring_channels_ids or []
+            )
+
+            if option == "add":
+                if channel_id in ids:
+                    description = f"Channel <#{channel_id}> already exists in the ignore list."  # noqa: E501
+                    color = discord.Color.yellow()
+                else:
+                    ids.append(channel_id)
+                    changed = True
+                    description = (
+                        f"Channel <#{channel_id}> added to the ignore list."
+                    )
+                    color = discord.Color.blurple()
+            elif option == "remove":
+                if channel_id not in ids:
+                    description = (
+                        f"Channel <#{channel_id}> is not in the ignore list."
+                    )
+                    color = discord.Color.red()
+                else:
+                    ids = [x for x in ids if x != channel_id]
+                    changed = True
+                    description = f"Channel <#{channel_id}> removed from the ignore list."  # noqa: E501
+                    color = discord.Color.blurple()
+
+            if changed:
+                # Assign the new list so SQLAlchemy sees the change
+                guild_config.message_log_ignoring_channels_ids = ids
+
+                logger.info(
+                    "config.logging.update_ignoring_channels user=%s guild=%s option=%s channel=%s",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                    option,
+                    channel_id,
+                )
+
+        return await interaction.response.send_message(
+            embed=Embed(
+                title="Logging Configuration",
+                description=description,
+                color=color,
+            ),
+            ephemeral=True,
+        )
+
     @config.command(
         name="moderstats", description="Configure moderation stats settings."
     )
+    @app_commands.checks.has_permissions(administrator=True)
     @app_commands.describe(
         mute="Mute score",
         ban="Ban score",
@@ -242,7 +340,8 @@ class Config(Cog):
                     title="Logging Configuration",
                     description="No options supplied. Nothing to change.",
                     color=discord.Color.yellow(),
-                )
+                ),
+                ephemeral=True,
             )
 
         async with self.bot.uow.start() as uow:
@@ -258,11 +357,8 @@ class Config(Cog):
                     interaction.guild.id,  # type: ignore
                 )
                 return await interaction.response.send_message(
-                    embed=Embed(
-                        title="Logging Configuration",
-                        description="No config found for this guild, but it will be created now. Please run this command again.",  # noqa: E501
-                        color=discord.Color.red(),
-                    )
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
                 )
 
             changed_float, skipped_float = apply_field_mapping_to_model(
@@ -304,7 +400,8 @@ class Config(Cog):
                 title="Logging Configuration",
                 description="\n\n".join(description_parts),
                 color=discord.Color.green(),
-            )
+            ),
+            ephemeral=True,
         )
 
 

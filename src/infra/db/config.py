@@ -35,7 +35,7 @@ class Config(BaseEnvConfig):
             "POSTGRES_URL",
         ),
     )
-    POSTGRES_ECHO: bool = True
+    POSTGRES_ECHO: bool = False
     POSTGRES_ECHO_POOL: bool = True
     POSTGRES_POOL_MAX_OVERFLOW: int = 15
     POSTGRES_POOL_SIZE: int = 5
