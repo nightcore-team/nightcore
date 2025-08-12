@@ -40,7 +40,7 @@ async def get_specified_logging_channel(
 def apply_field_mapping_to_model(
     obj: Any,
     *,
-    provided: dict[str, str],
+    provided: dict[str, Any],
     attr_template: str = "{field}",
     cast_type: type | None = int,
 ) -> tuple[list[str], list[str]]:

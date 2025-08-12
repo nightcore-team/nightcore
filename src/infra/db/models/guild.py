@@ -43,6 +43,9 @@ class GuildConfig(IdIntegerMixin, Base):
     reactions_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+    private_rooms_log_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
 
     # economy - nullable fields
     coin_name: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -205,7 +208,7 @@ class GuildConfig(IdIntegerMixin, Base):
     fraction_roles: Mapped[dict[str, int]] = mapped_column(
         JSON, nullable=False, default=dict
     )
-    leader_access_roles_ids: Mapped[list[int]] = mapped_column(
+    leader_access_rr_roles_ids: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger), nullable=False, default=list
     )
     clan_improvements: Mapped[list[int]] = mapped_column(

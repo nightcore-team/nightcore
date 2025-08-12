@@ -37,6 +37,11 @@ class Config(Cog):
         description="Configuration commands for the Nightcore bot.",
         parent=config,
     )
+    economy = app_commands.Group(
+        name="economy",
+        description="Configuration commands for the Nightcore bot.",
+        parent=config,
+    )
 
     @config.command(
         name="check",
@@ -84,6 +89,7 @@ class Config(Cog):
         moderation="The channel to log moderation actions.",
         tickets="The channel to log ticket updates.",
         reactions="The channel to log reaction updates.",
+        private_rooms="The channel to log private room updates.",
         ignoring_channels="The channels to ignore for logging. Type: `id,id,id,...`",  # noqa: E501
     )
     async def setup(
@@ -98,19 +104,21 @@ class Config(Cog):
         moderation: discord.TextChannel | None = None,
         tickets: discord.TextChannel | None = None,
         reactions: discord.TextChannel | None = None,
+        private_rooms: discord.TextChannel | None = None,
         ignoring_channels: str | None = None,
     ) -> InteractionCallbackResponse:
         """Configure logging settings for the guild."""
         provided_int = collect_provided_options(
-            bans_log_channel_id=bans.id if bans else None,
-            moderation_log_channel_id=moderation.id if moderation else None,
-            voices_log_channel_id=voices.id if voices else None,
-            members_log_channel_id=members.id if members else None,
-            channels_log_channel_id=channels.id if channels else None,
-            roles_log_channel_id=roles.id if roles else None,
-            tickets_log_channel_id=tickets.id if tickets else None,
-            messages_log_channel_id=messages.id if messages else None,
-            reactions_log_channel_id=reactions.id if reactions else None,
+            bans_log_channel_id=bans,
+            moderation_log_channel_id=moderation,
+            voices_log_channel_id=voices,
+            members_log_channel_id=members,
+            channels_log_channel_id=channels,
+            roles_log_channel_id=roles,
+            tickets_log_channel_id=tickets,
+            messages_log_channel_id=messages,
+            reactions_log_channel_id=reactions,
+            private_rooms_log_channel_id=private_rooms,
         )
         provided_list = collect_provided_options(
             message_log_ignoring_channels_ids=ignoring_channels
@@ -297,18 +305,18 @@ class Config(Cog):
     async def moderstats(
         self,
         interaction: Interaction,
-        mute: str | None = None,  # float
-        ban: str | None = None,  # float
-        kick: str | None = None,  # float
-        ticket: str | None = None,  # float
-        vmute: str | None = None,  # float
-        mpmute: str | None = None,  # float
-        ticket_ban: str | None = None,  # float
-        role_request: str | None = None,  # float
-        role_remove: str | None = None,  # float
-        message: str | None = None,  # float
-        role: str | None = None,  # int
-        channel: str | None = None,  # int
+        mute: float | None = None,
+        ban: float | None = None,
+        kick: float | None = None,
+        ticket: float | None = None,
+        vmute: float | None = None,
+        mpmute: float | None = None,
+        ticket_ban: float | None = None,
+        role_request: float | None = None,
+        role_remove: float | None = None,
+        message: float | None = None,
+        role: discord.Role | None = None,
+        channel: discord.TextChannel | None = None,
     ):
         """Configure moderation stats settings."""
         provided_float = collect_provided_options(
@@ -394,6 +402,160 @@ class Config(Cog):
             skipped_int + skipped_float,
             list(provided_int.keys()),
             list(provided_float.keys()),
+        )
+        return await interaction.response.send_message(
+            embed=Embed(
+                title="Logging Configuration",
+                description="\n\n".join(description_parts),
+                color=discord.Color.green(),
+            ),
+            ephemeral=True,
+        )
+
+    @moderation.command(
+        name="setup", description="Configure moderation settings."
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.describe(
+        moderation_access_roles="The roles that can access moderation features.",
+        ban_access_roles="The roles that can access ban features.",
+        ban_request_ping_role="The role to ping when a ban request is made.",
+        ban_request_channel="The channel where ban requests are made.",
+        new_tickets_category="The category for new tickets.",
+        pinned_tickets_category="The category for pinned tickets.",
+        closed_tickets_category="The category for closed tickets.",
+        ticket_created_ping_role="The role to ping when a ticket is created.",
+        notifications_channel="The channel for notifications.",
+        moderation_notifications_channel="The channel for notifications related to moderation.",
+        mute_type="The type of mute to apply. Timeout | Role",
+        mute_role="The role to assign when a user is muted.",
+        mpmute_role="The role to assign when a user is muted in a specific channel.",
+        vmute_role="The role to assign when a user is voice muted.",
+        leaders_access_rr_roles="The roles that can access the leader's report.",
+    )
+    @app_commands.choices(
+        mute_type=[
+            app_commands.Choice(name="Timeout", value="timeout"),
+            app_commands.Choice(name="Role", value="role"),
+        ]
+    )
+    async def setup(
+        self,
+        interaction: Interaction,
+        moderation_access_roles: str | None = None,
+        ban_access_roles: str | None = None,
+        ban_request_ping_role: discord.Role | None = None,
+        ban_request_channel: discord.TextChannel | None = None,
+        new_tickets_category: discord.CategoryChannel | None = None,
+        pinned_tickets_category: discord.CategoryChannel | None = None,
+        closed_tickets_category: discord.CategoryChannel | None = None,
+        ticket_created_ping_role: discord.Role | None = None,
+        notifications_channel: discord.TextChannel | None = None,
+        moderation_notifications_channel: discord.TextChannel | None = None,
+        mute_type: Literal["add", "remove"] | None = None,
+        mute_role: discord.Role | None = None,
+        mpmute_role: discord.Role | None = None,
+        vmute_role: discord.Role | None = None,
+        leaders_access_rr_roles: str | None = None,
+    ):
+        """Configure moderation settings."""
+        async with self.bot.uow.start() as uow:
+            guild_config = await get_guild_config(
+                uow.session,  # type: ignore
+                guild_id=interaction.guild_id,  # type: ignore
+            )
+
+            if not guild_config:
+                logger.info(
+                    "config.moderation.setup invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                )
+                return await interaction.response.send_message(
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
+                )
+
+            provided_int = collect_provided_options(
+                ban_request_ping_role_id=ban_request_ping_role,
+                send_ban_request_channel_id=ban_request_channel,
+                new_tickets_category_id=new_tickets_category,
+                pinned_tickets_category_id=pinned_tickets_category,
+                closed_tickets_category_id=closed_tickets_category,
+                create_ticket_channel_id=ticket_created_ping_role,
+                notifications_channel_id=notifications_channel,
+                notifications_for_moderation_channel_id=moderation_notifications_channel,
+                mute_role_id=mute_role,
+                mpmute_role_id=mpmute_role,
+                vmute_role_id=vmute_role,
+            )
+            provided_list = collect_provided_options(
+                moderation_access_roles_ids=moderation_access_roles,
+                ban_access_roles_ids=ban_access_roles,
+                leader_access_rr_roles_ids=leaders_access_rr_roles,
+            )
+            provided_str = collect_provided_options(
+                mute_type=mute_type,
+            )
+            if not any((provided_list, provided_int, provided_str)):
+                logger.info(
+                    "config.moderation.setup invoked user=%s guild=%s no_options_supplied",
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                )
+                return await interaction.response.send_message(
+                    embed=Embed(
+                        title="Moderation Configuration",
+                        description="No options supplied. Nothing to change.",
+                        color=discord.Color.yellow(),
+                    ),
+                    ephemeral=True,
+                )
+
+            changed_int, skipped_int = apply_field_mapping_to_model(
+                guild_config,
+                provided=provided_int,
+                attr_template="{field}",
+                cast_type=int,
+            )
+            changed_list, skipped_list = apply_field_mapping_to_model(
+                guild_config,
+                provided=provided_list,
+                attr_template="{field}",
+                cast_type=list,
+            )
+            changed_str, skipped_str = apply_field_mapping_to_model(
+                guild_config,
+                provided=provided_str,
+                attr_template="{field}",
+                cast_type=str,
+            )
+
+        description_parts = []
+        if changed_int + changed_list + changed_str:
+            description_parts.append(
+                "Updated:\n"
+                + "\n".join(
+                    f"- {c}" for c in changed_int + changed_list + changed_str
+                )
+            )
+        if skipped_int + skipped_list + skipped_str:
+            description_parts.append(
+                "Unchanged / skipped:\n"
+                + "\n".join(
+                    f"- {s}" for s in skipped_int + skipped_list + skipped_str
+                )
+            )
+
+        logger.info(
+            "config.moderation.setup invoked user=%s guild=%s updated=%s skipped=%s provided_int=%s provided_list=%s",  # noqa: E501
+            interaction.user.id,  # type: ignore
+            interaction.guild.id,  # type: ignore
+            changed_int + changed_list + changed_str,
+            skipped_int + skipped_list + skipped_str,
+            list(provided_int.keys()),
+            list(provided_list.keys()),
+            list(provided_str.keys()),
         )
         return await interaction.response.send_message(
             embed=Embed(

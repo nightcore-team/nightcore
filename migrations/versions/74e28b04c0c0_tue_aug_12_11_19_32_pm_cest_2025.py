@@ -1,8 +1,8 @@
-"""Mon Aug 11 07:53:41 PM CEST 2025
+"""Tue Aug 12 11:19:32 PM CEST 2025
 
-Revision ID: 06847673f3e4
+Revision ID: 74e28b04c0c0
 Revises: 
-Create Date: 2025-08-11 19:53:42.449404
+Create Date: 2025-08-12 23:19:33.483424
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '06847673f3e4'
+revision: str = '74e28b04c0c0'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -50,6 +50,7 @@ def upgrade() -> None:
     sa.Column('roles_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('channels_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('reactions_log_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('private_rooms_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('coin_name', sa.String(), nullable=True),
     sa.Column('economy_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('reward_count', sa.Float(), nullable=True),
@@ -105,7 +106,7 @@ def upgrade() -> None:
     sa.Column('level_roles', sa.JSON(), nullable=False),
     sa.Column('rules_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('fraction_roles', sa.JSON(), nullable=False),
-    sa.Column('leader_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
+    sa.Column('leader_access_rr_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
     sa.Column('clan_improvements', sa.ARRAY(sa.Integer()), nullable=False),
     sa.Column('colors', sa.JSON(), nullable=False),
     sa.Column('drop_from_cases', sa.ARRAY(sa.String()), nullable=True),
