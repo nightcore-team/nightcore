@@ -17,6 +17,15 @@ from src.nightcore.components.embed.error import NoConfigFoundEmbed
 from src.nightcore.utils import collect_provided_options
 
 logger = logging.getLogger(__name__)
+"""
+TODO: separate config commands into their own files
+TODO: remove duplicate code:
+- check guild config
+- add/remove options
+- embed builder updated/skipped
+- no_options_supplied embed
+
+"""
 
 
 class Config(Cog):
@@ -460,7 +469,7 @@ class Config(Cog):
         ticket_created_ping_role: discord.Role | None = None,
         notifications_channel: discord.TextChannel | None = None,
         moderation_notifications_channel: discord.TextChannel | None = None,
-        mute_type: Literal["add", "remove"] | None = None,
+        mute_type: Literal["timeout", "role"] | None = None,
         mute_role: discord.Role | None = None,
         mpmute_role: discord.Role | None = None,
         vmute_role: discord.Role | None = None,
@@ -556,7 +565,15 @@ class Config(Cog):
             )
 
         logger.info(
-            "config.moderation.setup invoked user=%s guild=%s updated=%s skipped=%s provided_int=%s provided_list=%s",  # noqa: E501
+            "config.moderation.setup invoked \
+                user=%s \
+                guild=%s \
+                updated=%s \
+                skipped=%s \
+                provided_int=%s \
+                provided_list=%s \
+                provided_str=%s \
+            ",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
             changed_int + changed_list + changed_str,
@@ -640,7 +657,7 @@ class Config(Cog):
 
             if changed:
                 # Assign the new list so SQLAlchemy sees the change
-                guild_config.message_log_ignoring_channels_ids = ids
+                guild_config.moderation_access_roles_ids = ids
 
                 logger.info(
                     "config.moderation.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
