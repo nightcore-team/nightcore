@@ -92,7 +92,7 @@ class Config(Cog):
         private_rooms="The channel to log private room updates.",
         ignoring_channels="The channels to ignore for logging. Type: `id,id,id,...`",  # noqa: E501
     )
-    async def setup(
+    async def setup_logging(
         self,
         interaction: Interaction,
         bans: discord.TextChannel | None = None,
@@ -417,7 +417,7 @@ class Config(Cog):
     )
     @app_commands.checks.has_permissions(administrator=True)
     @app_commands.describe(
-        moderation_access_roles="The roles that can access moderation features.",
+        moderation_access_roles="The roles that can access moderation features.",  # noqa: E501
         ban_access_roles="The roles that can access ban features.",
         ban_request_ping_role="The role to ping when a ban request is made.",
         ban_request_channel="The channel where ban requests are made.",
@@ -426,12 +426,12 @@ class Config(Cog):
         closed_tickets_category="The category for closed tickets.",
         ticket_created_ping_role="The role to ping when a ticket is created.",
         notifications_channel="The channel for notifications.",
-        moderation_notifications_channel="The channel for notifications related to moderation.",
+        moderation_notifications_channel="The channel for notifications related to moderation.",  # noqa: E501
         mute_type="The type of mute to apply. Timeout | Role",
         mute_role="The role to assign when a user is muted.",
-        mpmute_role="The role to assign when a user is muted in a specific channel.",
+        mpmute_role="The role to assign when a user is muted in a specific channel.",  # noqa: E501
         vmute_role="The role to assign when a user is voice muted.",
-        leaders_access_rr_roles="The roles that can access the leader's report.",
+        leaders_access_rr_roles="The roles that can access the leader's report.",  # noqa: E501
     )
     @app_commands.choices(
         mute_type=[
@@ -439,7 +439,7 @@ class Config(Cog):
             app_commands.Choice(name="Role", value="role"),
         ]
     )
-    async def setup(
+    async def setup_moderation(
         self,
         interaction: Interaction,
         moderation_access_roles: str | None = None,
@@ -499,7 +499,7 @@ class Config(Cog):
             )
             if not any((provided_list, provided_int, provided_str)):
                 logger.info(
-                    "config.moderation.setup invoked user=%s guild=%s no_options_supplied",
+                    "config.moderation.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
                     interaction.user.id,  # type: ignore
                     interaction.guild.id,  # type: ignore
                 )
@@ -562,6 +562,255 @@ class Config(Cog):
                 title="Logging Configuration",
                 description="\n\n".join(description_parts),
                 color=discord.Color.green(),
+            ),
+            ephemeral=True,
+        )
+
+    @moderation.command(name="update_moderation_access")
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.choices(
+        option=[
+            app_commands.Choice(name="Add", value="add"),
+            app_commands.Choice(name="Remove", value="remove"),
+        ]
+    )
+    async def update_moderation_access(
+        self,
+        interaction: Interaction,
+        role: discord.Role,
+        option: Literal["add", "remove"],
+    ) -> InteractionCallbackResponse:
+        """Update the list of roles with moderation access."""
+        role_id = role.id
+        description: str
+        color: discord.Color
+        changed = False
+
+        async with self.bot.uow.start() as uow:
+            guild_config = await get_guild_config(
+                uow.session,  # type: ignore
+                guild_id=interaction.guild_id,  # type: ignore
+            )
+
+            if not guild_config:
+                logger.info(
+                    "config.moderation.update_moderation_access invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                )
+                return await interaction.response.send_message(
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
+                )
+
+            ids: list[int] = list(
+                guild_config.moderation_access_roles_ids or []
+            )
+
+            if option == "add":
+                if role_id in ids:
+                    description = f"Role <@&{role_id}> already exists in the moderation access list."  # noqa: E501
+                    color = discord.Color.yellow()
+                else:
+                    ids.append(role_id)
+                    changed = True
+                    description = f"Role <@&{role_id}> added to the moderation access list."  # noqa: E501
+                    color = discord.Color.blurple()
+            elif option == "remove":
+                if role_id not in ids:
+                    description = f"Role <@&{role_id}> is not in the moderation access list."  # noqa: E501
+                    color = discord.Color.red()
+                else:
+                    ids = [x for x in ids if x != role_id]
+                    changed = True
+                    description = f"Role <@&{role_id}> removed from the moderation access list."  # noqa: E501
+                    color = discord.Color.blurple()
+
+            if changed:
+                # Assign the new list so SQLAlchemy sees the change
+                guild_config.message_log_ignoring_channels_ids = ids
+
+                logger.info(
+                    "config.moderation.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                    option,
+                    role_id,
+                )
+
+        return await interaction.response.send_message(
+            embed=Embed(
+                title="Moderation Configuration",
+                description=description,
+                color=color,
+            ),
+            ephemeral=True,
+        )
+
+    @moderation.command(name="update_ban_access")
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.choices(
+        option=[
+            app_commands.Choice(name="Add", value="add"),
+            app_commands.Choice(name="Remove", value="remove"),
+        ]
+    )
+    async def update_ban_access(
+        self,
+        interaction: Interaction,
+        role: discord.Role,
+        option: Literal["add", "remove"],
+    ) -> InteractionCallbackResponse:
+        """Update the list of roles with ban access."""
+        role_id = role.id
+        description: str
+        color: discord.Color
+        changed = False
+
+        async with self.bot.uow.start() as uow:
+            guild_config = await get_guild_config(
+                uow.session,  # type: ignore
+                guild_id=interaction.guild_id,  # type: ignore
+            )
+
+            if not guild_config:
+                logger.info(
+                    "config.moderation.update_ban_access invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                )
+                return await interaction.response.send_message(
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
+                )
+
+            ids: list[int] = list(guild_config.ban_access_roles_ids or [])
+
+            if option == "add":
+                if role_id in ids:
+                    description = f"Role <@&{role_id}> already exists in the ban access list."  # noqa: E501
+                    color = discord.Color.yellow()
+                else:
+                    ids.append(role_id)
+                    changed = True
+                    description = (
+                        f"Role <@&{role_id}> added to the ban access list."
+                    )
+                    color = discord.Color.blurple()
+            elif option == "remove":
+                if role_id not in ids:
+                    description = (
+                        f"Role <@&{role_id}> is not in the ban access list."
+                    )
+                    color = discord.Color.red()
+                else:
+                    ids = [x for x in ids if x != role_id]
+                    changed = True
+                    description = (
+                        f"Role <@&{role_id}> removed from the ban access list."
+                    )
+                    color = discord.Color.blurple()
+
+            if changed:
+                # Assign the new list so SQLAlchemy sees the change
+                guild_config.ban_access_roles_ids = ids
+
+                logger.info(
+                    "config.moderation.update_ban_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                    option,
+                    role_id,
+                )
+
+        return await interaction.response.send_message(
+            embed=Embed(
+                title="Moderation Configuration",
+                description=description,
+                color=color,
+            ),
+            ephemeral=True,
+        )
+
+    @moderation.command(name="update_leaders_access")
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.choices(
+        option=[
+            app_commands.Choice(name="Add", value="add"),
+            app_commands.Choice(name="Remove", value="remove"),
+        ]
+    )
+    async def update_leaders_access(
+        self,
+        interaction: Interaction,
+        role: discord.Role,
+        option: Literal["add", "remove"],
+    ) -> InteractionCallbackResponse:
+        """Update the list of leaders roles with `rr` access."""
+        role_id = role.id
+        description: str
+        color: discord.Color
+        changed = False
+
+        async with self.bot.uow.start() as uow:
+            guild_config = await get_guild_config(
+                uow.session,  # type: ignore
+                guild_id=interaction.guild_id,  # type: ignore
+            )
+
+            if not guild_config:
+                logger.info(
+                    "config.moderation.update_leaders_access invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                )
+                return await interaction.response.send_message(
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
+                )
+
+            ids: list[int] = list(
+                guild_config.leader_access_rr_roles_ids or []
+            )
+
+            if option == "add":
+                if role_id in ids:
+                    description = f"Role <@&{role_id}> already exists in the leaders access list."  # noqa: E501
+                    color = discord.Color.yellow()
+                else:
+                    ids.append(role_id)
+                    changed = True
+                    description = (
+                        f"Role <@&{role_id}> added to the leaders access list."
+                    )
+                    color = discord.Color.blurple()
+            elif option == "remove":
+                if role_id not in ids:
+                    description = f"Role <@&{role_id}> is not in the leaders access list."  # noqa: E501
+                    color = discord.Color.red()
+                else:
+                    ids = [x for x in ids if x != role_id]
+                    changed = True
+                    description = f"Role <@&{role_id}> removed from the leaders access list."  # noqa: E501
+                    color = discord.Color.blurple()
+
+            if changed:
+                # Assign the new list so SQLAlchemy sees the change
+                guild_config.leader_access_rr_roles_ids = ids
+
+                logger.info(
+                    "config.moderation.update_leaders_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                    option,
+                    role_id,
+                )
+
+        return await interaction.response.send_message(
+            embed=Embed(
+                title="Moderation Configuration",
+                description=description,
+                color=color,
             ),
             ephemeral=True,
         )

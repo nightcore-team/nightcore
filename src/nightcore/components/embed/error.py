@@ -1,5 +1,3 @@
-""""""
-
 import discord
 from discord.embeds import Embed
 
