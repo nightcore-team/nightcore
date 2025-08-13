@@ -29,19 +29,23 @@ class Config(Cog):
     )
     logging = app_commands.Group(
         name="logging",
-        description="Configuration commands for the Nightcore bot.",
+        description="Configuration commands for the logging.",
         parent=config,
     )
     moderation = app_commands.Group(
         name="moderation",
-        description="Configuration commands for the Nightcore bot.",
+        description="Configuration commands for the moderation.",
         parent=config,
     )
     economy = app_commands.Group(
         name="economy",
-        description="Configuration commands for the Nightcore bot.",
+        description="Configuration commands for the economy.",
         parent=config,
     )
+
+    clans = app_commands.Group(
+        name="clans", description="Configuration commands for the clans."
+    )  # TODO: create clans config with update access roles method
 
     @config.command(
         name="check",
@@ -207,7 +211,11 @@ class Config(Cog):
             app_commands.Choice(name="Remove", value="remove"),
         ]
     )
-    async def update_ignore_channel(
+    @app_commands.describe(
+        channel="The channel to update",
+        option="Whether to add or remove the channel from the ignore list",
+    )
+    async def update_ignoring_channels(
         self,
         interaction: Interaction,
         channel: discord.TextChannel,
@@ -227,7 +235,7 @@ class Config(Cog):
 
             if not guild_config:
                 logger.info(
-                    "config.logging.update_ignore_channel invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    "config.logging.update_ignoring_channels invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
                     interaction.user.id,  # type: ignore
                     interaction.guild.id,  # type: ignore
                 )
@@ -339,13 +347,13 @@ class Config(Cog):
 
         if not any((provided_float, provided_int)):
             logger.info(
-                "config.logging invoked user=%s guild=%s no_options_supplied",
+                "config.moderstats invoked user=%s guild=%s no_options_supplied",  # noqa: E501
                 interaction.user.id,  # type: ignore
                 interaction.guild.id,  # type: ignore
             )
             return await interaction.response.send_message(
                 embed=Embed(
-                    title="Logging Configuration",
+                    title="Moderstats Configuration",
                     description="No options supplied. Nothing to change.",
                     color=discord.Color.yellow(),
                 ),
@@ -360,7 +368,7 @@ class Config(Cog):
 
             if not guild_config:
                 logger.info(
-                    "config.logging invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    "config.moderstats invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
                     interaction.user.id,  # type: ignore
                     interaction.guild.id,  # type: ignore
                 )
@@ -395,7 +403,7 @@ class Config(Cog):
             )
 
         logger.info(
-            "config.logging invoked user=%s guild=%s updated=%s skipped=%s provided_int=%s provided_list=%s",  # noqa: E501
+            "config.moderstats invoked user=%s guild=%s updated=%s skipped=%s provided_int=%s provided_list=%s",  # noqa: E501
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
             changed_int + changed_float,
@@ -405,7 +413,7 @@ class Config(Cog):
         )
         return await interaction.response.send_message(
             embed=Embed(
-                title="Logging Configuration",
+                title="Moderstats Configuration",
                 description="\n\n".join(description_parts),
                 color=discord.Color.green(),
             ),
@@ -459,6 +467,42 @@ class Config(Cog):
         leaders_access_rr_roles: str | None = None,
     ):
         """Configure moderation settings."""
+        provided_int = collect_provided_options(
+            ban_request_ping_role_id=ban_request_ping_role,
+            send_ban_request_channel_id=ban_request_channel,
+            new_tickets_category_id=new_tickets_category,
+            pinned_tickets_category_id=pinned_tickets_category,
+            closed_tickets_category_id=closed_tickets_category,
+            create_ticket_channel_id=ticket_created_ping_role,
+            notifications_channel_id=notifications_channel,
+            notifications_for_moderation_channel_id=moderation_notifications_channel,
+            mute_role_id=mute_role,
+            mpmute_role_id=mpmute_role,
+            vmute_role_id=vmute_role,
+        )
+        provided_list = collect_provided_options(
+            moderation_access_roles_ids=moderation_access_roles,
+            ban_access_roles_ids=ban_access_roles,
+            leader_access_rr_roles_ids=leaders_access_rr_roles,
+        )
+        provided_str = collect_provided_options(
+            mute_type=mute_type,
+        )
+        if not any((provided_list, provided_int, provided_str)):
+            logger.info(
+                "config.moderation.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+                interaction.user.id,  # type: ignore
+                interaction.guild.id,  # type: ignore
+            )
+            return await interaction.response.send_message(
+                embed=Embed(
+                    title="Moderation Configuration",
+                    description="No options supplied. Nothing to change.",
+                    color=discord.Color.yellow(),
+                ),
+                ephemeral=True,
+            )
+
         async with self.bot.uow.start() as uow:
             guild_config = await get_guild_config(
                 uow.session,  # type: ignore
@@ -473,42 +517,6 @@ class Config(Cog):
                 )
                 return await interaction.response.send_message(
                     embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
-            provided_int = collect_provided_options(
-                ban_request_ping_role_id=ban_request_ping_role,
-                send_ban_request_channel_id=ban_request_channel,
-                new_tickets_category_id=new_tickets_category,
-                pinned_tickets_category_id=pinned_tickets_category,
-                closed_tickets_category_id=closed_tickets_category,
-                create_ticket_channel_id=ticket_created_ping_role,
-                notifications_channel_id=notifications_channel,
-                notifications_for_moderation_channel_id=moderation_notifications_channel,
-                mute_role_id=mute_role,
-                mpmute_role_id=mpmute_role,
-                vmute_role_id=vmute_role,
-            )
-            provided_list = collect_provided_options(
-                moderation_access_roles_ids=moderation_access_roles,
-                ban_access_roles_ids=ban_access_roles,
-                leader_access_rr_roles_ids=leaders_access_rr_roles,
-            )
-            provided_str = collect_provided_options(
-                mute_type=mute_type,
-            )
-            if not any((provided_list, provided_int, provided_str)):
-                logger.info(
-                    "config.moderation.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=Embed(
-                        title="Moderation Configuration",
-                        description="No options supplied. Nothing to change.",
-                        color=discord.Color.yellow(),
-                    ),
                     ephemeral=True,
                 )
 
@@ -573,6 +581,10 @@ class Config(Cog):
             app_commands.Choice(name="Add", value="add"),
             app_commands.Choice(name="Remove", value="remove"),
         ]
+    )
+    @app_commands.describe(
+        role="The role to update",
+        option="Whether to add or remove the role from the moderation access list",  # noqa: E501
     )
     async def update_moderation_access(
         self,
@@ -654,6 +666,10 @@ class Config(Cog):
             app_commands.Choice(name="Add", value="add"),
             app_commands.Choice(name="Remove", value="remove"),
         ]
+    )
+    @app_commands.describe(
+        role="The role to update",
+        option="Whether to add or remove the role from the ban access list",
     )
     async def update_ban_access(
         self,
@@ -740,6 +756,10 @@ class Config(Cog):
             app_commands.Choice(name="Remove", value="remove"),
         ]
     )
+    @app_commands.describe(
+        role="The role to update",
+        option="Whether to add or remove the role from the leaders access list",  # noqa: E501
+    )
     async def update_leaders_access(
         self,
         interaction: Interaction,
@@ -814,6 +834,94 @@ class Config(Cog):
             ),
             ephemeral=True,
         )
+
+    @config.command(
+        name="private_channels",
+        description="Configure private channels settings.",
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.describe(
+        create_private_channel="The channel to create for private rooms."
+    )
+    async def private_channels(
+        self,
+        interaction: Interaction,
+        create_private_channel: discord.VoiceChannel | None = None,
+    ) -> InteractionCallbackResponse:
+        """Configure private channels settings."""
+        provided = collect_provided_options(
+            private_rooms_create_channel_id=create_private_channel
+        )
+
+        if not provided:
+            logger.info(
+                "config.private_channels invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+                interaction.user.id,  # type: ignore
+                interaction.guild.id,  # type: ignore
+            )
+            return await interaction.response.send_message(
+                embed=Embed(
+                    title="Private Channels Configuration",
+                    description="No options supplied. Nothing to change.",
+                    color=discord.Color.yellow(),
+                ),
+                ephemeral=True,
+            )
+
+        async with self.bot.uow.start() as uow:
+            guild_config = await get_guild_config(
+                uow.session,  # type: ignore
+                guild_id=interaction.guild_id,  # type: ignore
+            )
+
+            if not guild_config:
+                logger.info(
+                    "config.private_channels invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
+                    interaction.user.id,  # type: ignore
+                    interaction.guild.id,  # type: ignore
+                )
+                return await interaction.response.send_message(
+                    embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
+                )
+
+            changed, skipped = apply_field_mapping_to_model(
+                guild_config,
+                provided=provided,
+                attr_template="{field}",
+                cast_type=int,
+            )
+
+        description_parts = []
+        if changed:
+            description_parts.append("Updated:\n" + f"- {changed[0]}")
+        if skipped:
+            description_parts.append(
+                "Unchanged / skipped:\n" + f"- {skipped[0]}"
+            )
+
+        logger.info(
+            "config.private_channels invoked user=%s guild=%s updated=%s skipped=%s provided=%s",  # noqa: E501
+            interaction.user.id,  # type: ignore
+            interaction.guild.id,  # type: ignore
+            changed,
+            skipped,
+            list(provided.keys()),
+        )
+        return await interaction.response.send_message(
+            embed=Embed(
+                title="Private Channels Configuration",
+                description="\n\n".join(description_parts),
+                color=discord.Color.green(),
+            ),
+            ephemeral=True,
+        )
+
+    @config.command(name="main", description="Configure main settings.")
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.describe()
+    # TODO: create main config command
+    async def main(self, interaction: Interaction): ...
 
 
 async def setup(bot: Nightcore):
