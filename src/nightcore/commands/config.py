@@ -10,17 +10,15 @@ from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.infra.db.operations import (
     apply_field_mapping_to_model,
-    get_guild_config,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed.error import NoConfigFoundEmbed
+from src.nightcore.services.config import open_guild_config
 from src.nightcore.utils import collect_provided_options
 
 logger = logging.getLogger(__name__)
 """
 TODO: separate config commands into their own files
 TODO: remove duplicate code:
-- check guild config
 - add/remove options
 - embed builder updated/skipped
 - no_options_supplied embed
@@ -65,15 +63,12 @@ class Config(Cog):
         self, interaction: Interaction
     ) -> InteractionCallbackResponse:
         """Check if the config is synced with the database."""
-        async with self.bot.uow.start() as uow:
-            config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-        if config:
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
+            config = guild_config
             description = f"Config is synced with the database for guild ID: {interaction.guild_id}.\n"  # type: ignore  # noqa: E501
-        else:
-            description = "Your config will be added to the database."
 
         logger.info(
             "config.check invoked user=%s guild=%s exists=%s",
@@ -152,23 +147,10 @@ class Config(Cog):
                 ephemeral=True,
             )
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if guild_config is None:
-                logger.info(
-                    "config.logging invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
             changed_int, skipped_int = apply_field_mapping_to_model(
                 guild_config,
                 provided=provided_int,
@@ -236,23 +218,9 @@ class Config(Cog):
         color: discord.Color
         changed = False
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if not guild_config:
-                logger.info(
-                    "config.logging.update_ignoring_channels invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot, interaction.guild.id
+        ) as guild_config:
             ids: list[int] = list(
                 guild_config.message_log_ignoring_channels_ids or []
             )
@@ -369,23 +337,10 @@ class Config(Cog):
                 ephemeral=True,
             )
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if not guild_config:
-                logger.info(
-                    "config.moderstats invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
             changed_float, skipped_float = apply_field_mapping_to_model(
                 guild_config,
                 provided=provided_float,
@@ -512,23 +467,10 @@ class Config(Cog):
                 ephemeral=True,
             )
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if not guild_config:
-                logger.info(
-                    "config.moderation.setup invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
             changed_int, skipped_int = apply_field_mapping_to_model(
                 guild_config,
                 provided=provided_int,
@@ -615,23 +557,10 @@ class Config(Cog):
         color: discord.Color
         changed = False
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if not guild_config:
-                logger.info(
-                    "config.moderation.update_moderation_access invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
             ids: list[int] = list(
                 guild_config.moderation_access_roles_ids or []
             )
@@ -700,23 +629,10 @@ class Config(Cog):
         color: discord.Color
         changed = False
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if not guild_config:
-                logger.info(
-                    "config.moderation.update_ban_access invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
             ids: list[int] = list(guild_config.ban_access_roles_ids or [])
 
             if option == "add":
@@ -789,23 +705,10 @@ class Config(Cog):
         color: discord.Color
         changed = False
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if not guild_config:
-                logger.info(
-                    "config.moderation.update_leaders_access invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
             ids: list[int] = list(
                 guild_config.leader_access_rr_roles_ids or []
             )
@@ -885,23 +788,10 @@ class Config(Cog):
                 ephemeral=True,
             )
 
-        async with self.bot.uow.start() as uow:
-            guild_config = await get_guild_config(
-                uow.session,  # type: ignore
-                guild_id=interaction.guild_id,  # type: ignore
-            )
-
-            if not guild_config:
-                logger.info(
-                    "config.private_channels invoked user=%s guild=%s config_missing_will_create",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                )
-                return await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
-                    ephemeral=True,
-                )
-
+        async with open_guild_config(
+            self.bot,
+            interaction.guild.id,  # type: ignore
+        ) as guild_config:
             changed, skipped = apply_field_mapping_to_model(
                 guild_config,
                 provided=provided,

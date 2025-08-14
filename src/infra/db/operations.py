@@ -17,8 +17,6 @@ async def get_guild_config(
     result = await session.scalar(
         select(GuildConfig).where(GuildConfig.guild_id == guild_id)
     )
-    if not result:
-        session.add(GuildConfig(guild_id=guild_id))
 
     return result
 
