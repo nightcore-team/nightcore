@@ -12,6 +12,7 @@ from src.infra.db.operations import (
     apply_field_mapping_to_model,
 )
 from src.nightcore.bot import Nightcore
+from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.services.config import open_guild_config
 from src.nightcore.utils import collect_provided_options
 
@@ -139,11 +140,7 @@ class Config(Cog):
                 interaction.guild.id,  # type: ignore
             )
             return await interaction.response.send_message(
-                embed=Embed(
-                    title="Logging Configuration",
-                    description="No options supplied. Nothing to change.",
-                    color=discord.Color.yellow(),
-                ),
+                embed=NoOptionsSuppliedEmbed(),
                 ephemeral=True,
             )
 
@@ -219,7 +216,8 @@ class Config(Cog):
         changed = False
 
         async with open_guild_config(
-            self.bot, interaction.guild.id
+            self.bot,
+            interaction.guild.id,  # type: ignore
         ) as guild_config:
             ids: list[int] = list(
                 guild_config.message_log_ignoring_channels_ids or []
@@ -329,11 +327,7 @@ class Config(Cog):
                 interaction.guild.id,  # type: ignore
             )
             return await interaction.response.send_message(
-                embed=Embed(
-                    title="Moderstats Configuration",
-                    description="No options supplied. Nothing to change.",
-                    color=discord.Color.yellow(),
-                ),
+                embed=NoOptionsSuppliedEmbed(),
                 ephemeral=True,
             )
 
@@ -459,11 +453,7 @@ class Config(Cog):
                 interaction.guild.id,  # type: ignore
             )
             return await interaction.response.send_message(
-                embed=Embed(
-                    title="Moderation Configuration",
-                    description="No options supplied. Nothing to change.",
-                    color=discord.Color.yellow(),
-                ),
+                embed=NoOptionsSuppliedEmbed(),
                 ephemeral=True,
             )
 
@@ -780,11 +770,7 @@ class Config(Cog):
                 interaction.guild.id,  # type: ignore
             )
             return await interaction.response.send_message(
-                embed=Embed(
-                    title="Private Channels Configuration",
-                    description="No options supplied. Nothing to change.",
-                    color=discord.Color.yellow(),
-                ),
+                embed=NoOptionsSuppliedEmbed(),
                 ephemeral=True,
             )
 
