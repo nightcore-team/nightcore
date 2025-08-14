@@ -8,22 +8,26 @@ from discord import Embed, app_commands
 from discord.ext.commands import Cog
 from discord.interactions import Interaction, InteractionCallbackResponse
 
-from src.infra.db.operations import (
-    apply_field_mapping_to_model,
-)
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.services.config import open_guild_config
-from src.nightcore.utils import collect_provided_options
+
+# from src.nightcore.utils import collect_provided_options
+from src.nightcore.utils.config_updates import (
+    FieldSpec,
+    apply_field_changes,
+    float_value,
+    format_changes,
+    int_id,
+    list_csv,
+    split_changes,
+    str_value,
+    update_id_list,
+)
 
 logger = logging.getLogger(__name__)
 """
 TODO: separate config commands into their own files
-TODO: remove duplicate code:
-- add/remove options
-- embed builder updated/skipped
-- no_options_supplied embed
-
 """
 
 
@@ -117,23 +121,23 @@ class Config(Cog):
         ignoring_channels: str | None = None,
     ) -> InteractionCallbackResponse:
         """Configure logging settings for the guild."""
-        provided_int = collect_provided_options(
-            bans_log_channel_id=bans,
-            moderation_log_channel_id=moderation,
-            voices_log_channel_id=voices,
-            members_log_channel_id=members,
-            channels_log_channel_id=channels,
-            roles_log_channel_id=roles,
-            tickets_log_channel_id=tickets,
-            messages_log_channel_id=messages,
-            reactions_log_channel_id=reactions,
-            private_rooms_log_channel_id=private_rooms,
-        )
-        provided_list = collect_provided_options(
-            message_log_ignoring_channels_ids=ignoring_channels
-        )
+        specs: list[FieldSpec | None] = [
+            int_id("bans_log_channel_id", bans),
+            int_id("voices_log_channel_id", voices),
+            int_id("members_log_channel_id", members),
+            int_id("channels_log_channel_id", channels),
+            int_id("roles_log_channel_id", roles),
+            int_id("messages_log_channel_id", messages),
+            int_id("moderation_log_channel_id", moderation),
+            int_id("tickets_log_channel_id", tickets),
+            int_id("reactions_log_channel_id", reactions),
+            int_id("private_rooms_log_channel_id", private_rooms),
+            list_csv("message_log_ignoring_channels_ids", ignoring_channels),
+        ]
 
-        if not any((provided_int, provided_list)):
+        specs = [s for s in specs if s is not None]
+
+        if not specs:
             logger.info(
                 "config.logging invoked user=%s guild=%s no_options_supplied",
                 interaction.user.id,  # type: ignore
@@ -148,44 +152,22 @@ class Config(Cog):
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            changed_int, skipped_int = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided_int,
-                attr_template="{field}",
-                cast_type=int,
-            )
-            changed_list, skipped_list = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided_list,
-                attr_template="{field}",
-                cast_type=list,
-            )
+            changes = apply_field_changes(guild_config, specs)  # type: ignore
 
-        description_parts = []
-        if changed_int + changed_list:
-            description_parts.append(
-                "Updated:\n"
-                + "\n".join(f"- {c}" for c in changed_int + changed_list)
-            )
-        if skipped_int + skipped_list:
-            description_parts.append(
-                "Unchanged / skipped:\n"
-                + "\n".join(f"- {s}" for s in skipped_int + skipped_list)
-            )
+        changed, skipped = split_changes(changes)
+        description = format_changes(changed, skipped)
 
         logger.info(
-            "config.logging invoked user=%s guild=%s updated=%s skipped=%s provided_int=%s provided_list=%s",  # noqa: E501
+            "config.logging invoked user=%s guild=%s updated=%s skipped=%s",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
-            changed_int + changed_list,
-            skipped_int + skipped_list,
-            list(provided_int.keys()),
-            list(provided_list.keys()),
+            changed,
+            skipped,
         )
         return await interaction.response.send_message(
             embed=Embed(
                 title="Logging Configuration",
-                description="\n\n".join(description_parts),
+                description=description,
                 color=discord.Color.green(),
             ),
             ephemeral=True,
@@ -210,58 +192,44 @@ class Config(Cog):
         option: Literal["add", "remove"],
     ) -> InteractionCallbackResponse:
         """Update the list of channels to ignore for logging."""
-        channel_id = channel.id
-        description: str
-        color: discord.Color
-        changed = False
-
         async with open_guild_config(
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            ids: list[int] = list(
-                guild_config.message_log_ignoring_channels_ids or []
+            new_list, changed, state = update_id_list(
+                guild_config.message_log_ignoring_channels_ids,
+                channel.id,
+                option,
             )
-
-            if option == "add":
-                if channel_id in ids:
-                    description = f"Channel <#{channel_id}> already exists in the ignore list."  # noqa: E501
-                    color = discord.Color.yellow()
-                else:
-                    ids.append(channel_id)
-                    changed = True
-                    description = (
-                        f"Channel <#{channel_id}> added to the ignore list."
-                    )
-                    color = discord.Color.blurple()
-            elif option == "remove":
-                if channel_id not in ids:
-                    description = (
-                        f"Channel <#{channel_id}> is not in the ignore list."
-                    )
-                    color = discord.Color.red()
-                else:
-                    ids = [x for x in ids if x != channel_id]
-                    changed = True
-                    description = f"Channel <#{channel_id}> removed from the ignore list."  # noqa: E501
-                    color = discord.Color.blurple()
-
             if changed:
-                # Assign the new list so SQLAlchemy sees the change
-                guild_config.message_log_ignoring_channels_ids = ids
+                guild_config.message_log_ignoring_channels_ids = new_list
 
-                logger.info(
-                    "config.logging.update_ignoring_channels user=%s guild=%s option=%s channel=%s",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                    option,
-                    channel_id,
-                )
+        if state == "exists":
+            desc = (
+                f"Channel <@&{channel.id}> already exists in the ignore list."
+            )
+            color = discord.Color.yellow()
+        elif state == "absent":
+            desc = f"Channel <#{channel.id}> is not in the ignore list."
+            color = discord.Color.red()
+        elif state == "added":
+            desc = f"Channel <#{channel.id}> added to the ignore list."
+            color = discord.Color.blurple()
+        else:  # removed
+            desc = f"Channel <#{channel.id}> removed from the ignore list."
+            color = discord.Color.blurple()
 
+        logger.info(
+            "config.logging.update_ignoring_channels user=%s guild=%s option=%s channel=%s",  # noqa: E501
+            interaction.user.id,  # type: ignore
+            interaction.guild.id,  # type: ignore
+            option,
+            channel.id,
+        )
         return await interaction.response.send_message(
             embed=Embed(
                 title="Logging Configuration",
-                description=description,
+                description=desc,
                 color=color,
             ),
             ephemeral=True,
@@ -302,27 +270,27 @@ class Config(Cog):
         channel: discord.TextChannel | None = None,
     ):
         """Configure moderation stats settings."""
-        provided_float = collect_provided_options(
-            mute_score=mute,
-            ban_score=ban,
-            kick_score=kick,
-            ticket_score=ticket,
-            vmute_score=vmute,
-            mpmute_score=mpmute,
-            ticket_ban_score=ticket_ban,
-            role_request_score=role_request,
-            role_remove_score=role_remove,
-            message_score=message,
-        )
 
-        provided_int = collect_provided_options(
-            trackable_moderation_role_id=role,
-            count_moderator_messages_channel_id=channel,
-        )
+        specs: list[FieldSpec | None] = [
+            float_value("mute_score", mute),
+            float_value("ban_score", ban),
+            float_value("kick_score", kick),
+            float_value("ticket_score", ticket),
+            float_value("vmute_score", vmute),
+            float_value("mpmute_score", mpmute),
+            float_value("ticket_ban_score", ticket_ban),
+            float_value("role_request_score", role_request),
+            float_value("role_remove_score", role_remove),
+            float_value("message_score", message),
+            int_id("trackable_moderation_role_id", role),
+            int_id("count_moderator_messages_channel_id", channel),
+        ]
 
-        if not any((provided_float, provided_int)):
+        specs = [s for s in specs if s is not None]
+
+        if not specs:
             logger.info(
-                "config.moderstats invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+                "config.moderstats invoked user=%s guild=%s no_options_supplied",
                 interaction.user.id,  # type: ignore
                 interaction.guild.id,  # type: ignore
             )
@@ -335,44 +303,22 @@ class Config(Cog):
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            changed_float, skipped_float = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided_float,
-                attr_template="{field}",
-                cast_type=float,
-            )
-            changed_int, skipped_int = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided_int,
-                attr_template="{field}",
-                cast_type=int,
-            )
+            changes = apply_field_changes(guild_config, specs)  # type: ignore
 
-        description_parts = []
-        if changed_float + changed_int:
-            description_parts.append(
-                "Updated:\n"
-                + "\n".join(f"- {c}" for c in changed_float + changed_int)
-            )
-        if skipped_float + skipped_int:
-            description_parts.append(
-                "Unchanged / skipped:\n"
-                + "\n".join(f"- {s}" for s in skipped_int + skipped_float)
-            )
+        changed, skipped = split_changes(changes)
+        description = format_changes(changed, skipped)
 
         logger.info(
-            "config.moderstats invoked user=%s guild=%s updated=%s skipped=%s provided_int=%s provided_list=%s",  # noqa: E501
+            "config.moderstats invoked user=%s guild=%s updated=%s skipped=%s",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
-            changed_int + changed_float,
-            skipped_int + skipped_float,
-            list(provided_int.keys()),
-            list(provided_float.keys()),
+            changed,
+            skipped,
         )
         return await interaction.response.send_message(
             embed=Embed(
                 title="Moderstats Configuration",
-                description="\n\n".join(description_parts),
+                description=description,
                 color=discord.Color.green(),
             ),
             ephemeral=True,
@@ -425,28 +371,31 @@ class Config(Cog):
         leaders_access_rr_roles: str | None = None,
     ):
         """Configure moderation settings."""
-        provided_int = collect_provided_options(
-            ban_request_ping_role_id=ban_request_ping_role,
-            send_ban_request_channel_id=ban_request_channel,
-            new_tickets_category_id=new_tickets_category,
-            pinned_tickets_category_id=pinned_tickets_category,
-            closed_tickets_category_id=closed_tickets_category,
-            create_ticket_channel_id=ticket_created_ping_role,
-            notifications_channel_id=notifications_channel,
-            notifications_for_moderation_channel_id=moderation_notifications_channel,
-            mute_role_id=mute_role,
-            mpmute_role_id=mpmute_role,
-            vmute_role_id=vmute_role,
-        )
-        provided_list = collect_provided_options(
-            moderation_access_roles_ids=moderation_access_roles,
-            ban_access_roles_ids=ban_access_roles,
-            leader_access_rr_roles_ids=leaders_access_rr_roles,
-        )
-        provided_str = collect_provided_options(
-            mute_type=mute_type,
-        )
-        if not any((provided_list, provided_int, provided_str)):
+
+        specs: list[FieldSpec | None] = [
+            int_id("ban_request_ping_role_id", ban_request_ping_role),
+            int_id("send_ban_request_channel_id", ban_request_channel),
+            int_id("new_tickets_category_id", new_tickets_category),
+            int_id("pinned_tickets_category_id", pinned_tickets_category),
+            int_id("closed_tickets_category_id", closed_tickets_category),
+            int_id("create_ticket_channel_id", ticket_created_ping_role),
+            int_id("notifications_channel_id", notifications_channel),
+            int_id(
+                "notifications_for_moderation_channel_id",
+                moderation_notifications_channel,
+            ),
+            int_id("mute_role_id", mute_role),
+            int_id("mpmute_role_id", mpmute_role),
+            int_id("vmute_role_id", vmute_role),
+            list_csv("moderation_access_roles_ids", moderation_access_roles),
+            list_csv("ban_access_roles_ids", ban_access_roles),
+            list_csv("leaders_access_rr_roles_ids", leaders_access_rr_roles),
+            str_value("mute_type", mute_type),
+        ]
+
+        specs = [s for s in specs if s is not None]
+
+        if not specs:
             logger.info(
                 "config.moderation.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
                 interaction.user.id,  # type: ignore
@@ -461,63 +410,22 @@ class Config(Cog):
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            changed_int, skipped_int = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided_int,
-                attr_template="{field}",
-                cast_type=int,
-            )
-            changed_list, skipped_list = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided_list,
-                attr_template="{field}",
-                cast_type=list,
-            )
-            changed_str, skipped_str = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided_str,
-                attr_template="{field}",
-                cast_type=str,
-            )
+            changes = apply_field_changes(guild_config, specs)  # type: ignore
 
-        description_parts = []
-        if changed_int + changed_list + changed_str:
-            description_parts.append(
-                "Updated:\n"
-                + "\n".join(
-                    f"- {c}" for c in changed_int + changed_list + changed_str
-                )
-            )
-        if skipped_int + skipped_list + skipped_str:
-            description_parts.append(
-                "Unchanged / skipped:\n"
-                + "\n".join(
-                    f"- {s}" for s in skipped_int + skipped_list + skipped_str
-                )
-            )
+        changed, skipped = split_changes(changes)
+        description = format_changes(changed, skipped)
 
         logger.info(
-            "config.moderation.setup invoked \
-                user=%s \
-                guild=%s \
-                updated=%s \
-                skipped=%s \
-                provided_int=%s \
-                provided_list=%s \
-                provided_str=%s \
-            ",
+            "config.moderation.setup invoked user=%s guild=%s updated=%s skipped=%s",  # noqa: E501
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
-            changed_int + changed_list + changed_str,
-            skipped_int + skipped_list + skipped_str,
-            list(provided_int.keys()),
-            list(provided_list.keys()),
-            list(provided_str.keys()),
+            changed,
+            skipped,
         )
         return await interaction.response.send_message(
             embed=Embed(
-                title="Logging Configuration",
-                description="\n\n".join(description_parts),
+                title="Moderation Configuration",
+                description=description,
                 color=discord.Color.green(),
             ),
             ephemeral=True,
@@ -542,54 +450,46 @@ class Config(Cog):
         option: Literal["add", "remove"],
     ) -> InteractionCallbackResponse:
         """Update the list of roles with moderation access."""
-        role_id = role.id
-        description: str
-        color: discord.Color
-        changed = False
 
         async with open_guild_config(
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            ids: list[int] = list(
-                guild_config.moderation_access_roles_ids or []
+            new_list, changed, state = update_id_list(
+                guild_config.moderation_access_roles_ids,
+                role.id,
+                option,
             )
-
-            if option == "add":
-                if role_id in ids:
-                    description = f"Role <@&{role_id}> already exists in the moderation access list."  # noqa: E501
-                    color = discord.Color.yellow()
-                else:
-                    ids.append(role_id)
-                    changed = True
-                    description = f"Role <@&{role_id}> added to the moderation access list."  # noqa: E501
-                    color = discord.Color.blurple()
-            elif option == "remove":
-                if role_id not in ids:
-                    description = f"Role <@&{role_id}> is not in the moderation access list."  # noqa: E501
-                    color = discord.Color.red()
-                else:
-                    ids = [x for x in ids if x != role_id]
-                    changed = True
-                    description = f"Role <@&{role_id}> removed from the moderation access list."  # noqa: E501
-                    color = discord.Color.blurple()
-
             if changed:
-                # Assign the new list so SQLAlchemy sees the change
-                guild_config.moderation_access_roles_ids = ids
+                guild_config.moderation_access_roles_ids = new_list
 
-                logger.info(
-                    "config.moderation.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                    option,
-                    role_id,
-                )
+        if state == "exists":
+            desc = f"Role <@&{role.id}> already in the moderation access list."
+            color = discord.Color.yellow()
+        elif state == "absent":
+            desc = f"Role <@&{role.id}> not in the moderation access list."
+            color = discord.Color.red()
+        elif state == "added":
+            desc = f"Role <@&{role.id}> added to the moderation access list."
+            color = discord.Color.blurple()
+        else:  # removed
+            desc = (
+                f"Role <@&{role.id}> removed from the moderation access list."
+            )
+            color = discord.Color.blurple()
+
+        logger.info(
+            "config.logging.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+            interaction.user.id,  # type: ignore
+            interaction.guild.id,  # type: ignore
+            option,
+            role.id,
+        )
 
         return await interaction.response.send_message(
             embed=Embed(
                 title="Moderation Configuration",
-                description=description,
+                description=desc,
                 color=color,
             ),
             ephemeral=True,
@@ -614,58 +514,43 @@ class Config(Cog):
         option: Literal["add", "remove"],
     ) -> InteractionCallbackResponse:
         """Update the list of roles with ban access."""
-        role_id = role.id
-        description: str
-        color: discord.Color
-        changed = False
-
         async with open_guild_config(
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            ids: list[int] = list(guild_config.ban_access_roles_ids or [])
-
-            if option == "add":
-                if role_id in ids:
-                    description = f"Role <@&{role_id}> already exists in the ban access list."  # noqa: E501
-                    color = discord.Color.yellow()
-                else:
-                    ids.append(role_id)
-                    changed = True
-                    description = (
-                        f"Role <@&{role_id}> added to the ban access list."
-                    )
-                    color = discord.Color.blurple()
-            elif option == "remove":
-                if role_id not in ids:
-                    description = (
-                        f"Role <@&{role_id}> is not in the ban access list."
-                    )
-                    color = discord.Color.red()
-                else:
-                    ids = [x for x in ids if x != role_id]
-                    changed = True
-                    description = (
-                        f"Role <@&{role_id}> removed from the ban access list."
-                    )
-                    color = discord.Color.blurple()
-
+            new_list, changed, state = update_id_list(
+                guild_config.ban_access_roles_ids,
+                role.id,
+                option,
+            )
             if changed:
-                # Assign the new list so SQLAlchemy sees the change
-                guild_config.ban_access_roles_ids = ids
+                guild_config.ban_access_roles_ids = new_list
 
-                logger.info(
-                    "config.moderation.update_ban_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                    option,
-                    role_id,
-                )
+        if state == "exists":
+            desc = f"Role <@&{role.id}> already in the ban access list."
+            color = discord.Color.yellow()
+        elif state == "absent":
+            desc = f"Role <@&{role.id}> not in the ban access list."
+            color = discord.Color.red()
+        elif state == "added":
+            desc = f"Role <@&{role.id}> added to the ban access list."
+            color = discord.Color.blurple()
+        else:  # removed
+            desc = f"Role <@&{role.id}> removed from the ban access list."
+            color = discord.Color.blurple()
+
+        logger.info(
+            "config.logging.update_ban_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+            interaction.user.id,  # type: ignore
+            interaction.guild.id,  # type: ignore
+            option,
+            role.id,
+        )
 
         return await interaction.response.send_message(
             embed=Embed(
                 title="Moderation Configuration",
-                description=description,
+                description=desc,
                 color=color,
             ),
             ephemeral=True,
@@ -690,56 +575,43 @@ class Config(Cog):
         option: Literal["add", "remove"],
     ) -> InteractionCallbackResponse:
         """Update the list of leaders roles with `rr` access."""
-        role_id = role.id
-        description: str
-        color: discord.Color
-        changed = False
-
         async with open_guild_config(
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            ids: list[int] = list(
-                guild_config.leader_access_rr_roles_ids or []
+            new_list, changed, state = update_id_list(
+                guild_config.leader_access_rr_roles_ids,
+                role.id,
+                option,
             )
-
-            if option == "add":
-                if role_id in ids:
-                    description = f"Role <@&{role_id}> already exists in the leaders access list."  # noqa: E501
-                    color = discord.Color.yellow()
-                else:
-                    ids.append(role_id)
-                    changed = True
-                    description = (
-                        f"Role <@&{role_id}> added to the leaders access list."
-                    )
-                    color = discord.Color.blurple()
-            elif option == "remove":
-                if role_id not in ids:
-                    description = f"Role <@&{role_id}> is not in the leaders access list."  # noqa: E501
-                    color = discord.Color.red()
-                else:
-                    ids = [x for x in ids if x != role_id]
-                    changed = True
-                    description = f"Role <@&{role_id}> removed from the leaders access list."  # noqa: E501
-                    color = discord.Color.blurple()
-
             if changed:
-                # Assign the new list so SQLAlchemy sees the change
-                guild_config.leader_access_rr_roles_ids = ids
+                guild_config.leader_access_rr_roles_ids = new_list
 
-                logger.info(
-                    "config.moderation.update_leaders_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-                    interaction.user.id,  # type: ignore
-                    interaction.guild.id,  # type: ignore
-                    option,
-                    role_id,
-                )
+        if state == "exists":
+            desc = f"Role <@&{role.id}> already in the leaders access list."
+            color = discord.Color.yellow()
+        elif state == "absent":
+            desc = f"Role <@&{role.id}> not in the leaders access list."
+            color = discord.Color.red()
+        elif state == "added":
+            desc = f"Role <@&{role.id}> added to the leaders access list."
+            color = discord.Color.blurple()
+        else:  # removed
+            desc = f"Role <@&{role.id}> removed from the leaders access list."
+            color = discord.Color.blurple()
+
+        logger.info(
+            "config.logging.update_leaders_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+            interaction.user.id,  # type: ignore
+            interaction.guild.id,  # type: ignore
+            option,
+            role.id,
+        )
 
         return await interaction.response.send_message(
             embed=Embed(
                 title="Moderation Configuration",
-                description=description,
+                description=desc,
                 color=color,
             ),
             ephemeral=True,
@@ -759,11 +631,13 @@ class Config(Cog):
         create_private_channel: discord.VoiceChannel | None = None,
     ) -> InteractionCallbackResponse:
         """Configure private channels settings."""
-        provided = collect_provided_options(
-            private_rooms_create_channel_id=create_private_channel
-        )
+        specs: list[FieldSpec | None] = [
+            int_id("private_rooms_create_channel_id", create_private_channel)
+        ]
 
-        if not provided:
+        specs = [s for s in specs if s is not None]
+
+        if not specs:
             logger.info(
                 "config.private_channels invoked user=%s guild=%s no_options_supplied",  # noqa: E501
                 interaction.user.id,  # type: ignore
@@ -778,33 +652,22 @@ class Config(Cog):
             self.bot,
             interaction.guild.id,  # type: ignore
         ) as guild_config:
-            changed, skipped = apply_field_mapping_to_model(
-                guild_config,
-                provided=provided,
-                attr_template="{field}",
-                cast_type=int,
-            )
+            changes = apply_field_changes(guild_config, specs)  # type: ignore
 
-        description_parts = []
-        if changed:
-            description_parts.append("Updated:\n" + f"- {changed[0]}")
-        if skipped:
-            description_parts.append(
-                "Unchanged / skipped:\n" + f"- {skipped[0]}"
-            )
+        changed, skipped = split_changes(changes)
+        description = format_changes(changed, skipped)
 
         logger.info(
-            "config.private_channels invoked user=%s guild=%s updated=%s skipped=%s provided=%s",  # noqa: E501
+            "config.private_channels invoked user=%s guild=%s updated=%s skipped=%s",  # noqa: E501
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
             changed,
             skipped,
-            list(provided.keys()),
         )
         return await interaction.response.send_message(
             embed=Embed(
                 title="Private Channels Configuration",
-                description="\n\n".join(description_parts),
+                description=description,
                 color=discord.Color.green(),
             ),
             ephemeral=True,
