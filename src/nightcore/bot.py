@@ -8,6 +8,7 @@ from discord import app_commands
 from discord.ext.commands import Bot
 
 from src.infra.db.uow import UnitOfWork
+from src.nightcore.utils.commands_logging import log_tree_summary
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,8 @@ class Nightcore(Bot):
             import traceback
 
             logger.error(traceback.format_exc())
+
+        log_tree_summary(self.tree, logger=logger)
 
     async def on_ready(self):
         """Event called when the bot is ready."""

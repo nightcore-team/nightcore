@@ -1,0 +1,113 @@
+"""Moderstats configuration commands for the Nightcore bot."""
+
+import logging
+from typing import cast
+
+import discord
+from discord import app_commands
+from discord.embeds import Embed
+from discord.interactions import Interaction
+
+from src.nightcore.bot import Nightcore
+from src.nightcore.commands.config._groups import config as main_config_group
+from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
+from src.nightcore.services.config import open_guild_config
+from src.nightcore.utils.config_updates import (
+    FieldSpec,
+    apply_field_changes,
+    float_value,
+    format_changes,
+    int_id,
+    split_changes,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@main_config_group.command(
+    name="moderstats", description="Configure moderation stats settings."
+)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    mute="Mute score",
+    ban="Ban score",
+    kick="Kick score",
+    ticket="Ticket score",
+    vmute="Voice mute score",
+    mpmute="Member mute score",
+    ticket_ban="Ticket ban score",
+    role_request="Role request score",
+    role_remove="Role remove score",
+    message="Message score",
+    role="Trackable moderation role",
+    channel="Count moderator messages channel",
+)
+async def moderstats(
+    interaction: Interaction,
+    mute: float | None = None,
+    ban: float | None = None,
+    kick: float | None = None,
+    ticket: float | None = None,
+    vmute: float | None = None,
+    mpmute: float | None = None,
+    ticket_ban: float | None = None,
+    role_request: float | None = None,
+    role_remove: float | None = None,
+    message: float | None = None,
+    role: discord.Role | None = None,
+    channel: discord.TextChannel | None = None,
+):
+    """Configure moderation stats settings."""
+
+    specs: list[FieldSpec | None] = [
+        float_value("mute_score", mute),
+        float_value("ban_score", ban),
+        float_value("kick_score", kick),
+        float_value("ticket_score", ticket),
+        float_value("vmute_score", vmute),
+        float_value("mpmute_score", mpmute),
+        float_value("ticket_ban_score", ticket_ban),
+        float_value("role_request_score", role_request),
+        float_value("role_remove_score", role_remove),
+        float_value("message_score", message),
+        int_id("trackable_moderation_role_id", role),
+        int_id("count_moderator_messages_channel_id", channel),
+    ]
+
+    specs = [s for s in specs if s is not None]
+
+    if not specs:
+        logger.info(
+            "config.moderstats invoked user=%s guild=%s no_options_supplied",
+            interaction.user.id,  # type: ignore
+            interaction.guild.id,  # type: ignore
+        )
+        return await interaction.response.send_message(
+            embed=NoOptionsSuppliedEmbed(),
+            ephemeral=True,
+        )
+
+    async with open_guild_config(
+        cast(Nightcore, interaction.client),
+        interaction.guild.id,  # type: ignore
+    ) as guild_config:
+        changes = apply_field_changes(guild_config, specs)  # type: ignore
+
+    changed, skipped = split_changes(changes)
+    description = format_changes(changed, skipped)
+
+    logger.info(
+        "config.moderstats invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,  # type: ignore
+        interaction.guild.id,  # type: ignore
+        changed,
+        skipped,
+    )
+    return await interaction.response.send_message(
+        embed=Embed(
+            title="Moderstats Configuration",
+            description=description,
+            color=discord.Color.green(),
+        ),
+        ephemeral=True,
+    )
