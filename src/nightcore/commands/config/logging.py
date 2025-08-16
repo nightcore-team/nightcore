@@ -12,11 +12,11 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.commands.config._groups import logging as logging_group
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.services.config import open_guild_config
-from src.nightcore.utils.config_updates import (
+from src.nightcore.utils.config_commands import (
     FieldSpec,
     apply_field_changes,
     format_changes,
-    int_id,
+    int_id_value,
     list_csv,
     split_changes,
     update_id_list,
@@ -56,16 +56,16 @@ async def setup_logging(
 ) -> InteractionCallbackResponse:
     """Configure logging settings for the guild."""
     specs: list[FieldSpec | None] = [
-        int_id("bans_log_channel_id", bans),
-        int_id("voices_log_channel_id", voices),
-        int_id("members_log_channel_id", members),
-        int_id("channels_log_channel_id", channels),
-        int_id("roles_log_channel_id", roles),
-        int_id("messages_log_channel_id", messages),
-        int_id("moderation_log_channel_id", moderation),
-        int_id("tickets_log_channel_id", tickets),
-        int_id("reactions_log_channel_id", reactions),
-        int_id("private_rooms_log_channel_id", private_rooms),
+        int_id_value("bans_log_channel_id", bans),
+        int_id_value("voices_log_channel_id", voices),
+        int_id_value("members_log_channel_id", members),
+        int_id_value("channels_log_channel_id", channels),
+        int_id_value("roles_log_channel_id", roles),
+        int_id_value("messages_log_channel_id", messages),
+        int_id_value("moderation_log_channel_id", moderation),
+        int_id_value("tickets_log_channel_id", tickets),
+        int_id_value("reactions_log_channel_id", reactions),
+        int_id_value("private_rooms_log_channel_id", private_rooms),
         list_csv("message_log_ignoring_channels_ids", ignoring_channels),
     ]
 

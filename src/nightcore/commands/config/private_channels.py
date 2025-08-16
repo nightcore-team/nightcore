@@ -12,11 +12,11 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.commands.config._groups import config as main_config_group
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.services.config import open_guild_config
-from src.nightcore.utils.config_updates import (
+from src.nightcore.utils.config_commands import (
     FieldSpec,
     apply_field_changes,
     format_changes,
-    int_id,
+    int_id_value,
     split_changes,
 )
 
@@ -37,7 +37,7 @@ async def private_channels(
 ) -> InteractionCallbackResponse:
     """Configure private channels settings."""
     specs: list[FieldSpec | None] = [
-        int_id("private_rooms_create_channel_id", create_private_channel)
+        int_id_value("private_rooms_create_channel_id", create_private_channel)
     ]
 
     specs = [s for s in specs if s is not None]

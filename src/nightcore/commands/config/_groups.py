@@ -6,6 +6,11 @@ config = app_commands.Group(
     name="config",
     description="Configuration commands for the Nightcore bot.",
 )
+main = app_commands.Group(
+    name="main",
+    description="Configuration commands for the main settings.",
+    parent=config,
+)
 logging = app_commands.Group(
     name="logging",
     description="Configuration commands for the logging.",

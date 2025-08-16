@@ -3,8 +3,8 @@
 from sqlalchemy import ARRAY, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
 from src.infra.db.models.base import Base
-from src.infra.db.models.mixins import CreatedAtMixin, IdIntegerMixin
 
 
 class Clan(IdIntegerMixin, Base, CreatedAtMixin):

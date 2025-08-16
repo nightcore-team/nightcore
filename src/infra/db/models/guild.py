@@ -3,8 +3,8 @@
 from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
-from src.infra.db.models.mixins import IdIntegerMixin
 
 
 class GuildConfig(IdIntegerMixin, Base):
@@ -190,8 +190,8 @@ class GuildConfig(IdIntegerMixin, Base):
     )
 
     # roles and configs
-    organizational_roles: Mapped[dict[str, int]] = mapped_column(
-        JSON, nullable=False, default=dict
+    organizational_roles: Mapped[dict[str, dict[str, str | int]]] = (
+        mapped_column(JSON, nullable=False, default=dict)
     )
     mpmute_role_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
@@ -207,6 +207,9 @@ class GuildConfig(IdIntegerMixin, Base):
     )
     fraction_roles: Mapped[dict[str, int]] = mapped_column(
         JSON, nullable=False, default=dict
+    )
+    fraction_roles_access_roles_ids: Mapped[list[int]] = mapped_column(
+        ARRAY(BigInteger), nullable=False, default=list
     )
     leader_access_rr_roles_ids: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger), nullable=False, default=list

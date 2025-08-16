@@ -5,8 +5,8 @@ from datetime import datetime
 from sqlalchemy import JSON, BigInteger, DateTime, SmallInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
-from src.infra.db.models.mixins import IdIntegerMixin
 
 
 class User(IdIntegerMixin, Base):

@@ -3,8 +3,8 @@
 from sqlalchemy import BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
-from src.infra.db.models.mixins import IdIntegerMixin
 
 
 class Punish(IdIntegerMixin, Base):

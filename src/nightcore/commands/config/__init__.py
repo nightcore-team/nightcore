@@ -5,6 +5,7 @@ from src.nightcore.bot import Nightcore
 # SIDE-EFFECT IMPORTS
 from . import (
     logging,  # noqa: F401
+    main,  # noqa: F401
     moderation,  # noqa: F401
     moderstats,  # noqa: F401
     private_channels,  # noqa: F401

@@ -5,7 +5,7 @@ from typing import cast
 import discord
 from discord.ext.commands.cog import Cog
 
-from src.infra.db.models.enums import LoggingChannelType
+from src.infra.db.models._enums import LoggingChannelType
 from src.infra.db.operations import get_specified_logging_channel
 from src.nightcore.bot import Nightcore
 

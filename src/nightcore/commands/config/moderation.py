@@ -14,11 +14,11 @@ from src.nightcore.commands.config._groups import (
 )
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.services.config import open_guild_config
-from src.nightcore.utils.config_updates import (
+from src.nightcore.utils.config_commands import (
     FieldSpec,
     apply_field_changes,
     format_changes,
-    int_id,
+    int_id_value,
     list_csv,
     split_changes,
     str_value,
@@ -76,20 +76,20 @@ async def setup_moderation(
     """Configure moderation settings."""
 
     specs: list[FieldSpec | None] = [
-        int_id("ban_request_ping_role_id", ban_request_ping_role),
-        int_id("send_ban_request_channel_id", ban_request_channel),
-        int_id("new_tickets_category_id", new_tickets_category),
-        int_id("pinned_tickets_category_id", pinned_tickets_category),
-        int_id("closed_tickets_category_id", closed_tickets_category),
-        int_id("create_ticket_channel_id", ticket_created_ping_role),
-        int_id("notifications_channel_id", notifications_channel),
-        int_id(
+        int_id_value("ban_request_ping_role_id", ban_request_ping_role),
+        int_id_value("send_ban_request_channel_id", ban_request_channel),
+        int_id_value("new_tickets_category_id", new_tickets_category),
+        int_id_value("pinned_tickets_category_id", pinned_tickets_category),
+        int_id_value("closed_tickets_category_id", closed_tickets_category),
+        int_id_value("create_ticket_channel_id", ticket_created_ping_role),
+        int_id_value("notifications_channel_id", notifications_channel),
+        int_id_value(
             "notifications_for_moderation_channel_id",
             moderation_notifications_channel,
         ),
-        int_id("mute_role_id", mute_role),
-        int_id("mpmute_role_id", mpmute_role),
-        int_id("vmute_role_id", vmute_role),
+        int_id_value("mute_role_id", mute_role),
+        int_id_value("mpmute_role_id", mpmute_role),
+        int_id_value("vmute_role_id", vmute_role),
         list_csv("moderation_access_roles_ids", moderation_access_roles),
         list_csv("ban_access_roles_ids", ban_access_roles),
         list_csv("leaders_access_rr_roles_ids", leaders_access_rr_roles),
@@ -101,7 +101,7 @@ async def setup_moderation(
     if not specs:
         logger.info(
             "config.moderation.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
-            interaction.user.id,  # type: ignore
+            interaction.user.id,
             interaction.guild.id,  # type: ignore
         )
         return await interaction.response.send_message(
@@ -258,7 +258,7 @@ async def update_ban_access(
     )
 
 
-@moderation_group.command(name="update_leaders_access")
+@moderation_group.command(name="update_rr_access")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
@@ -268,14 +268,75 @@ async def update_ban_access(
 )
 @app_commands.describe(
     role="The role to update",
-    option="Whether to add or remove the role from the leaders access list",
+    option="Whether to add or remove the role from the rr access list",
 )
-async def update_leaders_access(
+async def update_rr_access(
     interaction: Interaction,
     role: discord.Role,
     option: Literal["add", "remove"],
 ) -> InteractionCallbackResponse:
     """Update the list of leaders roles with `rr` access."""
+    async with open_guild_config(
+        cast(Nightcore, interaction.client),
+        interaction.guild.id,  # type: ignore
+    ) as guild_config:
+        new_list, changed, state = update_id_list(
+            guild_config.fraction_roles_access_roles_ids,
+            role.id,
+            option,
+        )
+        if changed:
+            guild_config.fraction_roles_access_roles_ids = new_list
+
+    if state == "exists":
+        desc = f"Role <@&{role.id}> already in the rr access list."
+        color = discord.Color.yellow()
+    elif state == "absent":
+        desc = f"Role <@&{role.id}> not in the rr access list."
+        color = discord.Color.red()
+    elif state == "added":
+        desc = f"Role <@&{role.id}> added to the rr access list."
+        color = discord.Color.blurple()
+    else:  # removed
+        desc = f"Role <@&{role.id}> removed from the rr access list."
+        color = discord.Color.blurple()
+
+    logger.info(
+        "config.logging.update_rr_access user=%s guild=%s option=%s role=%s",
+        interaction.user.id,  # type: ignore
+        interaction.guild.id,  # type: ignore
+        option,
+        role.id,
+    )
+
+    return await interaction.response.send_message(
+        embed=Embed(
+            title="Moderation Configuration",
+            description=desc,
+            color=color,
+        ),
+        ephemeral=True,
+    )
+
+
+@moderation_group.command(name="update_fraction_role_access")
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.choices(
+    option=[
+        app_commands.Choice(name="Add", value="add"),
+        app_commands.Choice(name="Remove", value="remove"),
+    ]
+)
+@app_commands.describe(
+    role="The role to update",
+    option="Whether to add or remove the role from the fraction access list",
+)
+async def update_fraction_role_access(
+    interaction: Interaction,
+    role: discord.Role,
+    option: Literal["add", "remove"],
+) -> InteractionCallbackResponse:
+    """Update the list of roles with `fraction_role` access."""
     async with open_guild_config(
         cast(Nightcore, interaction.client),
         interaction.guild.id,  # type: ignore
@@ -289,20 +350,20 @@ async def update_leaders_access(
             guild_config.leader_access_rr_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the leaders access list."
+        desc = f"Role <@&{role.id}> already in the fraction access list."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the leaders access list."
+        desc = f"Role <@&{role.id}> not in the fraction access list."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the leaders access list."
+        desc = f"Role <@&{role.id}> added to the fraction access list."
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the leaders access list."
+        desc = f"Role <@&{role.id}> removed from the fraction access list."
         color = discord.Color.blurple()
 
     logger.info(
-        "config.logging.update_leaders_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        "config.logging.update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
         interaction.user.id,  # type: ignore
         interaction.guild.id,  # type: ignore
         option,

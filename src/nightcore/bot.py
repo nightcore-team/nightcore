@@ -8,7 +8,7 @@ from discord import app_commands
 from discord.ext.commands import Bot
 
 from src.infra.db.uow import UnitOfWork
-from src.nightcore.utils.commands_logging import log_tree_summary
+from src.nightcore.utils.on_ready_log import log_tree_summary
 
 logger = logging.getLogger(__name__)
 

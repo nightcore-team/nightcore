@@ -12,12 +12,12 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.commands.config._groups import config as main_config_group
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.services.config import open_guild_config
-from src.nightcore.utils.config_updates import (
+from src.nightcore.utils.config_commands import (
     FieldSpec,
     apply_field_changes,
     float_value,
     format_changes,
-    int_id,
+    int_id_value,
     split_changes,
 )
 
@@ -70,8 +70,8 @@ async def moderstats(
         float_value("role_request_score", role_request),
         float_value("role_remove_score", role_remove),
         float_value("message_score", message),
-        int_id("trackable_moderation_role_id", role),
-        int_id("count_moderator_messages_channel_id", channel),
+        int_id_value("trackable_moderation_role_id", role),
+        int_id_value("count_moderator_messages_channel_id", channel),
     ]
 
     specs = [s for s in specs if s is not None]
