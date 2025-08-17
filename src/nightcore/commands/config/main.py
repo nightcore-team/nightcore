@@ -18,7 +18,7 @@ from src.nightcore.utils.config_commands import (
     format_changes,
     int_id_value,
     list_csv,
-    roles_dict_value,
+    org_roles_dict_value,
     split_changes,
 )
 from src.nightcore.utils.config_commands.helper import update_id_list
@@ -52,7 +52,7 @@ async def setup(
             "notifications_from_bot_channel_id",
             nightcore_notifications_channel,
         ),
-        roles_dict_value("organizational_roles", organizational_roles),
+        org_roles_dict_value("organizational_roles", organizational_roles),
         list_csv("fraction_roles", fraction_roles),
     ]
 
@@ -60,7 +60,7 @@ async def setup(
 
     if not specs:
         logger.info(
-            "config.main invoked user=%s guild=%s no_options_supplied",
+            "config.main.setup invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,
             interaction.guild.id,  # type: ignore
         )
@@ -141,7 +141,7 @@ async def update_fraction_roles(
         color = discord.Color.blurple()
 
     logger.info(
-        "config.logging.update_ban_access user=%s guild=%s option=%s role=%s",
+        "config.main.update_fraction_roles user=%s guild=%s option=%s role=%s",
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,

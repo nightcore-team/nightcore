@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
     tickets="The channel to log ticket updates.",
     reactions="The channel to log reaction updates.",
     private_rooms="The channel to log private room updates.",
+    economy="The channel to log economy moves.",
     ignoring_channels="The channels to ignore for logging. Type: `id,id,id,...`",  # noqa: E501
 )
 async def setup_logging(
@@ -52,6 +53,7 @@ async def setup_logging(
     tickets: discord.TextChannel | None = None,
     reactions: discord.TextChannel | None = None,
     private_rooms: discord.TextChannel | None = None,
+    economy: discord.TextChannel | None = None,
     ignoring_channels: str | None = None,
 ) -> InteractionCallbackResponse:
     """Configure logging settings for the guild."""
@@ -66,6 +68,7 @@ async def setup_logging(
         int_id_value("tickets_log_channel_id", tickets),
         int_id_value("reactions_log_channel_id", reactions),
         int_id_value("private_rooms_log_channel_id", private_rooms),
+        int_id_value("economy_log_channel_id", economy),
         list_csv("message_log_ignoring_channels_ids", ignoring_channels),
     ]
 

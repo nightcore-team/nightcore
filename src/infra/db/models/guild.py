@@ -46,14 +46,19 @@ class GuildConfig(IdIntegerMixin, Base):
     private_rooms_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+    economy_log_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
 
     # economy - nullable fields
     coin_name: Mapped[str | None] = mapped_column(String, nullable=True)
     economy_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
-    reward_count: Mapped[float | None] = mapped_column(Float, nullable=True)
-    coins_multipler: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reward_bonus: Mapped[float | None] = mapped_column(Float, nullable=True)
+    base_coins_multiplier: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
     temp_coins_multipler: Mapped[float | None] = mapped_column(
         Float, nullable=True
     )
@@ -74,12 +79,14 @@ class GuildConfig(IdIntegerMixin, Base):
     level_notify_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    exp_multipler: Mapped[float | None] = mapped_column(Float, nullable=True)
-    temp_exp_multipler: Mapped[float | None] = mapped_column(
+    base_exp_multiplier: Mapped[float | None] = mapped_column(
         Float, nullable=True
     )
-    bonus_roles_ids: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String), nullable=True
+    temp_exp_multiplier: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
+    bonus_access_roles_ids: Mapped[list[str] | None] = mapped_column(
+        ARRAY(BigInteger), nullable=True
     )
 
     # clans - nullable fields

@@ -1,8 +1,8 @@
-"""Sun Aug 17 07:51:52 PM CEST 2025
+"""Sun Aug 17 10:41:02 PM CEST 2025
 
-Revision ID: eb6363861078
+Revision ID: acaf7da51506
 Revises: 
-Create Date: 2025-08-17 19:51:53.286691
+Create Date: 2025-08-17 22:41:03.316967
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'eb6363861078'
+revision: str = 'acaf7da51506'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -51,19 +51,20 @@ def upgrade() -> None:
     sa.Column('channels_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('reactions_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('private_rooms_log_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('economy_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('coin_name', sa.String(), nullable=True),
     sa.Column('economy_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('reward_count', sa.Float(), nullable=True),
-    sa.Column('coins_multipler', sa.Float(), nullable=True),
+    sa.Column('reward_bonus', sa.Float(), nullable=True),
+    sa.Column('base_coins_multiplier', sa.Float(), nullable=True),
     sa.Column('temp_coins_multipler', sa.Float(), nullable=True),
     sa.Column('economy_shop_buy_ping_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('economy_shop', sa.JSON(), nullable=False),
     sa.Column('economy_products', sa.JSON(), nullable=False),
     sa.Column('count_messages_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('level_notify_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('exp_multipler', sa.Float(), nullable=True),
-    sa.Column('temp_exp_multipler', sa.Float(), nullable=True),
-    sa.Column('bonus_roles_ids', sa.ARRAY(sa.String()), nullable=True),
+    sa.Column('base_exp_multiplier', sa.Float(), nullable=True),
+    sa.Column('temp_exp_multiplier', sa.Float(), nullable=True),
+    sa.Column('bonus_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('clan_payday_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('clan_shop_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('clan_shop_products', sa.JSON(), nullable=False),

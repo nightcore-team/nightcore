@@ -1,0 +1,114 @@
+"""Economy configuration command for Nightcore bot."""
+
+import logging
+from typing import cast
+
+import discord
+from discord import Guild, app_commands
+from discord.embeds import Embed
+from discord.interactions import Interaction, InteractionCallbackResponse
+
+from src.nightcore.bot import Nightcore
+from src.nightcore.commands.config._groups import economy as economy_group
+from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
+from src.nightcore.services.config import open_guild_config
+from src.nightcore.utils.config_commands import (
+    FieldSpec,
+    apply_field_changes,
+    float_value,
+    format_changes,
+    int_id_value,
+    level_roles_dict_value,
+    list_csv,
+    split_changes,
+    str_value,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@economy_group.command(name="setup", description="Configure economy settings.")
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    shop_buy_ping_roles="Roles to ping when buying from the shop.",
+    economy_access_roles="Roles that have access to economy commands.",  # TODO: update_access_roles # noqa
+    # cases_drop="Drop from cases.",
+    # shop_items="Items available in the shop.",
+    reward_bonus="Bonus rewards for /reward.",
+    count_coins_channel="Channel to count coins.",  # count_messages_channel_id # noqa
+    new_level_channel="Channel for new level notifications.",
+    bonus_access_roles="Roles that have access to bonus rewards.",  # bonus_access_roles_ids # noqa
+    coin_name="Name of the local currency.",
+    roles_per_level="Roles per level.",  # level, role | level, role # level_roles # noqa
+    # colors="...",
+    coins_multiplier="Base coin multiplier.",
+    exp_multiplier="Base experience multiplier.",
+)
+async def setup(
+    interaction: Interaction,
+    shop_buy_ping_roles: str | None = None,
+    economy_access_roles: str | None = None,
+    # cases_drop: str | None = None,
+    # shop_items: str | None = None,
+    reward_bonus: float | None = None,
+    count_coins_channel: discord.TextChannel | None = None,
+    new_level_channel: discord.TextChannel | None = None,
+    bonus_access_roles: str | None = None,
+    coin_name: str | None = None,
+    roles_per_level: str | None = None,
+    # colors: str | None = None,
+    coins_multiplier: float | None = None,
+    exp_multiplier: float | None = None,
+) -> InteractionCallbackResponse:
+    """Configure economy settings."""
+
+    specs: list[FieldSpec | None] = [
+        list_csv("economy_shop_buy_ping_roles_ids", shop_buy_ping_roles),
+        list_csv("economy_access_roles_ids", economy_access_roles),
+        float_value("reward_bonus", reward_bonus),
+        int_id_value("count_messages_channel_id", count_coins_channel),
+        int_id_value("level_notify_channel_id", new_level_channel),
+        list_csv("bonus_access_roles_ids", bonus_access_roles),
+        str_value("coin_name", coin_name),
+        level_roles_dict_value("level_roles", roles_per_level),
+        float_value("base_coins_multiplier", coins_multiplier),
+        float_value("base_exp_multiplier", exp_multiplier),
+    ]
+
+    specs = [s for s in specs if s is not None]
+
+    if not specs:
+        logger.info(
+            "config.economy.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+            interaction.user.id,
+            cast(Guild, interaction.guild).id,
+        )
+        return await interaction.response.send_message(
+            embed=NoOptionsSuppliedEmbed(),
+            ephemeral=True,
+        )
+
+    async with open_guild_config(
+        cast(Nightcore, interaction.client),
+        cast(Guild, interaction.guild).id,
+    ) as guild_config:
+        changes = apply_field_changes(guild_config, specs)  # type: ignore
+
+    changed, skipped = split_changes(changes)
+    description = format_changes(changed, skipped)
+
+    logger.info(
+        "config.economy.setup invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
+    )
+    return await interaction.response.send_message(
+        embed=Embed(
+            title="Economy Configuration",
+            description=description,
+            color=discord.Color.green(),
+        ),
+        ephemeral=True,
+    )

@@ -90,8 +90,8 @@ def format_changes(
             "Unchanged / skipped:\n"
             + "\n".join(f"- {c.field}" for c in skipped)
         )
-    if not parts:
-        return "Nothing changed."
+    # if not parts:
+    #     return "Nothing changed."
     return "\n\n".join(parts)
 
 

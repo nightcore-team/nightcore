@@ -4,6 +4,7 @@ from src.nightcore.bot import Nightcore
 
 # SIDE-EFFECT IMPORTS
 from . import (
+    economy,  # noqa: F401
     logging,  # noqa: F401
     main,  # noqa: F401
     moderation,  # noqa: F401
