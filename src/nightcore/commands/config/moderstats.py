@@ -4,7 +4,7 @@ import logging
 from typing import cast
 
 import discord
-from discord import app_commands
+from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
@@ -89,7 +89,7 @@ async def moderstats(
 
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -98,8 +98,8 @@ async def moderstats(
 
     logger.info(
         "config.moderstats invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         changed,
         skipped,
     )

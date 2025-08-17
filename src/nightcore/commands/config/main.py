@@ -1,12 +1,12 @@
 """Main configuration command for Nightcore bot."""
 
 import logging
-from typing import cast
+from typing import Literal, cast
 
 import discord
 from discord import Guild, app_commands
 from discord.embeds import Embed
-from discord.interactions import Interaction
+from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.nightcore.bot import Nightcore
 from src.nightcore.commands.config._groups import main as main_group
@@ -21,13 +21,7 @@ from src.nightcore.utils.config_commands import (
     roles_dict_value,
     split_changes,
 )
-
-"""
-TODO: main config (
-    fraction_roles,
-)
-
-"""
+from src.nightcore.utils.config_commands.helper import update_id_list
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +42,7 @@ async def setup(
     nightcore_notifications_channel: discord.TextChannel | None = None,
     organizational_roles: str | None = None,
     fraction_roles: str | None = None,
-):
+) -> InteractionCallbackResponse:
     """Configure moderation settings."""
 
     specs: list[FieldSpec | None] = [
@@ -77,7 +71,7 @@ async def setup(
 
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        cast(int, cast(Guild, interaction.guild).id),
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -87,7 +81,7 @@ async def setup(
     logger.info(
         "config.main invoked user=%s guild=%s updated=%s skipped=%s",
         interaction.user.id,
-        cast(int, cast(Guild, interaction.guild).id),
+        cast(Guild, interaction.guild).id,
         changed,
         skipped,
     )
@@ -96,6 +90,69 @@ async def setup(
             title="Main Configuration",
             description=description,
             color=discord.Color.green(),
+        ),
+        ephemeral=True,
+    )
+
+
+@main_group.command(
+    name="update_fraction_roles", description="Update the fraction roles."
+)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.choices(
+    option=[
+        app_commands.Choice(name="Add", value="add"),
+        app_commands.Choice(name="Remove", value="remove"),
+    ]
+)
+@app_commands.describe(
+    role="The role to update",
+    option="Whether to add or remove the role from the ban access list",
+)
+async def update_fraction_roles(
+    interaction: Interaction,
+    role: discord.Role,
+    option: Literal["add", "remove"],
+) -> InteractionCallbackResponse:
+    """Update the list of roles with ban access."""
+    async with open_guild_config(
+        cast(Nightcore, interaction.client),
+        cast(Guild, interaction.guild).id,
+    ) as guild_config:
+        new_list, changed, state = update_id_list(
+            guild_config.fraction_roles,
+            role.id,
+            option,
+        )
+        if changed:
+            guild_config.fraction_roles = new_list
+
+    if state == "exists":
+        desc = f"Role <@&{role.id}> already in the ban access list."
+        color = discord.Color.yellow()
+    elif state == "absent":
+        desc = f"Role <@&{role.id}> not in the ban access list."
+        color = discord.Color.red()
+    elif state == "added":
+        desc = f"Role <@&{role.id}> added to the ban access list."
+        color = discord.Color.blurple()
+    else:  # removed
+        desc = f"Role <@&{role.id}> removed from the ban access list."
+        color = discord.Color.blurple()
+
+    logger.info(
+        "config.logging.update_ban_access user=%s guild=%s option=%s role=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
+    )
+
+    return await interaction.response.send_message(
+        embed=Embed(
+            title="Moderation Configuration",
+            description=desc,
+            color=color,
         ),
         ephemeral=True,
     )

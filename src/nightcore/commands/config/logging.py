@@ -4,7 +4,7 @@ import logging
 from typing import Literal, cast
 
 import discord
-from discord import app_commands
+from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction, InteractionCallbackResponse
 
@@ -74,8 +74,8 @@ async def setup_logging(
     if not specs:
         logger.info(
             "config.logging invoked user=%s guild=%s no_options_supplied",
-            interaction.user.id,  # type: ignore
-            interaction.guild.id,  # type: ignore
+            interaction.user.id,
+            cast(Guild, interaction.guild).id,
         )
         return await interaction.response.send_message(
             embed=NoOptionsSuppliedEmbed(),
@@ -84,7 +84,7 @@ async def setup_logging(
 
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -93,8 +93,8 @@ async def setup_logging(
 
     logger.info(
         "config.logging invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         changed,
         skipped,
     )
@@ -128,7 +128,7 @@ async def update_ignoring_channels(
     """Update the list of channels to ignore for logging."""
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         new_list, changed, state = update_id_list(
             guild_config.message_log_ignoring_channels_ids,
@@ -153,8 +153,8 @@ async def update_ignoring_channels(
 
     logger.info(
         "config.logging.update_ignoring_channels user=%s guild=%s option=%s channel=%s",  # noqa: E501
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         option,
         channel.id,
     )

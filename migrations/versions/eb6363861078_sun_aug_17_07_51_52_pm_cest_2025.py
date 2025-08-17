@@ -1,8 +1,8 @@
-"""Tue Aug 12 11:19:32 PM CEST 2025
+"""Sun Aug 17 07:51:52 PM CEST 2025
 
-Revision ID: 74e28b04c0c0
+Revision ID: eb6363861078
 Revises: 
-Create Date: 2025-08-12 23:19:33.483424
+Create Date: 2025-08-17 19:51:53.286691
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '74e28b04c0c0'
+revision: str = 'eb6363861078'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -105,7 +105,8 @@ def upgrade() -> None:
     sa.Column('vmute_role_id', sa.BigInteger(), nullable=True),
     sa.Column('level_roles', sa.JSON(), nullable=False),
     sa.Column('rules_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('fraction_roles', sa.JSON(), nullable=False),
+    sa.Column('fraction_roles', sa.ARRAY(sa.BigInteger()), nullable=False),
+    sa.Column('fraction_roles_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
     sa.Column('leader_access_rr_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
     sa.Column('clan_improvements', sa.ARRAY(sa.Integer()), nullable=False),
     sa.Column('colors', sa.JSON(), nullable=False),

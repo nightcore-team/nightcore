@@ -4,7 +4,7 @@ import logging
 from typing import cast
 
 import discord
-from discord import InteractionCallbackResponse, app_commands
+from discord import Guild, InteractionCallbackResponse, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
@@ -64,8 +64,8 @@ async def private_channels(
 
     logger.info(
         "config.private_channels invoked user=%s guild=%s updated=%s skipped=%s",  # noqa: E501
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         changed,
         skipped,
     )

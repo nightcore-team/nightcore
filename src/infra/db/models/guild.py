@@ -205,8 +205,8 @@ class GuildConfig(IdIntegerMixin, Base):
     rules_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    fraction_roles: Mapped[dict[str, int]] = mapped_column(
-        JSON, nullable=False, default=dict
+    fraction_roles: Mapped[list[int]] = mapped_column(
+        ARRAY(BigInteger), nullable=False, default=list
     )
     fraction_roles_access_roles_ids: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger), nullable=False, default=list

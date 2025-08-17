@@ -4,7 +4,7 @@ import logging
 from typing import Literal, cast
 
 import discord
-from discord import app_commands
+from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction, InteractionCallbackResponse
 
@@ -111,7 +111,7 @@ async def setup_moderation(
 
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -120,8 +120,8 @@ async def setup_moderation(
 
     logger.info(
         "config.moderation.setup invoked user=%s guild=%s updated=%s skipped=%s",  # noqa: E501
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         changed,
         skipped,
     )
@@ -156,7 +156,7 @@ async def update_moderation_access(
 
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         new_list, changed, state = update_id_list(
             guild_config.moderation_access_roles_ids,
@@ -181,8 +181,8 @@ async def update_moderation_access(
 
     logger.info(
         "config.logging.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         option,
         role.id,
     )
@@ -217,7 +217,7 @@ async def update_ban_access(
     """Update the list of roles with ban access."""
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         new_list, changed, state = update_id_list(
             guild_config.ban_access_roles_ids,
@@ -242,8 +242,8 @@ async def update_ban_access(
 
     logger.info(
         "config.logging.update_ban_access user=%s guild=%s option=%s role=%s",
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         option,
         role.id,
     )
@@ -278,7 +278,7 @@ async def update_rr_access(
     """Update the list of leaders roles with `rr` access."""
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         new_list, changed, state = update_id_list(
             guild_config.fraction_roles_access_roles_ids,
@@ -303,8 +303,8 @@ async def update_rr_access(
 
     logger.info(
         "config.logging.update_rr_access user=%s guild=%s option=%s role=%s",
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         option,
         role.id,
     )
@@ -339,7 +339,7 @@ async def update_fraction_role_access(
     """Update the list of roles with `fraction_role` access."""
     async with open_guild_config(
         cast(Nightcore, interaction.client),
-        interaction.guild.id,  # type: ignore
+        cast(Guild, interaction.guild).id,
     ) as guild_config:
         new_list, changed, state = update_id_list(
             guild_config.leader_access_rr_roles_ids,
@@ -364,8 +364,8 @@ async def update_fraction_role_access(
 
     logger.info(
         "config.logging.update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,  # type: ignore
-        interaction.guild.id,  # type: ignore
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
         option,
         role.id,
     )
