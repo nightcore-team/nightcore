@@ -19,8 +19,8 @@ def apply_field_changes(
         if spec.transform:
             try:
                 new_val = spec.transform(new_raw)
-            except Exception:
-                continue
+            except Exception as e:
+                raise e
         else:
             new_val = new_raw
 
@@ -90,8 +90,8 @@ def format_changes(
             "Unchanged / skipped:\n"
             + "\n".join(f"- {c.field}" for c in skipped)
         )
-    # if not parts:
-    #     return "Nothing changed."
+    if not parts:
+        return "Nothing changed."
     return "\n\n".join(parts)
 
 

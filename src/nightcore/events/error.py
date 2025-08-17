@@ -35,9 +35,9 @@ async def setup(bot: Nightcore):
                 )
             return
 
-        # logger.exception("Unhandled app command error", exc_info=original)
-        # if not interaction.response.is_done():
-        #     await interaction.response.send_message(
-        #         "Сталася неочікувана помилка. Повідом адміністратора.",
-        #         ephemeral=True,
-        #     )
+        logger.exception("Unhandled app command error", exc_info=error)
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                "Unexpected error occurred. Please contact the administrator.",
+                ephemeral=True,
+            )
