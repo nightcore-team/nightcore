@@ -9,8 +9,8 @@ from discord.embeds import Embed
 from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.nightcore.bot import Nightcore
-from src.nightcore.commands.config._groups import economy as economy_group
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
+from src.nightcore.features.config._groups import economy as economy_group
 from src.nightcore.services.config import open_guild_config
 from src.nightcore.utils.config_commands import (
     FieldSpec,

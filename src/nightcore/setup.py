@@ -8,9 +8,9 @@ async def create_bot(uow: UnitOfWork) -> Nightcore:
     """Create and return an instance of the Nightcore bot."""
 
     cog_modules = [
-        "src.nightcore.commands.ping",
-        "src.nightcore.commands.avatar",
-        "src.nightcore.commands.config",  # dir
+        "src.nightcore.features.meta.commands.ping",
+        "src.nightcore.features.meta.commands.avatar",
+        "src.nightcore.features.config",  # dir
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",
         "src.nightcore.events.error",

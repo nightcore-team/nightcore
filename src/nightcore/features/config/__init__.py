@@ -2,16 +2,17 @@ from discord import app_commands
 
 from src.nightcore.bot import Nightcore
 
-# SIDE-EFFECT IMPORTS
-from . import (
-    economy,  # noqa: F401
-    logging,  # noqa: F401
-    main,  # noqa: F401
-    moderation,  # noqa: F401
-    moderstats,  # noqa: F401
-    private_channels,  # noqa: F401
-)
 from ._groups import config as config_group
+
+# SIDE-EFFECT IMPORTS
+from .commands import (
+    economy,
+    logging,
+    main,
+    moderation,
+    moderstats,
+    private_channels,
+)
 
 
 async def setup(bot: Nightcore):
