@@ -10,6 +10,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
     cog_modules = [
         "src.nightcore.features.meta.commands.ping",
         "src.nightcore.features.meta.commands.avatar",
+        "src.nightcore.features.meta.commands.action",
         "src.nightcore.features.config",  # dir
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",
