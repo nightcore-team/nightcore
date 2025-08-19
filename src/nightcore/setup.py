@@ -4,7 +4,7 @@ from src.infra.db.uow import UnitOfWork
 from src.nightcore.bot import Nightcore
 
 
-async def create_bot(uow: UnitOfWork) -> Nightcore:
+def create_bot(uow: UnitOfWork) -> Nightcore:
     """Create and return an instance of the Nightcore bot."""
 
     cog_modules = [

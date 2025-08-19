@@ -14,7 +14,7 @@ async def main() -> None:
     """Main function to start the Nightcore bot."""
     logger: Logger = setup_logging()
     uow = UnitOfWork(SessionFactory(config.db.ENGINE))  # type: ignore
-    bot: Nightcore = await create_bot(uow=uow)
+    bot: Nightcore = create_bot(uow=uow)
 
     logger.info("Starting Nightcore bot...")
 

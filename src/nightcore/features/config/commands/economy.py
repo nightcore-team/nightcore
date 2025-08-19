@@ -1,7 +1,7 @@
 """Economy configuration command for Nightcore bot."""
 
 import logging
-from typing import cast
+from typing import Literal, cast
 
 import discord
 from discord import Guild, app_commands
@@ -23,6 +23,7 @@ from src.nightcore.utils.field_validators import (
     split_changes,
     str_value,
 )
+from src.nightcore.utils.field_validators.helper import update_id_list
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,67 @@ async def setup(
             title="Economy Configuration",
             description=description,
             color=discord.Color.green(),
+        ),
+        ephemeral=True,
+    )
+
+
+@economy_group.command(name="update_economy_access")
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.choices(
+    option=[
+        app_commands.Choice(name="Add", value="add"),
+        app_commands.Choice(name="Remove", value="remove"),
+    ]
+)
+@app_commands.describe(
+    role="The role to update",
+    option="Whether to add or remove the role from the fraction access list",
+)
+async def update_economy_access(
+    interaction: Interaction,
+    role: discord.Role,
+    option: Literal["add", "remove"],
+) -> InteractionCallbackResponse:
+    """Update the list of roles with `economy` access."""
+    async with open_guild_config(
+        cast(Nightcore, interaction.client),
+        cast(Guild, interaction.guild).id,
+    ) as guild_config:
+        new_list, changed, state = update_id_list(
+            guild_config.economy_access_roles_ids,
+            role.id,
+            option,
+        )
+        if changed:
+            guild_config.economy_access_roles_ids = new_list
+
+    if state == "exists":
+        desc = f"Role <@&{role.id}> already in the economy access list."
+        color = discord.Color.yellow()
+    elif state == "absent":
+        desc = f"Role <@&{role.id}> not in the economy access list."
+        color = discord.Color.red()
+    elif state == "added":
+        desc = f"Role <@&{role.id}> added to the economy access list."
+        color = discord.Color.blurple()
+    else:  # removed
+        desc = f"Role <@&{role.id}> removed from the economy access list."
+        color = discord.Color.blurple()
+
+    logger.info(
+        "config.logging.update_economy_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
+    )
+
+    return await interaction.response.send_message(
+        embed=Embed(
+            title="Economy Configuration",
+            description=desc,
+            color=color,
         ),
         ephemeral=True,
     )
