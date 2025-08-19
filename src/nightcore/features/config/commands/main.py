@@ -11,17 +11,17 @@ from discord.interactions import Interaction, InteractionCallbackResponse
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import main as main_group
+from src.nightcore.features.config.utils import org_roles_dict_value
 from src.nightcore.services.config import open_guild_config
-from src.nightcore.utils.config_commands import (
+from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
     format_changes,
     int_id_value,
     list_csv,
-    org_roles_dict_value,
     split_changes,
 )
-from src.nightcore.utils.config_commands.helper import update_id_list
+from src.nightcore.utils.field_validators.helper import update_id_list
 
 logger = logging.getLogger(__name__)
 

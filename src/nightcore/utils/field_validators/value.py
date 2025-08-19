@@ -5,11 +5,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
 
-from src.nightcore.exceptions import (
-    LevelRolesParsingError,
-    OrgRolesParsingError,
-)
-
 
 class ValueKind(Enum):
     INT = auto()
@@ -62,7 +57,7 @@ def _parse_csv_ints(s: str | None) -> list[int] | None:
     return out or None
 
 
-def _parse_str_parts(s: str | None) -> list[list[str]]:
+def parse_str_parts(s: str | None) -> list[list[str]]:
     """Parses a string into a list of parts, splitting by commas and pipes."""
     if not s:
         return []
@@ -71,53 +66,6 @@ def _parse_str_parts(s: str | None) -> list[list[str]]:
         for seg in s.split("|")
         if (parts := [f for f in (p.strip() for p in seg.split(",")) if f])
     ]
-
-
-def _to_org_roles(s: str | None):
-    """Converts a list of parts into a roles specification."""
-
-    parts = _parse_str_parts(s)
-    result: dict[str, dict[str, str | int]] = {}
-
-    for part in parts:
-        if len(part) != 3:
-            raise OrgRolesParsingError("Expected 3 parts: name, tag, role_id")
-        name, tag, role_id_raw = part
-        if not name or not tag:
-            raise OrgRolesParsingError("Name and tag cannot be empty")
-        try:
-            role_id = int(role_id_raw)
-        except ValueError as e:
-            raise OrgRolesParsingError(
-                f"Invalid role ID: {role_id_raw}"
-            ) from e
-
-        result[tag.upper()] = {"name": name, "role_id": role_id}
-
-    return result
-
-
-def _to_level_roles(s: str | None):
-    parts = _parse_str_parts(s)
-    result: dict[int, int] = {}
-
-    for part in parts:
-        if len(part) != 2:
-            raise LevelRolesParsingError("Expected 2 parts: level, role_id")
-        level_raw, role_id_raw = part
-        if not any((level_raw, role_id_raw)):
-            raise LevelRolesParsingError("Level and role ID cannot be empty")
-        try:
-            level = int(level_raw)
-            role_id = int(role_id_raw)
-        except ValueError as e:
-            raise LevelRolesParsingError(
-                f"Invalid role ID: {role_id_raw}"
-            ) from e
-
-        result[level] = role_id
-
-    return result
 
 
 # values
@@ -168,29 +116,3 @@ def list_csv(field: str, csv: str | None) -> FieldSpec | None:
         return None
 
     return FieldSpec(field=field, value=parsed, kind=ValueKind.LIST_INT)
-
-
-def org_roles_dict_value(field: str, value: str | None) -> FieldSpec | None:
-    """Creates a FieldSpec for a roles dictionary from a string representation."""  # noqa: E501
-    if value is None:
-        return None
-
-    return FieldSpec(
-        field=field,
-        value=value,
-        kind=ValueKind.DICT,
-        transform=_to_org_roles,
-    )
-
-
-def level_roles_dict_value(field: str, value: str | None) -> FieldSpec | None:
-    """Creates a FieldSpec for a roles dictionary from a string representation."""  # noqa: E501
-    if value is None:
-        return None
-
-    return FieldSpec(
-        field=field,
-        value=value,
-        kind=ValueKind.DICT,
-        transform=_to_level_roles,
-    )

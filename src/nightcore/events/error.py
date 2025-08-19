@@ -13,6 +13,8 @@ from src.nightcore.components.embed.error import (
 )
 from src.nightcore.exceptions import (
     ConfigMissingError,
+)
+from src.nightcore.features.config.exceptions import (
     LevelRolesParsingError,
     OrgRolesParsingError,
 )

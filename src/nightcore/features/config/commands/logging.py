@@ -12,7 +12,7 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import logging as logging_group
 from src.nightcore.services.config import open_guild_config
-from src.nightcore.utils.config_commands import (
+from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
     format_changes,
