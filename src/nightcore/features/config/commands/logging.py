@@ -8,10 +8,11 @@ from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction, InteractionCallbackResponse
 
+from src.infra.db.models.guild import GuildLoggingConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import logging as logging_group
-from src.nightcore.services.config import open_guild_config
+from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
@@ -54,6 +55,7 @@ async def setup(
     reactions: discord.TextChannel | None = None,
     private_rooms: discord.TextChannel | None = None,
     economy: discord.TextChannel | None = None,
+    clans: discord.TextChannel | None = None,
     ignoring_channels: str | None = None,
 ) -> InteractionCallbackResponse:
     """Configure logging settings for the guild."""
@@ -69,6 +71,7 @@ async def setup(
         int_id_value("reactions_log_channel_id", reactions),
         int_id_value("private_rooms_log_channel_id", private_rooms),
         int_id_value("economy_log_channel_id", economy),
+        int_id_value("clans_log_channel_id", clans),
         list_csv("message_log_ignoring_channels_ids", ignoring_channels),
     ]
 
@@ -85,9 +88,10 @@ async def setup(
             ephemeral=True,
         )
 
-    async with open_guild_config(
+    async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
+        config_type=GuildLoggingConfig,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -129,9 +133,10 @@ async def update_ignoring_channels(
     option: Literal["add", "remove"],
 ) -> InteractionCallbackResponse:
     """Update the list of channels to ignore for logging."""
-    async with open_guild_config(
+    async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
+        config_type=GuildLoggingConfig,
     ) as guild_config:
         new_list, changed, state = update_id_list(
             guild_config.message_log_ignoring_channels_ids,

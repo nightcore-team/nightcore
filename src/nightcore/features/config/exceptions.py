@@ -11,3 +11,9 @@ class LevelRolesParsingError(Exception):
     def __init__(self, msg: str):
         self.msg = msg
         super().__init__(f"Level roles parsing error: {msg}")
+
+
+class TempVoiceRolesParsingError(Exception):
+    def __init__(self, msg: str):
+        self.msg = msg
+        super().__init__(f"Temporary voice roles parsing error: {msg}")

@@ -26,3 +26,9 @@ economy = app_commands.Group(
     description="Configuration commands for the economy.",
     parent=config,
 )
+
+levels = app_commands.Group(
+    name="levels",
+    description="Configuration commands for the levels.",
+    parent=config,
+)

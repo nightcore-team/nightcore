@@ -7,20 +7,26 @@ from ._groups import config as config_group
 # SIDE-EFFECT IMPORTS
 from .commands import (
     economy,
+    levels,
     logging,
     main,
     moderation,
     moderstats,
+    notifications,
     private_channels,
+    tickets,
 )
 
 __all__ = (
     "economy",
+    "levels",
     "logging",
     "main",
     "moderation",
     "moderstats",
+    "notifications",
     "private_channels",
+    "tickets",
 )
 
 

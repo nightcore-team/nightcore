@@ -1,14 +1,14 @@
-"""Private Channels configuration commands for the Nightcore bot."""
+"""Moderstats configuration commands for the Nightcore bot."""
 
 import logging
 from typing import cast
 
 import discord
-from discord import Guild, InteractionCallbackResponse, app_commands
+from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
-from src.infra.db.models.guild import GuildPrivateChannelsConfig
+from src.infra.db.models.guild import GuildTicketsConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import config as main_config_group
@@ -25,27 +25,39 @@ logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
-    name="private_channels",
-    description="Configure private channels settings.",
+    name="tickets", description="Configure tickets settings."
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    create_private_channel="The channel to create for private rooms."
+    new_tickets_category="The category for new tickets",
+    pinned_tickets_category="The category for pinned tickets",
+    closed_tickets_category="The category for closed tickets",
+    create_ticket_channel="The channel for creating tickets",
+    create_ticket_ping_role="The role to ping when a ticket is created",
 )
-async def private_channels(
+async def tickets(
     interaction: Interaction,
-    create_private_channel: discord.VoiceChannel | None = None,
-) -> InteractionCallbackResponse:
-    """Configure private channels settings."""
+    new_tickets_category: discord.CategoryChannel | None = None,
+    pinned_tickets_category: discord.CategoryChannel | None = None,
+    closed_tickets_category: discord.CategoryChannel | None = None,
+    create_ticket_channel: discord.TextChannel | None = None,
+    create_ticket_ping_role: discord.Role | None = None,
+):
+    """Configure tickets settings."""
+
     specs: list[FieldSpec | None] = [
-        int_id_value("private_rooms_create_channel_id", create_private_channel)
+        int_id_value("new_tickets_category_id", new_tickets_category),
+        int_id_value("pinned_tickets_category_id", pinned_tickets_category),
+        int_id_value("closed_tickets_category_id", closed_tickets_category),
+        int_id_value("create_ticket_channel_id", create_ticket_channel),
+        int_id_value("create_ticket_ping_role_id", create_ticket_ping_role),
     ]
 
     specs = [s for s in specs if s is not None]
 
     if not specs:
         logger.info(
-            "config.private_channels invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+            "config.tickets invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
         )
@@ -57,7 +69,7 @@ async def private_channels(
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
-        config_type=GuildPrivateChannelsConfig,
+        config_type=GuildTicketsConfig,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -65,7 +77,7 @@ async def private_channels(
     description = format_changes(changed, skipped)
 
     logger.info(
-        "config.private_channels invoked user=%s guild=%s updated=%s skipped=%s",  # noqa: E501
+        "config.tickets invoked user=%s guild=%s updated=%s skipped=%s",
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         changed,
@@ -73,7 +85,7 @@ async def private_channels(
     )
     return await interaction.response.send_message(
         embed=Embed(
-            title="Private Channels Configuration",
+            title="Tickets Configuration",
             description=description,
             color=discord.Color.green(),
         ),

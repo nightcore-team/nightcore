@@ -8,10 +8,11 @@ from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
+from src.infra.db.models.guild import GuildModerationConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import config as main_config_group
-from src.nightcore.services.config import open_guild_config
+from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
@@ -29,18 +30,18 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    mute="Mute score",
-    ban="Ban score",
-    kick="Kick score",
-    ticket="Ticket score",
-    vmute="Voice mute score",
-    mpmute="Member mute score",
-    ticket_ban="Ticket ban score",
-    role_request="Role request score",
-    role_remove="Role remove score",
-    message="Message score",
-    role="Trackable moderation role",
-    channel="Count moderator messages channel",
+    mute="Mute score",  #
+    ban="Ban score",  #
+    kick="Kick score",  #
+    ticket="Ticket score",  #
+    vmute="Voice mute score",  #
+    mpmute="Member mute score",  #
+    ticket_ban="Ticket ban score",  #
+    role_request="Role request score",  #
+    role_remove="Role remove score",  #
+    message="Message score",  #
+    role="Trackable moderation role",  #
+    channel="Count moderator messages channel",  #
 )
 async def moderstats(
     interaction: Interaction,
@@ -87,9 +88,10 @@ async def moderstats(
             ephemeral=True,
         )
 
-    async with open_guild_config(
+    async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
+        config_type=GuildModerationConfig,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 

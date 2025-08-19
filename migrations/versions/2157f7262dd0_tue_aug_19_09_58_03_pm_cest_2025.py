@@ -1,8 +1,8 @@
-"""Sun Aug 17 10:41:02 PM CEST 2025
+"""Tue Aug 19 09:58:03 PM CEST 2025
 
-Revision ID: acaf7da51506
+Revision ID: 2157f7262dd0
 Revises: 
-Create Date: 2025-08-17 22:41:03.316967
+Create Date: 2025-08-19 21:58:08.489221
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'acaf7da51506'
+revision: str = '2157f7262dd0'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -38,10 +38,52 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('guildconfig',
+    op.create_table('guildclansconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
+    sa.Column('clan_payday_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('clan_shop_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('clan_shop_products', sa.JSON(), nullable=False),
+    sa.Column('clan_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
+    sa.Column('create_clan_role_id', sa.BigInteger(), nullable=True),
+    sa.Column('clan_buy_ping_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
+    sa.Column('clan_reputation', sa.Float(), nullable=False),
+    sa.Column('clan_improvements', sa.ARRAY(sa.Integer()), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('guildeconomyconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
+    sa.Column('coin_name', sa.String(), nullable=True),
+    sa.Column('economy_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
+    sa.Column('reward_bonus', sa.Float(), nullable=True),
+    sa.Column('economy_shop_buy_ping_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
+    sa.Column('economy_shop', sa.JSON(), nullable=False),
+    sa.Column('economy_products', sa.JSON(), nullable=False),
+    sa.Column('colors', sa.JSON(), nullable=False),
+    sa.Column('drop_from_cases', sa.ARRAY(sa.String()), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('guildlevelsconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
+    sa.Column('count_messages_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('level_notify_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('base_exp_multiplier', sa.Float(), nullable=True),
+    sa.Column('temp_exp_multiplier', sa.Float(), nullable=True),
+    sa.Column('base_coins_multiplier', sa.Float(), nullable=True),
+    sa.Column('temp_coins_multipler', sa.Float(), nullable=True),
+    sa.Column('bonus_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
+    sa.Column('level_roles', sa.JSON(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('guildloggingconfig',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('bans_log_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('clan_log_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('clans_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('members_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('messages_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('voices_log_channel_id', sa.BigInteger(), nullable=True),
@@ -52,27 +94,13 @@ def upgrade() -> None:
     sa.Column('reactions_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('private_rooms_log_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('economy_log_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('coin_name', sa.String(), nullable=True),
-    sa.Column('economy_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('reward_bonus', sa.Float(), nullable=True),
-    sa.Column('base_coins_multiplier', sa.Float(), nullable=True),
-    sa.Column('temp_coins_multipler', sa.Float(), nullable=True),
-    sa.Column('economy_shop_buy_ping_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('economy_shop', sa.JSON(), nullable=False),
-    sa.Column('economy_products', sa.JSON(), nullable=False),
-    sa.Column('count_messages_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('level_notify_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('base_exp_multiplier', sa.Float(), nullable=True),
-    sa.Column('temp_exp_multiplier', sa.Float(), nullable=True),
-    sa.Column('bonus_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('clan_payday_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('clan_shop_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('clan_shop_products', sa.JSON(), nullable=False),
-    sa.Column('clan_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('create_clan_role_id', sa.BigInteger(), nullable=True),
-    sa.Column('clan_buy_ping_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('clan_reputation', sa.Float(), nullable=False),
-    sa.Column('private_rooms_create_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('message_log_ignoring_channels_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('guildmoderationconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('moderation_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('count_moderator_messages_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('ban_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
@@ -89,36 +117,54 @@ def upgrade() -> None:
     sa.Column('trackable_moderation_role_id', sa.BigInteger(), nullable=True),
     sa.Column('ban_request_ping_role_id', sa.BigInteger(), nullable=True),
     sa.Column('send_ban_request_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('mpmute_role_id', sa.BigInteger(), nullable=True),
+    sa.Column('vmute_role_id', sa.BigInteger(), nullable=True),
+    sa.Column('mute_role_id', sa.BigInteger(), nullable=True),
+    sa.Column('mute_type', sa.String(), nullable=False),
+    sa.Column('fraction_roles_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
+    sa.Column('leader_access_rr_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('guildnotificationsconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('notifications_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('notifications_for_moderation_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('notifications_from_bot_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('guildprivatechannelsconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
+    sa.Column('private_rooms_create_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('guildticketsconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
+    sa.Column('tickets_count', sa.Integer(), nullable=False),
     sa.Column('new_tickets_category_id', sa.BigInteger(), nullable=True),
     sa.Column('closed_tickets_category_id', sa.BigInteger(), nullable=True),
     sa.Column('create_ticket_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('pinned_tickets_category_id', sa.BigInteger(), nullable=True),
-    sa.Column('check_role_requests_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('create_ticket_ping_role_id', sa.BigInteger(), nullable=True),
-    sa.Column('tickets_count', sa.Integer(), nullable=False),
-    sa.Column('proposals_count', sa.Integer(), nullable=False),
-    sa.Column('create_proposal_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('organizational_roles', sa.JSON(), nullable=False),
-    sa.Column('mpmute_role_id', sa.BigInteger(), nullable=True),
-    sa.Column('vmute_role_id', sa.BigInteger(), nullable=True),
-    sa.Column('level_roles', sa.JSON(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('guild_id')
+    )
+    op.create_table('mainguildconfig',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('rules_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('create_proposal_channel_id', sa.BigInteger(), nullable=True),
+    sa.Column('proposals_count', sa.Integer(), nullable=False),
+    sa.Column('organizational_roles', sa.JSON(), nullable=False),
     sa.Column('fraction_roles', sa.ARRAY(sa.BigInteger()), nullable=False),
-    sa.Column('fraction_roles_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
-    sa.Column('leader_access_rr_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
-    sa.Column('clan_improvements', sa.ARRAY(sa.Integer()), nullable=False),
-    sa.Column('colors', sa.JSON(), nullable=False),
-    sa.Column('drop_from_cases', sa.ARRAY(sa.String()), nullable=True),
-    sa.Column('illegal_roles', sa.JSON(), nullable=False),
-    sa.Column('embed_config_access_roles', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('message_log_ignoring_channels_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('voice_temp_roles', sa.JSON(), nullable=False),
-    sa.Column('mute_role_id', sa.BigInteger(), nullable=True),
-    sa.Column('mute_type', sa.String(), nullable=False),
     sa.Column('faq', sa.JSON(), nullable=False),
+    sa.Column('check_role_requests_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('guild_id')
@@ -162,6 +208,14 @@ def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('user')
     op.drop_table('punish')
-    op.drop_table('guildconfig')
+    op.drop_table('mainguildconfig')
+    op.drop_table('guildticketsconfig')
+    op.drop_table('guildprivatechannelsconfig')
+    op.drop_table('guildnotificationsconfig')
+    op.drop_table('guildmoderationconfig')
+    op.drop_table('guildloggingconfig')
+    op.drop_table('guildlevelsconfig')
+    op.drop_table('guildeconomyconfig')
+    op.drop_table('guildclansconfig')
     op.drop_table('clan')
     # ### end Alembic commands ###

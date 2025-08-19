@@ -8,11 +8,17 @@ from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction, InteractionCallbackResponse
 
+from src.infra.db.models.guild import MainGuildConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import main as main_group
-from src.nightcore.features.config.utils import org_roles_dict_value
-from src.nightcore.services.config import open_guild_config
+from src.nightcore.features.config.utils import (
+    org_roles_dict_value,
+    temp_voice_roles_dict_value,
+)
+from src.nightcore.services.config import (
+    specified_guild_config,
+)
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
@@ -33,26 +39,26 @@ logger = logging.getLogger(__name__)
     proposal_channel="The channel for proposals",
     organizational_roles="The roles for the organizations",
     fraction_roles="The roles for the fractions",
-    nightcore_notifications_channel="The channel for Nightcore notifications",
+    voice_temp_roles="The roles for the voice temp rooms",
+    # faq=""
 )
 async def setup(
     interaction: Interaction,
-    rules_channel: discord.TextChannel | None = None,
-    proposal_channel: discord.TextChannel | None = None,
-    nightcore_notifications_channel: discord.TextChannel | None = None,
-    organizational_roles: str | None = None,
-    fraction_roles: str | None = None,
+    rules_channel: discord.TextChannel | None = None,  #
+    proposal_channel: discord.TextChannel | None = None,  #
+    voice_temp_roles: str | None = None,  #
+    organizational_roles: str | None = None,  #
+    fraction_roles: str | None = None,  #
+    # faq: str | None = None, #
+    role_request_channel: discord.TextChannel | None = None,  #
 ) -> InteractionCallbackResponse:
     """Configure moderation settings."""
 
     specs: list[FieldSpec | None] = [
         int_id_value("rules_channel_id", rules_channel),
         int_id_value("create_proposal_channel_id", proposal_channel),
-        int_id_value(
-            "notifications_from_bot_channel_id",
-            nightcore_notifications_channel,
-        ),
         org_roles_dict_value("organizational_roles", organizational_roles),
+        temp_voice_roles_dict_value("voice_temp_roles", voice_temp_roles),
         list_csv("fraction_roles", fraction_roles),
     ]
 
@@ -69,9 +75,10 @@ async def setup(
             ephemeral=True,
         )
 
-    async with open_guild_config(
+    async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
+        config_type=MainGuildConfig,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -115,9 +122,10 @@ async def update_fraction_roles(
     option: Literal["add", "remove"],
 ) -> InteractionCallbackResponse:
     """Update the list of roles with ban access."""
-    async with open_guild_config(
+    async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
+        config_type=MainGuildConfig,
     ) as guild_config:
         new_list, changed, state = update_id_list(
             guild_config.fraction_roles,

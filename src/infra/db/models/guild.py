@@ -7,16 +7,46 @@ from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
 
 
-class GuildConfig(IdIntegerMixin, Base):
+class MainGuildConfig(IdIntegerMixin, Base):  #
+    """Main configuration for a guild."""
+
     guild_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, unique=True
     )
+    rules_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )  #
+    create_proposal_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )  #
+    proposals_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    organizational_roles: Mapped[dict[str, dict[str, str | int]]] = (
+        mapped_column(JSON, nullable=False, default=dict)
+    )  #
+    fraction_roles: Mapped[list[int]] = mapped_column(
+        ARRAY(BigInteger), nullable=False, default=list
+    )  #
+    voice_temp_roles: Mapped[dict] = mapped_column(
+        JSON, nullable=False, default=dict
+    )  #
+    faq: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    check_role_requests_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )  #
 
-    # log channels - все nullable
+
+class GuildLoggingConfig(IdIntegerMixin, Base):  #
+    """Logging configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
     bans_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    clan_log_channel_id: Mapped[int | None] = mapped_column(
+    clans_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
     members_log_channel_id: Mapped[int | None] = mapped_column(
@@ -49,19 +79,23 @@ class GuildConfig(IdIntegerMixin, Base):
     economy_log_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+    message_log_ignoring_channels_ids: Mapped[list[int] | None] = (
+        mapped_column(ARRAY(BigInteger), nullable=True)
+    )
 
-    # economy - nullable fields
+
+class GuildEconomyConfig(IdIntegerMixin, Base):  #
+    """Economy configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
+
     coin_name: Mapped[str | None] = mapped_column(String, nullable=True)
     economy_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
     reward_bonus: Mapped[float | None] = mapped_column(Float, nullable=True)
-    base_coins_multiplier: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
-    temp_coins_multipler: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
     economy_shop_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
@@ -71,8 +105,19 @@ class GuildConfig(IdIntegerMixin, Base):
     economy_products: Mapped[dict[str, float]] = mapped_column(
         JSON, nullable=False, default=dict
     )
+    colors: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    drop_from_cases: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String), nullable=True
+    )
 
-    # levels - nullable fields
+
+class GuildLevelsConfig(IdIntegerMixin, Base):  #
+    """Level configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
+
     count_messages_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
@@ -85,11 +130,26 @@ class GuildConfig(IdIntegerMixin, Base):
     temp_exp_multiplier: Mapped[float | None] = mapped_column(
         Float, nullable=True
     )
+    base_coins_multiplier: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
+    temp_coins_multipler: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
     bonus_access_roles_ids: Mapped[list[str] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
+    level_roles: Mapped[dict[int, int]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
 
-    # clans - nullable fields
+
+class GuildClansConfig(IdIntegerMixin, Base):  # ---
+    """Clans configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
     clan_payday_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
@@ -111,22 +171,37 @@ class GuildConfig(IdIntegerMixin, Base):
     clan_reputation: Mapped[float] = mapped_column(
         Float, nullable=False, default=0.0
     )
+    clan_improvements: Mapped[list[int]] = mapped_column(
+        ARRAY(Integer), nullable=False, default=list
+    )
 
-    # private rooms - nullable
+
+class GuildPrivateChannelsConfig(IdIntegerMixin, Base):  #
+    """Private channels configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
     private_rooms_create_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
 
-    # moderation - nullable arrays and scores
+
+class GuildModerationConfig(IdIntegerMixin, Base):  #
+    """Moderation configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
     moderation_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
-    )
+    )  #
     count_moderator_messages_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
-    )
+    )  #
     ban_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
-    )
+    )  #
     mute_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     ban_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     kick_score: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -146,16 +221,41 @@ class GuildConfig(IdIntegerMixin, Base):
 
     trackable_moderation_role_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
-    )
+    )  #
 
     ban_request_ping_role_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
-    )
+    )  #
     send_ban_request_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
-    )
+    )  #
+    mpmute_role_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )  #
+    vmute_role_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )  ##
+    mute_role_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    mute_type: Mapped[str] = mapped_column(
+        String, nullable=False, default="role"
+    )  #
+    fraction_roles_access_roles_ids: Mapped[list[int]] = mapped_column(
+        ARRAY(BigInteger), nullable=False, default=list
+    )  #
+    leader_access_rr_roles_ids: Mapped[list[int]] = mapped_column(
+        ARRAY(BigInteger), nullable=False, default=list
+    )  #
+    # embed_config_access_roles: Mapped[list[int] | None] = mapped_column(
+    #     ARRAY(BigInteger), nullable=True
+    # )
 
-    # notifications and tickets - nullable
+
+class GuildNotificationsConfig(IdIntegerMixin, Base):  #
+    """Notifications configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
     notifications_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
@@ -164,6 +264,17 @@ class GuildConfig(IdIntegerMixin, Base):
     )
     notifications_from_bot_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
+    )
+
+
+class GuildTicketsConfig(IdIntegerMixin, Base):
+    """Tickets configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
+    tickets_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
     )
     new_tickets_category_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
@@ -177,71 +288,6 @@ class GuildConfig(IdIntegerMixin, Base):
     pinned_tickets_category_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    check_role_requests_channel_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
-    )
     create_ticket_ping_role_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-
-    # counts with defaults
-    tickets_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
-    )
-    proposals_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
-    )
-
-    create_proposal_channel_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
-    )
-
-    # roles and configs
-    organizational_roles: Mapped[dict[str, dict[str, str | int]]] = (
-        mapped_column(JSON, nullable=False, default=dict)
-    )
-    mpmute_role_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
-    )
-    vmute_role_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
-    )
-    level_roles: Mapped[dict[int, int]] = mapped_column(
-        JSON, nullable=False, default=dict
-    )
-    rules_channel_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
-    )
-    fraction_roles: Mapped[list[int]] = mapped_column(
-        ARRAY(BigInteger), nullable=False, default=list
-    )
-    fraction_roles_access_roles_ids: Mapped[list[int]] = mapped_column(
-        ARRAY(BigInteger), nullable=False, default=list
-    )
-    leader_access_rr_roles_ids: Mapped[list[int]] = mapped_column(
-        ARRAY(BigInteger), nullable=False, default=list
-    )
-    clan_improvements: Mapped[list[int]] = mapped_column(
-        ARRAY(Integer), nullable=False, default=list
-    )
-    colors: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    drop_from_cases: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String), nullable=True
-    )
-    illegal_roles: Mapped[dict[str, int]] = mapped_column(
-        JSON, nullable=False, default=dict
-    )
-    embed_config_access_roles: Mapped[list[int] | None] = mapped_column(
-        ARRAY(BigInteger), nullable=True
-    )
-    message_log_ignoring_channels_ids: Mapped[list[int] | None] = (
-        mapped_column(ARRAY(BigInteger), nullable=True)
-    )
-    voice_temp_roles: Mapped[dict] = mapped_column(
-        JSON, nullable=False, default=dict
-    )
-    mute_role_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    mute_type: Mapped[str] = mapped_column(
-        String, nullable=False, default="role"
-    )
-    faq: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)

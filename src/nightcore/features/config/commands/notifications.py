@@ -1,14 +1,14 @@
-"""Private Channels configuration commands for the Nightcore bot."""
+"""Moderstats configuration commands for the Nightcore bot."""
 
 import logging
 from typing import cast
 
 import discord
-from discord import Guild, InteractionCallbackResponse, app_commands
+from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
-from src.infra.db.models.guild import GuildPrivateChannelsConfig
+from src.infra.db.models.guild import GuildNotificationsConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import config as main_config_group
@@ -25,27 +25,37 @@ logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
-    name="private_channels",
-    description="Configure private channels settings.",
+    name="notifications", description="Configure notifications settings."
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    create_private_channel="The channel to create for private rooms."
+    notifications="The channel to send notifications (/notify)",
+    moderation_notifications="The channel to send moderation notifications",
+    nightcore_notifications="The channel to send Nightcore notifications",
 )
-async def private_channels(
+async def notifications(
     interaction: Interaction,
-    create_private_channel: discord.VoiceChannel | None = None,
-) -> InteractionCallbackResponse:
-    """Configure private channels settings."""
+    notifications: discord.TextChannel | None = None,
+    moderation_notifications: discord.TextChannel | None = None,
+    nightcore_notifications: discord.TextChannel | None = None,
+):
+    """Configure notifications settings."""
+
     specs: list[FieldSpec | None] = [
-        int_id_value("private_rooms_create_channel_id", create_private_channel)
+        int_id_value("notifications_channel_id", notifications),
+        int_id_value(
+            "notifications_for_moderation_channel_id", moderation_notifications
+        ),
+        int_id_value(
+            "notifications_from_bot_channel_id", nightcore_notifications
+        ),
     ]
 
     specs = [s for s in specs if s is not None]
 
     if not specs:
         logger.info(
-            "config.private_channels invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+            "config.notifications invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
         )
@@ -57,7 +67,7 @@ async def private_channels(
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
-        config_type=GuildPrivateChannelsConfig,
+        config_type=GuildNotificationsConfig,
     ) as guild_config:
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -65,7 +75,7 @@ async def private_channels(
     description = format_changes(changed, skipped)
 
     logger.info(
-        "config.private_channels invoked user=%s guild=%s updated=%s skipped=%s",  # noqa: E501
+        "config.notifications invoked user=%s guild=%s updated=%s skipped=%s",
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         changed,
@@ -73,7 +83,7 @@ async def private_channels(
     )
     return await interaction.response.send_message(
         embed=Embed(
-            title="Private Channels Configuration",
+            title="Notifications Configuration",
             description=description,
             color=discord.Color.green(),
         ),
