@@ -20,3 +20,12 @@ class NoOptionsSuppliedEmbed(Embed):
             description="No options were supplied for this command.",
             color=discord.Color.yellow(),
         )
+
+
+class ValidationErrorEmbed(Embed):
+    def __init__(self, msg: str):
+        super().__init__(
+            title="Validation Error occurred",
+            description=msg,
+            color=discord.Color.red(),
+        )

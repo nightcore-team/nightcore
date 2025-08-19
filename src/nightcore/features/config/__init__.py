@@ -14,6 +14,15 @@ from .commands import (
     private_channels,
 )
 
+__all__ = (
+    "economy",
+    "logging",
+    "main",
+    "moderation",
+    "moderstats",
+    "private_channels",
+)
+
 
 async def setup(bot: Nightcore):
     """Setup the configuration commands for the Nightcore bot."""

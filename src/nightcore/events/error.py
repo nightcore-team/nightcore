@@ -1,20 +1,30 @@
 """Error events module."""
 
 import logging
+from typing import cast
 
 import discord
-from discord import app_commands
+from discord import Guild, app_commands
 
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed.error import NoConfigFoundEmbed
-from src.nightcore.exceptions import ConfigMissingError
+from src.nightcore.components.embed.error import (
+    NoConfigFoundEmbed,
+    ValidationErrorEmbed,
+)
+from src.nightcore.exceptions import (
+    ConfigMissingError,
+    LevelRolesParsingError,
+    OrgRolesParsingError,
+)
 
 logger = logging.getLogger(__name__)
 
 
 async def setup(bot: Nightcore):
+    """Setup the error handling for application commands."""
+
     @bot.tree.error
-    async def on_app_command_error(
+    async def on_app_command_error(  # type: ignore
         interaction: discord.Interaction,
         error: app_commands.AppCommandError,
     ):
@@ -24,13 +34,55 @@ async def setup(bot: Nightcore):
 
         if isinstance(original, ConfigMissingError):
             logger.info(
-                "ConfigMissingError handled guild=%s user=%s",
-                interaction.guild.id,  # type: ignore
-                interaction.user.id,  # type: ignore
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            logger.exception(
+                "%s occurred", original.__class__.__name__, exc_info=original
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
                     embed=NoConfigFoundEmbed(),
+                    ephemeral=True,
+                )
+            return
+
+        if isinstance(original, OrgRolesParsingError):
+            logger.info(
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            logger.exception(
+                "%s occurred", original.__class__.__name__, exc_info=original
+            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        f"{original.__class__.__name__}: {original.msg}"
+                    ),
+                    ephemeral=True,
+                )
+            return
+
+        if isinstance(original, LevelRolesParsingError):
+            logger.info(
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            logger.exception(
+                "%s occurred", original.__class__.__name__, exc_info=original
+            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        f"{original.__class__.__name__}: {original.msg}"
+                    ),
                     ephemeral=True,
                 )
             return

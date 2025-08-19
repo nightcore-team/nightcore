@@ -5,6 +5,11 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
 
+from src.nightcore.exceptions import (
+    LevelRolesParsingError,
+    OrgRolesParsingError,
+)
+
 
 class ValueKind(Enum):
     INT = auto()
@@ -76,14 +81,16 @@ def _to_org_roles(s: str | None):
 
     for part in parts:
         if len(part) != 3:
-            raise ValueError("Expected 3 parts: name, tag, role_id")
+            raise OrgRolesParsingError("Expected 3 parts: name, tag, role_id")
         name, tag, role_id_raw = part
         if not name or not tag:
-            raise ValueError("Name and tag cannot be empty")
+            raise OrgRolesParsingError("Name and tag cannot be empty")
         try:
             role_id = int(role_id_raw)
         except ValueError as e:
-            raise ValueError(f"Invalid role ID: {role_id_raw}") from e
+            raise OrgRolesParsingError(
+                f"Invalid role ID: {role_id_raw}"
+            ) from e
 
         result[tag.upper()] = {"name": name, "role_id": role_id}
 
@@ -96,15 +103,17 @@ def _to_level_roles(s: str | None):
 
     for part in parts:
         if len(part) != 2:
-            raise ValueError("Expected 2 parts: level, role_id")
+            raise LevelRolesParsingError("Expected 2 parts: level, role_id")
         level_raw, role_id_raw = part
         if not any((level_raw, role_id_raw)):
-            raise ValueError("Level and role ID cannot be empty")
+            raise LevelRolesParsingError("Level and role ID cannot be empty")
         try:
             level = int(level_raw)
             role_id = int(role_id_raw)
         except ValueError as e:
-            raise ValueError(f"Invalid role ID: {role_id_raw}") from e
+            raise LevelRolesParsingError(
+                f"Invalid role ID: {role_id_raw}"
+            ) from e
 
         result[level] = role_id
 
