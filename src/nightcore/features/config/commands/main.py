@@ -79,7 +79,7 @@ async def setup(
     description = format_changes(changed, skipped)
 
     logger.info(
-        "config.main invoked user=%s guild=%s updated=%s skipped=%s",
+        "config.main.setup invoked user=%s guild=%s updated=%s skipped=%s",
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         changed,

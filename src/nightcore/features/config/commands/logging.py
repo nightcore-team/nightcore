@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
     economy="The channel to log economy moves.",
     ignoring_channels="The channels to ignore for logging. Type: `id,id,id,...`",  # noqa: E501
 )
-async def setup_logging(
+async def setup(
     interaction: Interaction,
     bans: discord.TextChannel | None = None,
     voices: discord.TextChannel | None = None,
@@ -76,7 +76,7 @@ async def setup_logging(
 
     if not specs:
         logger.info(
-            "config.logging invoked user=%s guild=%s no_options_supplied",
+            "config.logging.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
             interaction.user.id,
             cast(Guild, interaction.guild).id,
         )
@@ -95,7 +95,7 @@ async def setup_logging(
     description = format_changes(changed, skipped)
 
     logger.info(
-        "config.logging invoked user=%s guild=%s updated=%s skipped=%s",
+        "config.logging.setup invoked user=%s guild=%s updated=%s skipped=%s",
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         changed,

@@ -180,7 +180,7 @@ async def update_moderation_access(
         color = discord.Color.blurple()
 
     logger.info(
-        "config.logging.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        "config.moderation.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,
@@ -241,7 +241,7 @@ async def update_ban_access(
         color = discord.Color.blurple()
 
     logger.info(
-        "config.logging.update_ban_access user=%s guild=%s option=%s role=%s",
+        "config.moderation.update_ban_access user=%s guild=%s option=%s role=%s",  # noqa: E501
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,
@@ -302,7 +302,7 @@ async def update_rr_access(
         color = discord.Color.blurple()
 
     logger.info(
-        "config.logging.update_rr_access user=%s guild=%s option=%s role=%s",
+        "config.moderation.update_rr_access user=%s guild=%s option=%s role=%s",  # noqa: E501
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,
@@ -363,7 +363,7 @@ async def update_fraction_role_access(
         color = discord.Color.blurple()
 
     logger.info(
-        "config.logging.update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        "config.moderation.update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,

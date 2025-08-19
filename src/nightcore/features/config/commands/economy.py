@@ -159,7 +159,7 @@ async def update_economy_access(
         color = discord.Color.blurple()
 
     logger.info(
-        "config.logging.update_economy_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        "config.economy.update_economy_access user=%s guild=%s option=%s role=%s",  # noqa: E501
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,
