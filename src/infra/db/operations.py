@@ -50,3 +50,14 @@ async def get_specified_logging_channel(
     column = getattr(GuildLoggingConfig, channel_type.value)
     stmt = select(column).where(GuildLoggingConfig.guild_id == guild_id)
     return await session.scalar(stmt)
+
+
+async def get_moderation_access_roles(
+    session: AsyncSession, *, guild_id: int
+) -> list[int]:
+    """Get the list of moderation access roles for a guild."""
+    stmt = select(GuildModerationConfig.moderation_access_roles_ids).where(
+        GuildModerationConfig.guild_id == guild_id
+    )
+    result = await session.scalar(stmt)
+    return result or []

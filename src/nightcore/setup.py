@@ -8,10 +8,15 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
     """Create and return an instance of the Nightcore bot."""
 
     cog_modules = [
+        # meta
         "src.nightcore.features.meta.commands.ping",
         "src.nightcore.features.meta.commands.avatar",
         "src.nightcore.features.meta.commands.action",
+        # config commands
         "src.nightcore.features.config",  # dir
+        # moderation commands
+        "src.nightcore.features.moderation.commands.kick",
+        # global events
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",
         "src.nightcore.events.error",
