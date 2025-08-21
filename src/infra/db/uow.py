@@ -19,9 +19,9 @@ class UnitOfWork:
         try:
             yield self
             await self.session.commit()
-        except Exception:
+        except Exception as e:
             await self.session.rollback()
-            raise
+            raise Exception(f"UnitOfWork failed: {e}") from e
         finally:
             await self.session.close()
             self.session = None
