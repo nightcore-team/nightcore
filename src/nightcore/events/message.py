@@ -21,16 +21,19 @@ class MessageEvent(Cog):
         self.bot = bot
 
     @Cog.listener()
-    async def on_message(self, message: discord.Message):
-        logger.info(f"Message: {message}")
+    async def on_message(
+        self, message: discord.Message
+    ): ...  # logger.info(f"Message: {message}")
 
     @Cog.listener()
-    async def on_raw_message_edit(self, payload: RawMessageUpdateEvent):
-        logger.info(f"Message edited: {payload}")
+    async def on_raw_message_edit(
+        self, payload: RawMessageUpdateEvent
+    ): ...  # logger.info(f"Message edited: {payload}")
 
     @Cog.listener()
-    async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
-        logger.info(f"Message deleted: {payload}")
+    async def on_raw_message_delete(
+        self, payload: RawMessageDeleteEvent
+    ): ...  # logger.info(f"Message deleted: {payload}")
 
     @Cog.listener()
     async def on_message_edit(
