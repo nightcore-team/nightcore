@@ -1,5 +1,6 @@
 """The module contains database operations for the Nightcore bot."""
 
+from datetime import datetime
 from typing import TypeVar
 
 from sqlalchemy import select
@@ -17,6 +18,7 @@ from src.infra.db.models.guild import (
     GuildTicketsConfig,
     MainGuildConfig,
 )
+from src.infra.db.models.punish import Punish
 
 T = TypeVar(
     "T",
@@ -61,3 +63,31 @@ async def get_moderation_access_roles(
     )
     result = await session.scalar(stmt)
     return result or []
+
+
+async def create_punish(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    moderator_id: int,
+    category: str,
+    reason: str,
+    time_now: datetime,
+    duration: int | None = None,
+    end_time: datetime | None = None,
+) -> Punish:
+    """Create a new punishment entry in the database."""
+    punish = Punish(
+        guild_id=guild_id,
+        user_id=user_id,
+        moderator_id=moderator_id,
+        category=category,
+        reason=reason,
+        time_now=time_now,
+        duration=duration,
+        end_time=end_time,
+    )
+    session.add(punish)
+
+    return punish
