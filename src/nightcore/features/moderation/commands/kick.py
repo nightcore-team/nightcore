@@ -5,7 +5,7 @@ from typing import cast
 
 import discord
 from discord import Guild, app_commands
-from discord.ext.commands import Cog
+from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,6 +95,19 @@ class Kick(Cog):
                 "I cannot kick this user because he has a higher role than me.",  # noqa: E501
             )
             return
+
+        try:
+            self.bot.dispatch(
+                "user_kicked",
+                moderator=interaction.user,
+                member=member,
+                category="kick",
+                reason=reason,
+            )
+        except Exception as e:
+            logger.exception(
+                "[event] - Failed to dispatch user_kicked event: %s", e
+            )
         await guild.kick(member, reason=reason)
         await interaction.followup.send(
             "User has been kicked from the server.",
