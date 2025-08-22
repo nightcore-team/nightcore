@@ -13,7 +13,11 @@ from src.infra.db.operations import (
     get_specified_logging_channel,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.features.moderation.utils import send_punish_dm_message
+from src.nightcore.features.moderation.utils import (
+    calculate_end_time,
+    send_punish_dm_message,
+    send_punish_log,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +27,25 @@ class ModerationEvents(Cog):
         self.bot = bot
 
     @Cog.listener()
-    async def on_user_kicked(
+    async def on_un_user_punish(self):
+        """Handle user unpunished events."""
+
+    @Cog.listener()
+    async def on_user_punish(
         self,
         *,
         moderator: discord.Member,
         member: discord.Member,
         category: str,
+        duration: str | None = None,
         reason: str,
     ) -> None:
-        """Handle user kicked events."""
+        """Handle user punished events."""
         logger.info(
-            "[event] user_kicked - User kicked: %s, Reason: %s",
-            member,
+            "[event] on_user_punish - %s: Guild: %s, Member: %s, Reason: %s",
+            category,
+            moderator.guild.id,
+            member.id,
             reason,
         )
 
@@ -42,108 +53,69 @@ class ModerationEvents(Cog):
             user = await self.bot.fetch_user(member.id)
         except Exception as e:
             logger.exception(
-                "[event] user_kicked - Failed to fetch user %s: %s",
+                "[event] on_user_punish - %s: Failed to fetch user %s: %s",
+                category,
                 member.id,
                 e,
             )
             return
 
-        # send dm message to user
-        await send_punish_dm_message(
-            self.bot,
-            moderator,
-            user,
-            "kick",
-            reason,
-        )
+        end_time = None
+        if duration:
+            end_time = calculate_end_time(duration)
 
         # db insert and getting logging channel
         async with self.bot.uow.start() as uow:
-            await create_punish(
-                session=cast(AsyncSession, uow.session),
-                guild_id=moderator.guild.id,
-                user_id=user.id,
-                moderator_id=moderator.id,
-                category=category,
-                reason=reason,
-                time_now=discord.utils.utcnow(),
-            )
+            try:
+                punish_info = await create_punish(
+                    session=cast(AsyncSession, uow.session),
+                    guild_id=moderator.guild.id,
+                    user_id=user.id,
+                    moderator_id=moderator.id,
+                    category=category,
+                    reason=reason,
+                    end_time=end_time,
+                    time_now=discord.utils.utcnow(),
+                )
+            except Exception as e:
+                logger.exception(
+                    "[event] on_user_punish - %s: Failed to create punish record: %s",  # noqa: E501
+                    category,
+                    e,
+                )
+                return
 
             logging_channel_id = await get_specified_logging_channel(
                 cast(AsyncSession, uow.session),
                 guild_id=moderator.guild.id,
-                channel_type=LoggingChannelType.MODERATION,  # type: ignore
+                channel_type=LoggingChannelType.MODERATION,
             )
 
-        # if statements for checking logging channel availability and sending message #  noqa: E501
+        # send dm message to user
+        await send_punish_dm_message(
+            self.bot,
+            moderator=moderator,
+            user=user,
+            punish_type=category,
+            reason=reason,
+            end_time=end_time,
+        )
+
+        # sending log message
         if not logging_channel_id:
             logger.warning(
-                "[event] user_kicked - logging channel is not set",
+                "[event] on_user_punish - %s: Guild: %s, logging channel is not set",  # noqa: E501
+                moderator.guild.id,
+                punish_info.category,
             )
             return
 
-        channel = self.bot.get_channel(logging_channel_id)
-
-        if channel is None:
-            try:
-                channel = await self.bot.fetch_channel(logging_channel_id)
-            except discord.NotFound:
-                logger.warning(
-                    "[event] user_kicked - logging channel %s not found",
-                    logging_channel_id,
-                )
-                return
-            except discord.Forbidden:
-                logger.warning(
-                    "[event] user_kicked - no permission for channel %s",
-                    logging_channel_id,
-                )
-                return
-            except discord.HTTPException as e:
-                logger.error(
-                    "[event] user_kicked - HTTP error fetching channel %s: %s",
-                    logging_channel_id,
-                    e,
-                )
-                return
-
-        if isinstance(channel, discord.ForumChannel):
-            logger.info(
-                "[event] user_kicked - forum channel %s, creating thread",
-                channel.id,
-            )
-            try:
-                await channel.create_thread(
-                    name=f"Kick: {member}",
-                    content=f"User kicked: {member}\nReason: {reason}",
-                )
-            except discord.DiscordException as e:
-                logger.error(
-                    "[event] user_kicked - failed to create forum thread in %s: %s",  # noqa: E501
-                    channel.id,
-                    e,
-                )
-            return
-
-        if not isinstance(channel, discord.TextChannel | discord.Thread):
-            logger.warning(
-                "[event] user_kicked - channel %s not messageable (%s)",
-                channel.id,
-                type(channel).__name__,
-            )
-            return
-
-        try:
-            await channel.send(
-                f"User kicked: {member}, Reason: {reason}",
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
-        except discord.HTTPException as e:
-            logger.error(
-                "[event] user_kicked - failed to send message to %s: %s",
-                channel.id,
-                e,
-            )
+        await send_punish_log(
+            self.bot,
+            channel_id=logging_channel_id,
+            duration=duration,
+            punish_info=punish_info,
+        )
 
 
 async def setup(bot: Nightcore):

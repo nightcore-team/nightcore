@@ -97,18 +97,23 @@ class Kick(Cog):
             return
 
         try:
+            await guild.kick(member, reason=reason)
+        except Exception as e:
+            logger.exception("[event] - Failed to kick user: %s", e)
+
+        try:
             self.bot.dispatch(
-                "user_kicked",
+                "user_punish",
                 moderator=interaction.user,
                 member=member,
-                category="kick",
+                category=self.__class__.__name__.lower(),
                 reason=reason,
             )
         except Exception as e:
             logger.exception(
                 "[event] - Failed to dispatch user_kicked event: %s", e
             )
-        await guild.kick(member, reason=reason)
+
         await interaction.followup.send(
             "User has been kicked from the server.",
         )
