@@ -18,7 +18,6 @@ from src.nightcore.utils.field_validators import (
     apply_field_changes,
     float_value,
     format_changes,
-    int_id_value,
     list_csv,
     split_changes,
     str_value,
@@ -26,8 +25,6 @@ from src.nightcore.utils.field_validators import (
 from src.nightcore.utils.field_validators.helper import update_id_list
 
 logger = logging.getLogger(__name__)
-
-# TODO: порівняти моделі, доробить команди і додати нові команди налаштування
 
 
 @economy_group.command(name="setup", description="Configure economy settings.")

@@ -1,4 +1,4 @@
-"""Avatar command for the Nightcore bot."""
+"""Kick command for the Nightcore bot."""
 
 import logging
 from typing import cast

@@ -2,11 +2,14 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import cast
 
 import discord
-from discord import Guild, Member, User
+from discord import Guild, Member, User, app_commands
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.models.punish import Punish
+from src.infra.db.operations import get_fraction_roles
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.components.embed.punish import (
     generate_dm_punish_embed,
@@ -206,3 +209,31 @@ async def send_punish_log(
             channel.id,
             e,
         )
+
+
+async def fraction_roles_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get fraction roles for the guild."""
+    guild = cast(Guild, interaction.guild)
+
+    async with cast(Nightcore, interaction.client).uow.start() as uow:
+        roles = await get_fraction_roles(
+            cast(AsyncSession, uow.session), guild_id=guild.id
+        )
+
+    result: list[app_commands.Choice[str]] = []
+    for role_id in roles:
+        role = guild.get_role(role_id)
+        if role is None:
+            logger.warning(
+                "[event] fraction_roles_autocomplete - %s: role %s not found",
+                guild.id,
+                role_id,
+            )
+            continue
+
+        result.append(app_commands.Choice(name=role.name, value=str(role.id)))
+
+    return result

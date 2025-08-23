@@ -114,7 +114,7 @@ async def setup(
 )
 @app_commands.describe(
     role="The role to update",
-    option="Whether to add or remove the role from the ban access list",
+    option="Whether to add or remove the role from the fraction roles list",
 )
 async def update_fraction_roles(
     interaction: Interaction,
@@ -136,16 +136,16 @@ async def update_fraction_roles(
             guild_config.fraction_roles = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the ban access list."
+        desc = f"Role <@&{role.id}> already in the fraction roles list."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the ban access list."
+        desc = f"Role <@&{role.id}> not in the fraction roles list."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the ban access list."
+        desc = f"Role <@&{role.id}> added to the fraction roles list."
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the ban access list."
+        desc = f"Role <@&{role.id}> removed from the fraction roles list."
         color = discord.Color.blurple()
 
     logger.info(
@@ -158,7 +158,7 @@ async def update_fraction_roles(
 
     return await interaction.response.send_message(
         embed=Embed(
-            title="Moderation Configuration",
+            title="Main Configuration",
             description=desc,
             color=color,
         ),
