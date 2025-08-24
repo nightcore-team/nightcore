@@ -1,5 +1,6 @@
 """Utility functions for moderation commands."""
 
+from collections.abc import Sequence
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import cast
@@ -15,6 +16,8 @@ from src.nightcore.features.moderation.components.embed.punish import (
     generate_dm_punish_embed,
     generate_log_punish_embed,
 )
+
+from src.config.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -237,3 +240,41 @@ async def fraction_roles_autocomplete(
         result.append(app_commands.Choice(name=role.name, value=str(role.id)))
 
     return result
+
+
+def build_pages(
+    punishments: Sequence[Punish],
+    guild_id: int,
+    notify_channel_id: int | None = None,
+) -> list[str]:
+    """Build paginated description pages for infractions."""
+    pages: list[str] = []
+    current = ""
+
+    for p in punishments:
+        time_now = int(p.time_now.timestamp())
+        line = f"**`[{p.category.upper()}]` | <t:{time_now}:F> "
+
+        if p.duration:
+            line += f"| {p.duration} "
+
+        if p.reason:
+            if p.category == "notify" and notify_channel_id:
+                line += f"| [notify](https://discord.com/channels/{guild_id}/{notify_channel_id}"
+            else:
+                line += f"| {p.reason} "
+        line += f"||**<@{p.moderator_id}>\n"
+
+        # Перевірка ліміту
+        if len(current) + len(line) > config.bot.EMBED_DESCRIPTION_LIMIT:
+            pages.append(current)
+            current = ""
+        current += line
+
+    if current:
+        pages.append(current)
+
+    if not pages:
+        pages = ["No infractions."]
+
+    return pages

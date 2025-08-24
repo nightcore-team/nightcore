@@ -18,3 +18,9 @@ class LoggingChannelType(Enum):
     REACTIONS = "reactions_log_channel_id"
     PRIVATE_CHANNELS = "private_rooms_log_channel_id"
     IGNORE = "message_log_ignoring_channels_ids"
+
+
+class ChannelType(Enum):
+    """Enumeration for channel types."""
+
+    NOTIFICATIONS = "notifications_channel_id"

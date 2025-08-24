@@ -134,7 +134,7 @@ class Kick(Cog):
         try:
             await guild.kick(member, reason=reason)
         except Exception as e:
-            logger.exception("[event] - Failed to kick user: %s", e)
+            logger.exception("[command] - Failed to kick user: %s", e)
 
         try:
             self.bot.dispatch(

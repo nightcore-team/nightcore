@@ -1,12 +1,13 @@
 """The module contains database operations for the Nightcore bot."""
 
+from collections.abc import Sequence
 from datetime import datetime
 from typing import TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infra.db.models._enums import LoggingChannelType
+from src.infra.db.models._enums import LoggingChannelType, ChannelType
 from src.infra.db.models.guild import (
     GuildClansConfig,
     GuildEconomyConfig,
@@ -51,6 +52,18 @@ async def get_specified_logging_channel(
     """Get the specified logging channel ID from the database."""
     column = getattr(GuildLoggingConfig, channel_type.value)
     stmt = select(column).where(GuildLoggingConfig.guild_id == guild_id)
+    return await session.scalar(stmt)
+
+
+async def get_specified_channel(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    channel_type: ChannelType,
+) -> int | None:
+    """Get the specified channel ID from the database."""
+    column = getattr(GuildNotificationsConfig, channel_type.value)
+    stmt = select(column).where(GuildNotificationsConfig.guild_id == guild_id)
     return await session.scalar(stmt)
 
 
@@ -117,3 +130,17 @@ async def get_fraction_roles_access(
     roles = await session.execute(stmt)
 
     return roles.scalar_one() or []
+
+
+async def get_user_infractions(
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> Sequence[Punish]:
+    """Get the list of punishments for a user in a guild."""
+    stmt = (
+        select(Punish)
+        .where(Punish.guild_id == guild_id)
+        .where(Punish.user_id == user_id)
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
