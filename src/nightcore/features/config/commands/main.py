@@ -10,7 +10,7 @@ from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.infra.db.models.guild import MainGuildConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
+from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import main as main_group
 from src.nightcore.features.config.utils import (
     org_roles_dict_value,
@@ -71,7 +71,10 @@ async def setup(
             interaction.guild.id,  # type: ignore
         )
         return await interaction.response.send_message(
-            embed=NoOptionsSuppliedEmbed(),
+            embed=NoOptionsSuppliedEmbed(
+                interaction.client.user.name,  # type: ignore
+                interaction.client.user.display_avatar.url,  # type: ignore
+            ),
             ephemeral=True,
         )
 

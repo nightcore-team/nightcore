@@ -10,7 +10,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models.guild import GuildNotificationsConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
+from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import config as main_config_group
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
@@ -55,12 +55,15 @@ async def notifications(
 
     if not specs:
         logger.info(
-            "config.notifications invoked user=%s guild=%s no_options_supplied",
+            "config.notifications invoked user=%s guild=%s no_options_supplied",  # noqa: E501
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
         )
         return await interaction.response.send_message(
-            embed=NoOptionsSuppliedEmbed(),
+            embed=NoOptionsSuppliedEmbed(
+                interaction.client.user.name,  # type: ignore
+                interaction.client.user.display_avatar.url,  # type: ignore
+            ),
             ephemeral=True,
         )
 

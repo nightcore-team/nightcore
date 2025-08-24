@@ -11,7 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.bot import Nightcore
+from src.nightcore.components.embed import (
+    EntityNotFoundEmbed,
+    MissingPermissionsEmbed,
+    SuccessMoveEmbed,
+    ValidationErrorEmbed,
+)
 from src.nightcore.features.moderation.utils import compare_top_roles
+from src.nightcore.utils.member import ensure_member_exists
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +38,6 @@ class Kick(Cog):
     ):
         """Kick a user from the server."""
         guild = cast(Guild, interaction.guild)
-        await interaction.response.defer(thinking=True)
 
         async with self.bot.uow.start() as uow:
             moderation_access_roles = await get_moderation_access_roles(
@@ -42,32 +48,37 @@ class Kick(Cog):
             for role_id in moderation_access_roles
         )
         if not has_moder_role:
-            await interaction.followup.send(
-                "You do not have permission to kick members.",
+            await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
             return
 
-        if (member := guild.get_member(user.id)) is None:
-            try:
-                member = await guild.fetch_member(user.id)
-            except discord.NotFound:
-                await interaction.followup.send(
-                    "User not found on the server!",
-                )
-                return
-            except Exception as e:
-                logger.exception("fetch_member failed: %s", e)
-                await interaction.followup.send(
-                    "Error fetching user information.",
-                )
-                return
-            await interaction.followup.send(
-                "You can only kick members from this server.",
+        # Ensure we have a guild Member object
+        member = await ensure_member_exists(user, guild)
+
+        if member is None:
+            await interaction.response.send_message(
+                embed=EntityNotFoundEmbed(
+                    "user",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
             return
+
         if interaction.user == member:
-            await interaction.followup.send(
-                "You cannot kick yourself.",
+            await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "You cannot kick yourself.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
             return
 
@@ -75,26 +86,50 @@ class Kick(Cog):
             member.get_role(role_id) for role_id in moderation_access_roles
         )
         if is_member_moderator:
-            await interaction.followup.send(
-                "You cannot kick moderators.",
+            await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "You cannot kick moderators.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
             return
 
         if not guild.me.guild_permissions.kick_members:
-            await interaction.followup.send(
-                "I do not have permission to kick members.",
+            await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                    "I do not have permission to kick members.",
+                ),
+                ephemeral=True,
             )
             return
 
         if guild.me == member:
-            await interaction.followup.send("You cannot kick me.")
+            await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "You cannot kick me.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
             return
 
         if not compare_top_roles(guild, member):
-            await interaction.followup.send(
-                "I cannot kick this user because he has a higher role than me.",  # noqa: E501
+            await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                    "I cannot kick this user because he has a higher role than me.",  # noqa: E501
+                ),
+                ephemeral=True,
             )
             return
+
+        await interaction.response.defer(thinking=True)
 
         try:
             await guild.kick(member, reason=reason)
@@ -115,7 +150,12 @@ class Kick(Cog):
             )
 
         await interaction.followup.send(
-            "User has been kicked from the server.",
+            embed=SuccessMoveEmbed(
+                "User Kicked",
+                f"Successfully kicked {member.mention} from the server.",
+                self.bot.user.name,  # type: ignore
+                self.bot.user.display_avatar.url,  # type: ignore
+            )
         )
 
 

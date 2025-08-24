@@ -10,7 +10,7 @@ from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.infra.db.models.guild import GuildLevelsConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed.error import NoOptionsSuppliedEmbed
+from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import levels as levels_group
 from src.nightcore.features.config.utils import level_roles_dict_value
 from src.nightcore.services.config import specified_guild_config
@@ -65,7 +65,10 @@ async def setup(
             cast(Guild, interaction.guild).id,
         )
         return await interaction.response.send_message(
-            embed=NoOptionsSuppliedEmbed(),
+            embed=NoOptionsSuppliedEmbed(
+                interaction.client.user.name,  # type: ignore
+                interaction.client.user.display_avatar.url,  # type: ignore
+            ),
             ephemeral=True,
         )
 
