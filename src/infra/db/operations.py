@@ -7,8 +7,7 @@ from typing import TypeVar
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infra.db.models._enums import LoggingChannelType, ChannelType
-from src.infra.db.models.guild import (
+from src.infra.db.models import (
     GuildClansConfig,
     GuildEconomyConfig,
     GuildLevelsConfig,
@@ -18,11 +17,12 @@ from src.infra.db.models.guild import (
     GuildPrivateChannelsConfig,
     GuildTicketsConfig,
     MainGuildConfig,
+    Punish,
 )
-from src.infra.db.models.punish import Punish
+from src.infra.db.models._enums import ChannelType
 
-T = TypeVar(
-    "T",
+GuildT = TypeVar(
+    "GuildT",
     GuildClansConfig,
     GuildEconomyConfig,
     GuildLevelsConfig,
@@ -36,22 +36,10 @@ T = TypeVar(
 
 
 async def get_specified_guild_config(
-    session: AsyncSession, *, config_type: type[T], guild_id: int
-) -> T | None:
+    session: AsyncSession, *, config_type: type[GuildT], guild_id: int
+) -> GuildT | None:
     """Get the guild configuration from the database."""
     stmt = select(config_type).where(config_type.guild_id == guild_id)
-    return await session.scalar(stmt)
-
-
-async def get_specified_logging_channel(
-    session: AsyncSession,
-    *,
-    guild_id: int,
-    channel_type: LoggingChannelType,
-) -> int | None:
-    """Get the specified logging channel ID from the database."""
-    column = getattr(GuildLoggingConfig, channel_type.value)
-    stmt = select(column).where(GuildLoggingConfig.guild_id == guild_id)
     return await session.scalar(stmt)
 
 

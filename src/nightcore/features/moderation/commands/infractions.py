@@ -16,16 +16,19 @@ from src.infra.db.operations import (
     get_user_infractions,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import (
+from src.nightcore.components import (
     ErrorEmbed,
     MissingPermissionsEmbed,
 )
-from src.nightcore.features.moderation.components.view.infractions import (
+from src.nightcore.features.moderation.components import (
     InfractionsView,
 )
 from src.nightcore.features.moderation.utils import build_pages
 
 logger = logging.getLogger(__name__)
+
+
+# TODO: refactoring / separate utils / components
 
 
 class Infractions(Cog):

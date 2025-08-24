@@ -47,7 +47,10 @@ async def setup(bot: Nightcore):
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(),
+                    embed=NoConfigFoundEmbed(
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
                     ephemeral=True,
                 )
             return
@@ -65,7 +68,9 @@ async def setup(bot: Nightcore):
             if not interaction.response.is_done():
                 await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}"
+                        f"{original.__class__.__name__}: {original.msg}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
@@ -84,7 +89,9 @@ async def setup(bot: Nightcore):
             if not interaction.response.is_done():
                 await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}"
+                        f"{original.__class__.__name__}: {original.msg}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
@@ -103,7 +110,9 @@ async def setup(bot: Nightcore):
             if not interaction.response.is_done():
                 await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}"
+                        f"{original.__class__.__name__}: {original.msg}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
@@ -115,3 +124,6 @@ async def setup(bot: Nightcore):
                 "Unexpected error occurred. Please contact the administrator.",
                 ephemeral=True,
             )
+
+
+# TODO: create embed for unexpected error with contact information

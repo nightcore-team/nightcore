@@ -10,7 +10,7 @@ from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.infra.db.models.guild import GuildModerationConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import NoOptionsSuppliedEmbed
+from src.nightcore.components import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import (
     moderation as moderation_group,
 )

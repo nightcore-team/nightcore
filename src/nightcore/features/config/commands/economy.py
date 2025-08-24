@@ -10,7 +10,7 @@ from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.infra.db.models.guild import GuildEconomyConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import NoOptionsSuppliedEmbed
+from src.nightcore.components import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import economy as economy_group
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
@@ -21,8 +21,8 @@ from src.nightcore.utils.field_validators import (
     list_csv,
     split_changes,
     str_value,
+    update_id_list,
 )
-from src.nightcore.utils.field_validators.helper import update_id_list
 
 logger = logging.getLogger(__name__)
 

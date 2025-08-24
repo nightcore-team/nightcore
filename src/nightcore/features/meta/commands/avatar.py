@@ -4,7 +4,7 @@ import logging
 
 import discord
 from discord import Embed, app_commands
-from discord.ext.commands import Cog
+from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.nightcore.bot import Nightcore
@@ -17,19 +17,13 @@ class Avatar(Cog):
         self.bot = bot
 
     @app_commands.command(name="avatar", description="Get user's avatar")
+    @app_commands.describe(member="The member to get the avatar of.")
     async def avatar(
         self,
         interaction: Interaction,
         member: discord.Member | discord.User | None = None,
     ) -> InteractionCallbackResponse:
-        """Send a message displaying the user's avatar.
-
-        Args:
-            interaction : discord.Interaction
-                The interaction that triggered the command.
-            member :
-                Choose a user to get their avatar.
-        """
+        """Send a message displaying the user's avatar."""
 
         if member is None:
             member = interaction.user  # type: ignore

@@ -2,7 +2,7 @@
 
 from contextlib import asynccontextmanager
 
-from src.infra.db.operations import T, get_specified_guild_config
+from src.infra.db.operations import GuildT, get_specified_guild_config
 from src.nightcore.bot import Nightcore
 from src.nightcore.exceptions import ConfigMissingError
 
@@ -11,11 +11,11 @@ from src.nightcore.exceptions import ConfigMissingError
 async def specified_guild_config(
     bot: Nightcore,
     guild_id: int,
-    config_type: type[T],
+    config_type: type[GuildT],
 ):
     """Open a context manager for the guild configuration."""
     async with bot.uow.start() as uow:
-        guild_config: T | None = await get_specified_guild_config(
+        guild_config: GuildT | None = await get_specified_guild_config(
             uow.session,  # type: ignore
             config_type=config_type,
             guild_id=guild_id,

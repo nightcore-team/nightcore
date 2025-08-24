@@ -7,10 +7,10 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infra.db.models._enums import LoggingChannelType
+from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     create_punish,
-    get_specified_logging_channel,
+    get_specified_channel,
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.utils import (
@@ -85,10 +85,10 @@ class ModerationEvents(Cog):
                 )
                 return
 
-            logging_channel_id = await get_specified_logging_channel(
+            logging_channel_id = await get_specified_channel(
                 cast(AsyncSession, uow.session),
                 guild_id=moderator.guild.id,
-                channel_type=LoggingChannelType.MODERATION,
+                channel_type=ChannelType.LOGGING_MODERATION,
             )
 
         # send dm message to user

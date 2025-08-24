@@ -1,7 +1,7 @@
 """Ping command for the Nightcore bot."""
 
 from discord import app_commands
-from discord.ext.commands import Cog
+from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction, InteractionCallbackResponse
 
 from src.nightcore.bot import Nightcore

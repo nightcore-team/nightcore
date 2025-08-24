@@ -5,10 +5,10 @@ import logging
 
 import discord
 from discord import app_commands
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot  # type: ignore
 
 from src.infra.db.uow import UnitOfWork
-from src.nightcore.utils.on_ready_log import log_tree_summary
+from src.nightcore.utils import log_tree_summary
 
 logger = logging.getLogger(__name__)
 

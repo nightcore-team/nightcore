@@ -26,8 +26,8 @@ from src.nightcore.utils.field_validators import (
     int_id_value,
     list_csv,
     split_changes,
+    update_id_list,
 )
-from src.nightcore.utils.field_validators.helper import update_id_list
 
 logger = logging.getLogger(__name__)
 

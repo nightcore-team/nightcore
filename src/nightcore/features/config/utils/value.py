@@ -5,7 +5,7 @@ from src.nightcore.features.config.exceptions import (
     OrgRolesParsingError,
     TempVoiceRolesParsingError,
 )
-from src.nightcore.utils.field_validators.value import (
+from src.nightcore.utils.field_validators import (
     FieldSpec,
     ValueKind,
     parse_str_parts,

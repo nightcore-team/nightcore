@@ -14,7 +14,7 @@ from src.infra.db.operations import (
     get_moderation_access_roles,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import (
+from src.nightcore.components import (
     EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -22,12 +22,11 @@ from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.utils import fraction_roles_autocomplete
-from src.nightcore.utils.member import ensure_member_exists
+from src.nightcore.utils import ensure_member_exists
 
 logger = logging.getLogger(__name__)
 
-# TODO: add embed as a returning and implement sending
-# logs about user's roles changing
+# TODO: logs about user's roles changing
 
 
 class FractionRole(Cog):

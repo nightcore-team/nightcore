@@ -2,7 +2,7 @@
 
 from collections.abc import Iterable
 from logging import Logger
-from typing import cast
+from typing import Any, cast
 
 from discord import app_commands
 
@@ -20,7 +20,7 @@ def walk_group(
             yield (f"{prefix}{cmd.name}", cmd)  # type: ignore
 
 
-def summarize_tree(tree: app_commands.CommandTree) -> dict:
+def summarize_tree(tree: app_commands.CommandTree) -> dict[str, str | Any]:
     """
     Returns summary information about the command tree.
     {
