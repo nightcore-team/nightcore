@@ -1,8 +1,8 @@
-"""Tue Aug 19 09:58:03 PM CEST 2025
+"""Mon Aug 25 10:19:14 PM CEST 2025
 
-Revision ID: 2157f7262dd0
+Revision ID: 443c94bb242a
 Revises: 
-Create Date: 2025-08-19 21:58:08.489221
+Create Date: 2025-08-25 22:19:15.360216
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '2157f7262dd0'
+revision: str = '443c94bb242a'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -171,13 +171,13 @@ def upgrade() -> None:
     )
     op.create_table('punish',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
-    sa.Column('used_id', sa.BigInteger(), nullable=False),
+    sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('moderator_id', sa.BigInteger(), nullable=False),
     sa.Column('category', sa.String(), nullable=False),
     sa.Column('reason', sa.String(), nullable=True),
-    sa.Column('duration', sa.String(), nullable=True),
-    sa.Column('end_time', sa.Integer(), nullable=True),
-    sa.Column('time_now', sa.Integer(), nullable=True),
+    sa.Column('duration', sa.Integer(), nullable=True),
+    sa.Column('end_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('time_now', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
