@@ -9,6 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.infra.db.models import GuildNotificationsConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     get_moderation_access_roles,
@@ -63,6 +64,7 @@ class Infractions(Cog):
             notify_channel_id = await get_specified_channel(
                 cast(AsyncSession, uow.session),
                 guild_id=guild.id,
+                config_type=GuildNotificationsConfig,
                 channel_type=ChannelType.NOTIFICATIONS,
             )
 

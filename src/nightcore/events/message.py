@@ -4,11 +4,9 @@
 import logging
 
 import discord
-from discord.ext.commands import Cog
+from discord.ext.commands import Cog  # type: ignore
 from discord.raw_models import RawMessageDeleteEvent, RawMessageUpdateEvent
 
-# from src.infra.db.models.enums import LoggingChannelType
-# from src.infra.db.operations import get_specified_logging_channel
 from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)

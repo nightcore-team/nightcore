@@ -5,6 +5,8 @@ from collections.abc import Sequence
 from src.config.config import config
 from src.infra.db.models.punish import Punish
 
+from .time_utils import discord_ts
+
 
 def build_pages(
     punishments: Sequence[Punish],
@@ -16,8 +18,7 @@ def build_pages(
     current = ""
 
     for p in punishments:
-        time_now = int(p.time_now.timestamp())
-        line = f"**`[{p.category.upper()}]` | <t:{time_now}:F> "
+        line = f"**`[{p.category.upper()}]` | {discord_ts(p.time_now, style='d')} "  # noqa: E501
 
         if p.duration:
             line += f"| {p.duration} "

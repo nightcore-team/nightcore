@@ -7,6 +7,7 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     create_punish,
@@ -88,6 +89,7 @@ class ModerationEvents(Cog):
             logging_channel_id = await get_specified_channel(
                 cast(AsyncSession, uow.session),
                 guild_id=moderator.guild.id,
+                config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 

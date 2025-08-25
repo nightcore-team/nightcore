@@ -4,9 +4,11 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import TypeVar
 
+from async_lru import alru_cache
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
     GuildClansConfig,
     GuildEconomyConfig,
@@ -47,11 +49,12 @@ async def get_specified_channel(
     session: AsyncSession,
     *,
     guild_id: int,
+    config_type: type[GuildT],
     channel_type: ChannelType,
 ) -> int | None:
     """Get the specified channel ID from the database."""
-    column = getattr(GuildNotificationsConfig, channel_type.value)
-    stmt = select(column).where(GuildNotificationsConfig.guild_id == guild_id)
+    column = getattr(config_type, channel_type.value)
+    stmt = select(column).where(config_type.guild_id == guild_id)
     return await session.scalar(stmt)
 
 
@@ -90,7 +93,7 @@ async def create_punish(
         end_time=end_time,
     )
     session.add(punish)
-
+    alru_invalidator(get_user_infractions, guild_id=guild_id, user_id=user_id)
     return punish
 
 
@@ -120,6 +123,7 @@ async def get_fraction_roles_access(
     return roles.scalar_one() or []
 
 
+@alru_cache()
 async def get_user_infractions(
     session: AsyncSession, *, guild_id: int, user_id: int
 ) -> Sequence[Punish]:
