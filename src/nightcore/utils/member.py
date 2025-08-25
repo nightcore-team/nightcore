@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 async def ensure_member_exists(
-    user: User | Member, guild: Guild
+    guild: Guild, user: User | Member
 ) -> Member | None:
     """
     Resolve the given User or Member to a Member belonging to the provided guild.

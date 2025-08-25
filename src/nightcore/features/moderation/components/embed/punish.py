@@ -19,6 +19,8 @@ def generate_log_punish_embed(
     reason: str,
     duration: str | None = None,
     end_time: datetime | None = None,
+    old_nickname: str | None = None,
+    new_nickname: str | None = None,
 ):
     """Generate an embed for punishment log notification."""
     embed = Embed(title=f"[{punish_type}] {user_id}", color=0xFF0000)
@@ -31,6 +33,12 @@ def generate_log_punish_embed(
 
     if end_time:
         embed.add_field(name="End Time", value=end_time, inline=True)
+
+    if old_nickname:
+        embed.add_field(name="Old Nickname", value=old_nickname, inline=True)
+
+    if new_nickname:
+        embed.add_field(name="New Nickname", value=new_nickname, inline=True)
 
     embed.set_footer(
         text=f"Powered by {bot.user.name}",  # type: ignore

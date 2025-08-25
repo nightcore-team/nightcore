@@ -17,29 +17,33 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.features.moderation.utils import compare_top_roles
-from src.nightcore.features.moderation.utils.event_data import EventData
+from src.nightcore.features.moderation.utils import (
+    EventData,
+    compare_top_roles,
+)
 from src.nightcore.utils import ensure_member_exists
 
 logger = logging.getLogger(__name__)
 
 
-class Kick(Cog):
+class Setname(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
     @app_commands.command(
-        name="kick", description="Kick a user from the server"
+        name="setname", description="Set/restore a user's nickname"
     )
-    async def kick(
+    async def setname(
         self,
         interaction: Interaction,
-        user: discord.User,
+        user: discord.User | discord.Member,
         reason: str,
+        nickname: str | None = None,
     ):
-        """Kick a user from the server."""
+        """Set/restore a user's nickname."""
         guild = cast(Guild, interaction.guild)
 
+        # check moderation access
         async with self.bot.uow.start() as uow:
             moderation_access_roles = await get_moderation_access_roles(
                 cast(AsyncSession, uow.session), guild_id=guild.id
@@ -72,24 +76,13 @@ class Kick(Cog):
             )
             return
 
-        if interaction.user == member:
-            await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "You cannot kick yourself.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-            return
-
         is_member_moderator = any(
             member.get_role(role_id) for role_id in moderation_access_roles
         )
         if is_member_moderator:
             await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot kick moderators.",
+                    "You can't set/restore a moderator's nickname.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -97,12 +90,12 @@ class Kick(Cog):
             )
             return
 
-        if not guild.me.guild_permissions.kick_members:
+        if not guild.me.guild_permissions.change_nickname:
             await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to kick members.",
+                    "I do not have permission to change nicknames.",
                 ),
                 ephemeral=True,
             )
@@ -111,7 +104,7 @@ class Kick(Cog):
         if guild.me == member:
             await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot kick me.",
+                    "You cannot change my nickname.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -124,18 +117,35 @@ class Kick(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I cannot kick this user because he has a higher role than me.",  # noqa: E501
+                    "I cannot change this user's nickname because he has a higher role than me.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
             return
 
+        old_member_nickname = member.display_name
+
+        if nickname:
+            if len(nickname) > 32:
+                await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        "The nickname cannot be longer than 32 characters.",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+                return
+        else:
+            nickname = member.global_name
+
         await interaction.response.defer(thinking=True)
 
         try:
-            await guild.kick(member, reason=reason)
+            await member.edit(nick=nickname)
         except Exception as e:
-            logger.exception("[command] - Failed to kick user: %s", e)
+            logger.exception("[command] - Failed to set user nickname: %s", e)
+            return
 
         try:
             self.bot.dispatch(
@@ -145,17 +155,20 @@ class Kick(Cog):
                     member=member,
                     category=self.__class__.__name__.lower(),
                     reason=reason,
+                    send_dm=False,
+                    old_nickname=old_member_nickname,
+                    new_nickname=nickname,
                 ),
             )
         except Exception as e:
             logger.exception(
-                "[event] - Failed to dispatch user_kicked event: %s", e
+                "[event] - Failed to dispatch user_punish event: %s", e
             )
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Kicked",
-                f"Successfully kicked {member.mention} from the server.",
+                "Nickname Changed",
+                f"Successfully changed {member.mention}'s nickname.",
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
@@ -163,5 +176,5 @@ class Kick(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the Kick cog."""
-    await bot.add_cog(Kick(bot))
+    """Setup the Setname cog."""
+    await bot.add_cog(Setname(bot))

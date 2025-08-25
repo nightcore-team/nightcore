@@ -15,6 +15,7 @@ from src.infra.db.operations import (
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.utils import (
+    EventData,
     calculate_end_time,
     send_punish_dm_message,
     send_punish_log,
@@ -35,88 +36,77 @@ class ModerationEvents(Cog):
     async def on_user_punish(
         self,
         *,
-        moderator: discord.Member,
-        member: discord.Member,
-        category: str,
-        duration: str | None = None,
-        reason: str,
+        data: EventData,
     ) -> None:
         """Handle user punished events."""
         logger.info(
             "[event] on_user_punish - %s: Guild: %s, Member: %s, Reason: %s",
-            category,
-            moderator.guild.id,
-            member.id,
-            reason,
+            data.category,
+            data.moderator.guild.id,
+            data.member.id,
+            data.reason,
         )
 
         try:
-            user = await self.bot.fetch_user(member.id)
+            user = await self.bot.fetch_user(data.member.id)
+            data.member = user
         except Exception as e:
             logger.exception(
                 "[event] on_user_punish - %s: Failed to fetch user %s: %s",
-                category,
-                member.id,
+                data.category,
+                data.member.id,
                 e,
             )
             return
 
         end_time = None
-        if duration:
-            end_time = calculate_end_time(duration)
+        if data.duration:
+            end_time = calculate_end_time(data.duration)
+            data.end_time = end_time
 
         # db insert and getting logging channel
         async with self.bot.uow.start() as uow:
             try:
                 punish_info = await create_punish(
                     session=cast(AsyncSession, uow.session),
-                    guild_id=moderator.guild.id,
-                    user_id=user.id,
-                    moderator_id=moderator.id,
-                    category=category,
-                    reason=reason,
+                    guild_id=data.moderator.guild.id,
+                    user_id=data.member.id,
+                    moderator_id=data.moderator.id,
+                    category=data.category,
+                    reason=data.reason,
                     end_time=end_time,
                     time_now=discord.utils.utcnow(),
                 )
             except Exception as e:
                 logger.exception(
                     "[event] on_user_punish - %s: Failed to create punish record: %s",  # noqa: E501
-                    category,
+                    data.category,
                     e,
                 )
                 return
 
             logging_channel_id = await get_specified_channel(
                 cast(AsyncSession, uow.session),
-                guild_id=moderator.guild.id,
+                guild_id=data.moderator.guild.id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
         # send dm message to user
-        await send_punish_dm_message(
-            self.bot,
-            moderator=moderator,
-            user=user,
-            punish_type=category,
-            reason=reason,
-            end_time=end_time,
-        )
+        if data.send_dm:
+            await send_punish_dm_message(self.bot, event_data=data)
 
         # sending log message
         if not logging_channel_id:
             logger.warning(
                 "[event] on_user_punish - %s: Guild: %s, logging channel is not set",  # noqa: E501
-                moderator.guild.id,
+                data.moderator.guild.id,
                 punish_info.category,
             )
             return
 
         await send_punish_log(
-            self.bot,
-            channel_id=logging_channel_id,
-            duration=duration,
-            punish_info=punish_info,
+            self.bot, channel_id=logging_channel_id, event_data=data
         )
 
 

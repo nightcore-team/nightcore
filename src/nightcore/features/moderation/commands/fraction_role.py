@@ -100,7 +100,7 @@ class FractionRole(Cog):
             return
 
         # Ensure we have a guild Member object
-        member = await ensure_member_exists(user, guild)
+        member = await ensure_member_exists(guild, user)
 
         if member is None:
             await interaction.followup.send(
