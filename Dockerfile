@@ -9,12 +9,12 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY uv.lock .
 
-RUN --mount=type=cache,id=s/fc583318-4860-4485-9d22-4802980b51bf,target=/root/.cache/uv \
+RUN --mount=type=cache,id=s/66c88aaf-75d1-47f9-bbd9-5902c3d7e3e2,target=/root/.cache/uv \
     uv sync --locked --no-install-project --no-dev
 
 COPY . /app
 
-RUN --mount=type=cache,id=s/fc583318-4860-4485-9d22-4802980b51bf,target=/root/.cache/uv \
+RUN --mount=type=cache,id=s/66c88aaf-75d1-47f9-bbd9-5902c3d7e3e2,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
 RUN rm -f pyproject.toml uv.lock .python-version
