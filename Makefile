@@ -10,7 +10,7 @@ run:
 	uv run main.py
 
 up:
-	docker-compose up -d
+	docker-compose up
 
 down:
 	docker-compose down

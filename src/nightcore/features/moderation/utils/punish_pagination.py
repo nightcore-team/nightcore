@@ -1,11 +1,14 @@
 """Utilities for building paginated punishment descriptions."""
 
+import logging
 from collections.abc import Sequence
 
 from src.config.config import config
 from src.infra.db.models.punish import Punish
 
 from .time_utils import discord_ts
+
+logger = logging.getLogger(__name__)
 
 
 def build_pages(
@@ -25,14 +28,15 @@ def build_pages(
 
         if p.reason:
             if p.category == "notify" and notify_channel_id:
-                line += f"| [notify](https://discord.com/channels/{guild_id}/{notify_channel_id}"
+                line += f"| [notify](https://discord.com/channels/{guild_id}/{notify_channel_id})"
             else:
                 line += f"| {p.reason} "
         line += f"||**<@{p.moderator_id}>\n"
 
-        if len(current) + len(line) > config.bot.EMBED_DESCRIPTION_LIMIT:
+        if len(current) + len(line) >= config.bot.EMBED_DESCRIPTION_LIMIT:
             pages.append(current)
             current = ""
+
         current += line
 
     if current:

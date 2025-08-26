@@ -66,7 +66,7 @@ class InfractionsView(View):
 
     @button(
         style=ButtonStyle.secondary,
-        label="⟨",
+        emoji="<:41036arrowforwardios1:1409851002256887808>",
         custom_id="infractions_prev",
     )
     async def previous(
@@ -80,20 +80,8 @@ class InfractionsView(View):
         )
 
     @button(
-        style=ButtonStyle.danger,
-        label="Удалить",
-        custom_id="infractions_delete",
-    )
-    async def delete(
-        self, interaction: Interaction, button: Button["InfractionsView"]
-    ):
-        """Delete the message."""
-        await interaction.message.delete()  # type: ignore
-        self.stop()
-
-    @button(
         style=ButtonStyle.secondary,
-        label="⟩",
+        emoji="<:41036arrowforwardios:1409850992593338460>",
         custom_id="infractions_next",
     )
     async def next(

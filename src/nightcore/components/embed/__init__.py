@@ -2,6 +2,7 @@ from .error import (
     EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
+    NoConfigFoundEmbed,
     NoOptionsSuppliedEmbed,
     ValidationErrorEmbed,
 )
@@ -13,6 +14,7 @@ __all__ = (
     "EntityNotFoundEmbed",
     "ErrorEmbed",
     "MissingPermissionsEmbed",
+    "NoConfigFoundEmbed",
     "NoOptionsSuppliedEmbed",
     "SuccessMoveEmbed",
     "ValidationErrorEmbed",
