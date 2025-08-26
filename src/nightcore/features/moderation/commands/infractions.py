@@ -1,4 +1,4 @@
-"""Kick command for the Nightcore bot."""
+"""Infractions command for the Nightcore bot."""
 
 import logging
 from typing import cast
@@ -39,6 +39,7 @@ class Infractions(Cog):
     @app_commands.command(
         name="infractions", description="Check user infractions"
     )
+    @app_commands.describe(user="The user to check infractions for")
     async def infractions(
         self,
         interaction: Interaction,

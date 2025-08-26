@@ -19,7 +19,10 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.fraction_role",
         "src.nightcore.features.moderation.commands.infractions",
         "src.nightcore.features.moderation.commands.setname",
-        "src.nightcore.features.moderation.events",
+        "src.nightcore.features.moderation.commands.clear",
+        # moderation events
+        "src.nightcore.features.moderation.events.punish",
+        "src.nightcore.features.moderation.events.message_clear",
         # global events
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",

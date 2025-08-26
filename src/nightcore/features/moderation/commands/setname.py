@@ -1,6 +1,7 @@
-"""Kick command for the Nightcore bot."""
+"""Setname command for the Nightcore bot."""
 
 import logging
+from datetime import timezone
 from typing import cast
 
 import discord
@@ -17,8 +18,10 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.events import (
+    UserPunishmentEventData,
+)
 from src.nightcore.features.moderation.utils import (
-    EventData,
     compare_top_roles,
 )
 from src.nightcore.utils import ensure_member_exists
@@ -32,6 +35,10 @@ class Setname(Cog):
 
     @app_commands.command(
         name="setname", description="Set/restore a user's nickname"
+    )
+    @app_commands.describe(
+        user="The user to set/restore the nickname for",
+        reason="The reason for changing the nickname",
     )
     async def setname(
         self,
@@ -150,14 +157,15 @@ class Setname(Cog):
         try:
             self.bot.dispatch(
                 "user_punish",
-                data=EventData(
+                data=UserPunishmentEventData(
                     moderator=interaction.user,  # type: ignore
-                    member=member,
+                    user=member,
                     category=self.__class__.__name__.lower(),
                     reason=reason,
                     send_dm=False,
                     old_nickname=old_member_nickname,
                     new_nickname=nickname,
+                    created_at=discord.utils.utcnow().astimezone(timezone.utc),
                 ),
             )
         except Exception as e:

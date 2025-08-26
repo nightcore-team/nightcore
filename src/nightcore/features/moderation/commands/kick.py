@@ -1,6 +1,7 @@
 """Kick command for the Nightcore bot."""
 
 import logging
+from datetime import timezone
 from typing import cast
 
 import discord
@@ -17,8 +18,8 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.events import UserPunishmentEventData
 from src.nightcore.features.moderation.utils import compare_top_roles
-from src.nightcore.features.moderation.utils.event_data import EventData
 from src.nightcore.utils import ensure_member_exists
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,9 @@ class Kick(Cog):
 
     @app_commands.command(
         name="kick", description="Kick a user from the server"
+    )
+    @app_commands.describe(
+        user="The user to kick", reason="The reason for kicking the user"
     )
     async def kick(
         self,
@@ -140,16 +144,19 @@ class Kick(Cog):
         try:
             self.bot.dispatch(
                 "user_punish",
-                data=EventData(
+                data=UserPunishmentEventData(
                     moderator=interaction.user,  # type: ignore
-                    member=member,
+                    user=member,
                     category=self.__class__.__name__.lower(),
                     reason=reason,
+                    created_at=discord.utils.utcnow().astimezone(
+                        tz=timezone.utc
+                    ),
                 ),
             )
         except Exception as e:
             logger.exception(
-                "[event] - Failed to dispatch user_kicked event: %s", e
+                "[event] - Failed to dispatch user_punish event: %s", e
             )
 
         await interaction.followup.send(

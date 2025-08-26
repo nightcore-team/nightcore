@@ -14,17 +14,17 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.bot import Nightcore
+from src.nightcore.features.moderation.events import UserPunishmentEventData
 from src.nightcore.features.moderation.utils import (
-    EventData,
     calculate_end_time,
+    send_moderation_log,
     send_punish_dm_message,
-    send_punish_log,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class ModerationEvents(Cog):
+class UserPunishEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
@@ -36,25 +36,25 @@ class ModerationEvents(Cog):
     async def on_user_punish(
         self,
         *,
-        data: EventData,
+        data: UserPunishmentEventData,
     ) -> None:
         """Handle user punished events."""
         logger.info(
             "[event] on_user_punish - %s: Guild: %s, Member: %s, Reason: %s",
             data.category,
             data.moderator.guild.id,
-            data.member.id,
+            data.user.id,
             data.reason,
         )
 
         try:
-            user = await self.bot.fetch_user(data.member.id)
-            data.member = user
+            user = await self.bot.fetch_user(data.user.id)
+            data.user = user
         except Exception as e:
             logger.exception(
                 "[event] on_user_punish - %s: Failed to fetch user %s: %s",
                 data.category,
-                data.member.id,
+                data.user.id,
                 e,
             )
             return
@@ -70,10 +70,10 @@ class ModerationEvents(Cog):
                 punish_info = await create_punish(
                     session=cast(AsyncSession, uow.session),
                     guild_id=data.moderator.guild.id,
-                    user_id=data.member.id,
+                    user_id=data.user.id,
                     moderator_id=data.moderator.id,
                     category=data.category,
-                    reason=data.reason,
+                    reason=data.reason,  # type: ignore
                     end_time=end_time,
                     time_now=discord.utils.utcnow(),
                 )
@@ -105,11 +105,11 @@ class ModerationEvents(Cog):
             )
             return
 
-        await send_punish_log(
+        await send_moderation_log(
             self.bot, channel_id=logging_channel_id, event_data=data
         )
 
 
 async def setup(bot: Nightcore):
-    """Setup the ModerationEvents cog."""
-    await bot.add_cog(ModerationEvents(bot))
+    """Setup the UserPunishEvent cog."""
+    await bot.add_cog(UserPunishEvent(bot))
