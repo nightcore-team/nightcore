@@ -2,26 +2,19 @@
 
 from contextlib import asynccontextmanager
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.infra.db.session import SessionFactory
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 class UnitOfWork:
-    def __init__(self, session_factory: SessionFactory):
-        self._session_factory = session_factory
-        self.session: AsyncSession | None = None
+    def __init__(self, sessionmaker: async_sessionmaker[AsyncSession]):
+        self._sm = sessionmaker
 
     @asynccontextmanager
     async def start(self):
-        """Start a unit of work with a new session."""
-        self.session = self._session_factory.create_session()
-        try:
-            yield self
-            await self.session.commit()
-        except Exception:
-            await self.session.rollback()
-            raise
-        finally:
-            await self.session.close()
-            self.session = None
+        async with self._sm() as session:
+            try:
+                yield session
+                await session.commit()
+            except:
+                await session.rollback()
+                raise

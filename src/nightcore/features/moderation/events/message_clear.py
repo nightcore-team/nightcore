@@ -1,10 +1,8 @@
 """Moderation Events Cog for Nightcore Bot."""
 
 import logging
-from typing import cast
 
 from discord.ext.commands import Cog  # type: ignore
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
@@ -40,9 +38,9 @@ class MessageClearEvent(Cog):
         )
 
         # getting logging channel
-        async with self.bot.uow.start() as uow:
+        async with self.bot.uow.start() as session:
             logging_channel_id = await get_specified_channel(
-                cast(AsyncSession, uow.session),
+                session,
                 guild_id=data.moderator.guild.id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_MODERATION,

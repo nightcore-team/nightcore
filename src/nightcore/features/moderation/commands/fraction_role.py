@@ -7,7 +7,6 @@ import discord
 from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.operations import (
     get_fraction_roles_access,
@@ -72,13 +71,13 @@ class FractionRole(Cog):
             )
             return
 
-        async with self.bot.uow.start() as uow:
+        async with self.bot.uow.start() as session:
             moderation_access_roles = await get_moderation_access_roles(
-                cast(AsyncSession, uow.session), guild_id=guild.id
+                session, guild_id=guild.id
             )
 
             fraction_roles_access_roles = await get_fraction_roles_access(
-                cast(AsyncSession, uow.session), guild_id=guild.id
+                session, guild_id=guild.id
             )
 
             final_access_list = (

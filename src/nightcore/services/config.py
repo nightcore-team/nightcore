@@ -14,14 +14,14 @@ async def specified_guild_config(
     config_type: type[GuildT],
 ):
     """Open a context manager for the guild configuration."""
-    async with bot.uow.start() as uow:
+    async with bot.uow.start() as session:
         guild_config: GuildT | None = await get_specified_guild_config(
-            uow.session,  # type: ignore
+            session,
             config_type=config_type,
             guild_id=guild_id,
         )
         if not guild_config:
-            uow.session.add(config_type(guild_id=guild_id))  # type: ignore
-            await uow.session.commit()  # type: ignore
+            session.add(config_type(guild_id=guild_id))  # type: ignore
+            await session.commit()  # type: ignore
             raise ConfigMissingError(guild_id)
         yield guild_config

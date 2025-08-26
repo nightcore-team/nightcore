@@ -132,6 +132,7 @@ async def get_user_infractions(
         select(Punish)
         .where(Punish.guild_id == guild_id)
         .where(Punish.user_id == user_id)
+        .order_by(Punish.time_now.asc())
     )
     result = await session.scalars(stmt)
 

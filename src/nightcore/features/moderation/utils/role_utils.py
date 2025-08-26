@@ -5,7 +5,6 @@ from typing import cast
 
 from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.operations import get_fraction_roles
 from src.nightcore.bot import Nightcore
@@ -37,10 +36,8 @@ async def fraction_roles_autocomplete(
     """Autocomplete function to get fraction roles for the guild."""
     guild = cast(Guild, interaction.guild)
 
-    async with cast(Nightcore, interaction.client).uow.start() as uow:
-        roles = await get_fraction_roles(
-            cast(AsyncSession, uow.session), guild_id=guild.id
-        )
+    async with cast(Nightcore, interaction.client).uow.start() as session:
+        roles = await get_fraction_roles(session, guild_id=guild.id)
 
     result: list[app_commands.Choice[str]] = []
     for role_id in roles:

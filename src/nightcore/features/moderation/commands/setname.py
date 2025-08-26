@@ -8,7 +8,6 @@ import discord
 from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.bot import Nightcore
@@ -51,9 +50,9 @@ class Setname(Cog):
         guild = cast(Guild, interaction.guild)
 
         # check moderation access
-        async with self.bot.uow.start() as uow:
+        async with self.bot.uow.start() as session:
             moderation_access_roles = await get_moderation_access_roles(
-                cast(AsyncSession, uow.session), guild_id=guild.id
+                session, guild_id=guild.id
             )
         has_moder_role = any(
             interaction.user.get_role(role_id)  # type: ignore

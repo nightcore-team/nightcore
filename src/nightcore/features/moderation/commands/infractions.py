@@ -7,7 +7,6 @@ import discord
 from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.models import GuildNotificationsConfig
 from src.infra.db.models._enums import ChannelType
@@ -48,22 +47,22 @@ class Infractions(Cog):
         """Check user infractions."""
         guild = cast(Guild, interaction.guild)
 
-        async with self.bot.uow.start() as uow:
+        async with self.bot.uow.start() as session:
             # check moderation access
             moderation_access_roles = await get_moderation_access_roles(
-                cast(AsyncSession, uow.session), guild_id=guild.id
+                session, guild_id=guild.id
             )
 
             # get user infractions
             infractions = await get_user_infractions(
-                cast(AsyncSession, uow.session),
+                session,
                 guild_id=guild.id,
                 user_id=user.id,
             )
 
             # get notifications channel
             notify_channel_id = await get_specified_channel(
-                cast(AsyncSession, uow.session),
+                session,
                 guild_id=guild.id,
                 config_type=GuildNotificationsConfig,
                 channel_type=ChannelType.NOTIFICATIONS,

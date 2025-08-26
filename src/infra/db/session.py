@@ -7,13 +7,12 @@ from sqlalchemy.ext.asyncio import (
 )
 
 
-class SessionFactory:
-    def __init__(self, engine: AsyncEngine):
-        self.engine = engine
-        self._sessionmaker = async_sessionmaker(
-            self.engine, expire_on_commit=False
-        )
-
-    def create_session(self) -> AsyncSession:
-        """Create a new AsyncSession."""
-        return self._sessionmaker()
+def get_async_sessionmaker(
+    engine: AsyncEngine,
+) -> async_sessionmaker[AsyncSession]:
+    """Get an async sessionmaker for the given engine."""
+    return async_sessionmaker(
+        bind=engine,
+        expire_on_commit=False,
+        class_=AsyncSession,
+    )
