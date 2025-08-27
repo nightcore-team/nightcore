@@ -28,9 +28,6 @@ from src.nightcore.features.moderation.utils import build_pages
 logger = logging.getLogger(__name__)
 
 
-# TODO: refactoring / separate utils / components
-
-
 class Infractions(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot

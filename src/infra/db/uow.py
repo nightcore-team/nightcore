@@ -11,6 +11,7 @@ class UnitOfWork:
 
     @asynccontextmanager
     async def start(self):
+        """Start a new db session."""
         async with self._sm() as session:
             try:
                 yield session

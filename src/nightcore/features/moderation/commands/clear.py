@@ -79,22 +79,7 @@ class Clear(Cog):
             )
             return
 
-        try:
-            channel = interaction.channel
-            if issubclass(channel.__class__, discord.abc.Messageable):
-                await channel.purge(limit=number)  # type: ignore
-            else:
-                await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
-                        "Cannot clear messages in this type of channel.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-                return
-        except Exception as e:
-            logger.exception("[command] - Failed to clear messages: %s", e)
+        channel = interaction.channel
 
         try:
             self.bot.dispatch(
@@ -113,6 +98,24 @@ class Clear(Cog):
             logger.exception(
                 "[event] - Failed to dispatch user_punish event: %s", e
             )
+            return
+
+        try:
+            if issubclass(channel.__class__, discord.abc.Messageable):
+                await channel.purge(limit=number)  # type: ignore
+            else:
+                await interaction.followup.send(
+                    embed=ValidationErrorEmbed(
+                        "Cannot clear messages in this type of channel.",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+                return
+
+        except Exception as e:
+            logger.exception("[command] - Failed to clear messages: %s", e)
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

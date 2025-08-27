@@ -74,7 +74,7 @@ async def setup_moderation(
         int_id_value("vmute_role_id", vmute_role),
         list_csv("moderation_access_roles_ids", moderation_access_roles),
         list_csv("ban_access_roles_ids", ban_access_roles),
-        list_csv("leaders_access_rr_roles_ids", leaders_access_rr_roles),
+        list_csv("leader_access_rr_roles_ids", leaders_access_rr_roles),
         list_csv("fraction_roles_access_roles_ids", fraction_roles_access),
         str_value("mute_type", mute_type),
     ]

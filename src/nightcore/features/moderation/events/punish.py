@@ -1,6 +1,8 @@
 """Moderation Events Cog for Nightcore Bot."""
 
+import asyncio
 import logging
+from collections.abc import Awaitable
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -90,12 +92,20 @@ class UserPunishEvent(Cog):
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
+        gather_list: list[Awaitable[None]] = []
+
         # send dm message to user
         if data.send_dm:
-            await send_punish_dm_message(self.bot, event_data=data)
+            gather_list.append(
+                send_punish_dm_message(self.bot, event_data=data)
+            )
 
         # sending log message
-        if not logging_channel_id:
+        if logging_channel_id:
+            await send_moderation_log(
+                self.bot, channel_id=logging_channel_id, event_data=data
+            )
+        else:
             logger.warning(
                 "[event] on_user_punish - %s: Guild: %s, logging channel is not set",  # noqa: E501
                 data.moderator.guild.id,
@@ -103,9 +113,14 @@ class UserPunishEvent(Cog):
             )
             return
 
-        await send_moderation_log(
-            self.bot, channel_id=logging_channel_id, event_data=data
-        )
+        try:
+            await asyncio.gather(*gather_list, return_exceptions=True)
+        except Exception as e:
+            logger.exception(
+                "[event] on_user_punish - %s: Failed to send DM or log message: %s",  # noqa: E501
+                data.category,
+                e,
+            )
 
 
 async def setup(bot: Nightcore):

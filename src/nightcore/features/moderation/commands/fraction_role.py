@@ -50,13 +50,27 @@ class FractionRole(Cog):
     async def fraction_role(
         self,
         interaction: Interaction,
-        user: discord.Member | discord.User,
+        user: discord.User,
         role: str,
         option: str,
     ) -> None:
         """Assigns a fraction role to a user."""
         guild = cast(Guild, interaction.guild)
         await interaction.response.defer(ephemeral=True, thinking=True)
+
+        # Ensure we have a guild Member object
+        member = await ensure_member_exists(guild, user)
+
+        if member is None:
+            await interaction.followup.send(
+                embed=EntityNotFoundEmbed(
+                    "user",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+            return
 
         try:
             role_id = int(role)
@@ -91,20 +105,6 @@ class FractionRole(Cog):
         if not has_moder_role:
             await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-            return
-
-        # Ensure we have a guild Member object
-        member = await ensure_member_exists(guild, user)
-
-        if member is None:
-            await interaction.followup.send(
-                embed=EntityNotFoundEmbed(
-                    "user",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

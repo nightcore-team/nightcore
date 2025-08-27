@@ -43,24 +43,6 @@ class Kick(Cog):
         """Kick a user from the server."""
         guild = cast(Guild, interaction.guild)
 
-        async with self.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
-            )
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
-        )
-        if not has_moder_role:
-            await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-            return
-
         # Ensure we have a guild Member object
         member = await ensure_member_exists(guild, user)
 
@@ -75,10 +57,17 @@ class Kick(Cog):
             )
             return
 
-        if interaction.user == member:
+        async with self.bot.uow.start() as session:
+            moderation_access_roles = await get_moderation_access_roles(
+                session, guild_id=guild.id
+            )
+        has_moder_role = any(
+            interaction.user.get_role(role_id)  # type: ignore
+            for role_id in moderation_access_roles
+        )
+        if not has_moder_role:
             await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "You cannot kick yourself.",
+                embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -136,11 +125,6 @@ class Kick(Cog):
         await interaction.response.defer(thinking=True)
 
         try:
-            await guild.kick(member, reason=reason)
-        except Exception as e:
-            logger.exception("[command] - Failed to kick user: %s", e)
-
-        try:
             self.bot.dispatch(
                 "user_punish",
                 data=UserPunishmentEventData(
@@ -157,6 +141,13 @@ class Kick(Cog):
             logger.exception(
                 "[event] - Failed to dispatch user_punish event: %s", e
             )
+            return
+
+        try:
+            await guild.kick(member, reason=reason)
+        except Exception as e:
+            logger.exception("[command] - Failed to kick user: %s", e)
+            return
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

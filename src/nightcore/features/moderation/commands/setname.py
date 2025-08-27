@@ -42,31 +42,12 @@ class Setname(Cog):
     async def setname(
         self,
         interaction: Interaction,
-        user: discord.User | discord.Member,
+        user: discord.User,
         reason: str,
         nickname: str | None = None,
     ):
         """Set/restore a user's nickname."""
         guild = cast(Guild, interaction.guild)
-
-        # check moderation access
-        async with self.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
-            )
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
-        )
-        if not has_moder_role:
-            await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-            return
 
         # Ensure we have a guild Member object
         member = await ensure_member_exists(guild, user)
@@ -75,6 +56,26 @@ class Setname(Cog):
             await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
                     "user",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+            return
+
+        # check moderation access
+        async with self.bot.uow.start() as session:
+            moderation_access_roles = await get_moderation_access_roles(
+                session, guild_id=guild.id
+            )
+
+        has_moder_role = any(
+            interaction.user.get_role(role_id)  # type: ignore
+            for role_id in moderation_access_roles
+        )
+        if not has_moder_role:
+            await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -148,12 +149,6 @@ class Setname(Cog):
         await interaction.response.defer(thinking=True)
 
         try:
-            await member.edit(nick=nickname)
-        except Exception as e:
-            logger.exception("[command] - Failed to set user nickname: %s", e)
-            return
-
-        try:
             self.bot.dispatch(
                 "user_punish",
                 data=UserPunishmentEventData(
@@ -171,6 +166,13 @@ class Setname(Cog):
             logger.exception(
                 "[event] - Failed to dispatch user_punish event: %s", e
             )
+            return
+
+        try:
+            await member.edit(nick=nickname)
+        except Exception as e:
+            logger.exception("[command] - Failed to set user nickname: %s", e)
+            return
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
