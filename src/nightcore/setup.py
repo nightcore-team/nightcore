@@ -12,6 +12,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.meta.commands.ping",
         "src.nightcore.features.meta.commands.avatar",
         "src.nightcore.features.meta.commands.action",
+        "src.nightcore.features.meta.commands.about",
         # config commands
         "src.nightcore.features.config",  # dir
         # moderation commands

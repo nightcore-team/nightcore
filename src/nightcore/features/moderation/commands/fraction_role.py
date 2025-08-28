@@ -62,7 +62,7 @@ class FractionRole(Cog):
         member = await ensure_member_exists(guild, user)
 
         if member is None:
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
                     "user",
                     self.bot.user.name,  # type: ignore
@@ -70,12 +70,11 @@ class FractionRole(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         try:
             role_id = int(role)
         except ValueError:
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Invalid role ID (not an integer).",
                     self.bot.user.name,  # type: ignore
@@ -83,7 +82,6 @@ class FractionRole(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         async with self.bot.uow.start() as session:
             moderation_access_roles = await get_moderation_access_roles(
@@ -103,19 +101,18 @@ class FractionRole(Cog):
             for role_id in final_access_list
         )
         if not has_moder_role:
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
 
         target_role = guild.get_role(role_id)
 
         if target_role is None:
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
                     "role",
                     self.bot.user.name,  # type: ignore
@@ -123,7 +120,6 @@ class FractionRole(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         member_roles = {r.id for r in member.roles}
         has_role = role_id in member_roles
@@ -135,7 +131,7 @@ class FractionRole(Cog):
                         await member.add_roles(target_role)
                     except Exception as e:
                         logger.exception("Failed to add role: %s", e)
-                        await interaction.followup.send(
+                        return await interaction.followup.send(
                             embed=ErrorEmbed(
                                 "Role Assignment Failed",
                                 "Failed to add role.",
@@ -144,7 +140,6 @@ class FractionRole(Cog):
                             ),
                             ephemeral=True,
                         )
-                        return
                     await interaction.followup.send(
                         embed=SuccessMoveEmbed(
                             "Role Assignment Successful",
@@ -154,23 +149,23 @@ class FractionRole(Cog):
                         ),
                         ephemeral=True,
                     )
-                    return
-                await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Role Assignment Failed",
-                        f"{member.mention} already has {target_role.mention}.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                else:
+                    return await interaction.followup.send(
+                        embed=ErrorEmbed(
+                            "Role Assignment Failed",
+                            f"{member.mention} already has {target_role.mention}.",  # noqa: E501
+                            self.bot.user.name,  # type: ignore
+                            self.bot.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
             case "remove":
                 if has_role:
                     try:
                         await member.remove_roles(target_role)
                     except Exception as e:
                         logger.exception("Failed to remove role: %s", e)
-                        await interaction.followup.send(
+                        return await interaction.followup.send(
                             embed=ErrorEmbed(
                                 "Role Removal Failed",
                                 f"Failed to remove {target_role.mention} from {member.mention}'s fraction roles.",  # noqa: E501
@@ -179,7 +174,6 @@ class FractionRole(Cog):
                             ),
                             ephemeral=True,
                         )
-                        return
                     await interaction.followup.send(
                         embed=SuccessMoveEmbed(
                             "Role Removal Successful",
@@ -189,18 +183,18 @@ class FractionRole(Cog):
                         ),
                         ephemeral=True,
                     )
-                    return
-                await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Role Removal Failed",
-                        f"{member.mention} does not have {target_role.mention}.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                else:
+                    return await interaction.followup.send(
+                        embed=ErrorEmbed(
+                            "Role Removal Failed",
+                            f"{member.mention} does not have {target_role.mention}.",  # noqa: E501
+                            self.bot.user.name,  # type: ignore
+                            self.bot.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
             case _:
-                await interaction.followup.send(
+                return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Invalid Option",
                         "Option must be 'add' or 'remove'.",
@@ -209,6 +203,15 @@ class FractionRole(Cog):
                     ),
                     ephemeral=True,
                 )
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s target=%s option=%s role=%s",
+            interaction.user.id,
+            guild.id,
+            member.id,
+            option,
+            role_id,
+        )
 
 
 async def setup(bot: Nightcore):

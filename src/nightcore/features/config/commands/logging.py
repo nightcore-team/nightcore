@@ -6,7 +6,7 @@ from typing import Literal, cast
 import discord
 from discord import Guild, app_commands
 from discord.embeds import Embed
-from discord.interactions import Interaction, InteractionCallbackResponse
+from discord.interactions import Interaction
 
 from src.infra.db.models.guild import GuildLoggingConfig
 from src.nightcore.bot import Nightcore
@@ -57,7 +57,7 @@ async def setup(
     economy: discord.TextChannel | None = None,
     clans: discord.TextChannel | None = None,
     ignoring_channels: str | None = None,
-) -> InteractionCallbackResponse:
+):
     """Configure logging settings for the guild."""
     specs: list[FieldSpec | None] = [
         int_id_value("bans_log_channel_id", bans),
@@ -79,7 +79,7 @@ async def setup(
 
     if not specs:
         logger.info(
-            "config.logging.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+            "[command] -  invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,
             cast(Guild, interaction.guild).id,
         )
@@ -101,20 +101,21 @@ async def setup(
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
 
-    logger.info(
-        "config.logging.setup invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        changed,
-        skipped,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Logging Configuration",
             description=description,
             color=discord.Color.green(),
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
     )
 
 
@@ -134,7 +135,7 @@ async def update_ignoring_channels(
     interaction: Interaction,
     channel: discord.TextChannel,
     option: Literal["add", "remove"],
-) -> InteractionCallbackResponse:
+):
     """Update the list of channels to ignore for logging."""
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
@@ -162,18 +163,19 @@ async def update_ignoring_channels(
         desc = f"Channel <#{channel.id}> removed from the ignore list."
         color = discord.Color.blurple()
 
-    logger.info(
-        "config.logging.update_ignoring_channels user=%s guild=%s option=%s channel=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        channel.id,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Logging Configuration",
             description=desc,
             color=color,
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s option=%s channel=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        channel.id,
     )

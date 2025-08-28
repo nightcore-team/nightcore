@@ -3,6 +3,7 @@
 import discord
 from discord.ext.commands.cog import Cog  # type: ignore
 
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
 from src.nightcore.bot import Nightcore
@@ -17,10 +18,11 @@ class ReactionEvent(Cog):
         self, reaction: discord.Reaction, user: discord.User
     ):
         """Handle reaction add events."""
-        async with self.bot.uow.start() as uow:
+        async with self.bot.uow.start() as session:
             log_channel_id: int | None = await get_specified_channel(
-                uow.session,  # type: ignore
+                session,  # type: ignore
                 guild_id=reaction.message.guild.id,  # type: ignore
+                config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_REACTIONS,
             )
 

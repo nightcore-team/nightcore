@@ -47,7 +47,7 @@ class Kick(Cog):
         member = await ensure_member_exists(guild, user)
 
         if member is None:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
                     "user",
                     self.bot.user.name,  # type: ignore
@@ -55,7 +55,6 @@ class Kick(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         async with self.bot.uow.start() as session:
             moderation_access_roles = await get_moderation_access_roles(
@@ -66,20 +65,19 @@ class Kick(Cog):
             for role_id in moderation_access_roles
         )
         if not has_moder_role:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
 
         is_member_moderator = any(
             member.get_role(role_id) for role_id in moderation_access_roles
         )
         if is_member_moderator:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "You cannot kick moderators.",
                     self.bot.user.name,  # type: ignore
@@ -87,10 +85,9 @@ class Kick(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         if not guild.me.guild_permissions.kick_members:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -98,10 +95,9 @@ class Kick(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         if guild.me == member:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "You cannot kick me.",
                     self.bot.user.name,  # type: ignore
@@ -109,10 +105,9 @@ class Kick(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         if not compare_top_roles(guild, member):
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -120,7 +115,6 @@ class Kick(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         await interaction.response.defer(thinking=True)
 
@@ -156,6 +150,13 @@ class Kick(Cog):
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
+        )
+        logger.info(
+            "[command] - invoked user=%s guild=%s target=%s reason=%s",
+            interaction.user.id,
+            guild.id,
+            user.id,
+            reason,
         )
 
 

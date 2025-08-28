@@ -55,7 +55,7 @@ async def notifications(
 
     if not specs:
         logger.info(
-            "config.notifications invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+            "[command] - invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
         )
@@ -77,18 +77,19 @@ async def notifications(
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
 
-    logger.info(
-        "config.notifications invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        changed,
-        skipped,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Notifications Configuration",
             description=description,
             color=discord.Color.green(),
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
     )

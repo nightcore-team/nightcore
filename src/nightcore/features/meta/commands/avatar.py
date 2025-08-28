@@ -5,7 +5,7 @@ import logging
 import discord
 from discord import Embed, app_commands
 from discord.ext.commands import Cog  # type: ignore
-from discord.interactions import Interaction, InteractionCallbackResponse
+from discord.interactions import Interaction
 
 from src.nightcore.bot import Nightcore
 
@@ -22,13 +22,13 @@ class Avatar(Cog):
         self,
         interaction: Interaction,
         member: discord.Member | discord.User | None = None,
-    ) -> InteractionCallbackResponse:
+    ):
         """Send a message displaying the user's avatar."""
 
         if member is None:
             member = interaction.user  # type: ignore
 
-        response = await interaction.response.send_message(
+        await interaction.response.send_message(
             embed=Embed(
                 title=f"Аватар пользователя {member.display_name}",  # type: ignore
                 color=discord.Color.blurple(),
@@ -41,13 +41,11 @@ class Avatar(Cog):
         )
 
         logger.info(
-            "commands.avatar invoked user=%s guild=%s target=%s",
+            "[command] - invoked user=%s guild=%s target=%s",
             interaction.user.id,  # type: ignore
             interaction.guild.id if interaction.guild else None,
             member.id,  # type: ignore
         )
-
-        return response
 
 
 async def setup(bot: Nightcore):

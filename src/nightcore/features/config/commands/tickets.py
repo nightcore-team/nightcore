@@ -57,7 +57,7 @@ async def tickets(
 
     if not specs:
         logger.info(
-            "config.tickets invoked user=%s guild=%s no_options_supplied",
+            "[command] - invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
         )
@@ -79,18 +79,19 @@ async def tickets(
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
 
-    logger.info(
-        "config.tickets invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        changed,
-        skipped,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Tickets Configuration",
             description=description,
             color=discord.Color.green(),
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
     )

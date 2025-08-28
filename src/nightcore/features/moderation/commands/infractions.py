@@ -70,14 +70,13 @@ class Infractions(Cog):
             for role_id in moderation_access_roles
         )
         if not has_moder_role:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
 
         # get user infractions from db
         pages = build_pages(infractions, guild.id, notify_channel_id)
@@ -96,27 +95,33 @@ class Infractions(Cog):
 
         if len(pages) == 1:
             await interaction.followup.send(embed=embed)
-            return
-
-        try:
-            await interaction.followup.send(
-                embed=embed,
-                view=InfractionsView(
-                    interaction.user.id, pages, user, self.bot
-                ),
-            )
-        except Exception as e:
-            logger.exception(
-                "[command] - Failed to send infractions view: %s", e
-            )
-            await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Infractions Error",
-                    "Failed to send infractions view.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+        else:
+            try:
+                await interaction.followup.send(
+                    embed=embed,
+                    view=InfractionsView(
+                        interaction.user.id, pages, user, self.bot
+                    ),
                 )
-            )
+            except Exception as e:
+                logger.exception(
+                    "[command] - Failed to send infractions view: %s", e
+                )
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Infractions Error",
+                        "Failed to send infractions view.",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    )
+                )
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s target=%s",
+            interaction.user.id,
+            guild.id,
+            user.id,
+        )
 
 
 async def setup(bot: Nightcore):

@@ -6,7 +6,7 @@ from typing import cast
 import discord
 from discord import Guild, app_commands
 from discord.embeds import Embed
-from discord.interactions import Interaction, InteractionCallbackResponse
+from discord.interactions import Interaction
 
 from src.infra.db.models.guild import GuildLevelsConfig
 from src.nightcore.bot import Nightcore
@@ -45,7 +45,7 @@ async def setup(
     coins_multiplier: float | None = None,
     roles_with_bonus: str | None = None,
     roles_per_level: str | None = None,
-) -> InteractionCallbackResponse:
+):
     """Configure levels settings for the guild."""
     specs: list[FieldSpec | None] = [
         int_id_value("count_messages_channel_id", count_messages_channel),
@@ -60,7 +60,7 @@ async def setup(
 
     if not specs:
         logger.info(
-            "config.levels.setup invoked user=%s guild=%s no_options_supplied",
+            "[command] - invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,
             cast(Guild, interaction.guild).id,
         )
@@ -82,18 +82,19 @@ async def setup(
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
 
-    logger.info(
-        "config.levels.setup invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        changed,
-        skipped,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Levels Configuration",
             description=description,
             color=discord.Color.green(),
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
     )

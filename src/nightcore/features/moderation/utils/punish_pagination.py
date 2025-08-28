@@ -5,8 +5,7 @@ from collections.abc import Sequence
 
 from src.config.config import config
 from src.infra.db.models.punish import Punish
-
-from .time_utils import discord_ts
+from src.nightcore.utils import discord_ts
 
 logger = logging.getLogger(__name__)
 

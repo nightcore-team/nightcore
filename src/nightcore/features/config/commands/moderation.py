@@ -6,7 +6,7 @@ from typing import Literal, cast
 import discord
 from discord import Guild, app_commands
 from discord.embeds import Embed
-from discord.interactions import Interaction, InteractionCallbackResponse
+from discord.interactions import Interaction
 
 from src.infra.db.models.guild import GuildModerationConfig
 from src.nightcore.bot import Nightcore
@@ -83,7 +83,7 @@ async def setup_moderation(
 
     if not specs:
         logger.info(
-            "config.moderation.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+            "[command] - invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,
             interaction.guild.id,  # type: ignore
         )
@@ -105,20 +105,21 @@ async def setup_moderation(
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
 
-    logger.info(
-        "config.moderation.setup invoked user=%s guild=%s updated=%s skipped=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        changed,
-        skipped,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Moderation Configuration",
             description=description,
             color=discord.Color.green(),
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
     )
 
 
@@ -138,7 +139,7 @@ async def update_moderation_access(
     interaction: Interaction,
     role: discord.Role,
     option: Literal["add", "remove"],
-) -> InteractionCallbackResponse:
+):
     """Update the list of roles with moderation access."""
 
     async with specified_guild_config(
@@ -167,21 +168,21 @@ async def update_moderation_access(
         desc = f"Role <@&{role.id}> removed from the moderation access list."
         color = discord.Color.blurple()
 
-    logger.info(
-        "config.moderation.update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
-    )
-
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Moderation Configuration",
             description=desc,
             color=color,
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
     )
 
 
@@ -201,7 +202,7 @@ async def update_ban_access(
     interaction: Interaction,
     role: discord.Role,
     option: Literal["add", "remove"],
-) -> InteractionCallbackResponse:
+):
     """Update the list of roles with ban access."""
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
@@ -229,21 +230,21 @@ async def update_ban_access(
         desc = f"Role <@&{role.id}> removed from the ban access list."
         color = discord.Color.blurple()
 
-    logger.info(
-        "config.moderation.update_ban_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
-    )
-
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Moderation Configuration",
             description=desc,
             color=color,
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - update_ban_access user=%s guild=%s option=%s role=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
     )
 
 
@@ -263,7 +264,7 @@ async def update_rr_access(
     interaction: Interaction,
     role: discord.Role,
     option: Literal["add", "remove"],
-) -> InteractionCallbackResponse:
+):
     """Update the list of leaders roles with `rr` access."""
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
@@ -291,21 +292,21 @@ async def update_rr_access(
         desc = f"Role <@&{role.id}> removed from the rr access list."
         color = discord.Color.blurple()
 
-    logger.info(
-        "config.moderation.update_rr_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
-    )
-
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Moderation Configuration",
             description=desc,
             color=color,
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - update_rr_access user=%s guild=%s option=%s role=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
     )
 
 
@@ -325,7 +326,7 @@ async def update_fraction_role_access(
     interaction: Interaction,
     role: discord.Role,
     option: Literal["add", "remove"],
-) -> InteractionCallbackResponse:
+):
     """Update the list of roles with `fraction_role` access."""
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
@@ -353,19 +354,19 @@ async def update_fraction_role_access(
         desc = f"Role <@&{role.id}> removed from the fraction access list."
         color = discord.Color.blurple()
 
-    logger.info(
-        "config.moderation.update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
-    )
-
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Moderation Configuration",
             description=desc,
             color=color,
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
     )

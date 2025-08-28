@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import TypeVar
 
 from async_lru import alru_cache
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.cache.async_lru import alru_invalidator
@@ -20,6 +20,7 @@ from src.infra.db.models import (
     GuildTicketsConfig,
     MainGuildConfig,
     Punish,
+    User,
 )
 from src.infra.db.models._enums import ChannelType
 
@@ -137,3 +138,10 @@ async def get_user_infractions(
     result = await session.scalars(stmt)
 
     return result.all()
+
+
+async def get_total_users_count(session: AsyncSession) -> int | None:
+    """Get the total number of users in the database."""
+    stmt = select(func.count()).select_from(User)
+
+    return await session.scalar(stmt)

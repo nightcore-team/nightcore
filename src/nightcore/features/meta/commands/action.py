@@ -1,19 +1,22 @@
 """Action command for the Nightcore bot."""
 
 import logging
+from typing import cast
 
 import discord
-from discord import app_commands
+from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.nightcore.bot import Nightcore
 from src.nightcore.components import ValidationErrorEmbed
+from src.nightcore.components.embed.error import EntityNotFoundEmbed
 from src.nightcore.features.meta.utils import (
     ACTION_CHOICES,
     DUO_ACTIONS,
     build_action_embed,
 )
+from src.nightcore.utils.member import ensure_member_exists
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +38,12 @@ class Action(Cog):
         self,
         interaction: Interaction,
         action: str,
-        user: discord.Member | None = None,
+        user: discord.User | None = None,
     ):
         """Send a message performing an action."""
+        guild = cast(Guild, interaction.guild)
+
+        # If the action requires a target user, validate user first
         if action in DUO_ACTIONS:
             if user is None:
                 await interaction.response.send_message(
@@ -49,6 +55,22 @@ class Action(Cog):
                     ephemeral=True,
                 )
                 return
+
+            # Ensure member exists on the guild (cache or API)
+            member = await ensure_member_exists(guild, user)  # type: ignore
+
+            if member is None:
+                await interaction.response.send_message(
+                    embed=EntityNotFoundEmbed(
+                        "user",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+                return
+
+            # Prevent acting on yourself
             if user.id == interaction.user.id:
                 await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
@@ -59,12 +81,20 @@ class Action(Cog):
                     ephemeral=True,
                 )
                 return
+
         else:
             user = None
+            member = None
 
-        embed = build_action_embed(action, interaction.user, user)
-
+        embed = build_action_embed(action, interaction.user, member)
         await interaction.response.send_message(embed=embed)
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s target=%s",
+            interaction.user.id,
+            interaction.guild.id if interaction.guild else None,
+            user.id if user else None,
+        )
 
 
 async def setup(bot: Nightcore):

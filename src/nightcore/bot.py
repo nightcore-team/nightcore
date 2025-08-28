@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+from datetime import datetime, timezone
 
 import discord
 from discord import app_commands
@@ -43,6 +44,7 @@ class Nightcore(Bot):
             help_command=None,
             tree_cls=GuildOnlyTree,
         )
+        self.startup_time = datetime.now(timezone.utc)
 
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""

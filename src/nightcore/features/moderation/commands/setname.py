@@ -53,7 +53,7 @@ class Setname(Cog):
         member = await ensure_member_exists(guild, user)
 
         if member is None:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
                     "user",
                     self.bot.user.name,  # type: ignore
@@ -61,7 +61,6 @@ class Setname(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         # check moderation access
         async with self.bot.uow.start() as session:
@@ -74,20 +73,19 @@ class Setname(Cog):
             for role_id in moderation_access_roles
         )
         if not has_moder_role:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
 
         is_member_moderator = any(
             member.get_role(role_id) for role_id in moderation_access_roles
         )
         if is_member_moderator:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "You can't set/restore a moderator's nickname.",
                     self.bot.user.name,  # type: ignore
@@ -95,10 +93,9 @@ class Setname(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         if not guild.me.guild_permissions.change_nickname:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -106,10 +103,9 @@ class Setname(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         if guild.me == member:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "You cannot change my nickname.",
                     self.bot.user.name,  # type: ignore
@@ -117,10 +113,9 @@ class Setname(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         if not compare_top_roles(guild, member):
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -128,13 +123,12 @@ class Setname(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         old_member_nickname = member.display_name
 
         if nickname:
             if len(nickname) > 32:
-                await interaction.response.send_message(
+                return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
                         "The nickname cannot be longer than 32 characters.",
                         self.bot.user.name,  # type: ignore
@@ -142,7 +136,6 @@ class Setname(Cog):
                     ),
                     ephemeral=True,
                 )
-                return
         else:
             nickname = member.global_name
 
@@ -181,6 +174,15 @@ class Setname(Cog):
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
+        )
+        logger.info(
+            "[command] - invoked user=%s guild=%s target=%s reason=%s old_nickname=%s new_nickname=%s",  # noqa: E501
+            interaction.user.id,
+            guild.id,
+            user.id,
+            reason,
+            old_member_nickname if old_member_nickname else "No Nickname",
+            nickname if nickname else "No Nickname",
         )
 
 

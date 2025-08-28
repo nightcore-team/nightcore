@@ -2,7 +2,7 @@
 
 from discord import app_commands
 from discord.ext.commands import Cog  # type: ignore
-from discord.interactions import Interaction, InteractionCallbackResponse
+from discord.interactions import Interaction
 
 from src.nightcore.bot import Nightcore
 
@@ -12,16 +12,14 @@ class Ping(Cog):
         self.bot = bot
 
     @app_commands.command(name="ping", description="Check the bot's latency.")
-    async def ping(
-        self, interaction: Interaction
-    ) -> InteractionCallbackResponse:
+    async def ping(self, interaction: Interaction):
         """Send a message displaying the bot's current latency.
 
         Args:
             interaction : discord.Interaction
                 The interaction that triggered the command.
         """
-        return await interaction.response.send_message(
+        await interaction.response.send_message(
             f"Pong! Latency: {self.bot.latency * 1000:.2f} ms"
         )
 

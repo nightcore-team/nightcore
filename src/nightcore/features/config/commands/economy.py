@@ -6,7 +6,7 @@ from typing import Literal, cast
 import discord
 from discord import Guild, app_commands
 from discord.embeds import Embed
-from discord.interactions import Interaction, InteractionCallbackResponse
+from discord.interactions import Interaction
 
 from src.infra.db.models.guild import GuildEconomyConfig
 from src.nightcore.bot import Nightcore
@@ -47,7 +47,7 @@ async def setup(
     reward_bonus: float | None = None,
     coin_name: str | None = None,
     # colors: str | None = None,
-) -> InteractionCallbackResponse:
+):
     """Configure economy settings."""
 
     specs: list[FieldSpec | None] = [
@@ -61,7 +61,7 @@ async def setup(
 
     if not specs:
         logger.info(
-            "config.economy.setup invoked user=%s guild=%s no_options_supplied",  # noqa: E501
+            "[command] - invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,
             cast(Guild, interaction.guild).id,
         )
@@ -83,20 +83,21 @@ async def setup(
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
 
-    logger.info(
-        "config.economy.setup invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        changed,
-        skipped,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Economy Configuration",
             description=description,
             color=discord.Color.green(),
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
     )
 
 
@@ -116,7 +117,7 @@ async def update_economy_access(
     interaction: Interaction,
     role: discord.Role,
     option: Literal["add", "remove"],
-) -> InteractionCallbackResponse:
+):
     """Update the list of roles with `economy` access."""
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
@@ -144,19 +145,19 @@ async def update_economy_access(
         desc = f"Role <@&{role.id}> removed from the economy access list."
         color = discord.Color.blurple()
 
-    logger.info(
-        "config.economy.update_economy_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
-    )
-
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Economy Configuration",
             description=desc,
             color=color,
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s option=%s role=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
     )

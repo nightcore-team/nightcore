@@ -79,7 +79,7 @@ async def moderstats(
 
     if not specs:
         logger.info(
-            "config.moderstats invoked user=%s guild=%s no_options_supplied",
+            "[command] - invoked user=%s guild=%s no_options_supplied",
             interaction.user.id,  # type: ignore
             interaction.guild.id,  # type: ignore
         )
@@ -101,18 +101,19 @@ async def moderstats(
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
 
-    logger.info(
-        "config.moderstats invoked user=%s guild=%s updated=%s skipped=%s",
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        changed,
-        skipped,
-    )
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=Embed(
             title="Moderstats Configuration",
             description=description,
             color=discord.Color.green(),
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s updated=%s skipped=%s",
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        changed,
+        skipped,
     )

@@ -46,17 +46,16 @@ class Clear(Cog):
             for role_id in moderation_access_roles
         )
         if not has_moder_role:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
 
         if not guild.me.guild_permissions.manage_messages:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -64,12 +63,11 @@ class Clear(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         if number < 1 or number > 20:
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Please provide a number between 1 and 20.",
                     self.bot.user.name,  # type: ignore
@@ -77,7 +75,6 @@ class Clear(Cog):
                 ),
                 ephemeral=True,
             )
-            return
 
         channel = interaction.channel
 
@@ -104,7 +101,7 @@ class Clear(Cog):
             if issubclass(channel.__class__, discord.abc.Messageable):
                 await channel.purge(limit=number)  # type: ignore
             else:
-                await interaction.followup.send(
+                return await interaction.followup.send(
                     embed=ValidationErrorEmbed(
                         "Cannot clear messages in this type of channel.",
                         self.bot.user.name,  # type: ignore
@@ -112,7 +109,6 @@ class Clear(Cog):
                     ),
                     ephemeral=True,
                 )
-                return
 
         except Exception as e:
             logger.exception("[command] - Failed to clear messages: %s", e)
@@ -125,6 +121,13 @@ class Clear(Cog):
                 self.bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
+        )
+        logger.info(
+            "[command] - invoked user=%s guild=%s channel=%s cleared_messages=%s",  # noqa: E501
+            interaction.user.id,
+            guild.id,
+            channel.id,  # type: ignore
+            number,
         )
 
 

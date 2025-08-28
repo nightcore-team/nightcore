@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from collections.abc import Awaitable
+from datetime import timezone
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -75,7 +76,7 @@ class UserPunishEvent(Cog):
                     category=data.category,
                     reason=data.reason,  # type: ignore
                     end_time=end_time,
-                    time_now=discord.utils.utcnow(),
+                    time_now=discord.utils.utcnow().astimezone(timezone.utc),
                 )
             except Exception as e:
                 logger.exception(
