@@ -22,8 +22,8 @@ class MainGuildConfig(IdIntegerMixin, Base):  #
     proposals_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )
-    organizational_roles: Mapped[dict[str, dict[str, str | int]]] = (
-        mapped_column(JSON, nullable=False, default=dict)
+    organizational_roles: Mapped[dict[str, dict[str, int]]] = mapped_column(
+        JSON, nullable=False, default=dict
     )  #
     fraction_roles: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger), nullable=False, default=list

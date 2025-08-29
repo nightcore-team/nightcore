@@ -12,17 +12,21 @@ from src.nightcore.features.moderation.events.dto.base import (
 
 
 @dataclass(slots=True)
-class MessageClearEventData(ModerationBaseEventData):
+class RolesChangeEventData(ModerationBaseEventData):
     category: str
     moderator: discord.Member
-    amount: int
-    channel_cleared_id: int
+    user: discord.User | discord.Member
+    role: discord.Role
     created_at: datetime
+    option: str | None = None
 
-    def build_embed(self, bot: "Nightcore") -> discord.Embed:
-        """Build a Discord embed for the message clear event."""
+    def build_embed(
+        self,
+        bot: "Nightcore",
+    ) -> discord.Embed:
+        """Build a Discord embed for the roles change event."""
         embed = discord.Embed(
-            title="Cleared Messages",
+            title=f"[{self.category}] {self.user.id}",
             colour=discord.Colour.blurple(),
             timestamp=self.created_at,
         )
@@ -33,9 +37,10 @@ class MessageClearEventData(ModerationBaseEventData):
         embed.add_field(
             name="Moderator", value=f"<@{self.moderator.id}>", inline=True
         )
-        embed.add_field(
-            name="Channel", value=f"<#{self.channel_cleared_id}>", inline=True
-        )
-        embed.add_field(name="Count", value=str(self.amount), inline=True)
+        embed.add_field(name="User", value=f"<@{self.user.id}>", inline=True)
+        embed.add_field(name="Role", value=f"<@&{self.role.id}>", inline=True)
+
+        if self.option:
+            embed.add_field(name="Option", value=self.option, inline=True)
 
         return embed

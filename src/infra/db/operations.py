@@ -77,8 +77,8 @@ async def create_punish(
     user_id: int,
     moderator_id: int,
     category: str,
-    reason: str,
     time_now: datetime,
+    reason: str | None = None,
     duration: int | None = None,
     end_time: datetime | None = None,
 ) -> Punish:
@@ -145,3 +145,34 @@ async def get_total_users_count(session: AsyncSession) -> int | None:
     stmt = select(func.count()).select_from(User)
 
     return await session.scalar(stmt)
+
+
+async def get_organization_roles_full_json(
+    session: AsyncSession, *, guild_id: int
+) -> dict[str, dict[str, int]] | None:
+    """Get the list of organization roles for a guild."""
+    stmt = select(MainGuildConfig.organizational_roles).where(
+        MainGuildConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_organization_roles_ids(
+    session: AsyncSession, *, guild_id: int
+) -> list[int]:
+    """Get the list of organization role IDs for a guild."""
+    ids: list[int] = []
+    stmt = select(MainGuildConfig.organizational_roles).where(
+        MainGuildConfig.guild_id == guild_id
+    )
+    result = (await session.execute(stmt)).scalar_one_or_none()
+    if result is None:
+        return []
+
+    for _, value in result.items():
+        role_id: int | None = value.get("role_id")
+        if role_id is not None:
+            ids.append(role_id)
+
+    return ids

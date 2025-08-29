@@ -1,6 +1,7 @@
 """Fraction Role (/fraction_role) command for the Nightcore bot."""
 
 import logging
+from datetime import timezone
 from typing import cast
 
 import discord
@@ -19,6 +20,9 @@ from src.nightcore.components import (
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
+)
+from src.nightcore.features.moderation.events import (
+    RolesChangeEventData,
 )
 from src.nightcore.features.moderation.utils import fraction_roles_autocomplete
 from src.nightcore.utils import ensure_member_exists
@@ -203,6 +207,26 @@ class FractionRole(Cog):
                     ),
                     ephemeral=True,
                 )
+
+        try:
+            self.bot.dispatch(
+                "roles_change",
+                data=RolesChangeEventData(
+                    category=f"fraction_role_{option}",
+                    moderator=interaction.user,  # type: ignore
+                    user=member,
+                    role=target_role,
+                    created_at=discord.utils.utcnow().astimezone(
+                        tz=timezone.utc
+                    ),
+                ),
+                _create_punish=False,
+            )
+        except Exception as e:
+            logger.exception(
+                "[event] - Failed to dispatch roles_change event: %s", e
+            )
+            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s option=%s role=%s",

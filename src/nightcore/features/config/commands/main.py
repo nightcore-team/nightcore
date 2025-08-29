@@ -57,6 +57,7 @@ async def setup(
     specs: list[FieldSpec | None] = [
         int_id_value("rules_channel_id", rules_channel),
         int_id_value("create_proposal_channel_id", proposal_channel),
+        int_id_value("check_role_requests_channel_id", role_request_channel),
         org_roles_dict_value("organizational_roles", organizational_roles),
         temp_voice_roles_dict_value("voice_temp_roles", voice_temp_roles),
         list_csv("fraction_roles", fraction_roles),

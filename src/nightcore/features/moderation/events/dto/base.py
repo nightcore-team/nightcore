@@ -9,10 +9,10 @@ import discord
 from src.nightcore.bot import Nightcore
 
 
-class ModerationLogEventType(Protocol):
+class ModerationBaseEventData(Protocol):
     category: str
     created_at: datetime
-    moderator_id: int
+    moderator: discord.Member
 
     @abstractmethod
     def build_embed(self, bot: "Nightcore") -> discord.Embed: ...  # noqa: D102

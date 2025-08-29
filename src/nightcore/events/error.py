@@ -12,7 +12,7 @@ from src.nightcore.components.embed.error import (
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import (
-    ConfigMissingError,
+    ConfigMissingButCreatingError,
 )
 from src.nightcore.features.config.exceptions import (
     LevelRolesParsingError,
@@ -35,7 +35,7 @@ async def setup(bot: Nightcore):
 
         original = getattr(error, "original", error)
 
-        if isinstance(original, ConfigMissingError):
+        if isinstance(original, ConfigMissingButCreatingError):
             logger.info(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,

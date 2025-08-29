@@ -38,6 +38,7 @@ class UserPunishEvent(Cog):
         self,
         *,
         data: UserPunishmentEventData,
+        _send_dm: bool = True,
     ) -> None:
         """Handle user punished events."""
         logger.info(
@@ -96,7 +97,7 @@ class UserPunishEvent(Cog):
         gather_list: list[Awaitable[None]] = []
 
         # send dm message to user
-        if data.send_dm:
+        if _send_dm:
             gather_list.append(
                 send_punish_dm_message(self.bot, event_data=data)
             )

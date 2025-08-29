@@ -19,3 +19,5 @@ class ChannelType(Enum):
     LOGGING_REACTIONS = "reactions_log_channel_id"
     LOGGING_PRIVATE_CHANNELS = "private_rooms_log_channel_id"
     LOGGING_IGNORE = "message_log_ignoring_channels_ids"
+
+    ROLE_REQUESTS = "check_role_requests_channel_id"

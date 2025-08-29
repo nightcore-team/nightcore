@@ -1,3 +1,11 @@
-from .dto import MessageClearEventData, UserPunishmentEventData
+from .dto import (
+    MessageClearEventData,
+    RolesChangeEventData,
+    UserPunishmentEventData,
+)
 
-__all__ = ("MessageClearEventData", "UserPunishmentEventData")
+__all__ = (
+    "MessageClearEventData",
+    "RolesChangeEventData",
+    "UserPunishmentEventData",
+)

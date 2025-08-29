@@ -149,11 +149,11 @@ class Setname(Cog):
                     user=member,
                     category=self.__class__.__name__.lower(),
                     reason=reason,
-                    send_dm=False,
                     old_nickname=old_member_nickname,
                     new_nickname=nickname,
                     created_at=discord.utils.utcnow().astimezone(timezone.utc),
                 ),
+                _send_dm=False,
             )
         except Exception as e:
             logger.exception(

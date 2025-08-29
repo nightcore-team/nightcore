@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from src.infra.db.operations import GuildT, get_specified_guild_config
 from src.nightcore.bot import Nightcore
-from src.nightcore.exceptions import ConfigMissingError
+from src.nightcore.exceptions import ConfigMissingButCreatingError
 
 
 @asynccontextmanager
@@ -23,5 +23,5 @@ async def specified_guild_config(
         if not guild_config:
             session.add(config_type(guild_id=guild_id))  # type: ignore
             await session.commit()  # type: ignore
-            raise ConfigMissingError(guild_id)
+            raise ConfigMissingButCreatingError(guild_id)
         yield guild_config

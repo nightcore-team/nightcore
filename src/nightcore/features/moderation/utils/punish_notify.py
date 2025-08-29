@@ -12,7 +12,10 @@ from src.nightcore.features.moderation.events import (
     UserPunishmentEventData,
 )
 from src.nightcore.features.moderation.events.dto.base import (
-    ModerationLogEventType,
+    ModerationBaseEventData,
+)
+from src.nightcore.features.moderation.events.dto.roles_change import (
+    RolesChangeEventData,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +55,7 @@ async def send_moderation_log(
     bot: Nightcore,
     *,
     channel_id: int,
-    event_data: ModerationLogEventType,
+    event_data: ModerationBaseEventData,
 ) -> None:
     """Send a moderation log message to the specified channel."""
     channel = bot.get_channel(channel_id)
@@ -82,8 +85,6 @@ async def send_moderation_log(
             )
             return
 
-    embed = event_data.build_embed(bot)
-
     if not isinstance(channel, (discord.TextChannel | discord.Thread)):
         logger.warning(
             "[event] %s: channel %s not messageable (%s)",
@@ -94,7 +95,61 @@ async def send_moderation_log(
         return
 
     try:
+        embed = event_data.build_embed(bot)
         await channel.send(embed=embed)
+    except discord.HTTPException as e:
+        logger.error(
+            "[event] %s: failed to send message to %s: %s",
+            event_data.category,
+            channel.id,
+            e,
+        )
+
+
+async def send_rr_channel_log(
+    bot: Nightcore, *, channel_id: int, event_data: RolesChangeEventData
+) -> None:
+    """Send a moderation log message to the role request channel."""
+    channel = bot.get_channel(channel_id)
+    if channel is None:
+        try:
+            channel = await bot.fetch_channel(channel_id)
+        except discord.NotFound:
+            logger.warning(
+                "[event] %s: role request channel %s not found",
+                event_data.category,
+                channel_id,
+            )
+            return
+        except discord.Forbidden:
+            logger.warning(
+                "[event] %s: no permission for channel %s",
+                event_data.category,
+                channel_id,
+            )
+            return
+        except discord.HTTPException as e:
+            logger.error(
+                "[event] %s: HTTP error fetching channel %s: %s",
+                event_data.category,
+                channel_id,
+                e,
+            )
+            return
+
+    if not isinstance(channel, (discord.TextChannel | discord.Thread)):
+        logger.warning(
+            "[event] %s: channel %s not messageable (%s)",
+            event_data.category,
+            channel.id,
+            type(channel).__name__,
+        )
+        return
+
+    text = f"`[🚮 | ROLE REMOVE]`  Moderator <@{event_data.moderator.id}> removed <@{event_data.user.id}> role <@&{event_data.role.id}>"  # noqa: E501
+
+    try:
+        await channel.send(content=text)
     except discord.HTTPException as e:
         logger.error(
             "[event] %s: failed to send message to %s: %s",

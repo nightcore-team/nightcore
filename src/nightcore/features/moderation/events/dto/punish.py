@@ -7,12 +7,12 @@ import discord
 
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.events.dto.base import (
-    ModerationLogEventType,
+    ModerationBaseEventData,
 )
 
 
 @dataclass(slots=True)
-class UserPunishmentEventData(ModerationLogEventType):
+class UserPunishmentEventData(ModerationBaseEventData):
     category: str
     moderator: discord.Member
     user: discord.Member | discord.User
@@ -22,7 +22,6 @@ class UserPunishmentEventData(ModerationLogEventType):
     end_time: datetime | None = None
     old_nickname: str | None = None
     new_nickname: str | None = None
-    send_dm: bool = True
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the punishment event."""
