@@ -3,11 +3,21 @@
 from discord import Color, Embed
 
 
-class NoConfigFoundEmbed(Embed):
+class NoConfigFoundButCreatedEmbed(Embed):
     def __init__(self, footer_text: str, footer_icon_url: str):
         super().__init__(
             title="No Configuration Found",
             description="No config found for this guild, but it will be created now. Please run this command again.",  # noqa
+            color=Color.red(),
+        )
+        self.set_footer(text=footer_text, icon_url=footer_icon_url)
+
+
+class NoConfigFoundEmbed(Embed):
+    def __init__(self, footer_text: str, footer_icon_url: str):
+        super().__init__(
+            title="No Configuration Found",
+            description="No config found for this guild.",
             color=Color.red(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)

@@ -83,7 +83,7 @@ async def setup(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=MainGuildConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
     changed, skipped = split_changes(changes)
@@ -131,7 +131,7 @@ async def update_fraction_roles(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=MainGuildConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.fraction_roles,
             role.id,

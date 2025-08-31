@@ -95,7 +95,7 @@ async def setup(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildLoggingConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
     changed, skipped = split_changes(changes)
@@ -141,7 +141,7 @@ async def update_ignoring_channels(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildLoggingConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.message_log_ignoring_channels_ids,
             channel.id,

@@ -99,7 +99,7 @@ async def setup_moderation(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
     changed, skipped = split_changes(changes)
@@ -146,7 +146,7 @@ async def update_moderation_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.moderation_access_roles_ids,
             role.id,
@@ -208,7 +208,7 @@ async def update_ban_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.ban_access_roles_ids,
             role.id,
@@ -270,7 +270,7 @@ async def update_rr_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.fraction_roles_access_roles_ids,
             role.id,
@@ -332,7 +332,7 @@ async def update_fraction_role_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.leader_access_rr_roles_ids,
             role.id,

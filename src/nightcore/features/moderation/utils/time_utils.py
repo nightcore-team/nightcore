@@ -41,17 +41,12 @@ def parse_duration(text: str) -> int | None:
     return total if total > 0 else None
 
 
-def calculate_end_time(s: str) -> datetime | None:
+def calculate_end_time(duration: int) -> datetime:
     """Calculate the end time based on the current time and duration in seconds."""  # noqa: E501
-
-    duration = parse_duration(s)
-
-    if not duration or duration <= 0:
-        return None
 
     try:
         seconds = float(duration)
-    except (ValueError, TypeError):
-        return None
+    except (ValueError, TypeError) as e:
+        raise ValueError("Invalid duration format") from e
 
     return datetime.now(timezone.utc) + timedelta(seconds=seconds)

@@ -8,9 +8,6 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.components import (
     generate_dm_punish_embed,
 )
-from src.nightcore.features.moderation.events import (
-    UserPunishmentEventData,
-)
 from src.nightcore.features.moderation.events.dto.base import (
     ModerationBaseEventData,
 )
@@ -24,7 +21,7 @@ logger = logging.getLogger(__name__)
 async def send_punish_dm_message(
     bot: Nightcore,
     *,
-    event_data: UserPunishmentEventData,
+    event_data: ModerationBaseEventData,
 ) -> None:
     """Send a DM to the user about their punishment."""
     embed = generate_dm_punish_embed(
@@ -32,7 +29,7 @@ async def send_punish_dm_message(
         guild_name=event_data.moderator.guild.name,
         moderator=event_data.moderator,
         reason=event_data.reason,  # type: ignore
-        end_time=event_data.end_time,
+        end_time=event_data.end_time,  # type: ignore
         bot=bot,
     )
     try:
@@ -64,21 +61,21 @@ async def send_moderation_log(
             channel = await bot.fetch_channel(channel_id)
         except discord.NotFound:
             logger.warning(
-                "[event] %s: logging channel %s not found",
+                "[event] on_user_punish - %s: logging channel %s not found",
                 event_data.category,
                 channel_id,
             )
             return
         except discord.Forbidden:
             logger.warning(
-                "[event] %s: no permission for channel %s",
+                "[event] on_user_punish - %s: no permission for channel %s",
                 event_data.category,
                 channel_id,
             )
             return
         except discord.HTTPException as e:
             logger.error(
-                "[event] %s: HTTP error fetching channel %s: %s",
+                "[event] on_user_punish - %s: HTTP error fetching channel %s: %s",  # noqa: E501
                 event_data.category,
                 channel_id,
                 e,
@@ -87,7 +84,7 @@ async def send_moderation_log(
 
     if not isinstance(channel, (discord.TextChannel | discord.Thread)):
         logger.warning(
-            "[event] %s: channel %s not messageable (%s)",
+            "[event] on_user_punish - %s: channel %s not messageable (%s)",
             event_data.category,
             channel.id,
             type(channel).__name__,
@@ -99,7 +96,7 @@ async def send_moderation_log(
         await channel.send(embed=embed)
     except discord.HTTPException as e:
         logger.error(
-            "[event] %s: failed to send message to %s: %s",
+            "[event] on_user_punish - %s: failed to send message to %s: %s",
             event_data.category,
             channel.id,
             e,

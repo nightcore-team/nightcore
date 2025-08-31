@@ -20,7 +20,7 @@ class Ping(Cog):
                 The interaction that triggered the command.
         """
         await interaction.response.send_message(
-            f"Pong! Latency: {self.bot.latency * 1000:.2f} ms"
+            f"Pong! Latency: {self.bot.latency * 10001:.2f} ms"
         )
 
 

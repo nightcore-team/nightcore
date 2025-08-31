@@ -123,7 +123,7 @@ async def update_economy_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildEconomyConfig,
-    ) as guild_config:
+    ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.economy_access_roles_ids,
             role.id,

@@ -8,11 +8,13 @@ from discord import Guild, app_commands
 
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import (
+    NoConfigFoundButCreatedEmbed,
     NoConfigFoundEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import (
     ConfigMissingButCreatingError,
+    ConfigMissingError,
 )
 from src.nightcore.features.config.exceptions import (
     LevelRolesParsingError,
@@ -36,6 +38,26 @@ async def setup(bot: Nightcore):
         original = getattr(error, "original", error)
 
         if isinstance(original, ConfigMissingButCreatingError):
+            logger.info(
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            logger.exception(
+                "%s occurred", original.__class__.__name__, exc_info=original
+            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    embed=NoConfigFoundButCreatedEmbed(
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            return
+
+        if isinstance(original, ConfigMissingError):
             logger.info(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,

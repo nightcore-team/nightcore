@@ -58,6 +58,7 @@ def generate_dm_punish_embed(
     bot: Nightcore,
 ) -> Embed:
     """Generate an embed for DM punishment notification."""
+    # TODO: add dict for correct embed title with answers
     embed = Embed(
         title=f"{punish_type.capitalize()} Notification",
         description=f"You have been {punish_type} from **{guild_name}**",

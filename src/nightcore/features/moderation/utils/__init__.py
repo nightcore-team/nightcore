@@ -5,13 +5,14 @@ from .punish_notify import (
 )
 from .punish_pagination import build_pages
 from .role_utils import compare_top_roles, fraction_roles_autocomplete
-from .time_utils import calculate_end_time
+from .time_utils import calculate_end_time, parse_duration
 
 __all__ = (
     "build_pages",
     "calculate_end_time",
     "compare_top_roles",
     "fraction_roles_autocomplete",
+    "parse_duration",
     "send_moderation_log",
     "send_punish_dm_message",
     "send_rr_channel_log",

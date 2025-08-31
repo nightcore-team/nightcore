@@ -28,6 +28,7 @@ from src.nightcore.utils import ensure_member_exists
 logger = logging.getLogger(__name__)
 
 
+# TODO: Implement setname event
 class Setname(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
