@@ -17,7 +17,7 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.features.moderation.events import UserPunishmentEventData
+from src.nightcore.features.moderation.events import UserKickEventData
 from src.nightcore.features.moderation.utils import compare_top_roles
 from src.nightcore.utils import ensure_member_exists
 
@@ -121,8 +121,8 @@ class Kick(Cog):
 
         try:
             self.bot.dispatch(
-                "user_punish",
-                data=UserPunishmentEventData(
+                "user_kicked",
+                data=UserKickEventData(
                     moderator=interaction.user,  # type: ignore
                     user=member,
                     category=self.__class__.__name__.lower(),
@@ -134,7 +134,7 @@ class Kick(Cog):
             )
         except Exception as e:
             logger.exception(
-                "[event] - Failed to dispatch user_punish event: %s", e
+                "[event] - Failed to dispatch user_kicked event: %s", e
             )
             return
 

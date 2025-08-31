@@ -1,11 +1,13 @@
+from .kick import UserKickEventData
 from .message_clear import MessageClearEventData
 from .mute import UserMutedEventData
-from .punish import UserPunishmentEventData
 from .roles_change import RolesChangeEventData
+from .setname import UserSetNameEventData
 
 __all__ = (
     "MessageClearEventData",
     "RolesChangeEventData",
+    "UserKickEventData",
     "UserMutedEventData",
-    "UserPunishmentEventData",
+    "UserSetNameEventData",
 )

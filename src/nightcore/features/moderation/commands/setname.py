@@ -18,7 +18,7 @@ from src.nightcore.components import (
     ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.events import (
-    UserPunishmentEventData,
+    UserSetNameEventData,
 )
 from src.nightcore.features.moderation.utils import (
     compare_top_roles,
@@ -28,7 +28,6 @@ from src.nightcore.utils import ensure_member_exists
 logger = logging.getLogger(__name__)
 
 
-# TODO: Implement setname event
 class Setname(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
@@ -138,14 +137,14 @@ class Setname(Cog):
                     ephemeral=True,
                 )
         else:
-            nickname = member.global_name
+            nickname = member.global_name or member.name
 
         await interaction.response.defer(thinking=True)
 
         try:
             self.bot.dispatch(
-                "user_punish",
-                data=UserPunishmentEventData(
+                "user_setname",
+                data=UserSetNameEventData(
                     moderator=interaction.user,  # type: ignore
                     user=member,
                     category=self.__class__.__name__.lower(),
@@ -154,11 +153,10 @@ class Setname(Cog):
                     new_nickname=nickname,
                     created_at=discord.utils.utcnow().astimezone(timezone.utc),
                 ),
-                _send_dm=False,
             )
         except Exception as e:
             logger.exception(
-                "[event] - Failed to dispatch user_punish event: %s", e
+                "[event] - Failed to dispatch user_setname event: %s", e
             )
             return
 

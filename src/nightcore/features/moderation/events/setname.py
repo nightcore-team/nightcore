@@ -15,35 +15,27 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.features.moderation.events import UserPunishmentEventData
+from src.nightcore.features.moderation.events import UserSetNameEventData
 from src.nightcore.features.moderation.utils import (
-    calculate_end_time,
-    parse_duration,
     send_moderation_log,
-    send_punish_dm_message,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class UserPunishEvent(Cog):
+class UserSetNameEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
     @Cog.listener()
-    async def on_un_user_punish(self):
-        """Handle user unpunished events."""
-
-    @Cog.listener()
-    async def on_user_punish(
+    async def on_user_setname(
         self,
         *,
-        data: UserPunishmentEventData,
-        _send_dm: bool = True,
+        data: UserSetNameEventData,
     ) -> None:
-        """Handle user punished events."""
+        """Handle user setname events."""
         logger.info(
-            "[event] on_user_punish - %s: Guild: %s, Member: %s, Reason: %s",
+            "[event] on_user_setname - %s: Guild: %s, Member: %s, Reason: %s",
             data.category,
             data.moderator.guild.id,
             data.user.id,
@@ -55,20 +47,12 @@ class UserPunishEvent(Cog):
             data.user = user
         except Exception as e:
             logger.exception(
-                "[event] on_user_punish - %s: Failed to fetch user %s: %s",
+                "[event] on_user_setname - %s: Failed to fetch user %s: %s",
                 data.category,
                 data.user.id,
                 e,
             )
             return
-
-        end_time = None
-        if data.duration:
-            duration = parse_duration(data.duration)
-            if not duration:
-                return
-            end_time = calculate_end_time(duration)
-            data.end_time = end_time
 
         # db insert and getting logging channel
         async with self.bot.uow.start() as session:
@@ -79,13 +63,13 @@ class UserPunishEvent(Cog):
                     user_id=data.user.id,
                     moderator_id=data.moderator.id,
                     category=data.category,
-                    reason=data.reason,  # type: ignore
-                    end_time=end_time,
+                    reason=data.reason,
+                    end_time=None,
                     time_now=discord.utils.utcnow().astimezone(timezone.utc),
                 )
             except Exception as e:
                 logger.exception(
-                    "[event] on_user_punish - %s: Failed to create punish record: %s",  # noqa: E501
+                    "[event] on_user_setname - %s: Failed to create punish record: %s",  # noqa: E501
                     data.category,
                     e,
                 )
@@ -100,12 +84,6 @@ class UserPunishEvent(Cog):
 
         gather_list: list[Awaitable[None]] = []
 
-        # send dm message to user
-        if _send_dm:
-            gather_list.append(
-                send_punish_dm_message(self.bot, event_data=data)
-            )
-
         # sending log message
         if logging_channel_id:
             gather_list.append(
@@ -115,7 +93,7 @@ class UserPunishEvent(Cog):
             )
         else:
             logger.warning(
-                "[event] on_user_punish - %s: Guild: %s, logging channel is not set",  # noqa: E501
+                "[event] on_user_setname - %s: Guild: %s, logging channel is not set",  # noqa: E501
                 data.moderator.guild.id,
                 punish_info.category,
             )
@@ -125,12 +103,12 @@ class UserPunishEvent(Cog):
             await asyncio.gather(*gather_list, return_exceptions=True)
         except Exception as e:
             logger.exception(
-                "[event] on_user_punish - %s: Failed to send DM or log message: %s",  # noqa: E501
+                "[event] on_user_setname - %s: Failed to send log message: %s",
                 data.category,
                 e,
             )
 
 
 async def setup(bot: Nightcore):
-    """Setup the UserPunishEvent cog."""
-    await bot.add_cog(UserPunishEvent(bot))
+    """Setup the UserSetNameEvent cog."""
+    await bot.add_cog(UserSetNameEvent(bot))

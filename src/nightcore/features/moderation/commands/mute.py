@@ -99,6 +99,16 @@ class Mute(Cog):
                 ephemeral=True,
             )
 
+        if member.guild_permissions.administrator:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "You cannot mute administrators.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
         if not guild.me.guild_permissions.moderate_members:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(

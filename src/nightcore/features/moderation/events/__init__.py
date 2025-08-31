@@ -1,13 +1,15 @@
 from .dto import (
     MessageClearEventData,
     RolesChangeEventData,
+    UserKickEventData,
     UserMutedEventData,
-    UserPunishmentEventData,
+    UserSetNameEventData,
 )
 
 __all__ = (
     "MessageClearEventData",
     "RolesChangeEventData",
+    "UserKickEventData",
     "UserMutedEventData",
-    "UserPunishmentEventData",
+    "UserSetNameEventData",
 )
