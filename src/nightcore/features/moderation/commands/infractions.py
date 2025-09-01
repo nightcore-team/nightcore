@@ -11,6 +11,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildNotificationsConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
+    count_user_infractions_last_7_days,
     get_moderation_access_roles,
     get_specified_channel,
     get_user_infractions,
@@ -20,8 +21,8 @@ from src.nightcore.components import (
     ErrorEmbed,
     MissingPermissionsEmbed,
 )
-from src.nightcore.features.moderation.components import (
-    InfractionsView,
+from src.nightcore.features.moderation.components.v2 import (
+    InfractionsViewV2,
 )
 from src.nightcore.features.moderation.utils import build_pages
 
@@ -57,6 +58,12 @@ class Infractions(Cog):
                 user_id=user.id,
             )
 
+            last_7_days_infractions = await count_user_infractions_last_7_days(
+                session,
+                guild_id=guild.id,
+                user_id=user.id,
+            )
+
             # get notifications channel
             notify_channel_id = await get_specified_channel(
                 session,
@@ -79,42 +86,28 @@ class Infractions(Cog):
             )
 
         # get user infractions from db
-        pages = build_pages(infractions, guild.id, notify_channel_id)
-        embed = discord.Embed(
-            description=pages[0], color=discord.Color.blurple()
-        )
-        embed.set_author(
-            name=f"{user} ➤ Infractions", icon_url=user.display_avatar.url
-        )
-        embed.set_footer(
-            text=f"Page 1 / {len(pages)}",
-            icon_url=self.bot.user.display_avatar.url,  # type: ignore
+        pages = build_pages(
+            infractions, guild.id, notify_channel_id, is_v2=True
         )
 
-        await interaction.response.defer()
+        view = InfractionsViewV2(
+            interaction.user.id, pages, user, self.bot, last_7_days_infractions
+        )
 
-        if len(pages) == 1:
-            await interaction.followup.send(embed=embed)
-        else:
-            try:
-                await interaction.followup.send(
-                    embed=embed,
-                    view=InfractionsView(
-                        interaction.user.id, pages, user, self.bot
-                    ),
+        try:
+            await interaction.response.send_message(view=view.make_component())
+        except Exception as e:
+            logger.exception(
+                "[command] - Failed to send infractions view: %s", e
+            )
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Infractions Error",
+                    "Failed to send infractions view.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
                 )
-            except Exception as e:
-                logger.exception(
-                    "[command] - Failed to send infractions view: %s", e
-                )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Infractions Error",
-                        "Failed to send infractions view.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    )
-                )
+            )
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s",

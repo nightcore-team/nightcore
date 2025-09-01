@@ -14,10 +14,16 @@ def build_pages(
     punishments: Sequence[Punish],
     guild_id: int,
     notify_channel_id: int | None = None,
+    is_v2: bool = False,
 ) -> list[str]:
     """Build paginated description pages for infractions."""
     pages: list[str] = []
     current = ""
+
+    limit = config.bot.EMBED_DESCRIPTION_LIMIT
+
+    if is_v2:
+        limit = config.bot.VIEW_V2_DESCRIPTION_LIMIT
 
     for p in punishments:
         line = f"**`[{p.category.upper()}]` | {discord_ts(p.time_now, style='d')} "  # noqa: E501
@@ -32,7 +38,7 @@ def build_pages(
                 line += f"| {p.reason} "
         line += f"||**<@{p.moderator_id}>\n"
 
-        if len(current) + len(line) >= config.bot.EMBED_DESCRIPTION_LIMIT:
+        if len(current) + len(line) >= limit:
             pages.append(current)
             current = ""
 

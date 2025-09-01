@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime
+from sqlalchemy import BigInteger, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -23,5 +23,11 @@ class Punish(IdIntegerMixin, Base):
         DateTime(timezone=True), nullable=True
     )  # время окончания наказания
     time_now: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        DateTime(timezone=True), nullable=False
     )  # время выдачи наказания
+
+    __table_args__ = (
+        Index(
+            "ix_punish_guild_user_time_now", "guild_id", "user_id", "time_now"
+        ),
+    )

@@ -1,7 +1,7 @@
 """The module contains database operations for the Nightcore bot."""
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import TypeVar
 
 from async_lru import alru_cache
@@ -138,6 +138,30 @@ async def get_user_infractions(
     result = await session.scalars(stmt)
 
     return result.all()
+
+
+async def count_user_infractions_last_7_days(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> int:
+    """Count the number of punishments for a user in the last 7 days."""
+    boundary = datetime.now(timezone.utc) - timedelta(days=7)
+
+    stmt = (
+        select(func.count())
+        .select_from(Punish)
+        .where(
+            Punish.guild_id == guild_id,
+            Punish.user_id == user_id,
+            Punish.time_now.is_not(None),
+            Punish.time_now >= boundary,
+        )
+    )
+
+    result = await session.execute(stmt)
+    return result.scalar_one()
 
 
 async def get_total_users_count(session: AsyncSession) -> int | None:
