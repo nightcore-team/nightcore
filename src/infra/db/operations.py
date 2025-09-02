@@ -20,6 +20,7 @@ from src.infra.db.models import (
     GuildTicketsConfig,
     MainGuildConfig,
     Punish,
+    TempPunish,
     User,
 )
 from src.infra.db.models._enums import ChannelType
@@ -96,6 +97,54 @@ async def create_punish(
     session.add(punish)
     alru_invalidator(get_user_infractions, guild_id=guild_id, user_id=user_id)
     return punish
+
+
+async def create_temp_punish(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    category: str,
+    end_time: datetime,
+) -> TempPunish:
+    """Create a new temporary punishment entry in the database."""
+    temp_punish = TempPunish(
+        guild_id=guild_id,
+        user_id=user_id,
+        category=category,
+        end_time=end_time,
+    )
+    session.add(temp_punish)
+    return temp_punish
+
+
+async def get_temp_infractions(session: AsyncSession) -> Sequence[TempPunish]:
+    """Get the list of temporary punishments from the database."""
+    stmt = select(TempPunish)
+    result = await session.scalars(stmt)
+    return result.all()
+
+
+async def get_latest_temp_punish(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    category: str,
+) -> TempPunish | None:
+    """Get the latest temporary punishment for a user in a guild."""
+    stmt = (
+        select(TempPunish)
+        .where(
+            TempPunish.guild_id == guild_id,
+            TempPunish.user_id == user_id,
+            func.lower(TempPunish.category) == category.lower(),
+        )
+        .order_by(TempPunish.end_time.desc().nulls_last())
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
 
 
 async def get_fraction_roles(
@@ -200,3 +249,21 @@ async def get_organization_roles_ids(
             ids.append(role_id)
 
     return ids
+
+
+async def get_mute_role(session: AsyncSession, *, guild_id: int) -> int | None:
+    """Get the mute role for a guild."""
+    stmt = select(GuildModerationConfig.mute_role_id).where(
+        GuildModerationConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_mute_type(session: AsyncSession, *, guild_id: int) -> str | None:
+    """Get the mute type for a guild."""
+    stmt = select(GuildModerationConfig.mute_type).where(
+        GuildModerationConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()

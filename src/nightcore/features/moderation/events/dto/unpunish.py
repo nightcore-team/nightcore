@@ -12,21 +12,18 @@ from src.nightcore.features.moderation.events.dto.base import (
 
 
 @dataclass(slots=True)
-class UserMutedEventData(ModerationBaseEventData):
+class UnPunishEventData(ModerationBaseEventData):
     category: str
-    moderator: discord.Member
-    user: discord.Member | discord.User  # type: ignore
-    created_at: datetime
+    guild_id: int
+    moderator_id: int
+    user_id: int
     reason: str
-    duration: int
-    original_duration: str
-    mute_type: str
-    end_time: str  # type: ignore
+    created_at: datetime
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the punishment event."""
         embed = discord.Embed(
-            title=f"[{self.category}] {self.user.id}",
+            title=f"[un{self.category}] {self.user_id}",
             colour=discord.Colour.blurple(),
             timestamp=self.created_at,
         )
@@ -36,20 +33,17 @@ class UserMutedEventData(ModerationBaseEventData):
         )
         embed.add_field(
             name="User",
-            value=f"<@{self.user.id}>",
+            value=f"<@{self.user_id}>",
             inline=True,
         )
         embed.add_field(
-            name="Moderator", value=f"<@{self.moderator.id}>", inline=True
+            name="Moderator", value=f"<@{self.moderator_id}>", inline=True
         )
         embed.add_field(name="Reason", value=self.reason, inline=True)
-        embed.add_field(
-            name="Duration", value=f"{self.original_duration}", inline=True
-        )
-        embed.add_field(
-            name="Ends",
-            value=self.end_time,
-            inline=False,
-        )
 
         return embed
+
+
+@dataclass(slots=True)
+class UserUnMutedEventData(UnPunishEventData):
+    mute_type: str

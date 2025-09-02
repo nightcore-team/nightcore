@@ -12,29 +12,215 @@ from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     create_punish,
+    create_temp_punish,
+    get_latest_temp_punish,
+    get_mute_role,
+    get_mute_type,
     get_specified_channel,
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.events import (
     UserMutedEventData,
+    UserUnMutedEventData,
 )
 from src.nightcore.features.moderation.utils import (
     calculate_end_time,
     send_moderation_log,
     send_punish_dm_message,
+    send_unpunish_dm_message,
 )
 from src.nightcore.utils import discord_ts
 
 logger = logging.getLogger(__name__)
 
 
+# TODO: implement unmuted event and task for unmuting and event for untimed out
 class UserMutedEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
     @Cog.listener()
-    async def on_un_user_muted(self):
+    async def on_user_unmute(
+        self, *, data: UserUnMutedEventData, by_command: bool = False
+    ) -> None:
         """Handle user unmuted events."""
+        logger.info(
+            "[event] user_unmute - %s: Guild: %s, Member: %s, Reason: %s",
+            data.category,
+            data.guild_id,
+            data.user_id,
+            data.reason,
+        )
+
+        guild = self.bot.get_guild(data.guild_id)
+        if guild is None:
+            logger.error(
+                "[event] user_unmute - %s: Guild %s not in cache",
+                data.category,
+                data.guild_id,
+            )
+            return
+
+        # Try to get the member from the cache
+        # TODO: вынести в отдельную функцию
+        member = guild.get_member(data.user_id)
+
+        if member is None:
+            try:
+                member = await guild.fetch_member(data.user_id)
+            except discord.NotFound:
+                logger.warning(
+                    "[event] user_unmute - %s: User %s not in guild %s (probably left)",  # noqa: E501
+                    data.category,
+                    data.user_id,
+                    data.guild_id,
+                )
+                return
+            except discord.HTTPException as e:
+                logger.exception(
+                    "[event] user_unmute - %s: Failed to fetch member %s in guild %s: %s",  # noqa: E501
+                    data.category,
+                    data.user_id,
+                    data.guild_id,
+                    e,
+                )
+                return
+
+        async with self.bot.uow.start() as session:
+            mute_type = await get_mute_type(session, guild_id=data.guild_id)
+            mute_role_id = await get_mute_role(session, guild_id=data.guild_id)
+
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=data.guild_id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_MODERATION,
+            )
+
+            if by_command:
+                await create_punish(
+                    session,
+                    guild_id=data.guild_id,
+                    user_id=data.user_id,
+                    moderator_id=data.moderator_id,
+                    category=data.category,
+                    reason=data.reason,
+                    end_time=None,
+                    time_now=discord.utils.utcnow().astimezone(timezone.utc),
+                )
+
+                if mute_type == "role":
+                    temp = await get_latest_temp_punish(
+                        session,
+                        guild_id=data.guild_id,
+                        user_id=data.user_id,
+                        category=data.category,
+                    )
+                    if temp:
+                        await session.delete(temp)
+
+        if not by_command:
+            # check if mute by role or timeout (here)
+            match mute_type:
+                case "role":
+                    mrole = None
+                    if mute_role_id:
+                        # Try cache first
+                        mrole = guild.get_role(mute_role_id)
+                        if mrole is None:
+                            try:
+                                mrole = await guild.fetch_role(mute_role_id)
+                            except discord.NotFound:
+                                mrole = None
+                            except discord.HTTPException as e:
+                                logger.exception(
+                                    "[event] user_unmute - %s: Failed to fetch mute role %s in guild %s: %s",  # noqa: E501
+                                    data.category,
+                                    mute_role_id,
+                                    data.guild_id,
+                                    e,
+                                )
+                                mrole = None
+                    if not mute_role_id or mrole is None:
+                        logger.error(
+                            "[event] user_unmute - %s: Mute role %s not found in guild %s",  # noqa: E501
+                            data.category,
+                            mute_role_id,
+                            data.guild_id,
+                        )
+                    else:
+                        member_roles = {r.id for r in member.roles}
+                        if mute_role_id not in member_roles:
+                            logger.error(
+                                "[event] user_unmute - %s: User %s does not have mute role %s",  # noqa: E501
+                                data.category,
+                                member.id,
+                                mute_role_id,
+                            )
+                        else:
+                            try:
+                                await member.remove_roles(mrole)
+                            except Exception as e:
+                                logger.exception(
+                                    "[event] user_unmute - %s: Failed to remove mute role %s from user %s: %s",  # noqa: E501
+                                    data.category,
+                                    mute_role_id,
+                                    member.id,
+                                    e,
+                                )
+                                raise e
+
+                case "timeout":
+                    if member.is_timed_out():
+                        try:
+                            await member.timeout(None, reason=data.reason)
+                        except Exception as e:
+                            logger.exception(
+                                "[event] user_unmute - %s: Failed to remove timeout from user %s: %s",  # noqa: E501
+                                data.category,
+                                member.id,
+                                e,
+                            )
+                    else:
+                        logger.info(
+                            "[event] user_unmute - %s: User %s is not timed out",  # noqa: E501
+                            data.category,
+                            member.id,
+                        )
+                case _:
+                    logger.error(
+                        "[event] user_unmute - %s: Unknown mute type for user %s",  # noqa: E501
+                        data.category,
+                        member.id,
+                    )
+
+        gather_list: list[Awaitable[None]] = []
+
+        # sending log message
+        if logging_channel_id:
+            gather_list.append(
+                send_moderation_log(
+                    self.bot, channel_id=logging_channel_id, event_data=data
+                )
+            )
+
+        gather_list.append(
+            send_unpunish_dm_message(
+                self.bot,
+                user=member,
+                category=data.category,
+                guild_name=guild.name,
+            )
+        )
+
+        try:
+            await asyncio.gather(*gather_list, return_exceptions=True)
+        except Exception as e:
+            logger.exception(
+                "[event] on_user_muted - %s: Failed to send DM or log message: %s",  # noqa: E501
+                data.category,
+                e,
+            )
 
     @Cog.listener()
     async def on_user_muted(
@@ -90,8 +276,21 @@ class UserMutedEvent(Cog):
                 return
 
             if data.mute_type == "role":
-                # TODO: create temp infraction for task
-                ...
+                try:
+                    await create_temp_punish(
+                        session,
+                        guild_id=data.moderator.guild.id,
+                        user_id=data.user.id,
+                        category=data.category,
+                        end_time=end_time,
+                    )
+                except Exception as e:
+                    logger.exception(
+                        "[event] on_user_muted - %s: Failed to create punish record: %s",  # noqa: E501
+                        data.category,
+                        e,
+                    )
+                    return
 
             logging_channel_id = await get_specified_channel(
                 session,

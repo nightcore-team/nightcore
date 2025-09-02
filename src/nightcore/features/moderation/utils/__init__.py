@@ -2,6 +2,7 @@ from .punish_notify import (
     send_moderation_log,
     send_punish_dm_message,
     send_rr_channel_log,
+    send_unpunish_dm_message,
 )
 from .punish_pagination import build_pages
 from .role_utils import compare_top_roles, fraction_roles_autocomplete
@@ -16,4 +17,5 @@ __all__ = (
     "send_moderation_log",
     "send_punish_dm_message",
     "send_rr_channel_log",
+    "send_unpunish_dm_message",
 )

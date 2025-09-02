@@ -80,3 +80,24 @@ def generate_dm_punish_embed(
     )
 
     return embed
+
+
+def generate_dm_un_punish_embed(
+    punish_type: str,
+    guild_name: str,
+    bot: Nightcore,
+) -> Embed:
+    """Generate an embed for DM punishment notification."""
+    # TODO: add dict for correct embed title with answers
+    embed = Embed(
+        title=f"{punish_type.capitalize()} Notification",
+        description=f"Your {punish_type} has been lifted from **{guild_name}**",  # noqa: E501
+        color=0x00FF00,
+    )
+
+    embed.set_footer(
+        text=f"Powered by {bot.user.name}",  # type: ignore
+        icon_url=bot.user.avatar.url,  # type: ignore
+    )
+
+    return embed

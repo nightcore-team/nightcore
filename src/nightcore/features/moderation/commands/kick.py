@@ -24,7 +24,6 @@ from src.nightcore.utils import ensure_member_exists
 logger = logging.getLogger(__name__)
 
 
-# TODO: implement kick event
 class Kick(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
