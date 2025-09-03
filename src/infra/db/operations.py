@@ -140,7 +140,7 @@ async def get_latest_temp_punish(
             TempPunish.user_id == user_id,
             func.lower(TempPunish.category) == category.lower(),
         )
-        .order_by(TempPunish.end_time.desc().nulls_last())
+        .order_by(TempPunish.end_time.asc().nulls_last())
         .limit(1)
     )
     res = await session.execute(stmt)

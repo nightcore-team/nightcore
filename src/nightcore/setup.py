@@ -23,6 +23,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.clear",
         "src.nightcore.features.moderation.commands.rr",
         "src.nightcore.features.moderation.commands.mute",
+        "src.nightcore.features.moderation.commands.unmute",
         # moderation events
         "src.nightcore.features.moderation.events.kick",
         "src.nightcore.features.moderation.events.message_clear",

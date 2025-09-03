@@ -42,8 +42,3 @@ class UnPunishEventData(ModerationBaseEventData):
         embed.add_field(name="Reason", value=self.reason, inline=True)
 
         return embed
-
-
-@dataclass(slots=True)
-class UserUnMutedEventData(UnPunishEventData):
-    mute_type: str

@@ -20,8 +20,8 @@ from src.infra.db.operations import (
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.events import (
+    UnPunishEventData,
     UserMutedEventData,
-    UserUnMutedEventData,
 )
 from src.nightcore.features.moderation.utils import (
     calculate_end_time,
@@ -41,7 +41,7 @@ class UserMutedEvent(Cog):
 
     @Cog.listener()
     async def on_user_unmute(
-        self, *, data: UserUnMutedEventData, by_command: bool = False
+        self, *, data: UnPunishEventData, by_command: bool = False
     ) -> None:
         """Handle user unmuted events."""
         logger.info(
@@ -103,7 +103,7 @@ class UserMutedEvent(Cog):
                     guild_id=data.guild_id,
                     user_id=data.user_id,
                     moderator_id=data.moderator_id,
-                    category=data.category,
+                    category=f"un{data.category}",
                     reason=data.reason,
                     end_time=None,
                     time_now=discord.utils.utcnow().astimezone(timezone.utc),
@@ -118,6 +118,13 @@ class UserMutedEvent(Cog):
                     )
                     if temp:
                         await session.delete(temp)
+                    else:
+                        logger.error(
+                            "[event] user_unmute - %s: No active temporary punishment found for user %s in guild %s",  # noqa: E501
+                            data.category,
+                            data.user_id,
+                            data.guild_id,
+                        )
 
         if not by_command:
             # check if mute by role or timeout (here)
@@ -150,7 +157,8 @@ class UserMutedEvent(Cog):
                         )
                     else:
                         member_roles = {r.id for r in member.roles}
-                        if mute_role_id not in member_roles:
+                        has_role = mute_role_id in member_roles
+                        if not has_role:
                             logger.error(
                                 "[event] user_unmute - %s: User %s does not have mute role %s",  # noqa: E501
                                 data.category,

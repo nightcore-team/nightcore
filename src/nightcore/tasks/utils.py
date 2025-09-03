@@ -18,7 +18,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
             guild_id=active_punish.guild_id,
             moderator_id=cast(ClientUser, bot.user).id,
             user_id=active_punish.user_id,
-            reason=active_punish.reason,
+            reason="Punish expired",
             created_at=datetime.now(timezone.utc),
         )
         bot.dispatch("user_unmute", data=data)
