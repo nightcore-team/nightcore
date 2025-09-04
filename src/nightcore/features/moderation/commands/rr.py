@@ -21,6 +21,7 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components import (
     RemoveOrgRoleSelect,
 )
@@ -64,13 +65,19 @@ class Rr(Cog):
             )
 
         async with self.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
-            )
+            if not (
+                moderation_access_roles := await get_moderation_access_roles(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("moderation access")
 
-            org_roles_ids = await get_organization_roles_ids(
-                session, guild_id=guild.id
-            )
+            if not (
+                org_roles_ids := await get_organization_roles_ids(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("organization roles")
 
         has_moder_role = any(
             interaction.user.get_role(role_id)  # type: ignore
@@ -99,16 +106,6 @@ class Rr(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "You cannot remove roles from me.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if not org_roles_ids:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "There are no organization roles configured.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

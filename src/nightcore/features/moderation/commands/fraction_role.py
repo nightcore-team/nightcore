@@ -21,6 +21,7 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
 )
@@ -88,13 +89,19 @@ class FractionRole(Cog):
             )
 
         async with self.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
-            )
+            if not (
+                moderation_access_roles := await get_moderation_access_roles(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("moderation access")
 
-            fraction_roles_access_roles = await get_fraction_roles_access(
-                session, guild_id=guild.id
-            )
+            if not (
+                fraction_roles_access_roles := await get_fraction_roles_access(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("fraction roles access")
 
             final_access_list = (
                 moderation_access_roles + fraction_roles_access_roles

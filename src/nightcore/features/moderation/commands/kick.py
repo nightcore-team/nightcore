@@ -17,6 +17,7 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UserKickEventData
 from src.nightcore.features.moderation.utils import compare_top_roles
 from src.nightcore.utils import ensure_member_exists
@@ -57,9 +58,13 @@ class Kick(Cog):
             )
 
         async with self.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
-            )
+            if not (
+                moderation_access_roles := await get_moderation_access_roles(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("moderation access")
+
         has_moder_role = any(
             interaction.user.get_role(role_id)  # type: ignore
             for role_id in moderation_access_roles

@@ -1,4 +1,4 @@
-"""Moderation Events Cog for Nightcore Bot."""
+"""SetName Event Cog for Nightcore Bot."""
 
 import asyncio
 import logging

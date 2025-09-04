@@ -1,4 +1,4 @@
-"""Data transfer object for user unpunishment events in moderation logs."""
+"""Data transfer object for user ban events in moderation logs."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -12,18 +12,20 @@ from src.nightcore.features.moderation.events.dto.base import (
 
 
 @dataclass(slots=True)
-class UnPunishEventData(ModerationBaseEventData):
+class UserBannedEventData(ModerationBaseEventData):
     category: str
-    guild_id: int
-    moderator_id: int
-    user_id: int
-    reason: str
+    moderator: discord.Member
+    user: discord.Member | discord.User
     created_at: datetime
+    reason: str
+    duration: int
+    original_duration: str
+    end_time: str
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the punishment event."""
         embed = discord.Embed(
-            title=f"[un{self.category}] {self.user_id}",
+            title=f"[{self.category}] {self.user.id}",
             colour=discord.Colour.blurple(),
             timestamp=self.created_at,
         )
@@ -33,12 +35,20 @@ class UnPunishEventData(ModerationBaseEventData):
         )
         embed.add_field(
             name="User",
-            value=f"<@{self.user_id}>",
+            value=f"<@{self.user.id}>",
             inline=True,
         )
         embed.add_field(
-            name="Moderator", value=f"<@{self.moderator_id}>", inline=True
+            name="Moderator", value=f"<@{self.moderator.id}>", inline=True
         )
         embed.add_field(name="Reason", value=self.reason, inline=True)
+        embed.add_field(
+            name="Duration", value=f"{self.original_duration}", inline=True
+        )
+        embed.add_field(
+            name="Ends",
+            value=self.end_time,
+            inline=False,
+        )
 
         return embed

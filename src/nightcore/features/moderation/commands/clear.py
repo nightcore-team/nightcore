@@ -16,6 +16,7 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import MessageClearEventData
 
 logger = logging.getLogger(__name__)
@@ -38,9 +39,13 @@ class Clear(Cog):
         guild = cast(Guild, interaction.guild)
 
         async with self.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
-            )
+            if not (
+                moderation_access_roles := await get_moderation_access_roles(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("moderation access")
+
         has_moder_role = any(
             interaction.user.get_role(role_id)  # type: ignore
             for role_id in moderation_access_roles

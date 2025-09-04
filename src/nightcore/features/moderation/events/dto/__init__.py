@@ -1,3 +1,4 @@
+from .ban import UserBannedEventData
 from .kick import UserKickEventData
 from .message_clear import MessageClearEventData
 from .mute import UserMutedEventData
@@ -9,6 +10,7 @@ __all__ = (
     "MessageClearEventData",
     "RolesChangeEventData",
     "UnPunishEventData",
+    "UserBannedEventData",
     "UserKickEventData",
     "UserMutedEventData",
     "UserSetNameEventData",

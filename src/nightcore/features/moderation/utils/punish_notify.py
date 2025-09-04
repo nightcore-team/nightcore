@@ -52,7 +52,7 @@ async def send_punish_dm_message(
 async def send_unpunish_dm_message(
     bot: Nightcore,
     *,
-    user: discord.Member,
+    user: discord.Member | discord.User,
     category: str,
     guild_name: str,
 ) -> None:

@@ -1,4 +1,4 @@
-"""Data transfer object for message clear events in moderation logs."""
+"""Data transfer object for roles change events in moderation logs."""
 
 from dataclasses import dataclass
 from datetime import datetime

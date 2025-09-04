@@ -1,4 +1,4 @@
-"""Moderation Events Cog for Nightcore Bot."""
+"""Kick Event Cog for Nightcore Bot."""
 
 import asyncio
 import logging
@@ -33,7 +33,6 @@ class UserKickEvent(Cog):
         self,
         *,
         data: UserKickEventData,
-        _send_dm: bool = True,
     ) -> None:
         """Handle user kicked events."""
         logger.info(
@@ -87,10 +86,7 @@ class UserKickEvent(Cog):
         gather_list: list[Awaitable[None]] = []
 
         # send dm message to user
-        if _send_dm:
-            gather_list.append(
-                send_punish_dm_message(self.bot, event_data=data)
-            )
+        gather_list.append(send_punish_dm_message(self.bot, event_data=data))
 
         # sending log message
         if logging_channel_id:

@@ -18,6 +18,7 @@ from src.nightcore.components import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.features.moderation.utils import (
     compare_top_roles,
@@ -66,9 +67,11 @@ class UnMute(Cog):
             GuildModerationConfig,
             _create=False,
         ) as (guild_config, _):
-            moderation_access_roles = cast(
-                list[int], guild_config.moderation_access_roles_ids
-            )
+            if not (
+                moderation_access_roles
+                := guild_config.moderation_access_roles_ids
+            ):
+                raise FieldNotConfiguredError("moderation access")
 
             mute_type = guild_config.mute_type
             mute_role_id = guild_config.mute_role_id

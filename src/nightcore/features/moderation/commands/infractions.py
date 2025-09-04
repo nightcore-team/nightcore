@@ -21,6 +21,7 @@ from src.nightcore.components import (
     ErrorEmbed,
     MissingPermissionsEmbed,
 )
+from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
@@ -47,9 +48,12 @@ class Infractions(Cog):
 
         async with self.bot.uow.start() as session:
             # check moderation access
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
-            )
+            if not (
+                moderation_access_roles := await get_moderation_access_roles(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("moderation access")
 
             # get user infractions
             infractions = await get_user_infractions(
