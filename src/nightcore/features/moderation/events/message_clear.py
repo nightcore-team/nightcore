@@ -35,6 +35,7 @@ class MessageClearEvent(Cog):
             "[event] on_message_clear - %s: Guild: %s, Member: %s, Channel: %s, Amount: %s",  # noqa: E501
             data.category,
             data.moderator.guild.id,
+            data.moderator.id,
             data.channel_cleared_id,
             data.amount,
         )

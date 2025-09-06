@@ -6,6 +6,7 @@ from .dto import (
     UserKickEventData,
     UserMutedEventData,
     UserSetNameEventData,
+    UserUnmutedEventData,
 )
 
 __all__ = (
@@ -16,4 +17,5 @@ __all__ = (
     "UserKickEventData",
     "UserMutedEventData",
     "UserSetNameEventData",
+    "UserUnmutedEventData",
 )

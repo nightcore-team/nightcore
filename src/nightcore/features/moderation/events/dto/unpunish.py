@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 
 import discord
 
@@ -42,3 +43,8 @@ class UnPunishEventData(ModerationBaseEventData):
         embed.add_field(name="Reason", value=self.reason, inline=True)
 
         return embed
+
+
+@dataclass(slots=True)
+class UserUnmutedEventData(UnPunishEventData):
+    mute_type: Literal["default", "mpmute", "vmute"]

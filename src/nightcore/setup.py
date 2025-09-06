@@ -26,6 +26,10 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.unmute",
         "src.nightcore.features.moderation.commands.ban",
         "src.nightcore.features.moderation.commands.unban",
+        "src.nightcore.features.moderation.commands.mpmute",
+        "src.nightcore.features.moderation.commands.unmpmute",
+        "src.nightcore.features.moderation.commands.vmute",
+        "src.nightcore.features.moderation.commands.unvmute",
         # moderation events
         "src.nightcore.features.moderation.events.kick",
         "src.nightcore.features.moderation.events.roles_change",

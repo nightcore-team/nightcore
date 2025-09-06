@@ -1,4 +1,4 @@
-"""Unmute command for the Nightcore bot."""
+"""Unmute in marketplace command for the Nightcore bot."""
 
 import logging
 from datetime import datetime, timezone
@@ -29,17 +29,19 @@ from src.nightcore.utils import ensure_member_exists
 logger = logging.getLogger(__name__)
 
 
-class UnMute(Cog):
+class UnVMute(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
     @app_commands.command(
-        name="unmute", description="Unmute a user in the server"
+        name="unvmute",
+        description="Unmute a user in voice chat in the server",
     )
     @app_commands.describe(
-        user="The user to unmute", reason="The reason for unmuting the user"
+        user="The user to unmute",
+        reason="The reason for unmuting the user",
     )
-    async def mute(
+    async def unvmute(
         self,
         interaction: Interaction,
         user: discord.User,
@@ -73,8 +75,7 @@ class UnMute(Cog):
             ):
                 raise FieldNotConfiguredError("moderation access")
 
-            mute_type = guild_config.mute_type
-            mute_role_id = guild_config.mute_role_id
+            mute_role_id = guild_config.vmute_role_id
 
         has_moder_role = any(
             interaction.user.get_role(role_id)  # type: ignore
@@ -124,107 +125,64 @@ class UnMute(Cog):
 
         await interaction.response.defer(thinking=True)
 
-        match mute_type:
-            case "role":
-                mrole = None
-                if mute_role_id:
-                    # Try cache first
-                    mrole = guild.get_role(mute_role_id)
-                    if mrole is None:
-                        try:
-                            mrole = await guild.fetch_role(mute_role_id)
-                        except discord.NotFound:
-                            mrole = None
-                        except discord.HTTPException as e:
-                            logger.exception(
-                                "Failed to fetch mute role %s in guild %s: %s",
-                                mute_role_id,
-                                guild.id,
-                                e,
-                            )
-                            mrole = None
-
-                if not mute_role_id or mrole is None:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "Mute role not found",
-                            f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
-                        )
+        mrole = None
+        if mute_role_id:
+            # Try cache first
+            mrole = guild.get_role(mute_role_id)
+            if mrole is None:
+                try:
+                    mrole = await guild.fetch_role(mute_role_id)
+                except discord.NotFound:
+                    mrole = None
+                except discord.HTTPException as e:
+                    logger.exception(
+                        "Failed to fetch mute role %s in guild %s: %s",
+                        mute_role_id,
+                        guild.id,
+                        e,
                     )
-                else:
-                    member_roles = {r.id for r in member.roles}
-                    has_role = mute_role_id in member_roles
+                    mrole = None
 
-                    if not has_role:
-                        return await interaction.followup.send(
-                            embed=ErrorEmbed(
-                                "Mute role not found",
-                                "The mute role was not found in this user.",
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
-                            )
-                        )
-                    else:
-                        try:
-                            await member.remove_roles(mrole)
-                        except Exception as e:
-                            logger.exception(
-                                "Failed to remove mute role %s from user %s: %s",  # noqa: E501
-                                mute_role_id,
-                                member.id,
-                                e,
-                            )
-                            return await interaction.followup.send(
-                                embed=ErrorEmbed(
-                                    "Role Removal Failed",
-                                    "Failed to remove role.",
-                                    self.bot.user.name,  # type: ignore
-                                    self.bot.user.display_avatar.url,  # type: ignore
-                                ),
-                            )
-
-            case "timeout":
-                if member.is_timed_out():
-                    try:
-                        await member.timeout(None, reason=reason)
-                    except Exception as e:
-                        logger.exception(
-                            "Failed to remove timeout from user %s: %s",
-                            member.id,
-                            e,
-                        )
-                        return await interaction.followup.send(
-                            embed=ErrorEmbed(
-                                "Timeout Removal Failed",
-                                "Failed to remove timeout.",
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
-                            ),
-                        )
-                else:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "User Not Timed Out",
-                            "The user is not currently timed out.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
-                        )
-                    )
-            case _:
-                logger.error(
-                    "Unknown mute type for user %s",
-                    member.id,
+        if not mute_role_id or mrole is None:
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Mute role not found",
+                    f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
                 )
+            )
+        else:
+            member_roles = {r.id for r in member.roles}
+            has_role = mute_role_id in member_roles
+
+            if not has_role:
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
-                        "Unknown Mute Type",
-                        "The specified mute type is unknown.",
+                        "Mute role not found",
+                        "The mute role was not found in this user.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     )
                 )
+            else:
+                try:
+                    await member.remove_roles(mrole)
+                except Exception as e:
+                    logger.exception(
+                        "Failed to remove mute role %s from user %s: %s",
+                        mute_role_id,
+                        member.id,
+                        e,
+                    )
+                    return await interaction.followup.send(
+                        embed=ErrorEmbed(
+                            "Role Removal Failed",
+                            "Failed to remove role.",
+                            self.bot.user.name,  # type: ignore
+                            self.bot.user.display_avatar.url,  # type: ignore
+                        ),
+                    )
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
@@ -239,8 +197,8 @@ class UnMute(Cog):
             self.bot.dispatch(
                 "user_unmute",
                 data=UserUnmutedEventData(
-                    category="mute",
-                    mute_type="default",
+                    category="vmute",
+                    mute_type="vmute",
                     guild_id=guild.id,
                     moderator_id=interaction.user.id,
                     user_id=member.id,
@@ -265,5 +223,5 @@ class UnMute(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the UnMute cog."""
-    await bot.add_cog(UnMute(bot))
+    """Setup the UnVMute cog."""
+    await bot.add_cog(UnVMute(bot))

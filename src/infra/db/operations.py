@@ -260,6 +260,28 @@ async def get_mute_role(session: AsyncSession, *, guild_id: int) -> int | None:
     return result.scalar_one_or_none()
 
 
+async def get_mpmute_role(
+    session: AsyncSession, *, guild_id: int
+) -> int | None:
+    """Get the marketplace mute role for a guild."""
+    stmt = select(GuildModerationConfig.mpmute_role_id).where(
+        GuildModerationConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_vmute_role(
+    session: AsyncSession, *, guild_id: int
+) -> int | None:
+    """Get the voice mute role for a guild."""
+    stmt = select(GuildModerationConfig.vmute_role_id).where(
+        GuildModerationConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def get_mute_type(session: AsyncSession, *, guild_id: int) -> str | None:
     """Get the mute type for a guild."""
     stmt = select(GuildModerationConfig.mute_type).where(

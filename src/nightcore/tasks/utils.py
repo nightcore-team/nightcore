@@ -7,15 +7,43 @@ from discord import ClientUser
 
 from src.infra.db.models import TempPunish
 from src.nightcore.bot import Nightcore
-from src.nightcore.features.moderation.events import UnPunishEventData
+from src.nightcore.features.moderation.events import (
+    UnPunishEventData,
+    UserUnmutedEventData,
+)
 
 
 def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
     """Handle specific events based on infraction type."""
     match active_punish.category.lower():
         case "mute":
-            data = UnPunishEventData(
+            data = UserUnmutedEventData(
                 category=active_punish.category,
+                mute_type="default",
+                guild_id=active_punish.guild_id,
+                moderator_id=cast(ClientUser, bot.user).id,
+                user_id=active_punish.user_id,
+                reason="Punish expired",
+                created_at=datetime.now(timezone.utc),
+            )
+            bot.dispatch("user_unmute", data=data)
+
+        case "mpmute":
+            data = UserUnmutedEventData(
+                category=active_punish.category,
+                mute_type="mpmute",
+                guild_id=active_punish.guild_id,
+                moderator_id=cast(ClientUser, bot.user).id,
+                user_id=active_punish.user_id,
+                reason="Punish expired",
+                created_at=datetime.now(timezone.utc),
+            )
+            bot.dispatch("user_unmute", data=data)
+
+        case "vmute":
+            data = UserUnmutedEventData(
+                category=active_punish.category,
+                mute_type="vmute",
                 guild_id=active_punish.guild_id,
                 moderator_id=cast(ClientUser, bot.user).id,
                 user_id=active_punish.user_id,
@@ -25,7 +53,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
             bot.dispatch("user_unmute", data=data)
 
         case "ban":
-            data = UnPunishEventData(
+            unpunish_data = UnPunishEventData(
                 category=active_punish.category,
                 guild_id=active_punish.guild_id,
                 moderator_id=cast(ClientUser, bot.user).id,
@@ -33,7 +61,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 reason="Punish expired",
                 created_at=datetime.now(timezone.utc),
             )
-            bot.dispatch("user_unbanned", data=data)
+            bot.dispatch("user_unbanned", data=unpunish_data)
 
         case _:
             ...
