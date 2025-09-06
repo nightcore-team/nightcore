@@ -249,9 +249,6 @@ class VMute(Cog):
             .add_field(name="Duration", value=duration, inline=True)
         )
 
-        # Define mute type for event payload
-        mute_type = "vmute"
-
         try:
             self.bot.dispatch(
                 "user_muted",
@@ -265,7 +262,6 @@ class VMute(Cog):
                     ),
                     duration=parsed_duration,
                     original_duration=duration,
-                    mute_type=mute_type,
                     end_time=end_time,  # type: ignore
                 ),
             )

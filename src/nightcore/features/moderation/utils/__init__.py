@@ -7,11 +7,13 @@ from .punish_notify import (
 from .punish_pagination import build_pages
 from .role_utils import compare_top_roles, fraction_roles_autocomplete
 from .time_utils import calculate_end_time, parse_duration
+from .timeout_remover import fetch_timeout_remover
 
 __all__ = (
     "build_pages",
     "calculate_end_time",
     "compare_top_roles",
+    "fetch_timeout_remover",
     "fraction_roles_autocomplete",
     "parse_duration",
     "send_moderation_log",

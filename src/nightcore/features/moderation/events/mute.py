@@ -36,7 +36,6 @@ from src.nightcore.utils import discord_ts
 logger = logging.getLogger(__name__)
 
 
-# TODO: implement unmuted event and task for unmuting and event for untimed out
 class UserMutedEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
@@ -94,22 +93,21 @@ class UserMutedEvent(Cog):
                 )
                 return
 
-            if data.mute_type in ("role", "mpmute", "vmute"):
-                try:
-                    await create_temp_punish(
-                        session,
-                        guild_id=data.moderator.guild.id,
-                        user_id=data.user.id,
-                        category=data.category,
-                        end_time=end_time,
-                    )
-                except Exception as e:
-                    logger.exception(
-                        "[event] on_user_muted - %s: Failed to create punish record: %s",  # noqa: E501
-                        data.category,
-                        e,
-                    )
-                    return
+            try:
+                await create_temp_punish(
+                    session,
+                    guild_id=data.moderator.guild.id,
+                    user_id=data.user.id,
+                    category=data.category,
+                    end_time=end_time,
+                )
+            except Exception as e:
+                logger.exception(
+                    "[event] on_user_muted - %s: Failed to create punish record: %s",  # noqa: E501
+                    data.category,
+                    e,
+                )
+                return
 
             logging_channel_id = await get_specified_channel(
                 session,
@@ -233,22 +231,23 @@ class UserMutedEvent(Cog):
                     time_now=discord.utils.utcnow().astimezone(timezone.utc),
                 )
 
-                if mute_type == "role":
-                    temp = await get_latest_temp_punish(
-                        session,
-                        guild_id=data.guild_id,
-                        user_id=data.user_id,
-                        category=data.category,
+                temp = await get_latest_temp_punish(
+                    session,
+                    guild_id=data.guild_id,
+                    user_id=data.user_id,
+                    category=data.category,
+                )
+                if temp:
+                    await session.delete(temp)
+
+                else:
+                    logger.error(
+                        "[event] user_unmute - %s: No active temporary punishment found for user %s in guild %s",  # noqa: E501
+                        data.category,
+                        data.user_id,
+                        data.guild_id,
                     )
-                    if temp:
-                        await session.delete(temp)
-                    else:
-                        logger.error(
-                            "[event] user_unmute - %s: No active temporary punishment found for user %s in guild %s",  # noqa: E501
-                            data.category,
-                            data.user_id,
-                            data.guild_id,
-                        )
+
             logging_channel_id = await get_specified_channel(
                 session,
                 guild_id=data.guild_id,

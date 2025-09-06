@@ -287,7 +287,6 @@ class Mute(Cog):
                     ),
                     duration=parsed_duration,
                     original_duration=duration,
-                    mute_type=mute_type,
                     end_time=end_time,  # type: ignore
                 ),
             )

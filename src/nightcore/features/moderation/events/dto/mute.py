@@ -20,7 +20,6 @@ class UserMutedEventData(ModerationBaseEventData):
     reason: str
     duration: int
     original_duration: str
-    mute_type: str
     end_time: str  # type: ignore
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:

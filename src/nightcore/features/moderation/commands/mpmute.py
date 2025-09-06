@@ -232,9 +232,6 @@ class MpMute(Cog):
             .add_field(name="Duration", value=duration, inline=True)
         )
 
-        # Define mute type for event payload
-        mute_type = "mpmute"
-
         try:
             self.bot.dispatch(
                 "user_muted",
@@ -248,7 +245,6 @@ class MpMute(Cog):
                     ),
                     duration=parsed_duration,
                     original_duration=duration,
-                    mute_type=mute_type,
                     end_time=end_time,  # type: ignore
                 ),
             )
