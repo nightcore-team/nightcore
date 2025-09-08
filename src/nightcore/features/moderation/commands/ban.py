@@ -19,6 +19,7 @@ from src.nightcore.components import (
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
+from src.nightcore.features.moderation.components import BanFormModal
 from src.nightcore.features.moderation.events import UserBannedEventData
 from src.nightcore.features.moderation.utils import (
     calculate_end_time,
@@ -243,6 +244,173 @@ class Ban(Cog):
         )
 
 
+async def _ban_request_callback(
+    interaction: Interaction, user: discord.Member
+):
+    """Callback for the ban request context menu."""
+    guild = cast(Guild, interaction.guild)
+
+    # Ensure we have a guild Member object
+    member = await ensure_member_exists(guild, user)
+    client = cast(Nightcore, interaction.client)
+
+    if member is None:
+        return await interaction.response.send_message(
+            embed=EntityNotFoundEmbed(
+                "user",
+                client.user.name,  # type: ignore
+                client.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    async with specified_guild_config(
+        client,
+        guild.id,
+        GuildModerationConfig,
+        _create=False,
+    ) as (guild_config, _):
+        if not (
+            moderation_access_roles := guild_config.moderation_access_roles_ids
+        ):
+            raise FieldNotConfiguredError("moderation access")
+
+        if not (
+            ban_request_channel_id := guild_config.send_ban_request_channel_id
+        ):
+            raise FieldNotConfiguredError("ban request channel")
+
+        if not (ban_access_roles := guild_config.ban_access_roles_ids):
+            raise FieldNotConfiguredError("ban access")
+
+        ban_request_ping_role_id = guild_config.ban_request_ping_role_id
+
+    has_moder_role = any(
+        interaction.user.get_role(role_id)  # type: ignore
+        for role_id in moderation_access_roles
+    )
+    if not has_moder_role:
+        return await interaction.response.send_message(
+            embed=MissingPermissionsEmbed(
+                client.user.name,  # type: ignore
+                client.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    is_member_moderator = any(
+        member.get_role(role_id) for role_id in moderation_access_roles
+    )
+    if is_member_moderator:
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "You cannot ban moderators.",
+                client.user.name,  # type: ignore
+                client.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if member.guild_permissions.administrator:
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "You cannot ban administrators.",
+                client.user.name,  # type: ignore
+                client.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if not guild.me.guild_permissions.ban_members:
+        return await interaction.response.send_message(
+            embed=MissingPermissionsEmbed(
+                client.user.name,  # type: ignore
+                client.user.display_avatar.url,  # type: ignore
+                "I do not have permission to ban members.",
+            ),
+            ephemeral=True,
+        )
+
+    if guild.me == member:
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "You cannot ban me.",
+                client.user.name,  # type: ignore
+                client.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if not compare_top_roles(guild, member):
+        return await interaction.response.send_message(
+            embed=MissingPermissionsEmbed(
+                client.user.name,  # type: ignore
+                client.user.display_avatar.url,  # type: ignore
+                "I cannot ban this user because he has a higher role than me.",
+            ),
+            ephemeral=True,
+        )
+
+    role = None
+    if ban_request_ping_role_id:
+        role = guild.get_role(ban_request_ping_role_id)
+        if role is None:
+            try:
+                role = await guild.fetch_role(ban_request_ping_role_id)
+            except discord.NotFound:
+                role = None
+
+    channel = guild.get_channel(ban_request_channel_id)
+    if channel is None:
+        try:
+            channel = await guild.fetch_channel(ban_request_channel_id)  # type: ignore
+            if not isinstance(channel, discord.TextChannel | discord.Thread):
+                logger.warning(
+                    "[ban_request_callback] channel %s not messageable (%s)",
+                    channel.id,  # type: ignore
+                    type(channel).__name__,
+                )
+                return await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        "Channel's type must be a TextChannel or Thread",
+                        client.user.name,  # type: ignore
+                        client.user.display_avatar.url,  # type: ignore
+                    )
+                )
+        except discord.NotFound:
+            return await interaction.response.send_message(
+                embed=EntityNotFoundEmbed(
+                    "channel",
+                    client.user.name,  # type: ignore
+                    client.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+    modal = BanFormModal(
+        target=user,
+        moderator=interaction.user,  # type: ignore
+        bot=client,
+        ping_role=role,
+        channel=channel,  # type: ignore
+        ban_access_roles_ids=ban_access_roles,
+    )
+
+    await interaction.response.send_modal(modal)
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s target=%s",
+        interaction.user.id,
+        guild.id,
+        user.id,
+    )
+
+
 async def setup(bot: Nightcore):
     """Setup the Ban cog."""
+    bot.tree.add_command(
+        app_commands.ContextMenu(
+            name="Send Ban Request",
+            callback=_ban_request_callback,
+        )
+    )
     await bot.add_cog(Ban(bot))

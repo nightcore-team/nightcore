@@ -3,6 +3,7 @@
 import logging
 
 from discord import Guild, HTTPException, Member, NotFound, User
+import discord
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,13 @@ async def ensure_member_exists(
     if isinstance(user, Member):
         return user
     try:
-        return await guild.fetch_member(user.id)
-    except NotFound:
-        return None
+        member = guild.get_member(user.id)
+        if member is None:
+            try:
+                member = await guild.fetch_member(user.id)
+            except NotFound:
+                member = None
+        return member
     except HTTPException as e:
         logger.debug(
             "Failed refetching member %s in guild %s: %s",

@@ -1,3 +1,3 @@
-from .view import InfractionsViewV2
+from .view import BanRequestViewV2, InfractionsViewV2
 
-__all__ = ("InfractionsViewV2",)
+__all__ = ("BanRequestViewV2", "InfractionsViewV2")

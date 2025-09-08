@@ -7,3 +7,4 @@ class Config(BaseEnvConfig):
     BOT_TOKEN: str
     EMBED_DESCRIPTION_LIMIT: int = 4096
     VIEW_V2_DESCRIPTION_LIMIT: int = 3000
+    DELETE_MESSAGES_SECONDS: int = 604800
