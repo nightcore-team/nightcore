@@ -14,7 +14,7 @@ from src.infra.db.operations import (
     get_moderation_access_roles,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.components import (
+from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,

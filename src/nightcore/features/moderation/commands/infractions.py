@@ -17,7 +17,7 @@ from src.infra.db.operations import (
     get_user_infractions,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.components import (
+from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
 )

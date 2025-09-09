@@ -7,6 +7,7 @@ from .error import (
     ValidationErrorEmbed,
 )
 from .success import (
+    SuccessDeniedEmbed,
     SuccessMoveEmbed,
 )
 
@@ -16,6 +17,7 @@ __all__ = (
     "MissingPermissionsEmbed",
     "NoConfigFoundButCreatedEmbed",
     "NoOptionsSuppliedEmbed",
+    "SuccessDeniedEmbed",
     "SuccessMoveEmbed",
     "ValidationErrorEmbed",
 )

@@ -14,7 +14,7 @@ from src.infra.db.operations import (
     get_organization_roles_ids,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.components import (
+from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -22,7 +22,7 @@ from src.nightcore.components import (
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
-from src.nightcore.features.moderation.components import (
+from src.nightcore.features.moderation.components.view import (
     RemoveOrgRoleSelect,
 )
 from src.nightcore.features.moderation.events import (

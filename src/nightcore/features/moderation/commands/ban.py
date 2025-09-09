@@ -11,7 +11,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components import (
+from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -19,7 +19,7 @@ from src.nightcore.components import (
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
-from src.nightcore.features.moderation.components import BanFormModal
+from src.nightcore.features.moderation.components.modal import BanFormModal
 from src.nightcore.features.moderation.events import UserBannedEventData
 from src.nightcore.features.moderation.utils import (
     calculate_end_time,
@@ -393,6 +393,7 @@ async def _ban_request_callback(
         ping_role=role,
         channel=channel,  # type: ignore
         ban_access_roles_ids=ban_access_roles,
+        moderation_access_roles_ids=moderation_access_roles,
     )
 
     await interaction.response.send_modal(modal)

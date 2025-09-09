@@ -1,3 +1,5 @@
+"""GIFs for various actions."""
+
 HUG_GIFS = [
     "https://c.tenor.com/SG2Y2dkZvqoAAAAd/tenor.gif",
     "https://c.tenor.com/SyziBVc7Gx4AAAAd/tenor.gif",

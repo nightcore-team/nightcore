@@ -5,7 +5,7 @@ import logging
 import discord
 
 from src.nightcore.bot import Nightcore
-from src.nightcore.features.moderation.components import (
+from src.nightcore.features.moderation.components.embed import (
     generate_dm_punish_embed,
     generate_dm_un_punish_embed,
 )

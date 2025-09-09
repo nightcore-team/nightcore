@@ -7,7 +7,11 @@ from discord.ui import Modal, TextInput
 
 from src.config.config import config
 from src.nightcore.bot import Nightcore
-from src.nightcore.components import ErrorEmbed, ValidationErrorEmbed
+from src.nightcore.components.embed import (
+    ErrorEmbed,
+    SuccessMoveEmbed,
+    ValidationErrorEmbed,
+)
 from src.nightcore.features.moderation.components.v2 import BanRequestViewV2
 from src.nightcore.features.moderation.utils import parse_duration
 
@@ -45,6 +49,7 @@ class BanFormModal(Modal, title="Send Ban Request"):
         bot: Nightcore,
         channel: discord.TextChannel | discord.Thread,
         ban_access_roles_ids: list[int],
+        moderation_access_roles_ids: list[int],
         ping_role: discord.Role | None = None,
     ):
         super().__init__()
@@ -54,6 +59,9 @@ class BanFormModal(Modal, title="Send Ban Request"):
         self.ping_role = ping_role
         self.channel = channel
         self.ban_access_roles_ids = ban_access_roles_ids
+        self.moderation_access_roles_ids: list[int] = (
+            moderation_access_roles_ids
+        )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         """Handles the submission of the ban form modal."""
@@ -85,7 +93,6 @@ class BanFormModal(Modal, title="Send Ban Request"):
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
-                    ephemeral=True,
                 )
 
             if delete_seconds > config.bot.DELETE_MESSAGES_SECONDS:
@@ -95,7 +102,6 @@ class BanFormModal(Modal, title="Send Ban Request"):
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
-                    ephemeral=True,
                 )
 
             original_delete_seconds = self.delete_messages_for_last.value
@@ -105,18 +111,26 @@ class BanFormModal(Modal, title="Send Ban Request"):
             reason=reason,
             user=self.target,
             bot=self.bot,
+            ping_role=self.ping_role,
             original_duration=self.duration.value,
             duration=duration_seconds,
             original_delete_seconds=original_delete_seconds,
             delete_seconds=delete_seconds,
             ban_access_roles_ids=self.ban_access_roles_ids,
+            moderation_access_roles_ids=self.moderation_access_roles_ids,
         )
 
         try:
-            if self.ping_role:
-                await self.channel.send(f"<@{self.ping_role.id}>")
-
             await self.channel.send(view=view)
+
+            await interaction.followup.send(
+                embed=SuccessMoveEmbed(
+                    "Ban Request Submitted",
+                    f"Your ban request for {self.target.mention} has sent successfully.",  # noqa: E501
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                )
+            )
 
         except Exception as e:
             logger.exception(
@@ -127,6 +141,7 @@ class BanFormModal(Modal, title="Send Ban Request"):
             )
             return await interaction.followup.send(
                 embed=ErrorEmbed(
+                    "Ban Request Failed",
                     "Failed to send ban request message.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore

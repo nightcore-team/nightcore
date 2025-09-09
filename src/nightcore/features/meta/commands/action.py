@@ -9,8 +9,10 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.nightcore.bot import Nightcore
-from src.nightcore.components import ValidationErrorEmbed
-from src.nightcore.components.embed.error import EntityNotFoundEmbed
+from src.nightcore.components.embed import (
+    EntityNotFoundEmbed,
+    ValidationErrorEmbed,
+)
 from src.nightcore.features.meta.utils import (
     ACTION_CHOICES,
     DUO_ACTIONS,

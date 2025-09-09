@@ -10,7 +10,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models.guild import GuildLevelsConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components import NoOptionsSuppliedEmbed
+from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import levels as levels_group
 from src.nightcore.features.config.utils import level_roles_dict_value
 from src.nightcore.services.config import specified_guild_config

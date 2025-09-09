@@ -1,9 +1,11 @@
 """View for paginating infractions."""
 
+import logging
 from datetime import datetime, timezone
-from typing import Self
+from typing import Self, cast
 
-from discord import ButtonStyle, Member, User
+import discord
+from discord import ButtonStyle, Member, Role, User
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -19,21 +21,39 @@ from discord.ui import (
 )
 
 from src.nightcore.bot import Nightcore
+from src.nightcore.components.embed import (
+    MissingPermissionsEmbed,
+    SuccessDeniedEmbed,
+    SuccessMoveEmbed,
+)
 from src.nightcore.utils import discord_ts
+
+logger = logging.getLogger(__name__)
 
 
 class ActionButtons(ActionRow["BanRequestViewV2"]):
     def __init__(self):
         super().__init__()
+        self.in_favor: set[int] = set()
+        self.against: set[int] = set()
 
     async def interaction_check(
         self,
         interaction: Interaction,
     ) -> bool:
-        """Ensure that only the author can interact with the view."""
-        if interaction.user.id != self.view.author_id:  # type: ignore
+        """Ensure that only users with ban access roles can interact with the view."""  # noqa: E501
+        view = self.view  # type: ignore
+        has_moder_role = any(
+            interaction.user.get_role(role_id)  # type: ignore
+            for role_id in view.moderation_access_roles_ids  # type: ignore
+        )
+        if not has_moder_role:
             await interaction.response.send_message(
-                "You can't manage this pagination.", ephemeral=True
+                embed=MissingPermissionsEmbed(
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
             return False
         return True
@@ -48,6 +68,55 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         self, interaction: Interaction, button: Button["BanRequestViewV2"]
     ):
         """Approve the ban request."""
+        view = self.view  # type: ignore
+        user = cast(Member, interaction.user)
+
+        # if user voted - send ephemeral message
+        # if user didn't vote - add to list and update message
+        #   if user has access to ban - update message to say ban is approved and disable buttons  # noqa: E501
+        # if len of voted users >= 4 - update message to say ban is approved and disable buttons  # noqa: E501
+
+        if user.id in self.in_favor:
+            return await interaction.response.send_message(
+                "You have already voted in favor of this ban request.",
+                ephemeral=True,
+            )
+
+        self.in_favor.add(user.id)
+
+        view.in_favor_moderators_text += (  # type: ignore
+            f"- <@{user.id}>\n"
+        )
+
+        has_ban_role = any(
+            user.get_role(role_id)  # type: ignore
+            for role_id in view.ban_access_roles_ids  # type: ignore
+        )
+        if has_ban_role:
+            view.accent_color = discord.Color.green()  # type: ignore
+
+            return await interaction.response.edit_message(
+                view=view.make_component(disabled=True),  # type: ignore
+            )
+
+        if len(self.in_favor) >= 4:
+            view.accent_color = discord.Color.green()  # type: ignore
+            await interaction.response.edit_message(
+                view=view.make_component(disabled=True),  # type: ignore
+            )
+            return await interaction.response.send_message(
+                embed=SuccessMoveEmbed(
+                    "Ban Request Submitted",
+                    f"Ban request for {view.user.mention} has been submitted.",  # type: ignore
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+        await interaction.response.edit_message(
+            view=view.make_component(),  # type: ignore
+        )
+
+        logger.info("Ban request approved by %s", user.id)
 
     @button(
         style=ButtonStyle.red,
@@ -59,6 +128,56 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         self, interaction: Interaction, button: Button["BanRequestViewV2"]
     ):
         """Deny the ban request."""
+        view = self.view  # type: ignore
+        user = cast(Member, interaction.user)
+
+        # if user voted - send ephemeral message
+        # if user didn't vote - add to list and update message
+        #   if user has access to ban - update message to say ban is denied and disable buttons  # noqa: E501
+        # if len of voted users >= 4 - update message to say ban is denied and disable buttons  # noqa: E501
+
+        if user.id in self.against:
+            return await interaction.response.send_message(
+                "You have already voted against this ban request.",
+                ephemeral=True,
+            )
+
+        self.against.add(user.id)
+
+        view.against_moderators_text += (  # type: ignore
+            f"- <@{user.id}>\n"
+        )
+
+        has_ban_role = any(
+            user.get_role(role_id)  # type: ignore
+            for role_id in view.ban_access_roles_ids  # type: ignore
+        )
+        if has_ban_role:
+            view.accent_color = discord.Color.red()  # type: ignore
+
+            await interaction.response.edit_message(
+                view=view.make_component(disabled=True),  # type: ignore
+            )
+            await interaction.response.send_message(
+                embed=SuccessDeniedEmbed(
+                    "Ban Request Denied",
+                    f"Ban request for {view.user.mention} has been denied.",  # type: ignore
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        if len(self.against) >= 4:
+            view.accent_color = discord.Color.red()  # type: ignore
+            return await interaction.response.edit_message(
+                view=view.make_component(disabled=True),  # type: ignore
+            )
+
+        await interaction.response.edit_message(
+            view=view.make_component(),  # type: ignore
+        )
+
+        logger.info("Ban request approved by %s", user.id)
 
 
 class BanRequestViewV2(LayoutView):
@@ -72,7 +191,10 @@ class BanRequestViewV2(LayoutView):
         original_duration: str,
         delete_seconds: int,
         original_delete_seconds: str,
+        moderation_access_roles_ids: list[int],
         ban_access_roles_ids: list[int],
+        ping_role: Role | None = None,
+        attachments: list[str] | None = None,
         timeout: int = 180,
     ):
         super().__init__(timeout=timeout)
@@ -80,38 +202,50 @@ class BanRequestViewV2(LayoutView):
         self.reason = reason
         self.user = user
         self.bot = bot
+        self.ping_role = ping_role
         self.original_duration = original_duration
         self.ban_access_roles_ids = ban_access_roles_ids
         self.duration = duration
         self.delete_seconds = delete_seconds
         self.original_delete_seconds = original_delete_seconds
+        self.moderation_access_roles_ids = moderation_access_roles_ids
 
         self.actions: ActionButtons | None = None
         self.header_text: TextDisplay[Self] | None = None
         self.footer_text: TextDisplay[Self] | None = None
+        self.in_favor_moderators_text = ""
+        self.against_moderators_text = ""
+        self.accent_color = discord.Color.yellow()
 
         self.make_component()
 
-    def _disable_buttons(self): ...
+    def disable_buttons(self):
+        """Disable all buttons in the view."""
+        if self.actions:
+            for item in self.actions.children:
+                if isinstance(item, Button):
+                    item.disabled = True
 
-    def make_component(self) -> Self:
+    def make_component(self, *, disabled: bool = False) -> Self:
         """Create the layout view component."""
 
         # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=self.accent_color)
 
-        # Header
-        self.notify_test = TextDisplay[Self]("## Ban Request Form")
-        container.add_item(self.notify_test)
-        container.add_item(Separator[Self]())
+        if self.ping_role:
+            container.add_item(
+                TextDisplay[Self](f"### {self.ping_role.mention}")
+            )
+            container.add_item(Separator[Self]())
 
         self.header_text = TextDisplay[Self](
-            f"Name | ID: {self.user.global_name} | {self.user.id}\n"
+            f"Name | ID: {self.user.mention} | `{self.user.id}`\n"
+            f"Moderator: <@{self.author_id}>\n"
             f"Reason: **`{self.reason}`**\n"
             f"Duration: **`{self.original_duration}`**\n"
-            f"Delete message for last: **`{self.original_delete_seconds if self.original_delete_seconds else 'N/A'}`**\n"  # noqa: E501
+            f"Delete messages for last: **`{self.original_delete_seconds if self.original_delete_seconds else 'N/A'}`**\n"  # noqa: E501
         )
         header_section = Section[Self](
             self.header_text,
@@ -120,13 +254,26 @@ class BanRequestViewV2(LayoutView):
         container.add_item(header_section)
         container.add_item(Separator[Self]())
 
+        container.add_item(TextDisplay[Self]("### In Favor:"))
+        if self.in_favor_moderators_text:
+            container.add_item(
+                TextDisplay[Self](self.in_favor_moderators_text)
+            )
+        container.add_item(TextDisplay[Self]("### Against:"))
+        if self.against_moderators_text:
+            container.add_item(TextDisplay[Self](self.against_moderators_text))
+
+        container.add_item(Separator[Self]())
+
         # Main page text
-        page_content = "Attachments:\n"
-        self.main_text = TextDisplay[Self](page_content)
+        attachments_text = TextDisplay[Self]("### Attachments:")
+        container.add_item(attachments_text)
         container.add_item(Separator[Self]())
 
         # Action buttons
         self.actions = ActionButtons()
+        container.add_item(self.actions)
+        container.add_item(Separator[Self]())
 
         # Footer
         now = datetime.now(timezone.utc)
@@ -134,6 +281,9 @@ class BanRequestViewV2(LayoutView):
             f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
         )
         container.add_item(self.footer_text)
+
+        if disabled:
+            self.disable_buttons()
 
         self.add_item(container)
 
