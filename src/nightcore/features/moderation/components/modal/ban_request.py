@@ -36,10 +36,10 @@ class BanFormModal(Modal, title="Send Ban Request"):
 
     delete_messages_for_last = TextInput["BanFormModal"](
         label="Delete messages for the last",
-        style=discord.TextStyle.paragraph,
+        style=discord.TextStyle.short,
         placeholder="Example: 1m, 1h, 1d, 7d",
         required=False,
-        max_length=100,
+        max_length=20,
     )
 
     def __init__(
@@ -109,7 +109,7 @@ class BanFormModal(Modal, title="Send Ban Request"):
         view = BanRequestViewV2(
             author_id=self.moderator.id,
             reason=reason,
-            user=self.target,
+            target=self.target,
             bot=self.bot,
             ping_role=self.ping_role,
             original_duration=self.duration.value,

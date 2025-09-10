@@ -42,7 +42,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.message",
         "src.nightcore.events.error",
         # tasks
-        # "src.nightcore.tasks.unpunish",
+        "src.nightcore.tasks.unpunish",
     ]
 
     return Nightcore(

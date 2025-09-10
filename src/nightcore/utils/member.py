@@ -1,9 +1,9 @@
 """Utility functions for handling Discord members."""
 
 import logging
+from collections.abc import Sequence
 
 from discord import Guild, HTTPException, Member, NotFound, User
-import discord
 
 logger = logging.getLogger(__name__)
 
@@ -41,3 +41,9 @@ async def ensure_member_exists(
             e,
         )
         return None
+
+
+def has_any_role(user: Member, roles_sequence: Sequence[int]) -> bool:
+    """Check if a member has any of the specified roles."""
+
+    return any(user.get_role(role_id) for role_id in roles_sequence)
