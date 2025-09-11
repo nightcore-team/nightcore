@@ -9,6 +9,7 @@ from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
+from src.config.config import config
 from src.infra.db.models import GuildModerationConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
@@ -46,6 +47,7 @@ class Ban(Cog):
         user: discord.User,
         duration: str,
         reason: str,
+        delete_messages_per: str | None = None,
     ):
         """Mute a user in the server."""
         guild = cast(Guild, interaction.guild)
@@ -167,6 +169,30 @@ class Ban(Cog):
                 ),
                 ephemeral=True,
             )
+        parsed_delete_messages_per = 0
+
+        if delete_messages_per:
+            tmp_delete_messages_per = parse_duration(delete_messages_per)
+
+            if tmp_delete_messages_per is None:
+                return await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        "Invalid message deletion duration. Use s/m/h/d up to 7d (e.g., 1h, 1d, 7d).",  # noqa: E501
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                )
+
+            if tmp_delete_messages_per > config.bot.DELETE_MESSAGES_SECONDS:
+                return await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        f"Message deletion duration cannot exceed {config.bot.DELETE_MESSAGES_SECONDS // 86400} days.",  # noqa: E501
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                )
+
+            parsed_delete_messages_per = tmp_delete_messages_per
 
         end_time = calculate_end_time(parsed_duration)
 
@@ -177,7 +203,11 @@ class Ban(Cog):
         except discord.NotFound:
             # not banned yet, we can ban
             try:
-                await guild.ban(member, reason=reason, delete_message_days=0)
+                await guild.ban(
+                    member,
+                    reason=reason,
+                    delete_message_seconds=parsed_delete_messages_per,
+                )
             except discord.HTTPException as e:
                 logger.exception(
                     "Failed to ban user=%s guild=%s: %s",
@@ -203,6 +233,11 @@ class Ban(Cog):
                     )
                     .add_field(name="Reason", value=reason, inline=True)
                     .add_field(name="Duration", value=duration, inline=True)
+                    .add_field(
+                        name="Deleted Messages",
+                        value=delete_messages_per or "N/A",
+                        inline=True,
+                    )
                 )
         else:
             return await interaction.followup.send(
@@ -227,6 +262,7 @@ class Ban(Cog):
                     duration=parsed_duration,
                     original_duration=duration,
                     end_time=end_time,  # type: ignore
+                    delete_messages_per=delete_messages_per,
                 ),
             )
         except Exception as e:

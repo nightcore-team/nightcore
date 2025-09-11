@@ -11,7 +11,7 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.features.moderation.events.dto.roles_change import (
+from src.nightcore.features.moderation.events.dto import (
     RolesChangeEventData,
 )
 

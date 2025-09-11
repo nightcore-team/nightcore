@@ -20,7 +20,8 @@ class UserBannedEventData(ModerationBaseEventData):
     reason: str
     duration: int
     original_duration: str
-    end_time: str
+    end_time: str | None = None
+    delete_messages_per: str | None = None
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the punishment event."""
@@ -45,6 +46,12 @@ class UserBannedEventData(ModerationBaseEventData):
         embed.add_field(
             name="Duration", value=f"{self.original_duration}", inline=True
         )
+        if self.delete_messages_per:
+            embed.add_field(
+                name="Delete messages per last",
+                value=self.delete_messages_per,
+                inline=True,
+            )
         embed.add_field(
             name="Ends",
             value=self.end_time,

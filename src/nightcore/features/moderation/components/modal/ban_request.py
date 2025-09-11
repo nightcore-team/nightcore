@@ -121,12 +121,12 @@ class BanFormModal(Modal, title="Send Ban Request"):
         )
 
         try:
-            await self.channel.send(view=view)
+            message = await self.channel.send(view=view)
 
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
                     "Ban Request Submitted",
-                    f"Your ban request for {self.target.mention} has sent successfully.",  # noqa: E501
+                    f"Your {message.jump_url} for {self.target.mention} has sent successfully.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 )
