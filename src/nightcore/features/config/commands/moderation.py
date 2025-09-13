@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     moderation_access_roles="The roles that can access moderation features.",
+    leadership_access_roles="The roles that can access leadership moderation features.",  # noqa: E501
     ban_access_roles="The roles that can access ban features.",
     ban_request_ping_role="The role to ping when a ban request is made.",
     ban_request_channel="The channel where ban requests are made.",
@@ -54,6 +55,7 @@ logger = logging.getLogger(__name__)
 async def setup_moderation(
     interaction: Interaction,
     moderation_access_roles: str | None = None,  #
+    leadership_access_roles: str | None = None,  #
     ban_access_roles: str | None = None,  #
     ban_request_ping_role: discord.Role | None = None,  #
     ban_request_channel: discord.TextChannel | None = None,  #
@@ -73,6 +75,7 @@ async def setup_moderation(
         int_id_value("mpmute_role_id", mpmute_role),
         int_id_value("vmute_role_id", vmute_role),
         list_csv("moderation_access_roles_ids", moderation_access_roles),
+        list_csv("leadership_access_roles_ids", leadership_access_roles),
         list_csv("ban_access_roles_ids", ban_access_roles),
         list_csv("leader_access_rr_roles_ids", leaders_access_rr_roles),
         list_csv("fraction_roles_access_roles_ids", fraction_roles_access),
@@ -365,6 +368,68 @@ async def update_fraction_role_access(
 
     logger.info(
         "[command] - update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        interaction.user.id,
+        cast(Guild, interaction.guild).id,
+        option,
+        role.id,
+    )
+
+
+@moderation_group.command(name="update_leardership_access")
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.choices(
+    option=[
+        app_commands.Choice(name="Add", value="add"),
+        app_commands.Choice(name="Remove", value="remove"),
+    ]
+)
+@app_commands.describe(
+    role="The role to update",
+    option="Whether to add or remove the role from the leadership access list",
+)
+async def update_leadership_access(
+    interaction: Interaction,
+    role: discord.Role,
+    option: Literal["add", "remove"],
+):
+    """Update the list of roles with leadership moderation access."""
+    async with specified_guild_config(
+        cast(Nightcore, interaction.client),
+        cast(Guild, interaction.guild).id,
+        config_type=GuildModerationConfig,
+    ) as (guild_config, _):
+        new_list, changed, state = update_id_list(
+            guild_config.leadership_access_roles_ids,
+            role.id,
+            option,
+        )
+        if changed:
+            guild_config.leadership_access_roles_ids = new_list
+
+    if state == "exists":
+        desc = f"Role <@&{role.id}> already in the leadership access list."
+        color = discord.Color.yellow()
+    elif state == "absent":
+        desc = f"Role <@&{role.id}> not in the leadership access list."
+        color = discord.Color.red()
+    elif state == "added":
+        desc = f"Role <@&{role.id}> added to the leadership access list."
+        color = discord.Color.blurple()
+    else:  # removed
+        desc = f"Role <@&{role.id}> removed from the leadership access list."
+        color = discord.Color.blurple()
+
+    await interaction.response.send_message(
+        embed=Embed(
+            title="Moderation Configuration",
+            description=desc,
+            color=color,
+        ),
+        ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - update_leadership_access user=%s guild=%s option=%s role=%s",  # noqa: E501
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,

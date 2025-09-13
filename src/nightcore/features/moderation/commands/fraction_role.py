@@ -26,7 +26,12 @@ from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
 )
 from src.nightcore.features.moderation.utils import fraction_roles_autocomplete
-from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils import (
+    ensure_member_exists,
+    ensure_role_exists,
+    has_any_role,
+    has_any_role_from_sequence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +112,8 @@ class FractionRole(Cog):
                 moderation_access_roles + fraction_roles_access_roles
             )
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in final_access_list
+        has_moder_role = has_any_role_from_sequence(
+            cast(discord.Member, interaction.user), final_access_list
         )
         if not has_moder_role:
             return await interaction.followup.send(
@@ -120,20 +124,18 @@ class FractionRole(Cog):
                 ephemeral=True,
             )
 
-        target_role = guild.get_role(role_id)
-
+        target_role = await ensure_role_exists(guild, role_id)
         if target_role is None:
             return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
-                    "role",
+                    "fraction role",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
 
-        member_roles = {r.id for r in member.roles}
-        has_role = role_id in member_roles
+        has_role = has_any_role(member, target_role.id)
 
         match option:
             case "add":

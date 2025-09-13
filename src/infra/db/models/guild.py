@@ -196,6 +196,9 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
     moderation_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )  #
+    leadership_access_roles_ids: Mapped[list[int] | None] = mapped_column(
+        ARRAY(BigInteger), nullable=True
+    )  #
     count_moderator_messages_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )  #

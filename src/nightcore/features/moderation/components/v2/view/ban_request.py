@@ -35,7 +35,7 @@ from src.nightcore.components.embed import (
     MissingPermissionsEmbed,
 )
 from src.nightcore.features.moderation.events.dto import UserBannedEventData
-from src.nightcore.utils import discord_ts, has_any_role
+from src.nightcore.utils import discord_ts, has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +49,11 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         interaction: Interaction,
     ) -> bool:
         """Ensure that only users with ban access roles can interact with the view."""  # noqa: E501
-        view = self.view  # type: ignore
+        view = cast(BanRequestViewV2, self.view)
         user = cast(Member, interaction.user)
-        has_moder_role = has_any_role(user, view.moderation_access_roles_ids)  # type: ignore
+        has_moder_role = has_any_role_from_sequence(
+            user, view.moderation_access_roles_ids
+        )
         if not has_moder_role:
             await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
@@ -95,7 +97,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
             if not (
                 len(view.in_favor) >= 4
-                or has_any_role(
+                or has_any_role_from_sequence(
                     moderator,
                     view.ban_access_roles_ids,
                 )
@@ -139,17 +141,17 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         try:
             await guild.ban(
                 target,
-                reason=view.reason,  # type: ignore
-                delete_message_seconds=view.delete_seconds,  # type: ignore
+                reason=view.reason,
+                delete_message_seconds=view.delete_seconds,
             )
         except (discord.Forbidden, discord.HTTPException) as e:
             logger.exception(
                 "Failed to ban user=%s guild=%s: %s", target.id, guild.id, e
             )
 
-            view.accent_color = discord.Color.red()  # type: ignore
+            view.accent_color = discord.Color.red()
             await interaction.edit_original_response(
-                view=view.make_component(disabled=True)  # type: ignore
+                view=view.make_component(disabled=True)
             )
             await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
@@ -192,7 +194,9 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
         view.against_moderators_text += f"- <@{user.id}>\n"
 
-        has_ban_role = has_any_role(user, view.ban_access_roles_ids)
+        has_ban_role = has_any_role_from_sequence(
+            user, view.ban_access_roles_ids
+        )
         if (
             has_ban_role
             or interaction.user.id == view.author_id

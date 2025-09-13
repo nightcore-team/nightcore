@@ -20,6 +20,7 @@ from src.nightcore.components.embed import (
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -58,13 +59,11 @@ class UnBan(Cog):
             if not (ban_access_roles := guild_config.ban_access_roles_ids):
                 raise FieldNotConfiguredError("ban access")
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
+        has_moder_role = has_any_role_from_sequence(
+            cast(discord.Member, interaction.user), moderation_access_roles
         )
-        has_ban_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in ban_access_roles
+        has_ban_role = has_any_role_from_sequence(
+            cast(discord.Member, interaction.user), ban_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(

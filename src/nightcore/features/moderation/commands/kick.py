@@ -13,6 +13,7 @@ from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
+    ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
@@ -20,7 +21,10 @@ from src.nightcore.components.embed import (
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UserKickEventData
 from src.nightcore.features.moderation.utils import compare_top_roles
-from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils import (
+    ensure_member_exists,
+    has_any_role_from_sequence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +69,8 @@ class Kick(Cog):
             ):
                 raise FieldNotConfiguredError("moderation access")
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
+        has_moder_role = has_any_role_from_sequence(
+            cast(discord.Member, interaction.user), moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(
@@ -78,8 +81,8 @@ class Kick(Cog):
                 ephemeral=True,
             )
 
-        is_member_moderator = any(
-            member.get_role(role_id) for role_id in moderation_access_roles
+        is_member_moderator = has_any_role_from_sequence(
+            member, moderation_access_roles
         )
         if is_member_moderator:
             return await interaction.response.send_message(
@@ -146,7 +149,14 @@ class Kick(Cog):
             await guild.kick(member, reason=reason)
         except Exception as e:
             logger.exception("[command] - Failed to kick user: %s", e)
-            return
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Kick Error",
+                    "Failed to kick the user.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                )
+            )
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

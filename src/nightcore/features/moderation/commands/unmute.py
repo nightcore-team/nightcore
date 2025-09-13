@@ -24,7 +24,12 @@ from src.nightcore.features.moderation.utils import (
     compare_top_roles,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils import (
+    ensure_member_exists,
+    ensure_role_exists,
+    has_any_role,
+    has_any_role_from_sequence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +81,8 @@ class UnMute(Cog):
             mute_type = guild_config.mute_type
             mute_role_id = guild_config.mute_role_id
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
+        has_moder_role = has_any_role_from_sequence(
+            cast(discord.Member, interaction.user), moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(
@@ -128,23 +132,9 @@ class UnMute(Cog):
             case "role":
                 mrole = None
                 if mute_role_id:
-                    # Try cache first
-                    mrole = guild.get_role(mute_role_id)
-                    if mrole is None:
-                        try:
-                            mrole = await guild.fetch_role(mute_role_id)
-                        except discord.NotFound:
-                            mrole = None
-                        except discord.HTTPException as e:
-                            logger.exception(
-                                "Failed to fetch mute role %s in guild %s: %s",
-                                mute_role_id,
-                                guild.id,
-                                e,
-                            )
-                            mrole = None
+                    mrole = await ensure_role_exists(guild, mute_role_id)
 
-                if not mute_role_id or mrole is None:
+                if mute_role_id is None or mrole is None:
                     return await interaction.followup.send(
                         embed=ErrorEmbed(
                             "Mute role not found",
@@ -154,8 +144,7 @@ class UnMute(Cog):
                         )
                     )
                 else:
-                    member_roles = {r.id for r in member.roles}
-                    has_role = mute_role_id in member_roles
+                    has_role = has_any_role(member, mrole.id)
 
                     if not has_role:
                         return await interaction.followup.send(

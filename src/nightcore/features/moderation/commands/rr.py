@@ -33,6 +33,7 @@ from src.nightcore.utils import ensure_member_exists
 logger = logging.getLogger(__name__)
 
 
+# TODO: check for ref *has_any_role and other
 class Rr(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot

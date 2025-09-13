@@ -35,7 +35,12 @@ from src.nightcore.features.moderation.utils import (
     parse_duration,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import ensure_member_exists, has_any_role
+from src.nightcore.utils import (
+    ensure_member_exists,
+    ensure_messageable_channel_exists,
+    ensure_role_exists,
+    has_any_role_from_sequence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +105,9 @@ class Voteban(Cog):
             ping_role_id = guild_config.ban_request_ping_role_id
 
         if ping_role_id:
-            ping_role = guild.get_role(ping_role_id)
+            ping_role = await ensure_role_exists(guild, ping_role_id)
 
-        has_moder_role = has_any_role(
+        has_moder_role = has_any_role_from_sequence(
             cast(Member, interaction.user), moderation_access_roles
         )
 
@@ -115,7 +120,9 @@ class Voteban(Cog):
                 ephemeral=True,
             )
 
-        is_member_moderator = has_any_role(member, moderation_access_roles)
+        is_member_moderator = has_any_role_from_sequence(
+            member, moderation_access_roles
+        )
         if is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
@@ -193,34 +200,18 @@ class Voteban(Cog):
 
             parsed_delete_messages_per_seconds = tmp_delete_messages_per
 
-        channel = guild.get_channel(ban_request_channel_id)
-        if channel is None:
-            try:
-                channel = await guild.fetch_channel(ban_request_channel_id)  # type: ignore
-                if not isinstance(
-                    channel, discord.TextChannel | discord.Thread
-                ):
-                    logger.warning(
-                        "[ban_request_callback] channel %s not messageable (%s)",  # noqa: E501
-                        channel.id,  # type: ignore
-                        type(channel).__name__,
-                    )
-                    return await interaction.response.send_message(
-                        embed=ValidationErrorEmbed(
-                            "Channel's type must be a TextChannel or Thread",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
-                        )
-                    )
-
-            except discord.NotFound:
-                return await interaction.response.send_message(
-                    embed=EntityNotFoundEmbed(
-                        "channel",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    )
-                )
+        channel = await ensure_messageable_channel_exists(
+            guild, ban_request_channel_id
+        )
+        if not channel:
+            return await interaction.response.send_message(
+                embed=EntityNotFoundEmbed(
+                    "channel",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         acview = AttachmentsCollectorView(author_id=interaction.user.id)
 

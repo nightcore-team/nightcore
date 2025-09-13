@@ -18,6 +18,7 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import MessageClearEventData
+from src.nightcore.utils import has_any_role
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +47,8 @@ class Clear(Cog):
             ):
                 raise FieldNotConfiguredError("moderation access")
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
+        has_moder_role = has_any_role(
+            cast(discord.Member, interaction.user), moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(
@@ -103,21 +103,17 @@ class Clear(Cog):
             return
 
         try:
-            if issubclass(channel.__class__, discord.abc.Messageable):
-                await channel.purge(limit=number)  # type: ignore
-            else:
-                return await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
-                        "Cannot clear messages in this type of channel.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
+            await channel.purge(limit=number)  # type: ignore
         except Exception as e:
             logger.exception("[command] - Failed to clear messages: %s", e)
-
+            return await interaction.followup.send(
+                embed=ValidationErrorEmbed(
+                    "Failed to clear messages. Ensure I have the necessary permissions and try again.",  # noqa: E501
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
                 "Messages Cleared",

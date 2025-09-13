@@ -26,6 +26,7 @@ from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
 from src.nightcore.features.moderation.utils import build_pages
+from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +77,8 @@ class Infractions(Cog):
                 channel_type=ChannelType.NOTIFICATIONS,
             )
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
+        has_moder_role = has_any_role_from_sequence(
+            cast(discord.Member, interaction.user), moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(

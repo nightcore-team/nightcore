@@ -64,7 +64,7 @@ class EntityNotFoundEmbed(Embed):
     def __init__(self, entity: str, footer_text: str, footer_icon_url: str):
         super().__init__(
             title="Entity Not Found",
-            description=f"The specified {entity} was not found.",
+            description=f"The specified {entity} was not found on the server.",
             color=Color.red(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)

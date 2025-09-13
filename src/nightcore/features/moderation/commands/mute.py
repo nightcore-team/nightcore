@@ -26,7 +26,12 @@ from src.nightcore.features.moderation.utils import (
     parse_duration,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils import (
+    ensure_member_exists,
+    ensure_role_exists,
+    has_any_role,
+    has_any_role_from_sequence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +81,8 @@ class Mute(Cog):
 
         mute_type = guild_config.mute_type
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
+        has_moder_role = has_any_role_from_sequence(
+            member, moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(
@@ -89,8 +93,8 @@ class Mute(Cog):
                 ephemeral=True,
             )
 
-        is_member_moderator = any(
-            member.get_role(role_id) for role_id in moderation_access_roles
+        is_member_moderator = has_any_role_from_sequence(
+            member, moderation_access_roles
         )
         if is_member_moderator:
             return await interaction.response.send_message(
@@ -163,35 +167,16 @@ class Mute(Cog):
                 mute_role_id = guild_config.mute_role_id
                 if mute_role_id:
                     # Try cache first
-                    mrole = guild.get_role(mute_role_id)
+                    mrole = await ensure_role_exists(guild, mute_role_id)
                     if mrole is None:
-                        try:
-                            mrole = await guild.fetch_role(mute_role_id)
-                        except discord.NotFound:
-                            mrole = None
-                            return await interaction.followup.send(
-                                embed=ErrorEmbed(
-                                    "Mute role not found",
-                                    f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
-                                    self.bot.user.name,  # type: ignore
-                                    self.bot.user.display_avatar.url,  # type: ignore
-                                )
+                        return await interaction.followup.send(
+                            embed=ErrorEmbed(
+                                "Mute role not found",
+                                f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
+                                self.bot.user.name,  # type: ignore
+                                self.bot.user.display_avatar.url,  # type: ignore
                             )
-                        except discord.HTTPException as e:
-                            logger.exception(
-                                "Failed to fetch mute role %s in guild %s: %s",
-                                mute_role_id,
-                                guild.id,
-                                e,
-                            )
-                            return await interaction.followup.send(
-                                embed=ErrorEmbed(
-                                    "Mute role not found",
-                                    f"Failed to fetch mute role with ID {mute_role_id} in this server.",  # noqa: E501
-                                    self.bot.user.name,  # type: ignore
-                                    self.bot.user.display_avatar.url,  # type: ignore
-                                )
-                            )
+                        )
                 else:
                     return await interaction.followup.send(
                         embed=ErrorEmbed(
@@ -202,8 +187,7 @@ class Mute(Cog):
                         )
                     )
 
-                member_roles = {r.id for r in member.roles}
-                has_role = mute_role_id in member_roles
+                has_role = has_any_role(member, mrole.id)
 
                 if not has_role:
                     try:

@@ -28,7 +28,7 @@ from src.nightcore.features.moderation.utils import (
     parse_duration,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils import ensure_member_exists, has_any_role
 
 logger = logging.getLogger(__name__)
 
@@ -80,14 +80,8 @@ class Ban(Cog):
             if not (ban_access_roles := guild_config.ban_access_roles_ids):
                 raise FieldNotConfiguredError("ban access")
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
-        )
-        has_ban_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in ban_access_roles
-        )
+        has_moder_role = has_any_role(member, moderation_access_roles)
+        has_ban_role = has_any_role(member, ban_access_roles)
         if not has_moder_role:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
@@ -105,9 +99,7 @@ class Ban(Cog):
                 ephemeral=True,
             )
 
-        is_member_moderator = any(
-            member.get_role(role_id) for role_id in moderation_access_roles
-        )
+        is_member_moderator = has_any_role(member, moderation_access_roles)
         if is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
