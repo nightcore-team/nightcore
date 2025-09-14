@@ -5,7 +5,7 @@ from datetime import timezone
 from typing import cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -28,7 +28,10 @@ from src.nightcore.features.moderation.components.view import (
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
 )
-from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils import (
+    ensure_member_exists,
+    has_any_role_from_sequence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +83,8 @@ class Rr(Cog):
             ):
                 raise FieldNotConfiguredError("organization roles")
 
-        has_moder_role = any(
-            interaction.user.get_role(role_id)  # type: ignore
-            for role_id in moderation_access_roles
+        has_moder_role = has_any_role_from_sequence(
+            cast(Member, interaction.user), moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(

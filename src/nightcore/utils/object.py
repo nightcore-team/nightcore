@@ -127,3 +127,14 @@ def has_any_role_from_sequence(
 def has_any_role(user: Member, role_id: int) -> bool:
     """Check if a member has a specific role."""
     return user.get_role(role_id) is not None
+
+
+async def get_all_members_with_specified_role(
+    guild: Guild, role_id: int
+) -> list[Member]:
+    """Get all members with the specified role."""
+    role = await ensure_role_exists(guild, role_id)
+    if role is None:
+        return []
+
+    return role.members

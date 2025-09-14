@@ -18,7 +18,7 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import MessageClearEventData
-from src.nightcore.utils import has_any_role
+from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class Clear(Cog):
             ):
                 raise FieldNotConfiguredError("moderation access")
 
-        has_moder_role = has_any_role(
+        has_moder_role = has_any_role_from_sequence(
             cast(discord.Member, interaction.user), moderation_access_roles
         )
         if not has_moder_role:

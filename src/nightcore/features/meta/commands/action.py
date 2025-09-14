@@ -18,7 +18,7 @@ from src.nightcore.features.meta.utils import (
     DUO_ACTIONS,
     build_action_embed,
 )
-from src.nightcore.utils.member import ensure_member_exists
+from src.nightcore.utils import ensure_member_exists
 
 logger = logging.getLogger(__name__)
 

@@ -44,7 +44,17 @@ class Nightcore(Bot):
             help_command=None,
             tree_cls=GuildOnlyTree,
         )
-        self.startup_time = datetime.now(timezone.utc)
+        self.chunked_guilds: int = 0
+        self.startup_time: datetime = datetime.now(timezone.utc)
+
+    async def chunk_guilds(self) -> None:
+        """Ensure all guilds are chunked."""
+        for guild in self.guilds:
+            if not guild.chunked:
+                logger.info(f"Chunking guild: {guild.name} ({guild.id})")
+                await guild.chunk(cache=True)
+                logger.info(f"[success] Chunked guild: {guild.name}")
+                self.chunked_guilds += 1
 
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""
@@ -80,10 +90,13 @@ class Nightcore(Bot):
 
             logger.error(traceback.format_exc())
 
+        await self.chunk_guilds()
+
         log_tree_summary(self.tree, logger=logger)
 
     async def on_ready(self):
         """Event called when the bot is ready."""
         logger.info("🚀 Nightcore bot started successfully!")
         logger.info(f"Connected to {len(self.guilds)} guilds")
+        logger.info(f"Chunked guilds: {self.chunked_guilds}")
         logger.info(f"Loaded cogs: {list(self.cogs.keys())}")

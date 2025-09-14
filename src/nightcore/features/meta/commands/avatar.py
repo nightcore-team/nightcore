@@ -17,25 +17,25 @@ class Avatar(Cog):
         self.bot = bot
 
     @app_commands.command(name="avatar", description="Get user's avatar")
-    @app_commands.describe(member="The member to get the avatar of.")
+    @app_commands.describe(user="The user to get the avatar of.")
     async def avatar(
         self,
         interaction: Interaction,
-        member: discord.Member | discord.User | None = None,
+        user: discord.Member | discord.User | None = None,
     ):
         """Send a message displaying the user's avatar."""
 
-        if member is None:
-            member = interaction.user  # type: ignore
+        if user is None:
+            user = interaction.user  # type: ignore
 
         await interaction.response.send_message(
             embed=Embed(
-                title=f"Аватар пользователя {member.display_name}",  # type: ignore
+                title=f"Аватар пользователя {user.display_name}",  # type: ignore
                 color=discord.Color.blurple(),
             ).set_image(
-                url=member.avatar.url  # type: ignore
-                if member.avatar  # type: ignore
-                else member.default_avatar.url  # type: ignore
+                url=user.avatar.url  # type: ignore
+                if user.avatar  # type: ignore
+                else user.default_avatar.url  # type: ignore
             ),
             ephemeral=True,
         )
@@ -44,7 +44,7 @@ class Avatar(Cog):
             "[command] - invoked user=%s guild=%s target=%s",
             interaction.user.id,  # type: ignore
             interaction.guild.id if interaction.guild else None,
-            member.id,  # type: ignore
+            user.id,  # type: ignore
         )
 
 

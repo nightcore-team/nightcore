@@ -25,7 +25,7 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
-from src.nightcore.features.moderation.utils import build_pages
+from src.nightcore.features.moderation.utils import build_infraction_pages
 from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class Infractions(Cog):
             )
 
         # get user infractions from db
-        pages = build_pages(
+        pages = build_infraction_pages(
             infractions, guild.id, notify_channel_id, is_v2=True
         )
 

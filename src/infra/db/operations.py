@@ -189,6 +189,40 @@ async def get_user_infractions(
     return result.all()
 
 
+async def get_user_infractions_for_moderators(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    moderators: dict[int, str],
+    from_date: datetime,
+    to_date: datetime,
+) -> dict[int, dict[str, list[Punish] | str]]:
+    """Return infractions grouped by moderator_id for all given moderators."""
+    if not moderators:
+        return {}
+
+    stmt = (
+        select(Punish)
+        .where(
+            Punish.guild_id == guild_id,
+            Punish.moderator_id.in_(moderators.keys()),
+            Punish.time_now >= from_date,
+            Punish.time_now <= to_date,
+        )
+        .order_by(Punish.moderator_id.asc(), Punish.time_now.asc())
+    )
+    result = (await session.scalars(stmt)).all()
+
+    grouped: dict[int | str, dict[str, list[Punish] | str]] = {
+        mid: {"punishments": [], "nickname": nick}
+        for mid, nick in moderators.items()
+    }
+    for punish in result:
+        grouped[punish.moderator_id]["punishments"].append(punish)  # type: ignore
+
+    return grouped  # type: ignore
+
+
 async def count_user_infractions_last_7_days(
     session: AsyncSession,
     *,

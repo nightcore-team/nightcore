@@ -5,7 +5,7 @@ from datetime import timezone
 from typing import cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -82,7 +82,7 @@ class Mute(Cog):
         mute_type = guild_config.mute_type
 
         has_moder_role = has_any_role_from_sequence(
-            member, moderation_access_roles
+            cast(Member, interaction.user), moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(
