@@ -1,4 +1,4 @@
-"""Mute command for the Nightcore bot."""
+"""Ban command for the Nightcore bot."""
 
 import logging
 from datetime import timezone

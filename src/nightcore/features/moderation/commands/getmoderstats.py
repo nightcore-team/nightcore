@@ -1,4 +1,4 @@
-"""Mute command for the Nightcore bot."""
+"""Get moderation stats command for the Nightcore bot."""
 
 import logging
 from typing import cast
