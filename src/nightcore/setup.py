@@ -11,6 +11,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # meta
         "src.nightcore.features.meta.commands.ping",
         "src.nightcore.features.meta.commands.avatar",
+        "src.nightcore.features.meta.commands.banner",
         "src.nightcore.features.meta.commands.action",
         "src.nightcore.features.meta.commands.about",
         # config commands
@@ -32,6 +33,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.vmute",
         "src.nightcore.features.moderation.commands.unvmute",
         "src.nightcore.features.moderation.commands.getmoderstats",
+        # tickets commands
+        "src.nightcore.features.tickets.commands.ticketmessage",
         # moderation events
         "src.nightcore.features.moderation.events.kick",
         "src.nightcore.features.moderation.events.roles_change",

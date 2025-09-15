@@ -85,22 +85,17 @@ async def ensure_messageable_channel_exists(
     return channel
 
 
-async def ensure_member_exists(
-    guild: Guild, user: User | Member
-) -> Member | None:
+async def ensure_member_exists(guild: Guild, user_id: int) -> Member | None:
     """Ensure that a member with the given user ID exists in the guild."""
-    if isinstance(user, Member):
-        return user
-
-    member = guild.get_member(user.id)
+    member = guild.get_member(user_id)
 
     if member is None:
         try:
-            member = await guild.fetch_member(user.id)
+            member = await guild.fetch_member(user_id)
         except NotFound as e:
             logger.error(
                 "[ensure_member_exists] Member %s not found in guild %s: %s",
-                user.id,
+                user_id,
                 guild.id,
                 e,
             )
@@ -108,7 +103,7 @@ async def ensure_member_exists(
         except HTTPException as e:
             logger.error(
                 "[ensure_member_exists] Failed refetching member %s in guild %s: %s",  # noqa: E501
-                user.id,
+                user_id,
                 guild.id,
                 e,
             )

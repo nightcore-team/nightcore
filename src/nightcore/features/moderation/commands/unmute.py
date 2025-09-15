@@ -54,7 +54,7 @@ class UnMute(Cog):
         guild = cast(Guild, interaction.guild)
 
         # Ensure we have a guild Member object
-        member = await ensure_member_exists(guild, user)
+        member = await ensure_member_exists(guild, user.id)
 
         if member is None:
             return await interaction.response.send_message(

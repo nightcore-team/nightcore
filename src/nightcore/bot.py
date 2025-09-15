@@ -9,6 +9,7 @@ from discord import app_commands
 from discord.ext.commands import Bot  # type: ignore
 
 from src.infra.db.uow import UnitOfWork
+from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
 from src.nightcore.utils import log_tree_summary
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,10 @@ class Nightcore(Bot):
         )
         self.chunked_guilds: int = 0
         self.startup_time: datetime = datetime.now(timezone.utc)
+
+    async def init_views(self) -> None:
+        """Initialize persistent views."""
+        self.add_view(CreateTicketViewV2(self))
 
     async def chunk_guilds(self) -> None:
         """Ensure all guilds are chunked."""
@@ -89,6 +94,8 @@ class Nightcore(Bot):
             import traceback
 
             logger.error(traceback.format_exc())
+
+        await self.init_views()
 
         await self.chunk_guilds()
 

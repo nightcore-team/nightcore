@@ -31,7 +31,7 @@ from src.nightcore.features.moderation.utils import (
     send_punish_dm_message,
     send_unpunish_dm_message,
 )
-from src.nightcore.utils import discord_ts
+from src.nightcore.utils import discord_ts, ensure_member_exists
 
 logger = logging.getLogger(__name__)
 
@@ -169,28 +169,15 @@ class UserMutedEvent(Cog):
 
         # Try to get the member from the cache
         # TODO: вынести в отдельную функцию
-        member = guild.get_member(data.user_id)
-
+        member = await ensure_member_exists(guild, data.user_id)
         if member is None:
-            try:
-                member = await guild.fetch_member(data.user_id)
-            except discord.NotFound:
-                logger.warning(
-                    "[event] user_unmute - %s: User %s not in guild %s (probably left)",  # noqa: E501
-                    data.category,
-                    data.user_id,
-                    data.guild_id,
-                )
-                return
-            except discord.HTTPException as e:
-                logger.exception(
-                    "[event] user_unmute - %s: Failed to fetch member %s in guild %s: %s",  # noqa: E501
-                    data.category,
-                    data.user_id,
-                    data.guild_id,
-                    e,
-                )
-                return
+            logger.error(
+                "[event] user_unmute - %s: Member %s not found in guild %s",
+                data.category,
+                data.user_id,
+                data.guild_id,
+            )
+            return
 
         async with self.bot.uow.start() as session:
             # Ensure variables are always defined

@@ -65,7 +65,7 @@ class GetModerationStats(Cog):
         # Ensure we have a guild Member object
         member = None
         if user:
-            member = await ensure_member_exists(guild, user)
+            member = await ensure_member_exists(guild, user.id)
 
             if not member:
                 return await interaction.response.send_message(

@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
     new_tickets_category="The category for new tickets",
     pinned_tickets_category="The category for pinned tickets",
     closed_tickets_category="The category for closed tickets",
-    create_ticket_channel="The channel for creating tickets",
     create_ticket_ping_role="The role to ping when a ticket is created",
 )
 async def tickets(
@@ -40,7 +39,6 @@ async def tickets(
     new_tickets_category: discord.CategoryChannel | None = None,
     pinned_tickets_category: discord.CategoryChannel | None = None,
     closed_tickets_category: discord.CategoryChannel | None = None,
-    create_ticket_channel: discord.TextChannel | None = None,
     create_ticket_ping_role: discord.Role | None = None,
 ):
     """Configure tickets settings."""
@@ -49,7 +47,6 @@ async def tickets(
         int_id_value("new_tickets_category_id", new_tickets_category),
         int_id_value("pinned_tickets_category_id", pinned_tickets_category),
         int_id_value("closed_tickets_category_id", closed_tickets_category),
-        int_id_value("create_ticket_channel_id", create_ticket_channel),
         int_id_value("create_ticket_ping_role_id", create_ticket_ping_role),
     ]
 

@@ -35,8 +35,6 @@ from src.nightcore.utils import (
 
 logger = logging.getLogger(__name__)
 
-# TODO: logs about user's roles changing
-
 
 class FractionRole(Cog):
     def __init__(self, bot: Nightcore) -> None:
@@ -69,7 +67,7 @@ class FractionRole(Cog):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         # Ensure we have a guild Member object
-        member = await ensure_member_exists(guild, user)
+        member = await ensure_member_exists(guild, user.id)
 
         if member is None:
             return await interaction.followup.send(
