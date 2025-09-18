@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from discord import (
     Guild,
@@ -14,6 +15,9 @@ from discord import (
     User,
 )
 from discord.abc import GuildChannel, Messageable
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
@@ -133,3 +137,26 @@ async def get_all_members_with_specified_role(
         return []
 
     return role.members
+
+
+async def get_discord_user(bot: "Nightcore", user_id: int) -> User | None:
+    """Get a Discord user by ID, fetching from API if not cached."""
+    user = bot.get_user(user_id)
+    if user is None:
+        try:
+            user = await bot.fetch_user(user_id)
+        except NotFound as e:
+            logger.error(
+                "[get_discord_user] User %s not found: %s",
+                user_id,
+                e,
+            )
+            return None
+        except HTTPException as e:
+            logger.error(
+                "[get_discord_user] Failed fetching user %s: %s",
+                user_id,
+                e,
+            )
+            return None
+    return user

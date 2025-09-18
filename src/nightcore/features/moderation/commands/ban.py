@@ -191,6 +191,7 @@ class Ban(Cog):
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
 
             parsed_delete_messages_per = tmp_delete_messages_per

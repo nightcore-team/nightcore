@@ -2,7 +2,13 @@
 
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, DateTime, SmallInteger
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    DateTime,
+    SmallInteger,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -10,6 +16,10 @@ from src.infra.db.models.base import Base
 
 
 class User(IdIntegerMixin, Base):
+    __table_args__ = (
+        UniqueConstraint("guild_id", "user_id", name="ux_user_guild_user"),
+    )
+
     user_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, unique=True
     )

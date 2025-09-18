@@ -54,6 +54,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         has_moder_role = has_any_role_from_sequence(
             user, view.moderation_access_roles_ids
         )
+        # TODO: get info about ban request from components after bot restarting
         if not has_moder_role:
             await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(

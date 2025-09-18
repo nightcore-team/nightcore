@@ -33,6 +33,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.vmute",
         "src.nightcore.features.moderation.commands.unvmute",
         "src.nightcore.features.moderation.commands.getmoderstats",
+        "src.nightcore.features.moderation.commands.ticketban",
+        "src.nightcore.features.moderation.commands.unticketban",
         # tickets commands
         "src.nightcore.features.tickets.commands.ticketmessage",
         # moderation events
@@ -42,6 +44,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.events.setname",
         "src.nightcore.features.moderation.events.mute",
         "src.nightcore.features.moderation.events.ban",
+        "src.nightcore.features.moderation.events.ticketban",
         # global events
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",

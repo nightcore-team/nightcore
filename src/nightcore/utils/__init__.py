@@ -4,6 +4,7 @@ from .object import (
     ensure_messageable_channel_exists,
     ensure_role_exists,
     get_all_members_with_specified_role,
+    get_discord_user,
     has_any_role,
     has_any_role_from_sequence,
 )
@@ -17,6 +18,7 @@ __all__ = (
     "ensure_messageable_channel_exists",
     "ensure_role_exists",
     "get_all_members_with_specified_role",
+    "get_discord_user",
     "has_any_role",
     "has_any_role_from_sequence",
     "log_tree_summary",

@@ -1,11 +1,14 @@
 """Nightcore Bot."""
 
+import asyncio
+from collections.abc import Awaitable
 import contextlib
 import logging
 from datetime import datetime, timezone
 
 import discord
-from discord import app_commands
+from aiohttp import TCPConnector
+from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
 from src.infra.db.uow import UnitOfWork
@@ -39,27 +42,47 @@ class Nightcore(Bot):
     ):
         self.cog_modules = cog_modules
         self.uow = uow
+
+        # custom tcp connector
+        connector = TCPConnector(
+            limit=0, ttl_dns_cache=300, enable_cleanup_closed=True
+        )
         super().__init__(
             command_prefix=".",
             intents=discord.Intents.all(),
             help_command=None,
             tree_cls=GuildOnlyTree,
+            connector=connector,
+            chunk_guilds_at_startup=True,
         )
         self.chunked_guilds: int = 0
         self.startup_time: datetime = datetime.now(timezone.utc)
 
+    async def _warmup_discord(self) -> None:
+        try:
+            await self.application_info()
+        except Exception as e:
+            logger.error(f"[failed] Warmup failed: {e}")
+
+        tasks: list[Awaitable[None]] = []
+
+        for guild in self.guilds:
+            tasks.append(self._warmup_guild_channels(guild))
+
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _warmup_guild_channels(self, guild: Guild) -> None:
+        try:
+            await guild.fetch_channels()  # один HTTP-запит на гільдію
+        except Exception as e:
+            logger.error(
+                f"[failed] Failed to fetch channels for guild {guild.id}: {e}"
+            )
+            return
+
     async def init_views(self) -> None:
         """Initialize persistent views."""
         self.add_view(CreateTicketViewV2(self))
-
-    async def chunk_guilds(self) -> None:
-        """Ensure all guilds are chunked."""
-        for guild in self.guilds:
-            if not guild.chunked:
-                logger.info(f"Chunking guild: {guild.name} ({guild.id})")
-                await guild.chunk(cache=True)
-                logger.info(f"[success] Chunked guild: {guild.name}")
-                self.chunked_guilds += 1
 
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""
@@ -97,8 +120,6 @@ class Nightcore(Bot):
 
         await self.init_views()
 
-        await self.chunk_guilds()
-
         log_tree_summary(self.tree, logger=logger)
 
     async def on_ready(self):
@@ -107,3 +128,5 @@ class Nightcore(Bot):
         logger.info(f"Connected to {len(self.guilds)} guilds")
         logger.info(f"Chunked guilds: {self.chunked_guilds}")
         logger.info(f"Loaded cogs: {list(self.cogs.keys())}")
+
+        await self._warmup_discord()

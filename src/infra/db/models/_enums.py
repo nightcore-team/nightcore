@@ -21,3 +21,9 @@ class ChannelType(Enum):
     LOGGING_IGNORE = "message_log_ignoring_channels_ids"
 
     ROLE_REQUESTS = "check_role_requests_channel_id"
+
+
+class TicketStateEnum(Enum):
+    OPEN = "opened"
+    IN_PROGRESS = "pinned"
+    CLOSED = "closed"

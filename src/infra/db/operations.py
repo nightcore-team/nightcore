@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, timezone
 from typing import TypeVar
 
 from async_lru import alru_cache
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.cache.async_lru import alru_invalidator
@@ -22,6 +23,7 @@ from src.infra.db.models import (
     Punish,
     TempPunish,
     User,
+    TicketState,
 )
 from src.infra.db.models._enums import ChannelType
 
@@ -44,7 +46,8 @@ async def get_specified_guild_config(
 ) -> GuildT | None:
     """Get the guild configuration from the database."""
     stmt = select(config_type).where(config_type.guild_id == guild_id)
-    return await session.scalar(stmt)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def get_specified_channel(
@@ -69,6 +72,59 @@ async def get_moderation_access_roles(
     )
     result = await session.scalar(stmt)
     return result or []
+
+
+async def is_user_ticketbanned(
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> bool:
+    """Check if a user is ticket banned in a guild."""
+    stmt = select(
+        exists().where(
+            User.guild_id == guild_id,
+            User.user_id == user_id,
+            User.ticket_ban.is_(True),
+        )
+    )
+    return bool(await session.scalar(stmt))
+
+
+# TODO: rewrite to use all models (like in get_specified_guild_config)
+async def get_or_create_user(  # noqa: D103
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> tuple[User, bool]:
+    stmt = (
+        insert(User)
+        .values(guild_id=guild_id, user_id=user_id)
+        .on_conflict_do_nothing(constraint="ux_user_guild_user")
+        .returning(User.user_id)
+    )
+    res = await session.execute(stmt)
+    created = res.scalar_one_or_none() is not None
+
+    user = await session.scalar(
+        select(User).where(User.guild_id == guild_id, User.user_id == user_id)
+    )
+    return user, created  # type: ignore
+
+
+async def set_user_field_upsert(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    field: str,
+    value: bool,
+) -> None:
+    """Set a field for a user in the database, creating the user if necessary."""  # noqa: E501
+    stmt = (
+        insert(User)
+        .values(guild_id=guild_id, user_id=user_id, **{field: value})
+        .on_conflict_do_update(
+            constraint="ux_user_guild_user",
+            set_={field: value},
+        )
+    )
+    await session.execute(stmt)
 
 
 async def create_punish(
@@ -141,6 +197,26 @@ async def get_latest_temp_punish(
             func.lower(TempPunish.category) == category.lower(),
         )
         .order_by(TempPunish.end_time.asc().nulls_last())
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def get_latest_user_ticket(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> TicketState | None:
+    """Get the latest ticket state for a user in a guild."""
+    stmt = (
+        select(TicketState)
+        .where(
+            TicketState.guild_id == guild_id,
+            TicketState.author_id == user_id,
+        )
+        .order_by(TicketState.updated_at.asc().nulls_last())
         .limit(1)
     )
     res = await session.execute(stmt)

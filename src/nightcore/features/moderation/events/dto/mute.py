@@ -20,7 +20,7 @@ class UserMutedEventData(ModerationBaseEventData):
     reason: str
     duration: int
     original_duration: str
-    end_time: str  # type: ignore
+    end_time: str | None = None  # type: ignore
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the punishment event."""
