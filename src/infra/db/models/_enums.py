@@ -19,11 +19,14 @@ class ChannelType(Enum):
     LOGGING_REACTIONS = "reactions_log_channel_id"
     LOGGING_PRIVATE_CHANNELS = "private_rooms_log_channel_id"
     LOGGING_IGNORE = "message_log_ignoring_channels_ids"
+    NEW_TICKETS_CATEGORY = "new_tickets_category_id"
+    CLOSED_TICKETS_CATEGORY = "closed_tickets_category_id"
+    PINNED_TICKETS_CATEGORY = "pinned_tickets_category_id"
 
     ROLE_REQUESTS = "check_role_requests_channel_id"
 
 
 class TicketStateEnum(Enum):
-    OPEN = "opened"
-    IN_PROGRESS = "pinned"
+    OPENED = "opened"
+    PINNED = "pinned"
     CLOSED = "closed"

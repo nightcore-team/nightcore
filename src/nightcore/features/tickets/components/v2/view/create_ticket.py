@@ -4,7 +4,8 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, CategoryChannel, Guild
+import discord
+from discord import ButtonStyle, CategoryChannel, Guild, Member
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -30,6 +31,8 @@ from src.infra.db.operations import (
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
 
+from .manage_ticket import ManageTicketViewV2
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,17 +43,16 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Create Ticket",
-        emoji="<:3936faqbadge:1417212058902204539>",
+        emoji="<:29909ticket:1418324338142220309>",
         custom_id="ticket:create",
     )
     async def create_ticket(
         self, interaction: Interaction, button: Button["CreateTicketViewV2"]
     ):
-        """Go to the previous page."""
+        """Button to create a ticket."""
         view = cast("CreateTicketViewV2", self.view)
         guild = cast(Guild, interaction.guild)
-
-        logger.info("-------------------------------------------------")
+        user = cast(Member, interaction.user)
 
         async with view.bot.uow.start() as session:
             guild_config = await get_specified_guild_config(
@@ -70,6 +72,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
 
             if not all(
                 [
+                    guild_config.create_ticket_ping_role_id,
                     guild_config.new_tickets_category_id,
                     guild_config.pinned_tickets_category_id,
                     guild_config.closed_tickets_category_id,
@@ -84,33 +87,31 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     ephemeral=True,
                 )
 
-            user, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=interaction.user.id
+            dbuser, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=user.id
             )
-            if user.ticket_ban:
+            if dbuser.ticket_ban:
                 return await interaction.response.send_message(
                     "You are ticket banned and cannot create tickets.",
                     ephemeral=True,
                 )
 
             last_ticket = await get_latest_user_ticket(
-                session, guild_id=guild.id, user_id=interaction.user.id
+                session, guild_id=guild.id, user_id=user.id
             )
             if last_ticket and last_ticket.state != TicketStateEnum.CLOSED:
                 return await interaction.response.send_message(
                     "You already have an open ticket.",
                     ephemeral=True,
                 )
+            else:
+                current_tickets_count = guild_config.tickets_count + 1
 
-            current_tickets_count = guild_config.tickets_count + 1
-
-            if not last_ticket:
                 first_ticket = TicketState(
                     ticket_number=current_tickets_count,
                     guild_id=guild.id,
-                    author_id=interaction.user.id,
-                    moderator_id=interaction.user.id,
-                    state=TicketStateEnum.OPEN,
+                    author_id=user.id,
+                    state=TicketStateEnum.OPENED,
                 )
                 session.add(first_ticket)
 
@@ -134,20 +135,30 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 )
 
             try:
+                overwrites = new_tickets_category.overwrites
+                overwrites[user] = discord.PermissionOverwrite(
+                    view_channel=True,
+                    send_messages=True,
+                    attach_files=True,
+                    read_message_history=True,
+                )
+
                 channel = await guild.create_text_channel(
                     name=f"ticket-{current_tickets_count}",
                     category=new_tickets_category,
-                    overwrites=new_tickets_category.overwrites,
+                    overwrites=overwrites,
                 )
+
                 message = await channel.send(
-                    f"{interaction.user.mention}, thank you for creating a ticket."  # noqa: E501
+                    view=ManageTicketViewV2(
+                        view.bot,
+                        ping_role_id=guild_config.create_ticket_ping_role_id,
+                        interaction_user_id=interaction.user.id,
+                    ),
                 )
                 await interaction.response.send_message(
                     f"Your ticket has been created: {message.jump_url}",
                     ephemeral=True,
-                )
-                logger.info(
-                    "-------------------------------------------------"
                 )
             except Exception as e:
                 logger.error(

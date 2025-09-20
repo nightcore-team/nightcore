@@ -58,7 +58,6 @@ async def ensure_messageable_channel_exists(
     """Ensure that a channel with the given ID exists in the guild and is messageable."""  # noqa: E501
 
     channel = guild.get_channel(channel_id)
-
     if channel is None:
         try:
             channel = await guild.fetch_channel(channel_id)  # type: ignore

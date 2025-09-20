@@ -1,9 +1,9 @@
 """Nightcore Bot."""
 
 import asyncio
-from collections.abc import Awaitable
 import contextlib
 import logging
+from collections.abc import Awaitable
 from datetime import datetime, timezone
 
 import discord
@@ -12,7 +12,10 @@ from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
 from src.infra.db.uow import UnitOfWork
-from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
+from src.nightcore.features.tickets.components.v2 import (
+    CreateTicketViewV2,
+    ManageTicketViewV2,
+)
 from src.nightcore.utils import log_tree_summary
 
 logger = logging.getLogger(__name__)
@@ -83,6 +86,7 @@ class Nightcore(Bot):
     async def init_views(self) -> None:
         """Initialize persistent views."""
         self.add_view(CreateTicketViewV2(self))
+        self.add_view(ManageTicketViewV2(self))
 
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""

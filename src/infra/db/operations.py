@@ -22,8 +22,8 @@ from src.infra.db.models import (
     MainGuildConfig,
     Punish,
     TempPunish,
-    User,
     TicketState,
+    User,
 )
 from src.infra.db.models._enums import ChannelType
 
@@ -68,6 +68,17 @@ async def get_moderation_access_roles(
 ) -> list[int]:
     """Get the list of moderation access roles for a guild."""
     stmt = select(GuildModerationConfig.moderation_access_roles_ids).where(
+        GuildModerationConfig.guild_id == guild_id
+    )
+    result = await session.scalar(stmt)
+    return result or []
+
+
+async def get_head_moderation_access_roles(
+    session: AsyncSession, *, guild_id: int
+) -> list[int]:
+    """Get the list of head moderation access roles for a guild."""
+    stmt = select(GuildModerationConfig.leadership_access_roles_ids).where(
         GuildModerationConfig.guild_id == guild_id
     )
     result = await session.scalar(stmt)
@@ -216,7 +227,9 @@ async def get_latest_user_ticket(
             TicketState.guild_id == guild_id,
             TicketState.author_id == user_id,
         )
-        .order_by(TicketState.updated_at.asc().nulls_last())
+        .order_by(
+            TicketState.updated_at.desc().nulls_last(),
+        )
         .limit(1)
     )
     res = await session.execute(stmt)

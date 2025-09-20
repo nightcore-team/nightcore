@@ -167,8 +167,6 @@ class UserMutedEvent(Cog):
             )
             return
 
-        # Try to get the member from the cache
-        # TODO: вынести в отдельную функцию
         member = await ensure_member_exists(guild, data.user_id)
         if member is None:
             logger.error(
