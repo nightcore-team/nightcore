@@ -115,6 +115,31 @@ async def ensure_member_exists(guild: Guild, user_id: int) -> Member | None:
     return member
 
 
+async def ensure_guild_exists(bot: "Nightcore", guild_id: int) -> Guild | None:
+    """Ensure that a guild with the given ID exists."""
+    guild = bot.get_guild(guild_id)
+
+    if guild is None:
+        try:
+            guild = await bot.fetch_guild(guild_id)
+        except NotFound as e:
+            logger.error(
+                "[ensure_guild_exists] Guild %s not found: %s",
+                guild_id,
+                e,
+            )
+            return None
+        except HTTPException as e:
+            logger.error(
+                "[ensure_guild_exists] Failed fetching guild %s: %s",
+                guild_id,
+                e,
+            )
+            return None
+
+    return guild
+
+
 def has_any_role_from_sequence(
     user: Member, roles_sequence: Sequence[int]
 ) -> bool:

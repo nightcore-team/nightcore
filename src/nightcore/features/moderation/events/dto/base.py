@@ -1,4 +1,4 @@
-"""Base DTO for moderation log events."""
+"""Base DTO for moderation events."""
 
 from abc import abstractmethod
 from typing import Protocol

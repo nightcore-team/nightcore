@@ -8,6 +8,7 @@ dependencies = [
     "alembic>=1.16.4",
     "async-lru>=2.0.5",
     "asyncpg>=0.30.0",
+    "chat-exporter>=2.8.4",
     "discord-py>=2.6.3",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",

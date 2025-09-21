@@ -15,6 +15,7 @@ class TicketState(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     author_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    channel_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
     # fix native python enums using values_callable
     state: Mapped[TicketStateEnum] = mapped_column(
@@ -27,5 +28,5 @@ class TicketState(IdIntegerMixin, Base):
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

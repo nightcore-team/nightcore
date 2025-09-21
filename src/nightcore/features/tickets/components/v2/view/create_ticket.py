@@ -21,14 +21,20 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models import GuildTicketsConfig, TicketState
-from src.infra.db.models._enums import TicketStateEnum
+from src.infra.db.models import (
+    GuildLoggingConfig,
+    GuildTicketsConfig,
+    TicketState,
+)
+from src.infra.db.models._enums import ChannelType, TicketStateEnum
 from src.infra.db.operations import (
     get_latest_user_ticket,
     get_or_create_user,
+    get_specified_channel,
     get_specified_guild_config,
 )
 from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.features.tickets.events.dto import TicketEventData
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
 
 from .manage_ticket import ManageTicketViewV2
@@ -36,6 +42,7 @@ from .manage_ticket import ManageTicketViewV2
 logger = logging.getLogger(__name__)
 
 
+# TODO: add missing permissions and error embeds
 class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
     def __init__(self):
         super().__init__()
@@ -53,6 +60,12 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
         view = cast("CreateTicketViewV2", self.view)
         guild = cast(Guild, interaction.guild)
         user = cast(Member, interaction.user)
+
+        if not guild.me.guild_permissions.manage_channels:
+            return await interaction.response.send_message(
+                "I do not have permission to manage channels.",
+                ephemeral=True,
+            )
 
         async with view.bot.uow.start() as session:
             guild_config = await get_specified_guild_config(
@@ -113,7 +126,6 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     author_id=user.id,
                     state=TicketStateEnum.OPENED,
                 )
-                session.add(first_ticket)
 
                 guild_config.tickets_count = current_tickets_count
 
@@ -149,6 +161,9 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     overwrites=overwrites,
                 )
 
+                first_ticket.channel_id = channel.id
+                session.add(first_ticket)
+
                 message = await channel.send(
                     view=ManageTicketViewV2(
                         view.bot,
@@ -156,6 +171,27 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                         interaction_user_id=interaction.user.id,
                     ),
                 )
+
+                logging_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_TICKETS,
+                )
+
+                if logging_channel_id:
+                    view.bot.dispatch(
+                        "ticket_changed",
+                        data=TicketEventData(
+                            guild,
+                            channel.id,
+                            user.id,
+                            None,
+                            logging_channel_id,
+                            TicketStateEnum.OPENED,
+                        ),
+                    )
+
                 await interaction.response.send_message(
                     f"Your ticket has been created: {message.jump_url}",
                     ephemeral=True,

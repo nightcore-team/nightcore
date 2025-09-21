@@ -25,7 +25,7 @@ from src.infra.db.models import (
     TicketState,
     User,
 )
-from src.infra.db.models._enums import ChannelType
+from src.infra.db.models._enums import ChannelType, TicketStateEnum
 
 GuildT = TypeVar(
     "GuildT",
@@ -334,6 +334,17 @@ async def count_user_infractions_last_7_days(
 
     result = await session.execute(stmt)
     return result.scalar_one()
+
+
+async def get_all_closed_tickets(
+    session: AsyncSession,
+) -> Sequence[TicketState]:
+    """Get all closed tickets."""
+    stmt = select(TicketState).where(
+        TicketState.state == TicketStateEnum.CLOSED
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
 
 
 async def get_total_users_count(session: AsyncSession) -> int | None:

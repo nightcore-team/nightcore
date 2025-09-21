@@ -30,3 +30,4 @@ class TicketStateEnum(Enum):
     OPENED = "opened"
     PINNED = "pinned"
     CLOSED = "closed"
+    DELETED = "deleted"

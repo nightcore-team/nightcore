@@ -1,6 +1,7 @@
 """Utilities for sending punishment notifications."""
 
 import logging
+from collections.abc import Sequence
 
 import discord
 
@@ -83,6 +84,7 @@ async def send_moderation_log(
     *,
     channel_id: int,
     event_data: ModerationBaseEventData,
+    attachments: Sequence[discord.File] | None = None,
 ) -> None:
     """Send a moderation log message to the specified channel."""
     channel = bot.get_channel(channel_id)
@@ -123,7 +125,10 @@ async def send_moderation_log(
 
     try:
         embed = event_data.build_embed(bot)
-        await channel.send(embed=embed)
+        if attachments:
+            await channel.send(embed=embed, files=attachments)
+        else:
+            await channel.send(embed=embed)
     except discord.HTTPException as e:
         logger.error(
             "[event] on_user_punish - %s: failed to send message to %s: %s",

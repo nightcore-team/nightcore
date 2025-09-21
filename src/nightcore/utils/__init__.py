@@ -1,5 +1,6 @@
 from .object import (
     ensure_channel_is_messageable,
+    ensure_guild_exists,
     ensure_member_exists,
     ensure_messageable_channel_exists,
     ensure_role_exists,
@@ -14,6 +15,7 @@ from .time_utils import discord_ts
 __all__ = (
     "discord_ts",
     "ensure_channel_is_messageable",
+    "ensure_guild_exists",
     "ensure_member_exists",
     "ensure_messageable_channel_exists",
     "ensure_role_exists",

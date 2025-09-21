@@ -20,7 +20,7 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models import GuildTicketsConfig
+from src.infra.db.models import GuildLoggingConfig, GuildTicketsConfig
 from src.infra.db.models._enums import ChannelType, TicketStateEnum
 from src.infra.db.operations import (
     get_head_moderation_access_roles,
@@ -29,6 +29,7 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
+from src.nightcore.features.tickets.events.dto import TicketEventData
 from src.nightcore.features.tickets.utils import extract_id_from_str
 from src.nightcore.utils import (
     discord_ts,
@@ -203,6 +204,12 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ),
                     ephemeral=True,
                 )
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_TICKETS,
+            )
 
             ticket.moderator_id = user.id
             ticket.state = TicketStateEnum.PINNED
@@ -240,6 +247,19 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 author_id=ticket.author_id,
             ),
         )
+
+        if logging_channel_id:
+            view.bot.dispatch(
+                "ticket_changed",
+                data=TicketEventData(
+                    guild,
+                    channel.id,
+                    user.id,
+                    None,
+                    logging_channel_id,
+                    TicketStateEnum.PINNED,
+                ),
+            )
 
         logger.info(
             "Ticket %s pinned by user %s in guild %s",
@@ -367,6 +387,13 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ephemeral=True,
                 )
 
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_TICKETS,
+            )
+
             ticket.moderator_id = user.id
             ticket.state = TicketStateEnum.PINNED
 
@@ -411,6 +438,19 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 author_id=ticket.author_id,
             ),
         )
+
+        if logging_channel_id:
+            view.bot.dispatch(
+                "ticket_changed",
+                data=TicketEventData(
+                    guild,
+                    channel.id,
+                    user.id,
+                    None,
+                    logging_channel_id,
+                    TicketStateEnum.OPENED,
+                ),
+            )
 
         logger.info(
             "Ticket %s reopened by user %s in guild %s",
@@ -516,6 +556,13 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ephemeral=True,
                 )
 
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_TICKETS,
+            )
+
             ticket.moderator_id = user.id
             ticket.state = TicketStateEnum.CLOSED
 
@@ -563,6 +610,19 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 author_id=ticket.author_id,
             ),
         )
+
+        if logging_channel_id:
+            view.bot.dispatch(
+                "ticket_changed",
+                data=TicketEventData(
+                    guild,
+                    channel.id,
+                    user.id,
+                    None,
+                    logging_channel_id,
+                    TicketStateEnum.CLOSED,
+                ),
+            )
 
         logger.info(
             "Ticket %s closed by user %s in guild %s",
@@ -618,5 +678,4 @@ class ManageTicketViewV2(LayoutView):
 
 
 # TODO: add task for deleting old closed tickets after X days
-# TODO: add event for logging tickets
 # TODO: fix reopening tickets (moderator who reopened rewrite moderator_id in db)  # noqa: E501
