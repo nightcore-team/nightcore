@@ -19,8 +19,8 @@ class TicketEventData(TicketBaseEventData):
     channel_id: int
     author_id: int
     moderator_id: int | None
-    logging_channel_id: int | None
     state: TicketStateEnum
+    logging_channel_id: int | None = None
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the ticket event."""

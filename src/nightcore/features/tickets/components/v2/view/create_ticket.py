@@ -187,8 +187,8 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                             channel.id,
                             user.id,
                             None,
-                            logging_channel_id,
                             TicketStateEnum.OPENED,
+                            logging_channel_id,
                         ),
                     )
 

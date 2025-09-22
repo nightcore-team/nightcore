@@ -6,7 +6,10 @@ import logging
 from collections.abc import Awaitable
 
 import discord
-from chat_exporter import export  # type: ignore
+from chat_exporter import (  # type: ignore
+    AttachmentToDiscordChannelHandler,
+    export,  # type: ignore
+)
 from discord.ext.commands import Cog  # type: ignore
 
 from src.nightcore.bot import Nightcore
@@ -14,7 +17,6 @@ from src.nightcore.bot import Nightcore
 # TODO: вынести в глобальные утилиты (сед модер лог).
 from src.nightcore.features.moderation.utils import send_moderation_log
 from src.nightcore.features.tickets.events.dto import TicketEventData
-from src.nightcore.features.tickets.utils import CustomAttachmentsHandler
 from src.nightcore.utils import ensure_messageable_channel_exists
 
 logger = logging.getLogger(__name__)
@@ -87,13 +89,13 @@ class TicketEvent(Cog):
             )
             return
 
-        handler = CustomAttachmentsHandler(
-            channel=ticket_channel,  # type: ignore
+        handler = AttachmentToDiscordChannelHandler(
+            channel=ticket_channel,
         )
 
         transcript = await export(
             channel=ticket_channel,
-            attachment_handler=handler.handler,
+            attachment_handler=handler,
         )
 
         transcript_file = discord.File(

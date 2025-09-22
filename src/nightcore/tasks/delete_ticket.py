@@ -7,8 +7,12 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
 from src.config.config import config
-from src.infra.db.models._enums import TicketStateEnum
-from src.infra.db.operations import get_all_closed_tickets
+from src.infra.db.models import GuildLoggingConfig
+from src.infra.db.models._enums import ChannelType, TicketStateEnum
+from src.infra.db.operations import (
+    get_all_closed_tickets,
+    get_specified_channel,
+)
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.tickets.events.dto import TicketEventData
 from src.nightcore.utils import ensure_guild_exists
@@ -37,7 +41,7 @@ class DeleteTicketTask(Cog):
 
             for ticket in closed_tickets:
                 if ticket.updated_at + timedelta(
-                    minutes=config.bot.CLOSED_TICKET_ALIVE_HOURS
+                    hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
                 ) <= datetime.now(timezone.utc):
                     guild = await ensure_guild_exists(
                         self.bot, ticket.guild_id
@@ -49,6 +53,13 @@ class DeleteTicketTask(Cog):
                         )
                         continue
 
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_TICKETS,
+                    )
+
                     self.bot.dispatch(
                         "ticket_deleted",
                         data=TicketEventData(
@@ -56,7 +67,7 @@ class DeleteTicketTask(Cog):
                             channel_id=ticket.channel_id,
                             author_id=ticket.author_id,
                             moderator_id=ticket.moderator_id,
-                            logging_channel_id=None,
+                            logging_channel_id=logging_channel_id,
                             state=TicketStateEnum.DELETED,
                         ),
                     )
