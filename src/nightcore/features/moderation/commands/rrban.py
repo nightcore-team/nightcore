@@ -1,4 +1,4 @@
-"""Ticket ban command for the Nightcore bot."""
+"""Role requesting ban command for the Nightcore bot."""
 
 import logging
 from datetime import timezone
@@ -12,7 +12,6 @@ from discord.interactions import Interaction
 from src.infra.db.operations import (
     get_moderation_access_roles,
     get_or_create_user,
-    is_user_ticketbanned,
     set_user_field_upsert,
 )
 from src.nightcore.bot import Nightcore
@@ -36,24 +35,24 @@ from src.nightcore.utils import (
 logger = logging.getLogger(__name__)
 
 
-class Ticketban(Cog):
+class Rrban(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
     @app_commands.command(
-        name="ticketban", description="Ban a user from creating tickets"
+        name="rrban", description="Ban a user from requesting roles"
     )
     @app_commands.describe(
         user="The user to ban", reason="The reason for banning the user"
     )
-    async def ticketban(
+    async def rrban(
         self,
         interaction: Interaction,
         user: discord.User,
         duration: str,
         reason: str,
     ):
-        """Ban a user from creating tickets."""
+        """Ban a user from requesting roles."""
         guild = cast(Guild, interaction.guild)
 
         # Ensure we have a guild Member object
@@ -72,7 +71,7 @@ class Ticketban(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot ban tickets for me.",
+                    "You cannot ban role requesting for me.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -117,7 +116,7 @@ class Ticketban(Cog):
             if is_member_moderator:
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        "You cannot ban tickets for moderators.",
+                        "You cannot ban role requesting for moderators.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -128,53 +127,35 @@ class Ticketban(Cog):
                 u, _ = await get_or_create_user(
                     session, guild_id=guild.id, user_id=member.id
                 )
-                if u.ticket_ban or await is_user_ticketbanned(
-                    session, guild_id=guild.id, user_id=member.id
-                ):
+                if u.role_request_ban:
                     return await interaction.response.send_message(
                         embed=ValidationErrorEmbed(
-                            "This user is already ticket banned.",
+                            "This user is already role requesting banned.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
-            except Exception as e:
-                logger.error(
-                    "Failed to ticketban user %s in guild %s: %s",
-                    user.id,
-                    guild.id,
-                    e,
-                )
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ticketban Failed",
-                        "Failed to ticketban the user. ",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    )
-                )
 
-            try:
                 await set_user_field_upsert(
                     session,
                     guild_id=guild.id,
                     user_id=member.id,
-                    field="ticket_ban",
+                    field="role_request_ban",
                     value=True,
                 )
 
             except Exception as e:
                 logger.error(
-                    "Failed to ticketban user %s in guild %s: %s",
+                    "Failed to role request ban user %s in guild %s: %s",
                     user.id,
                     guild.id,
                     e,
                 )
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Ticketban Failed",
-                        "Failed to ticketban the user. ",
+                        "Role Request Ban Failed",
+                        "Failed to role request ban the user. ",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     )
@@ -184,7 +165,7 @@ class Ticketban(Cog):
 
         try:
             self.bot.dispatch(
-                "user_ticketbanned",
+                "user_role_request_banned",
                 data=UserMutedEventData(
                     category=self.__class__.__name__.lower(),
                     moderator=interaction.user,  # type: ignore
@@ -199,14 +180,15 @@ class Ticketban(Cog):
             )
         except Exception as e:
             logger.exception(
-                "[event] - Failed to dispatch user_muted event: %s", e
+                "[event] - Failed to dispatch user_role_request_banned event: %s",  # noqa: E501
+                e,
             )
             return
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Ticketbanned",
-                f"{member.mention} has been ticketbanned by moderator {interaction.user.mention}",  # noqa: E501
+                "User Role Request Banned",
+                f"{member.mention} has been role request banned by moderator {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
@@ -225,5 +207,5 @@ class Ticketban(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the Ticketban cog."""
-    await bot.add_cog(Ticketban(bot))
+    """Setup the Rrban cog."""
+    await bot.add_cog(Rrban(bot))

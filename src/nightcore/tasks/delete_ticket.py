@@ -77,8 +77,6 @@ class DeleteTicketTask(Cog):
                         ticket.guild_id,
                     )
 
-                    await session.delete(ticket)
-
     @delete_ticket_task.before_loop
     async def before_delete_ticket_task(self):
         """Prepare before starting the delete ticket task."""

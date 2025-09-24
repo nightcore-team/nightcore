@@ -74,5 +74,16 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
             )
             bot.dispatch("user_unbanned", data=b)
 
+        case "rrban":
+            rr = UnPunishEventData(
+                category=active_punish.category,
+                guild_id=active_punish.guild_id,
+                moderator_id=cast(ClientUser, bot.user).id,
+                user_id=active_punish.user_id,
+                reason="Punish expired",
+                created_at=datetime.now(timezone.utc),
+            )
+            bot.dispatch("user_unrole_request_banned", data=rr)
+
         case _:
             ...

@@ -42,14 +42,14 @@ class User(IdIntegerMixin, Base):
         SmallInteger, nullable=False, default=0
     )
     ticket_ban: Mapped[bool] = mapped_column(nullable=False, default=False)
-    ban_role_request: Mapped[bool] = mapped_column(
+    role_request_ban: Mapped[bool] = mapped_column(
         nullable=False, default=False
     )
     battle_pass_level: Mapped[int] = mapped_column(nullable=False, default=0)
     battle_pass_points: Mapped[float] = mapped_column(
         nullable=False, default=0.0
     )
-    inventory: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    inventory: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)  # type: ignore
 
     # def __repr__(self):
     #     return f"<User user_id={self.user_id} guild_id={self.guild_id} coins={self.coins}>" # noqa: E501

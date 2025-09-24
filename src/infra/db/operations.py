@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import TypeVar
+from typing import TypeVar, cast
 
 from async_lru import alru_cache
 from sqlalchemy import exists, func, select
@@ -25,6 +25,7 @@ from src.infra.db.models import (
     TicketState,
     User,
 )
+from src.infra.db.models._annot import OrgRoleWithoutTagAnnot
 from src.infra.db.models._enums import ChannelType, TicketStateEnum
 
 GuildT = TypeVar(
@@ -356,13 +357,15 @@ async def get_total_users_count(session: AsyncSession) -> int | None:
 
 async def get_organization_roles_full_json(
     session: AsyncSession, *, guild_id: int
-) -> dict[str, dict[str, int]] | None:
+) -> dict[str, OrgRoleWithoutTagAnnot] | None:
     """Get the list of organization roles for a guild."""
     stmt = select(MainGuildConfig.organizational_roles).where(
         MainGuildConfig.guild_id == guild_id
     )
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    return cast(
+        dict[str, OrgRoleWithoutTagAnnot] | None, result.scalar_one_or_none()
+    )
 
 
 async def get_organization_roles_ids(
