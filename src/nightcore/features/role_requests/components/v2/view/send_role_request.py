@@ -21,9 +21,11 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models import MainGuildConfig
-from src.infra.db.models._enums import ChannelType
+from src.infra.db.models._enums import ChannelType, RoleRequestStateEnum
 from src.infra.db.operations import (
+    get_latest_user_role_request,
     get_or_create_user,
+    get_organization_roles_full_json,
     get_organization_roles_ids,
     get_specified_channel,
 )
@@ -62,12 +64,8 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
 
         self.add_item(select)
 
-    # TODO: implement
-    async def select_role(
-        self,
-        interaction: Interaction["Nightcore"],
-    ) -> None:
-        """Handle the select menu interaction."""
+    async def select_role(self, interaction: Interaction["Nightcore"]) -> None:
+        """Handle the select role interaction."""
         guild = cast(Guild, interaction.guild)
         view = cast(SendRoleRequestView, self.view)
         user = cast(Member, interaction.user)
@@ -75,6 +73,69 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
         option_parts: list[str] = interaction.data.get("values")[0].split(",")  # type: ignore
         selected_role_id = int(option_parts[0])  # type: ignore
         selected_role_tag = option_parts[1]  # type: ignore
+
+        async with view.bot.uow.start() as session:
+            org_roles = await get_organization_roles_full_json(
+                session, guild_id=guild.id
+            )
+            if not org_roles:
+                raise FieldNotConfiguredError("organization roles")
+
+            options = [
+                SelectOption(label=v["name"], value=f"{v['role_id']},{k}")
+                for k, v in org_roles.items()
+            ]
+
+            dbuser, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=user.id
+            )
+            if dbuser.role_request_ban:
+                await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Role Request Failed",
+                        "You are banned from requesting roles.",
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+                return
+
+            last_rr = await get_latest_user_role_request(
+                session, guild_id=guild.id, user_id=user.id
+            )
+            if last_rr and last_rr.state in (
+                RoleRequestStateEnum.PENDING,
+                RoleRequestStateEnum.REQUESTED,
+            ):
+                await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Role Request Failed",
+                        "You already have a pending role request.",
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+                return
+
+            check_role_request_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=MainGuildConfig,
+                channel_type=ChannelType.ROLE_REQUESTS,
+            )
+            if not check_role_request_channel_id:
+                await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Field not configured.",
+                        "Channel for checking role requests is not configured.",  # noqa: E501
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+                return
 
         requested_role = await ensure_role_exists(guild, selected_role_id)
         if not requested_role:
@@ -87,39 +148,6 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 ),
                 ephemeral=True,
             )
-
-        async with view.bot.uow.start() as session:
-            dbuser, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=interaction.user.id
-            )
-            if dbuser.role_request_ban:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Role Request Failed",
-                        "You are banned from requesting roles.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
-            if not (
-                check_role_request_channel_id := await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=MainGuildConfig,
-                    channel_type=ChannelType.ROLE_REQUESTS,
-                )
-            ):
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Field not configured.",
-                        "Channel for checking role requests is not configured.",  # noqa: E501
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
 
         channel = await ensure_messageable_channel_exists(
             guild, check_role_request_channel_id
@@ -143,6 +171,10 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 bot=view.bot,
                 selected_role_tag=selected_role_tag,  # type: ignore
             )
+        )
+
+        await interaction.edit_original_response(
+            view=SendRoleRequestView(view.bot, options=options)
         )
 
         logger.info(

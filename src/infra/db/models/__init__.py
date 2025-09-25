@@ -12,6 +12,7 @@ from .guild import (
     MainGuildConfig,
 )
 from .punish import Base, Punish  # noqa: F811
+from .role_request import Base, RoleRequestState  # noqa: F811
 from .temp import Base, TempPunish  # noqa: F811
 from .ticket import Base, TicketState  # noqa: F811
 from .user import Base, User  # noqa: F811
@@ -29,6 +30,7 @@ __all__ = (
     "GuildTicketsConfig",
     "MainGuildConfig",
     "Punish",
+    "RoleRequestState",
     "TempPunish",
     "TicketState",
     "User",

@@ -9,6 +9,8 @@ from discord.ui import Modal, TextInput
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.infra.db.models import RoleRequestState
+from src.infra.db.models._enums import RoleRequestStateEnum
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -112,11 +114,12 @@ class RoleRequestModal(Modal, title="Send Role Request"):
         view = CheckRoleRequestView(
             bot=self.bot,
             interaction_user_id=self.user.id,
+            interaction_user_nick=self.user.display_name,
             role_requested_id=self.requested_role.id,
         )
 
         try:
-            await self.channel.send(view=view)  # type: ignore
+            message = await self.channel.send(view=view)  # type: ignore
 
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
@@ -143,6 +146,32 @@ class RoleRequestModal(Modal, title="Send Role Request"):
                     self.bot.user.display_avatar.url,  # type: ignore
                 )
             )
+
+        async with self.bot.uow.start() as session:
+            try:
+                new_rr = RoleRequestState(
+                    guild_id=guild.id,
+                    author_id=self.user.id,
+                    message_id=cast(discord.Message, message).id,
+                    state=RoleRequestStateEnum.PENDING,
+                )
+            except Exception as e:
+                logger.exception(
+                    "Failed to create RoleRequestState in guild %s for user %s: %s",  # noqa: E501
+                    guild.id,
+                    self.user.id,
+                    e,
+                )
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Role Request Failed",
+                        "Failed to create role request.",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    )
+                )
+
+            session.add(new_rr)
 
         logger.info(
             "[role_request_submit] - invoked user=%s guild=%s role=%s",

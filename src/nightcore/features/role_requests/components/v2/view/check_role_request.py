@@ -80,12 +80,14 @@ class CheckRoleRequestView(LayoutView):
         self,
         bot: "Nightcore",
         interaction_user_id: int | None = None,
+        interaction_user_nick: str | None = None,
         role_requested_id: int | None = None,
     ) -> None:
         super().__init__(timeout=None)
         self.bot = bot
         self.interaction_user_id = interaction_user_id
         self.role_requested_id = role_requested_id
+        self.interaction_user_nick = interaction_user_nick
 
         container = Container[Self]()
 
@@ -98,6 +100,9 @@ class CheckRoleRequestView(LayoutView):
             TextDisplay[Self](
                 f"User | ID: <@{self.interaction_user_id}> | {self.interaction_user_id}"  # noqa: E501
             )
+        )
+        container.add_item(
+            TextDisplay[Self](f"User nickname: {self.interaction_user_nick}")
         )
         container.add_item(
             TextDisplay[Self](f"Role requested: <@&{self.role_requested_id}>")

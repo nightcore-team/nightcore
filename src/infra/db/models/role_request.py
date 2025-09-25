@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, Enum, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._enums import TicketStateEnum
+from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
 
@@ -16,10 +16,9 @@ class RoleRequestState(IdIntegerMixin, Base):
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
-    # fix native python enums using values_callable
-    state: Mapped[TicketStateEnum] = mapped_column(
+    state: Mapped[RoleRequestStateEnum] = mapped_column(
         Enum(
-            TicketStateEnum,
+            RoleRequestStateEnum,
             native_enum=False,
             values_callable=lambda x: [e.value for e in x],  # type: ignore
             validate_strings=True,

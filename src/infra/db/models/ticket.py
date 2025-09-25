@@ -17,7 +17,6 @@ class TicketState(IdIntegerMixin, Base):
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     channel_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
-    # fix native python enums using values_callable
     state: Mapped[TicketStateEnum] = mapped_column(
         Enum(
             TicketStateEnum,

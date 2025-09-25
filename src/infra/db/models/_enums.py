@@ -31,3 +31,10 @@ class TicketStateEnum(Enum):
     PINNED = "pinned"
     CLOSED = "closed"
     DELETED = "deleted"
+
+
+class RoleRequestStateEnum(Enum):
+    PENDING = "pending"
+    REQUESTED = "requested"
+    APPROVED = "approved"
+    DENIED = "denied"

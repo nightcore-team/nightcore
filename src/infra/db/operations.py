@@ -21,12 +21,16 @@ from src.infra.db.models import (
     GuildTicketsConfig,
     MainGuildConfig,
     Punish,
+    RoleRequestState,
     TempPunish,
     TicketState,
     User,
 )
 from src.infra.db.models._annot import OrgRoleWithoutTagAnnot
-from src.infra.db.models._enums import ChannelType, TicketStateEnum
+from src.infra.db.models._enums import (
+    ChannelType,
+    TicketStateEnum,
+)
 
 GuildT = TypeVar(
     "GuildT",
@@ -230,6 +234,28 @@ async def get_latest_user_ticket(
         )
         .order_by(
             TicketState.updated_at.desc().nulls_last(),
+        )
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def get_latest_user_role_request(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> RoleRequestState | None:
+    """Get the latest role request state for a user in a guild."""
+    stmt = (
+        select(RoleRequestState)
+        .where(
+            RoleRequestState.guild_id == guild_id,
+            RoleRequestState.author_id == user_id,
+        )
+        .order_by(
+            RoleRequestState.updated_at.desc().nulls_last(),
         )
         .limit(1)
     )
