@@ -63,9 +63,21 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
         """Handles the submission of the ban form modal."""
         guild = cast(discord.Guild, interaction.guild)
 
+        await interaction.response.defer()
+
+        if not guild.me.guild_permissions.manage_nicknames:
+            return await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                    "I do not have permission to manage messages.",
+                ),
+                ephemeral=True,
+            )
+
         nickname = validate_user_nickname(self.nickname.value)
         if not nickname:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Invalid nickname format. Please use Name_Surname.",
                     self.bot.user.name,  # type: ignore
@@ -77,7 +89,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
         try:
             rank = int(self.rank.value)
         except ValueError:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Invalid rank format. Please enter a valid number.",
                     self.bot.user.name,  # type: ignore
@@ -86,22 +98,12 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 ephemeral=True,
             )
 
-        if 1 > rank > 10:
-            return await interaction.response.send_message(
+        if 1 < rank < 11:
+            return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Rank must be between 1 and 10.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if not guild.me.guild_permissions.manage_nicknames:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to manage messages.",
                 ),
                 ephemeral=True,
             )
@@ -111,7 +113,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 nick=f"[{self.selected_role_tag}][{rank}] {nickname}",
             )
         except Exception:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Nickname Change Failed",
                     "I was unable to change your nickname.",
@@ -120,8 +122,6 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 ),
                 ephemeral=True,
             )
-
-        await interaction.response.defer()
 
         view = self.view(
             bot=self.bot,
@@ -166,6 +166,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                     author_id=self.user.id,
                     role_id=self.requested_role.id,
                     message_id=cast(discord.Message, message).id,
+                    channel_id=self.channel.id,
                     state=RoleRequestStateEnum.PENDING,
                 )
             except Exception as e:

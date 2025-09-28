@@ -120,7 +120,6 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
 
                 last_rr.state = RoleRequestStateEnum.REQUESTED
                 last_rr.moderator_id = interaction.user.id
-                last_rr.channel_id = interaction.channel.id  # type: ignore
 
                 nightcore_notifications_channel_id = (
                     await get_specified_channel(
@@ -477,6 +476,7 @@ class CheckRoleRequestView(LayoutView):
         moderator_id: int | None = None,
         state: RoleRequestStateEnum | None = None,
         attachments: list[MediaGalleryItem] | None = None,
+        all_disabled: bool = False,
     ) -> None:
         super().__init__(timeout=None)
         self.bot = bot
@@ -489,7 +489,7 @@ class CheckRoleRequestView(LayoutView):
 
         self.actions: ManageRoleRequestActionRow
 
-        self.make_component()
+        self.make_component(all_disabled)
 
     def get_component(self, custom_id: str) -> Item[Self] | None:
         """Get component by custom_id."""
@@ -546,17 +546,18 @@ class CheckRoleRequestView(LayoutView):
             state_str = ""
             match self.state:
                 case RoleRequestStateEnum.REQUESTED:
-                    state_str = "<:9776stars:1421150081037369516> Запрос на статистику был **отправлен** модератором:"  # noqa: E501
+                    state_str = f"<:f9776stars:1421150081037369516> Запрос на статистику был **отправлен** модератором: <@{self.moderator_id}>"  # noqa: E501
                 case RoleRequestStateEnum.APPROVED:
-                    state_str = "<:15932stars:1421150093960286389> Запрос на статистику был **одобрен** модератором:"  # noqa: E501
+                    state_str = f"<:15932stars:1421150093960286389> Запрос на статистику был **одобрен** модератором: <@{self.moderator_id}>"  # noqa: E501
                 case RoleRequestStateEnum.DENIED:
-                    state_str = "<:21552stars:1421150105981157568> Запрос на статистику был **отклонен** модератором:"  # noqa: E501
+                    state_str = f"<:21552stars:1421150105981157568> Запрос на статистику был **отклонен** модератором: <@{self.moderator_id}>"  # noqa: E501
+                case RoleRequestStateEnum.CANCELED:
+                    state_str = "<:21552stars:1421150105981157568> Пользователь отклонил свой запрос на роль."  # noqa: E501
+                    self.moderator_id = None
                 case _:
                     state_str = "Cannot determine state."
 
-            container.add_item(
-                TextDisplay[Self](f"{state_str} <@{self.moderator_id}>")
-            )
+            container.add_item(TextDisplay[Self](f"{state_str}"))
             container.add_item(Separator[Self]())
 
         if self.attachments:

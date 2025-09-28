@@ -37,11 +37,15 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.modal import (
     SendRoleRequestModal,
 )
-from src.nightcore.features.role_requests.components.v2.view.check_role_request import (
+from src.nightcore.features.role_requests.components.v2.view.check_role_request import (  # noqa: E501
     CheckRoleRequestView,
+)
+from src.nightcore.features.role_requests.components.v2.view.role_request_state import (  # noqa: E501
+    RoleRequestStateView,
 )
 from src.nightcore.utils import (
     discord_ts,
+    ensure_message_exists,
     ensure_messageable_channel_exists,
     ensure_role_exists,
     has_any_role_from_sequence,
@@ -220,9 +224,132 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         button: Button["SendRoleRequestView"],
     ) -> None:
         """Handle the cancel button interaction."""
-        await interaction.response.send_message(
-            "Your role request has been cancelled.", ephemeral=True
-        )
+        # get rr from db
+        # if rr exists and hasn't state in (CANCELED, DENIED, APPROVED) -> set state to CANCELED  # noqa: E501
+        # else -> inform user that he has no active requests
+        # update message view to disable buttons and send message that user cancelled the request  # noqa: E501
+        guild = cast(Guild, interaction.guild)
+        user = cast(Member, interaction.user)
+        view = cast(SendRoleRequestView, self.view)
+
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        async with view.bot.uow.start() as session:
+            last_rr = await get_latest_user_role_request(
+                session, guild_id=guild.id, user_id=user.id
+            )
+            if not last_rr or last_rr.state in (
+                RoleRequestStateEnum.CANCELED,
+                RoleRequestStateEnum.DENIED,
+                RoleRequestStateEnum.APPROVED,
+            ):
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка при отмене запроса",
+                        "У вас нет активных запросов на роль.",  # noqa: RUF001
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                )
+
+            await session.delete(last_rr)
+
+        if not (
+            channel := await ensure_messageable_channel_exists(
+                guild, last_rr.channel_id
+            )
+        ):
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка при отмене запроса",
+                    "Канал для проверки запросов на роль не существует или недоступен.\nВаш запрос будет автоматически отменен.",  # noqa: E501, RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+
+        if not (
+            channel := await ensure_messageable_channel_exists(
+                guild, last_rr.channel_id
+            )
+        ):
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка при отмене запроса",
+                    "Канал для проверки запросов на роль не существует или недоступен.\nВаш запрос будет автоматически отменен.",  # noqa: E501, RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+
+        if not (
+            rr_message := await ensure_message_exists(
+                view.bot, channel, last_rr.message_id
+            )
+        ):
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка при отмене запроса",
+                    "Сообщение с вашим запросом на роль не найдено.\nВаш запрос будет автоматически отменен.",  # noqa: E501, RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+
+        try:
+            message = await rr_message.edit(
+                view=CheckRoleRequestView(
+                    bot=view.bot,
+                    interaction_user_id=user.id,
+                    interaction_user_nick=user.display_name,
+                    role_requested_id=last_rr.role_id,
+                    moderator_id=last_rr.moderator_id,
+                    state=RoleRequestStateEnum.CANCELED,
+                    all_disabled=True,
+                )
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to update role request message %s in guild %s: %s",
+                rr_message.id,
+                guild.id,
+                e,
+            )
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка при отмене запроса",
+                    "Произошла ошибка при обновлении сообщения с вашим запросом на роль.\nВаш запрос будет автоматически отменен.",  # noqa: E501, RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+        try:
+            await message.reply(
+                view=RoleRequestStateView(
+                    bot=view.bot,
+                    moderator_id=last_rr.moderator_id,
+                    user_id=user.id,
+                    state=RoleRequestStateEnum.CANCELED,
+                    role_id=last_rr.role_id,
+                )
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to reply to role request message %s in guild %s: %s",
+                message.id,
+                guild.id,
+                e,
+            )
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка при отмене запроса",
+                    "Произошла ошибка при отправке сообщения об отмене вашего запроса на роль.\nВаш запрос будет автоматически отменен.",  # noqa: E501, RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        await interaction.followup.send("Вы отменили свой запрос на роль.")
 
     @button(
         label="Снять организационные роли",
@@ -251,8 +378,8 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         if not has_any_role_from_sequence(user, org_roles_ids):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Role Removal Failed",
-                    "You do not have any organization roles to remove.",
+                    "Ошибка при снятии ролей",
+                    "У вас нет организационных ролей для снятия.",  # noqa: RUF001
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -269,7 +396,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
 
         try:
             await user.remove_roles(
-                *roles_to_remove, reason="User requested role removal"
+                *roles_to_remove, reason="Снятие организационных ролей"
             )
         except Exception as e:
             logger.error(
@@ -280,8 +407,8 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
             )
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Role Removal Failed",
-                    "An error occurred while removing your organization roles.",  # noqa: E501
+                    "Ошибка при снятии ролей",
+                    "Произошла ошибка при снятии ваших организационных ролей.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -290,8 +417,8 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "Role Removal Successful",
-                f"Your organization roles ({', '.join(f'<@&{role.id}>' for role in roles_to_remove)}) have been removed.",  # noqa: E501
+                "Снятие ролей успешно",
+                f"Ваши организационные роли ({', '.join(f'<@&{role.id}>' for role in roles_to_remove)}) были сняты.",  # noqa: E501
                 view.bot.user.name,  # type: ignore
                 view.bot.user.display_avatar.url,  # type: ignore
             ),

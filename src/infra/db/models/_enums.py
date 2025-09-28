@@ -40,3 +40,4 @@ class RoleRequestStateEnum(Enum):
     APPROVED = "approved"
     DENIED = "denied"
     STATS_PROVIDED = "has_stats"
+    CANCELED = "canceled"

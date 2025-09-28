@@ -61,10 +61,11 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
         guild = cast(Guild, interaction.guild)
         user = cast(Member, interaction.user)
 
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
         if not guild.me.guild_permissions.manage_channels:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 "I do not have permission to manage channels.",
-                ephemeral=True,
             )
 
         async with view.bot.uow.start() as session:
@@ -78,9 +79,8 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     "Failed to find ticket guild config in guild %s",
                     guild.id,
                 )
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     "Ticket system is not configured in this server.",
-                    ephemeral=True,
                 )
 
             if not all(
@@ -95,27 +95,24 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     "Not all ticket categories are configured in guild %s",
                     guild.id,
                 )
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     "Ticket system is not configured in this server.",
-                    ephemeral=True,
                 )
 
             dbuser, _ = await get_or_create_user(
                 session, guild_id=guild.id, user_id=user.id
             )
             if dbuser.ticket_ban:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     "You are ticket banned and cannot create tickets.",
-                    ephemeral=True,
                 )
 
             last_ticket = await get_latest_user_ticket(
                 session, guild_id=guild.id, user_id=user.id
             )
             if last_ticket and last_ticket.state != TicketStateEnum.CLOSED:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     "You already have an open ticket.",
-                    ephemeral=True,
                 )
             else:
                 current_tickets_count = guild_config.tickets_count + 1
@@ -141,9 +138,8 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     "Failed to find new tickets category in guild %s",
                     guild.id,
                 )
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     "Ticket system is not configured in this server.",
-                    ephemeral=True,
                 )
 
             try:
@@ -192,9 +188,8 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                         ),
                     )
 
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"Your ticket has been created: {message.jump_url}",
-                    ephemeral=True,
                 )
             except Exception as e:
                 logger.error(
@@ -203,14 +198,13 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     new_tickets_category.id,
                     e,
                 )
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ticket Creation Failed",
                         "Failed to create ticket channel.",
                         view.bot.user.name,  # type: ignore
                         view.bot.user.display_avatar.url,  # type: ignore
                     ),
-                    ephemeral=True,
                 )
 
 
