@@ -7,6 +7,7 @@ class ChannelType(Enum):
     """Enumeration for channel types."""
 
     NOTIFICATIONS = "notifications_channel_id"
+    NIGHTCORE_NOTIFICATIONS = "notifications_from_bot_channel_id"
     LOGGING_BANS = "bans_log_channel_id"
     LOGGING_CLANS = "clans_log_channel_id"
     LOGGING_MEMBERS = "members_log_channel_id"
@@ -38,3 +39,4 @@ class RoleRequestStateEnum(Enum):
     REQUESTED = "requested"
     APPROVED = "approved"
     DENIED = "denied"
+    STATS_PROVIDED = "has_stats"

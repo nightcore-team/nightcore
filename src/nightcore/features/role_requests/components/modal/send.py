@@ -8,6 +8,9 @@ from discord.ui import Modal, TextInput
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+    from src.nightcore.features.role_requests.components.v2.view.check_role_request import (  # noqa: E501
+        CheckRoleRequestView,
+    )
 
 from src.infra.db.models import RoleRequestState
 from src.infra.db.models._enums import RoleRequestStateEnum
@@ -17,27 +20,24 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.features.role_requests.components.v2.view.check_role_request import (  # noqa: E501
-    CheckRoleRequestView,
-)
 from src.nightcore.features.role_requests.utils import validate_user_nickname
 
 logger = logging.getLogger(__name__)
 
 
-class RoleRequestModal(Modal, title="Send Role Request"):
+class SendRoleRequestModal(Modal, title="Отправить запрос роли"):
     nickname = TextInput[Self](
-        label="Enter your nickname in format: Name_Surname",
+        label="Введите ваш ник в формате: Имя_Фамилия",
         style=discord.TextStyle.short,
-        placeholder="Example: Raymond_Walker",
+        placeholder="Пример: Raymond_Walker",
         required=True,
         max_length=35,
     )
 
     rank = TextInput[Self](
-        label="Enter your rank",
+        label="Введите ваш ранг",
         style=discord.TextStyle.short,
-        placeholder="Example: 1",
+        placeholder="Пример: 1",
         required=True,
         max_length=2,
     )
@@ -49,6 +49,7 @@ class RoleRequestModal(Modal, title="Send Role Request"):
         role: discord.Role,
         selected_role_tag: str,
         bot: "Nightcore",
+        view: type["CheckRoleRequestView"],
     ):
         super().__init__()
         self.user = user
@@ -56,6 +57,7 @@ class RoleRequestModal(Modal, title="Send Role Request"):
         self.channel = channel
         self.requested_role = role
         self.selected_role_tag = selected_role_tag
+        self.view = view
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         """Handles the submission of the ban form modal."""
@@ -78,6 +80,16 @@ class RoleRequestModal(Modal, title="Send Role Request"):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Invalid rank format. Please enter a valid number.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if 1 > rank > 10:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Rank must be between 1 and 10.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -111,7 +123,7 @@ class RoleRequestModal(Modal, title="Send Role Request"):
 
         await interaction.response.defer()
 
-        view = CheckRoleRequestView(
+        view = self.view(
             bot=self.bot,
             interaction_user_id=self.user.id,
             interaction_user_nick=self.user.display_name,
@@ -152,6 +164,7 @@ class RoleRequestModal(Modal, title="Send Role Request"):
                 new_rr = RoleRequestState(
                     guild_id=guild.id,
                     author_id=self.user.id,
+                    role_id=self.requested_role.id,
                     message_id=cast(discord.Message, message).id,
                     state=RoleRequestStateEnum.PENDING,
                 )

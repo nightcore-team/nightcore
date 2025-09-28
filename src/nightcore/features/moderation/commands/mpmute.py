@@ -118,6 +118,16 @@ class MpMute(Cog):
                 ephemeral=True,
             )
 
+        if not guild.me.guild_permissions.manage_roles:
+            return await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                    "I do not have permission to add mute roles.",
+                ),
+                ephemeral=True,
+            )
+
         if not guild.me.guild_permissions.moderate_members:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(

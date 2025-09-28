@@ -1,3 +1,4 @@
-from .role_request import RoleRequestModal
+from .decline import DeclineRoleRequestModal
+from .send import SendRoleRequestModal
 
-__all__ = ("RoleRequestModal",)
+__all__ = ("DeclineRoleRequestModal", "SendRoleRequestModal")

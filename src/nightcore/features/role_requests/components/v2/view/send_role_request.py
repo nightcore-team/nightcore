@@ -35,7 +35,10 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.modal import (
-    RoleRequestModal,
+    SendRoleRequestModal,
+)
+from src.nightcore.features.role_requests.components.v2.view.check_role_request import (
+    CheckRoleRequestView,
 )
 from src.nightcore.utils import (
     discord_ts,
@@ -99,6 +102,9 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                     ),
                     ephemeral=True,
                 )
+                await interaction.message.edit(
+                    view=SendRoleRequestView(view.bot, options=options)
+                )
                 return
 
             last_rr = await get_latest_user_role_request(
@@ -107,6 +113,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
             if last_rr and last_rr.state in (
                 RoleRequestStateEnum.PENDING,
                 RoleRequestStateEnum.REQUESTED,
+                RoleRequestStateEnum.STATS_PROVIDED,
             ):
                 await interaction.response.send_message(
                     embed=ErrorEmbed(
@@ -116,6 +123,9 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                         view.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
+                )
+                await interaction.message.edit(
+                    view=SendRoleRequestView(view.bot, options=options)
                 )
                 return
 
@@ -135,11 +145,14 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                     ),
                     ephemeral=True,
                 )
+                await interaction.message.edit(
+                    view=SendRoleRequestView(view.bot, options=options)
+                )
                 return
 
         requested_role = await ensure_role_exists(guild, selected_role_id)
         if not requested_role:
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Role Request Failed",
                     "The selected role does not exist in this server.",
@@ -148,12 +161,16 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 ),
                 ephemeral=True,
             )
+            await interaction.message.edit(
+                view=SendRoleRequestView(view.bot, options=options)
+            )
+            return
 
         channel = await ensure_messageable_channel_exists(
             guild, check_role_request_channel_id
         )
         if not channel:
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Role Request Failed",
                     "The checking role requests channel does not exist or is not accessible.",  # noqa: E501
@@ -162,18 +179,23 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 ),
                 ephemeral=True,
             )
+            await interaction.message.edit(
+                view=SendRoleRequestView(view.bot, options=options)
+            )
+            return
 
         await interaction.response.send_modal(
-            RoleRequestModal(
+            SendRoleRequestModal(
                 user=user,
                 channel=channel,
                 role=requested_role,
                 bot=view.bot,
                 selected_role_tag=selected_role_tag,  # type: ignore
+                view=CheckRoleRequestView,
             )
         )
 
-        await interaction.edit_original_response(
+        await interaction.message.edit(
             view=SendRoleRequestView(view.bot, options=options)
         )
 
@@ -187,9 +209,9 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
 
 class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
     @button(
-        label="Cancel role request",
+        label="Отклонить текущий запрос",
         custom_id="role_request:cancel",
-        style=ButtonStyle.danger,
+        style=ButtonStyle.grey,
         emoji="<:9349_nope:1414732960841859182>",
     )  # TODO: implement
     async def cancel_role_request(
@@ -203,7 +225,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         )
 
     @button(
-        label="Remove organization roles",
+        label="Снять организационные роли",
         custom_id="role_request:remove_roles",
         style=ButtonStyle.grey,
         emoji="<:42276rank:1420074588104294440>",
@@ -291,13 +313,18 @@ class SendRoleRequestView(LayoutView):
         container = Container[Self]()
 
         # header
-        container.add_item(TextDisplay[Self]("## Role Request"))
+        container.add_item(
+            TextDisplay[Self](
+                "## <:72151staff:1421169506230866050> Отправить запрос на роль"
+            )
+        )
         container.add_item(Separator[Self]())
 
         # main text
         container.add_item(
             TextDisplay[Self](
-                "**For role requests, please select a role from the list below.**"  # noqa: E501
+                "**Для запроса роли, пожалуйста, выберите вашу организацию...**\n"  # noqa: E501
+                "**...из списка ниже.**"
             )
         )
 

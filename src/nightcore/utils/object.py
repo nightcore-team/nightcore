@@ -8,6 +8,7 @@ from discord import (
     Guild,
     HTTPException,
     Member,
+    Message,
     NotFound,
     Role,
     TextChannel,
@@ -50,6 +51,37 @@ async def ensure_role_exists(guild: Guild, role_id: int) -> Role | None:
 def ensure_channel_is_messageable(channel: GuildChannel | Thread) -> bool:
     """Check if a channel is messageable."""
     return isinstance(channel, TextChannel | Thread)
+
+
+async def ensure_message_exists(
+    bot: "Nightcore", channel: GuildChannel | Thread, message_id: int
+) -> Message | None:
+    """Ensure that a message with the given ID exists in the channel."""
+
+    cached = next((m for m in bot.cached_messages if m.id == message_id), None)
+    if cached is not None:
+        return cached
+
+    try:
+        message = await channel.fetch_message(message_id)  # type: ignore
+    except NotFound as e:
+        logger.error(
+            "[ensure_message_exists] Message %s not found in channel %s: %s",
+            message_id,
+            channel.id,  # type: ignore
+            e,
+        )
+        return None
+    except HTTPException as e:
+        logger.error(
+            "[ensure_message_exists] Failed fetching message %s in channel %s: %s",  # noqa: E501
+            message_id,
+            channel.id,  # type: ignore
+            e,
+        )
+        return None
+
+    return message  # type: ignore
 
 
 async def ensure_messageable_channel_exists(

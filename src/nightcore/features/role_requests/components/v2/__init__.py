@@ -1,3 +1,11 @@
-from .view import CheckRoleRequestView, SendRoleRequestView
+from .view import (
+    CheckRoleRequestView,
+    RoleRequestStateView,
+    SendRoleRequestView,
+)
 
-__all__ = ("CheckRoleRequestView", "SendRoleRequestView")
+__all__ = (
+    "CheckRoleRequestView",
+    "RoleRequestStateView",
+    "SendRoleRequestView",
+)

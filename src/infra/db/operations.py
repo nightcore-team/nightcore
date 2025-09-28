@@ -123,6 +123,7 @@ async def get_or_create_user(  # noqa: D103
     return user, created  # type: ignore
 
 
+# TODO: rewrite to use all models (like in get_specified_guild_config)
 async def set_user_field_upsert(
     session: AsyncSession,
     *,
@@ -244,16 +245,18 @@ async def get_latest_user_ticket(
 async def get_latest_user_role_request(
     session: AsyncSession,
     *,
-    guild_id: int,
+    guild_id: int | None,
     user_id: int,
 ) -> RoleRequestState | None:
     """Get the latest role request state for a user in a guild."""
+    by_guild_id = RoleRequestState.guild_id == guild_id
+    by_user_id = RoleRequestState.author_id == user_id
+    _clause = [by_user_id]
+    if guild_id:
+        _clause.append(by_guild_id)
     stmt = (
         select(RoleRequestState)
-        .where(
-            RoleRequestState.guild_id == guild_id,
-            RoleRequestState.author_id == user_id,
-        )
+        .where(*_clause)
         .order_by(
             RoleRequestState.updated_at.desc().nulls_last(),
         )
