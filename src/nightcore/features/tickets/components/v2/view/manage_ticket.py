@@ -256,7 +256,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     channel.id,
                     user.id,
                     None,
-                    TicketStateEnum.OPENED,
+                    TicketStateEnum.PINNED,
                     logging_channel_id,
                 ),
             )
@@ -447,7 +447,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     channel.id,
                     user.id,
                     None,
-                    TicketStateEnum.OPENED,
+                    TicketStateEnum.PINNED,
                     logging_channel_id,
                 ),
             )
@@ -619,7 +619,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     channel.id,
                     user.id,
                     None,
-                    TicketStateEnum.OPENED,
+                    TicketStateEnum.CLOSED,
                     logging_channel_id,
                 ),
             )
