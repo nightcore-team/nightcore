@@ -59,19 +59,6 @@ def build_infraction_pages(
     return pages
 
 
-"""
-Mute: 0
-Ban: 0
-Kick: 0
-Vmute: 0
-Mpmute: 0
-Ticketban: 0
-Закрытых тикетов: 0
-Одобрено запросов ролей: 0
-Снято ролей: 0
-"""
-
-
 def build_moderators_stats(
     infractions: dict[int, ModeratorData],
     mute_score: float,
@@ -98,14 +85,14 @@ def build_moderators_stats(
         vmute_count = sum(1 for p in punishes if p.category == "vmute")
         mpmute_count = sum(1 for p in punishes if p.category == "mpmute")
         ticketban_count = sum(1 for p in punishes if p.category == "ticketban")
-        closed_tickets_count = sum(
-            1 for p in punishes if p.category == "ticketclose"
-        )
-        approved_role_requests_count = sum(
-            1 for p in punishes if p.category == "approverolerequest"
-        )
+        # closed_tickets_count = sum(
+        #     1 for p in punishes if p.category == "ticketclose"
+        # )
+        # approved_role_requests_count = sum(
+        #     1 for p in punishes if p.category == "approverolerequest"
+        # )
         changed_roles_count = sum(
-            1 for p in punishes if p.category == "changeroles"
+            1 for p in punishes if p.category == "role_remove"
         )
         total_points = (
             mute_count * mute_score
@@ -114,8 +101,8 @@ def build_moderators_stats(
             + vmute_count * vmute_score
             + mpmute_count * mpmute_score
             + ticketban_count * ticketban_score
-            + closed_tickets_count * tickets_score
-            + approved_role_requests_count * approved_role_requests_score
+            # + closed_tickets_count * tickets_score
+            # + approved_role_requests_count * approved_role_requests_score
             + changed_roles_count * changed_roles_score
             + total_messages * message_score
         )
@@ -128,8 +115,8 @@ def build_moderators_stats(
             f"Vmute: {vmute_count}\n"
             f"Mpmute: {mpmute_count}\n"
             f"Ticketban: {ticketban_count}\n"
-            f"Closed tickets: {closed_tickets_count}\n"
-            f"Approved role requests: {approved_role_requests_count}\n"
+            # f"Closed tickets: {closed_tickets_count}\n"
+            # f"Approved role requests: {approved_role_requests_count}\n"
             f"Changed roles: {changed_roles_count}\n"
             f"Messages: {total_messages}\n\n"
             f"Total points: {total_points}"

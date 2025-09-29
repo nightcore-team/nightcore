@@ -57,6 +57,14 @@ async def setup(bot: Nightcore):
                     ),
                     ephemeral=True,
                 )
+            else:
+                await interaction.followup.send(
+                    embed=NoConfigFoundButCreatedEmbed(
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
             return
 
         if isinstance(original, ConfigMissingError):
@@ -77,6 +85,14 @@ async def setup(bot: Nightcore):
                     ),
                     ephemeral=True,
                 )
+            else:
+                await interaction.followup.send(
+                    embed=NoConfigFoundEmbed(
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
             return
 
         if isinstance(original, OrgRolesParsingError):
@@ -91,6 +107,15 @@ async def setup(bot: Nightcore):
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        f"{original.__class__.__name__}: {original.msg}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.followup.send(
                     embed=ValidationErrorEmbed(
                         f"{original.__class__.__name__}: {original.msg}",
                         interaction.client.user.name,  # type: ignore
@@ -119,6 +144,15 @@ async def setup(bot: Nightcore):
                     ),
                     ephemeral=True,
                 )
+            else:
+                await interaction.followup.send(
+                    embed=ValidationErrorEmbed(
+                        f"{original.__class__.__name__}: {original.msg}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
             return
 
         if isinstance(original, LevelRolesParsingError):
@@ -133,6 +167,15 @@ async def setup(bot: Nightcore):
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        f"{original.__class__.__name__}: {original.msg}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.followup.send(
                     embed=ValidationErrorEmbed(
                         f"{original.__class__.__name__}: {original.msg}",
                         interaction.client.user.name,  # type: ignore
@@ -162,6 +205,16 @@ async def setup(bot: Nightcore):
                     ),
                     ephemeral=True,
                 )
+            else:
+                await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Field not configured.",
+                        f"{original}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
             return
 
         logger.exception("Unhandled app command error", exc_info=error)
@@ -170,6 +223,12 @@ async def setup(bot: Nightcore):
                 "Unexpected error occurred. Please contact the administrator.",
                 ephemeral=True,
             )
+        else:
+            await interaction.followup.send(
+                "Unexpected error occurred. Please contact the administrator.",
+                ephemeral=True,
+            )
+        return
 
 
 # TODO: create embed for unexpected error with contact information
