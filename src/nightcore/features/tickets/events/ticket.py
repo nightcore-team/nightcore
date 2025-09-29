@@ -29,9 +29,6 @@ class TicketEvent(Cog):
     @Cog.listener()
     async def on_ticket_changed(self, *, data: TicketEventData) -> None:
         """Handle ticket change events."""
-        # get logging channel
-        # check if channel exists
-        # send log to logging channel
 
         logger.info(
             "[event] on_ticket_changed - %s: Guild: %s, Member: %s, Moderator: %s",  # noqa: E501
@@ -104,7 +101,7 @@ class TicketEvent(Cog):
         )
 
         gather_list: list[Awaitable[None]] = []
-        # TODO: fix it
+
         if data.logging_channel_id:
             gather_list.append(
                 send_moderation_log(
@@ -120,6 +117,8 @@ class TicketEvent(Cog):
                 data.guild.id,
             )
             return
+
+        gather_list.append(ticket_channel.delete(reason="Ticket deleted"))
 
         try:
             await asyncio.gather(*gather_list, return_exceptions=True)

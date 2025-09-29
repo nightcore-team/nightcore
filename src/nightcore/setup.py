@@ -37,13 +37,6 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.unticketban",
         "src.nightcore.features.moderation.commands.rrban",
         "src.nightcore.features.moderation.commands.unrrban",
-        # tickets commands
-        "src.nightcore.features.tickets.commands.ticketmessage",
-        # tickets events
-        "src.nightcore.features.tickets.events.ticket",
-        # role requests commands
-        "src.nightcore.features.role_requests.commands.rrmessage",
-        # role requests events
         # moderation events
         "src.nightcore.features.moderation.events.kick",
         "src.nightcore.features.moderation.events.roles_change",
@@ -53,13 +46,21 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.events.ban",
         "src.nightcore.features.moderation.events.ticketban",
         "src.nightcore.features.moderation.events.rrban",
+        # tickets commands
+        "src.nightcore.features.tickets.commands.ticketmessage",
+        # tickets events
+        "src.nightcore.features.tickets.events.ticket",
+        # role requests commands
+        "src.nightcore.features.role_requests.commands.rrmessage",
+        # role requests events
+        "src.nightcore.features.role_requests.events.stats",
         # global events
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",
         "src.nightcore.events.error",
         # tasks
-        # "src.nightcore.tasks.unpunish",
-        # "src.nightcore.tasks.delete_ticket",
+        "src.nightcore.tasks.unpunish",
+        "src.nightcore.tasks.delete_ticket",
         "src.nightcore.tasks.delete_role_request",
     ]
 
