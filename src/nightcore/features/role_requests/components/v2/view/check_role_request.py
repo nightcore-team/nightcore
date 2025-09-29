@@ -460,7 +460,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 nightcore_notifications_channel_id=nightcore_notifications_channel_id,
                 view=view,
                 state_view=RoleRequestStateView,
-                message=interaction.message,
+                message=interaction.message,  # type: ignore
             )
         )
 
@@ -553,6 +553,9 @@ class CheckRoleRequestView(LayoutView):
                     state_str = f"<:21552stars:1421150105981157568> Запрос на статистику был **отклонен** модератором: <@{self.moderator_id}>"  # noqa: E501
                 case RoleRequestStateEnum.CANCELED:
                     state_str = "<:21552stars:1421150105981157568> Пользователь отклонил свой запрос на роль."  # noqa: E501
+                    self.moderator_id = None
+                case RoleRequestStateEnum.EXPIRED:
+                    state_str = "<:21552stars:1421150105981157568> Запрос на роль **истек**."  # noqa: E501
                     self.moderator_id = None
                 case _:
                     state_str = "Cannot determine state."

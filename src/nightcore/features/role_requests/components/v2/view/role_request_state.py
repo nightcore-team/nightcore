@@ -74,7 +74,6 @@ class RoleRequestStateView(LayoutView):
             case RoleRequestStateEnum.DENIED:
                 header_text = f"### <:9349_nope:1414732960841859182> | DENIED <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
                 text = f"Вы отклонили запрос пользователя <@{user_id}> по причине:\n\n{self.reason}."  # noqa: E501
-            # case RoleRequestState.CANCELED:
             case RoleRequestStateEnum.CANCELED:
                 header_text = "### <:9349_nope:1414732960841859182> | CANCELED"
                 if moderator_id:
@@ -82,6 +81,11 @@ class RoleRequestStateView(LayoutView):
                 text = (
                     f"Пользователь <@{user_id}> отклонил свой запрос на роль."
                 )
+            case RoleRequestStateEnum.EXPIRED:
+                header_text = "### <:9349_nope:1414732960841859182> | EXPIRED"
+                if moderator_id:
+                    header_text += f"<:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
+                text = f"Запрос пользователя <@{user_id}> истек и был удален."
             case _:
                 ...
 

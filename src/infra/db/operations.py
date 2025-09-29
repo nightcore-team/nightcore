@@ -31,6 +31,7 @@ from src.infra.db.models._enums import (
     ChannelType,
     TicketStateEnum,
 )
+from src.config.config import config
 
 GuildT = TypeVar(
     "GuildT",
@@ -364,6 +365,29 @@ async def count_user_infractions_last_7_days(
 
     result = await session.execute(stmt)
     return result.scalar_one()
+
+
+async def get_role_requests_to_delete(
+    session: AsyncSession,
+) -> Sequence[RoleRequestState]:
+    """Get role requests that need to be deleted based on their duration."""
+    boundary = datetime.now(timezone.utc) - timedelta(
+        minutes=config.bot.ROLE_REQUESTS_ALIVE_HOURS
+    )
+
+    stmt = select(RoleRequestState).where(
+        RoleRequestState.state.in_(
+            [
+                "pending",
+                "requested",
+                "has_stats",
+            ]
+        ),
+        RoleRequestState.updated_at <= boundary,
+    )
+
+    result = await session.scalars(stmt)
+    return result.all()
 
 
 async def get_all_closed_tickets(

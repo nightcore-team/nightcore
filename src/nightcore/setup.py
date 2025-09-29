@@ -60,6 +60,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # tasks
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",
+        "src.nightcore.tasks.delete_role_request",
     ]
 
     return Nightcore(

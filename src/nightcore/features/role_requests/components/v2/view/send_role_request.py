@@ -106,7 +106,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                     ),
                     ephemeral=True,
                 )
-                await interaction.message.edit(
+                await interaction.message.edit(  # type: ignore
                     view=SendRoleRequestView(view.bot, options=options)
                 )
                 return
@@ -128,7 +128,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                     ),
                     ephemeral=True,
                 )
-                await interaction.message.edit(
+                await interaction.message.edit(  # type: ignore
                     view=SendRoleRequestView(view.bot, options=options)
                 )
                 return
@@ -149,7 +149,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                     ),
                     ephemeral=True,
                 )
-                await interaction.message.edit(
+                await interaction.message.edit(  # type: ignore
                     view=SendRoleRequestView(view.bot, options=options)
                 )
                 return
@@ -165,7 +165,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 ),
                 ephemeral=True,
             )
-            await interaction.message.edit(
+            await interaction.message.edit(  # type: ignore
                 view=SendRoleRequestView(view.bot, options=options)
             )
             return
@@ -183,14 +183,13 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 ),
                 ephemeral=True,
             )
-            await interaction.message.edit(
+            await interaction.message.edit(  # type: ignore
                 view=SendRoleRequestView(view.bot, options=options)
             )
             return
 
         await interaction.response.send_modal(
             SendRoleRequestModal(
-                user=user,
                 channel=channel,
                 role=requested_role,
                 bot=view.bot,
@@ -199,7 +198,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
             )
         )
 
-        await interaction.message.edit(
+        await interaction.message.edit(  # type: ignore
             view=SendRoleRequestView(view.bot, options=options)
         )
 

@@ -44,7 +44,6 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
 
     def __init__(
         self,
-        user: discord.Member,
         channel: discord.abc.GuildChannel | discord.Thread,
         role: discord.Role,
         selected_role_tag: str,
@@ -52,7 +51,6 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
         view: type["CheckRoleRequestView"],
     ):
         super().__init__()
-        self.user = user
         self.bot = bot
         self.channel = channel
         self.requested_role = role
@@ -62,6 +60,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
     async def on_submit(self, interaction: discord.Interaction) -> None:
         """Handles the submission of the ban form modal."""
         guild = cast(discord.Guild, interaction.guild)
+        user = cast(discord.Member, interaction.user)
 
         await interaction.response.defer()
 
@@ -109,7 +108,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
             )
 
         try:
-            await self.user.edit(
+            member = await user.edit(
                 nick=f"[{self.selected_role_tag}][{rank}] {nickname}",
             )
         except Exception:
@@ -125,8 +124,8 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
 
         view = self.view(
             bot=self.bot,
-            interaction_user_id=self.user.id,
-            interaction_user_nick=self.user.display_name,
+            interaction_user_id=user.id,
+            interaction_user_nick=cast(discord.Member, member).display_name,
             role_requested_id=self.requested_role.id,
         )
 
@@ -163,7 +162,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
             try:
                 new_rr = RoleRequestState(
                     guild_id=guild.id,
-                    author_id=self.user.id,
+                    author_id=user.id,
                     role_id=self.requested_role.id,
                     message_id=cast(discord.Message, message).id,
                     channel_id=self.channel.id,
@@ -173,7 +172,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 logger.exception(
                     "Failed to create RoleRequestState in guild %s for user %s: %s",  # noqa: E501
                     guild.id,
-                    self.user.id,
+                    user.id,
                     e,
                 )
                 return await interaction.followup.send(
@@ -189,7 +188,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
 
         logger.info(
             "[role_request_submit] - invoked user=%s guild=%s role=%s",
-            self.user.id,
+            user.id,
             guild.id,
             self.requested_role.id,
         )
