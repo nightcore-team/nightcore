@@ -63,6 +63,7 @@ class Voteban(Cog):
         duration: str,
         reason: str,
         delete_messages_per: str | None = None,
+        proofs: bool = False,
     ):
         """Vote to ban a user on the server."""
         guild = cast(Guild, interaction.guild)
@@ -213,147 +214,155 @@ class Voteban(Cog):
                 ),
                 ephemeral=True,
             )
+        await interaction.response.defer()
 
-        # Ephemeral control panel to finish/cancel the evidence collection
-        acview = AttachmentsCollectorV2(
-            author_id=interaction.user.id, user=member, bot=self.bot
-        )
-
-        await interaction.response.send_message(
-            view=acview,
-            ephemeral=True,
-        )
-
-        # Evidence collection with deletion tracking
+        collected_files: list[File] = []
         attachments_by_msg: dict[
             int, list[discord.Attachment]
         ] = {}  # msg_id -> attachments kept (<= 7)
         messages_by_id: dict[
             int, discord.Message
         ] = {}  # msg_id -> Message (for later cleanup)
-        lock = asyncio.Lock()
+        if proofs:
+            # Ephemeral control panel to finish/cancel the evidence collection
+            acview = AttachmentsCollectorV2(
+                author_id=interaction.user.id, user=member, bot=self.bot
+            )
 
-        def total_count() -> int:
-            return sum(len(v) for v in attachments_by_msg.values())
+            await interaction.followup.send(
+                view=acview,
+                ephemeral=True,
+            )
 
-        def msg_check(message: discord.Message) -> bool:
-            if message.author.id != interaction.user.id:
-                return False
-            if message.channel.id != interaction.channel_id:
-                return False
-            if not message.attachments:  # noqa: SIM103
-                return False
-            return True
+            lock = asyncio.Lock()
+            # Evidence collection with deletion tracking
 
-        async def add_message(msg: discord.Message) -> None:
-            # keep only image attachments; expand if you want videos/docs as well  # noqa: E501
-            imgs: list[discord.Attachment] = []
-            for a in msg.attachments:
-                ct = (a.content_type or "").lower()
-                if ct.startswith("image/") or a.filename.lower().endswith(
-                    (".png", ".jpg", ".jpeg", ".gif", ".webp")
-                ):
-                    imgs.append(a)
-            if not imgs:
-                return
-            async with lock:
-                remain = config.bot.VOTEBAN_ATTACHMENTS_LIMIT - total_count()
-                if remain <= 0:
+            def total_count() -> int:
+                return sum(len(v) for v in attachments_by_msg.values())
+
+            def msg_check(message: discord.Message) -> bool:
+                if message.author.id != interaction.user.id:
+                    return False
+                if message.channel.id != interaction.channel_id:
+                    return False
+                if not message.attachments:  # noqa: SIM103
+                    return False
+                return True
+
+            async def add_message(msg: discord.Message) -> None:
+                # keep only image attachments; expand if you want videos/docs as well  # noqa: E501
+                imgs: list[discord.Attachment] = []
+                for a in msg.attachments:
+                    ct = (a.content_type or "").lower()
+                    if ct.startswith("image/") or a.filename.lower().endswith(
+                        (".png", ".jpg", ".jpeg", ".gif", ".webp")
+                    ):
+                        imgs.append(a)
+                if not imgs:
                     return
-                messages_by_id[msg.id] = msg
-                attachments_by_msg[msg.id] = imgs[:remain]
-                if total_count() >= config.bot.VOTEBAN_ATTACHMENTS_LIMIT:
-                    acview.done.set()
-
-        async def listener():
-            while not acview.done.is_set():
-                try:
-                    msg = await self.bot.wait_for(
-                        "message", timeout=1.0, check=msg_check
+                async with lock:
+                    remain = (
+                        config.bot.VOTEBAN_ATTACHMENTS_LIMIT - total_count()
                     )
-                except asyncio.TimeoutError:
-                    continue
-                except Exception:
-                    continue
-                with contextlib.suppress(Exception):
-                    await add_message(msg)
+                    if remain <= 0:
+                        return
+                    messages_by_id[msg.id] = msg
+                    attachments_by_msg[msg.id] = imgs[:remain]
+                    if total_count() >= config.bot.VOTEBAN_ATTACHMENTS_LIMIT:
+                        acview.done.set()
 
-        async def deletion_watcher():
-            # track deletions to remove evidence if user deletes message(s)
-            while not acview.done.is_set():
-                done, pending = await asyncio.wait(
-                    [
-                        asyncio.create_task(
-                            self.bot.wait_for(
-                                "raw_message_delete", timeout=1.0
-                            )
-                        ),
-                        asyncio.create_task(
-                            self.bot.wait_for(
-                                "raw_bulk_message_delete", timeout=1.0
-                            )
-                        ),
-                    ],
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-                for t in done:
+            async def listener():
+                while not acview.done.is_set():
                     try:
-                        payload = t.result()
+                        msg = await self.bot.wait_for(
+                            "message", timeout=1.0, check=msg_check
+                        )
                     except asyncio.TimeoutError:
                         continue
                     except Exception:
                         continue
+                    with contextlib.suppress(Exception):
+                        await add_message(msg)
 
-                    # single delete
-                    if isinstance(payload, discord.RawMessageDeleteEvent):
-                        if (
-                            payload.channel_id != interaction.channel_id
-                            or payload.guild_id != interaction.guild_id
-                        ):
+            async def deletion_watcher():
+                # track deletions to remove evidence if user deletes message(s)
+                while not acview.done.is_set():
+                    done, pending = await asyncio.wait(
+                        [
+                            asyncio.create_task(
+                                self.bot.wait_for(
+                                    "raw_message_delete", timeout=1.0
+                                )
+                            ),
+                            asyncio.create_task(
+                                self.bot.wait_for(
+                                    "raw_bulk_message_delete", timeout=1.0
+                                )
+                            ),
+                        ],
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
+                    for t in done:
+                        try:
+                            payload = t.result()
+                        except asyncio.TimeoutError:
                             continue
-                        mid = payload.message_id
-                        async with lock:
-                            attachments_by_msg.pop(mid, None)
-                            messages_by_id.pop(mid, None)
+                        except Exception:
+                            continue
 
-                for p in pending:
-                    p.cancel()
+                        # single delete
+                        if isinstance(payload, discord.RawMessageDeleteEvent):
+                            if (
+                                payload.channel_id != interaction.channel_id
+                                or payload.guild_id != interaction.guild_id
+                            ):
+                                continue
+                            mid = payload.message_id
+                            async with lock:
+                                attachments_by_msg.pop(mid, None)
+                                messages_by_id.pop(mid, None)
+
+                    for p in pending:
+                        p.cancel()
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await p
+
+            listener_task = asyncio.create_task(listener())
+            delete_task = asyncio.create_task(deletion_watcher())
+
+            try:
+                await acview.done.wait()
+            finally:
+                for t in (listener_task, delete_task):
+                    t.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
-                        await p
+                        await t
 
-        listener_task = asyncio.create_task(listener())
-        delete_task = asyncio.create_task(deletion_watcher())
+            if acview.cancelled:
+                await interaction.followup.send(
+                    "Collection cancelled. Request not created.",
+                    ephemeral=True,
+                )
+                return
 
-        try:
-            await acview.done.wait()
-        finally:
-            for t in (listener_task, delete_task):
-                t.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await t
-
-        if acview.cancelled:
-            await interaction.followup.send(
-                "Collection cancelled. Request not created.", ephemeral=True
-            )
-            return
-
-        # Convert remaining (non-deleted) evidence to File just before sending
-        collected_files: list[File] = []
-        for _, atts in list(attachments_by_msg.items()):
-            for att in atts:
-                try:
-                    f = await att.to_file()
-                except Exception:
-                    continue
-                collected_files.append(f)
+            # Convert remaining (non-deleted) evidence to File just before sending  # noqa: E501
+            for _, atts in list(attachments_by_msg.items()):
+                for att in atts:
+                    try:
+                        f = await att.to_file()
+                    except Exception:
+                        continue
+                    collected_files.append(f)
+                    if (
+                        len(collected_files)
+                        >= config.bot.VOTEBAN_ATTACHMENTS_LIMIT
+                    ):
+                        break
                 if (
                     len(collected_files)
                     >= config.bot.VOTEBAN_ATTACHMENTS_LIMIT
                 ):
                     break
-            if len(collected_files) >= config.bot.VOTEBAN_ATTACHMENTS_LIMIT:
-                break
 
         # Build and send the ban request with gallery (files=...) and the interactive view  # noqa: E501
         view = BanRequestViewV2(
@@ -403,36 +412,37 @@ class Voteban(Cog):
             )
 
         # Cleanup: remove user's evidence messages from the channel to avoid clutter  # noqa: E501
-        ch = interaction.channel
-        if isinstance(ch, discord.TextChannel):
-            # Collect messages that still exist and belong to this channel
-            msgs_to_delete = [
-                m
-                for m in messages_by_id.values()
-                if m and m.channel.id == ch.id
-            ]
-            if msgs_to_delete:
-                now = discord.utils.utcnow()
-                recent: list[discord.Message] = []
-                old: list[discord.Message] = []
+        if proofs:
+            ch = interaction.channel
+            if isinstance(ch, discord.TextChannel):
+                # Collect messages that still exist and belong to this channel
+                msgs_to_delete = [
+                    m
+                    for m in messages_by_id.values()
+                    if m and m.channel.id == ch.id
+                ]
+                if msgs_to_delete:
+                    now = discord.utils.utcnow()
+                    recent: list[discord.Message] = []
+                    old: list[discord.Message] = []
 
-                for m in msgs_to_delete:
-                    if (now - m.created_at).days < 14:
-                        recent.append(m)
-                    else:
-                        old.append(m)
+                    for m in msgs_to_delete:
+                        if (now - m.created_at).days < 14:
+                            recent.append(m)
+                        else:
+                            old.append(m)
 
-                if recent:
-                    with contextlib.suppress(
-                        discord.Forbidden, discord.HTTPException
-                    ):
-                        await ch.delete_messages(recent)
+                    if recent:
+                        with contextlib.suppress(
+                            discord.Forbidden, discord.HTTPException
+                        ):
+                            await ch.delete_messages(recent)
 
-                for m in old:
-                    with contextlib.suppress(
-                        discord.Forbidden, discord.HTTPException
-                    ):
-                        await m.delete()
+                    for m in old:
+                        with contextlib.suppress(
+                            discord.Forbidden, discord.HTTPException
+                        ):
+                            await m.delete()
 
         logger.info(
             "[ban_request_submit] - invoked user=%s guild=%s target=%s duration=%s reason=%s delete_messages_for_last=%s",  # noqa: E501
