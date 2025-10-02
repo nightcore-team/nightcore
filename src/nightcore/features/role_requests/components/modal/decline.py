@@ -77,7 +77,19 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
                     ephemeral=True,
                 )
 
+            if last_rr.state == RoleRequestStateEnum.DENIED:
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Decline failed",
+                        "Another moderator declined this request.",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
             last_rr.state = RoleRequestStateEnum.DENIED
+            last_rr.moderator_id = interaction.user.id
 
         try:
             await self.message.edit(view=self.view)

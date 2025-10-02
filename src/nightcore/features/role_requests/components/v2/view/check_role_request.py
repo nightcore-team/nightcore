@@ -118,6 +118,17 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                         ephemeral=True,
                     )
 
+                if last_rr.state == RoleRequestStateEnum.REQUESTED:
+                    return await interaction.followup.send(
+                        embed=ErrorEmbed(
+                            "Request stat failed",
+                            "Another moderator is already processing this request.",
+                            view.bot.user.name,  # type: ignore
+                            view.bot.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
+
                 last_rr.state = RoleRequestStateEnum.REQUESTED
                 last_rr.moderator_id = interaction.user.id
 
@@ -183,7 +194,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         custom_id="role_request:approve",
         style=ButtonStyle.grey,
         emoji="<:52104checkmark:1414732973005340672>",
-    )  # TODO: implement
+    )
     async def approve_role_request(
         self,
         interaction: Interaction["Nightcore"],
@@ -232,7 +243,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         if not member:
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Request stat failed",
+                    "Approve failed",
                     "Cannot find this user in guild.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
@@ -264,7 +275,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 if not last_rr:
                     return await interaction.followup.send(
                         embed=ErrorEmbed(
-                            "Request stat failed",
+                            "Approve failed",
                             "Cannot find this role request in database.",
                             view.bot.user.name,  # type: ignore
                             view.bot.user.display_avatar.url,  # type: ignore
@@ -272,7 +283,19 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                         ephemeral=True,
                     )
 
+                if last_rr.state == RoleRequestStateEnum.APPROVED:
+                    return await interaction.followup.send(
+                        embed=ErrorEmbed(
+                            "Approve failed",
+                            "Another moderator approved this request.",
+                            view.bot.user.name,  # type: ignore
+                            view.bot.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
+
                 last_rr.state = RoleRequestStateEnum.APPROVED
+                last_rr.moderator_id = interaction.user.id
 
                 nightcore_notifications_channel_id = (
                     await get_specified_channel(
@@ -292,7 +315,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 )
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
-                        "Request stat failed",
+                        "Approve failed",
                         "An error occurred while fetching the role request from the database.",  # noqa: E501
                         view.bot.user.name,  # type: ignore
                         view.bot.user.display_avatar.url,  # type: ignore
