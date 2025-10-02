@@ -182,6 +182,7 @@ class Ban(Cog):
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
 
             if tmp_delete_messages_per > config.bot.DELETE_MESSAGES_SECONDS:
@@ -198,12 +199,9 @@ class Ban(Cog):
 
         end_time = calculate_end_time(parsed_duration)
 
-        await interaction.response.defer(thinking=True)
-
         try:
             await guild.fetch_ban(member)
         except discord.NotFound:
-            # not banned yet, we can ban
             try:
                 await guild.ban(
                     member,
@@ -217,15 +215,19 @@ class Ban(Cog):
                     guild.id,
                     e,
                 )
-                return await interaction.followup.send(
+                return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "User Ban Failed",
                         "Failed to ban user.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
-                    )
+                    ),
+                    ephemeral=True,
                 )
             else:
+                if not interaction.response.is_done():
+                    await interaction.response.defer(thinking=True)
+
                 await interaction.followup.send(
                     embed=SuccessMoveEmbed(
                         "User Banned",
@@ -239,15 +241,16 @@ class Ban(Cog):
                         name="Deleted Messages",
                         value=delete_messages_per or "N/A",
                         inline=True,
-                    )
+                    ),
                 )
         else:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "User is already banned.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                )
+                ),
+                ephemeral=True,
             )
 
         try:

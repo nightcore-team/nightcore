@@ -54,7 +54,19 @@ class Mute(Cog):
         """Mute a user in the server."""
         guild = cast(Guild, interaction.guild)
 
-        # Ensure we have a guild Member object
+        parsed_duration = parse_duration(duration)
+
+        if not parsed_duration:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Invalid duration format.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        # # Ensure we have a guild Member object
         member = await ensure_member_exists(guild, user.id)
 
         if member is None:
@@ -146,21 +158,7 @@ class Mute(Cog):
                 ephemeral=True,
             )
 
-        parsed_duration = parse_duration(duration)
-
-        if not parsed_duration:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Invalid duration format.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
         end_time = calculate_end_time(parsed_duration)
-
-        await interaction.response.defer(thinking=True)
 
         match mute_type:
             case "role":
@@ -169,22 +167,24 @@ class Mute(Cog):
                     # Try cache first
                     mrole = await ensure_role_exists(guild, mute_role_id)
                     if mrole is None:
-                        return await interaction.followup.send(
+                        return await interaction.response.send_message(
                             embed=ErrorEmbed(
                                 "Mute role not found",
                                 f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
-                            )
+                            ),
+                            ephemeral=True,
                         )
                 else:
-                    return await interaction.followup.send(
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Mute role not found",
                             f"The mute role with ID {mute_role_id} was not configured.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
-                        )
+                        ),
+                        ephemeral=True,
                     )
 
                 has_role = has_any_role(member, mrole.id)
@@ -194,16 +194,17 @@ class Mute(Cog):
                         await member.add_roles(mrole, reason=reason)  # type: ignore
                     except Exception as e:
                         logger.exception("Failed to add role: %s", e)
-                        return await interaction.followup.send(
+                        return await interaction.response.send_message(
                             embed=ErrorEmbed(
                                 "Role Assignment Failed",
                                 "Failed to add role.",
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
+                            ephemeral=True,
                         )
                 else:
-                    return await interaction.followup.send(
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "User Mute Failed",
                             f"{member.mention} already has mute.",
@@ -218,34 +219,39 @@ class Mute(Cog):
                     if not member.is_timed_out():
                         await member.timeout(end_time, reason=reason)
                     else:
-                        return await interaction.followup.send(
+                        return await interaction.response.send_message(
                             embed=ErrorEmbed(
                                 "User Mute Failed",
                                 f"{member.mention} is already timed out.",
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
+                            ephemeral=True,
                         )
 
                 except Exception as e:
                     logger.exception("Failed to timeout member: %s", e)
-                    return await interaction.followup.send(
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "User Timeout Failed",
                             "Failed to timeout user.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
-                        )
+                        ),
+                        ephemeral=True,
                     )
             case _:
-                return await interaction.followup.send(
+                return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Invalid Mute Type",
                         "Mute type must be 'role' or 'timeout'.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
+
+        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
@@ -255,7 +261,8 @@ class Mute(Cog):
                 self.bot.user.display_avatar.url,  # type: ignore
             )
             .add_field(name="Reason", value=reason, inline=True)
-            .add_field(name="Duration", value=duration, inline=True)
+            .add_field(name="Duration", value=duration, inline=True),
+            ephemeral=False,
         )
 
         try:
@@ -284,7 +291,7 @@ class Mute(Cog):
             "[command] - invoked user=%s guild=%s target=%s reason=%s",
             interaction.user.id,
             guild.id,
-            user.id,
+            member.id,
             reason,
         )
 

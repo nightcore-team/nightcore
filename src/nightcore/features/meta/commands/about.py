@@ -34,6 +34,7 @@ class About(Cog):
             logger.exception("[command] - Failed to get memory info: %s", e)
             mem_bytes = 0
 
+        total_members = 0
         async with self.bot.uow.start() as session:
             total_members = await get_total_users_count(session)
 

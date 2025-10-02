@@ -102,32 +102,34 @@ class UnBan(Cog):
                 ephemeral=True,
             )
 
-        await interaction.response.defer(thinking=True)
-
         try:
             await guild.fetch_ban(user)
         except discord.NotFound:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "User Not Banned",
                     f"<@{user.id}> is not banned in this server.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                )
+                ),
+                ephemeral=True,
             )
         else:
             try:
                 await guild.unban(user, reason=reason)
             except discord.HTTPException as e:
                 logger.exception("Failed to unban user: %s", e)
-                return await interaction.followup.send(
+                return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Unban Failed",
                         f"Failed to unban <@{user.id}>.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
-                    )
+                    ),
+                    ephemeral=True,
                 )
+
+        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

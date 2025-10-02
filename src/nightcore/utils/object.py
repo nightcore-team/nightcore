@@ -126,6 +126,7 @@ async def ensure_member_exists(guild: Guild, user_id: int) -> Member | None:
 
     if member is None:
         try:
+            logger.info("Refetching member %s in guild %s", user_id, guild.id)
             member = await guild.fetch_member(user_id)
         except NotFound as e:
             logger.error(

@@ -22,6 +22,7 @@ class Banner(Cog):
         self,
         interaction: Interaction,
         user: discord.User | None = None,
+        ephemeral: bool = True,
     ):
         """Send a message displaying the user's banner."""
 
@@ -47,7 +48,7 @@ class Banner(Cog):
                 ).set_image(
                     url=u.banner.url  # type: ignore
                 ),
-                ephemeral=True,
+                ephemeral=ephemeral,
             )
 
         else:

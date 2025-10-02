@@ -127,32 +127,32 @@ class UnMpMute(Cog):
                 ephemeral=True,
             )
 
-        await interaction.response.defer(thinking=True)
-
         mrole = None
         if mute_role_id:
             mrole = await ensure_role_exists(guild, mute_role_id)
 
         if mute_role_id is None or mrole is None:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Mute role not found",
                     f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                )
+                ),
+                ephemeral=True,
             )
         else:
             has_role = has_any_role(member, mrole.id)
 
             if not has_role:
-                return await interaction.followup.send(
+                return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Mute role not found",
                         "The mute role was not found in this user.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
-                    )
+                    ),
+                    ephemeral=True,
                 )
             else:
                 try:
@@ -164,14 +164,17 @@ class UnMpMute(Cog):
                         member.id,
                         e,
                     )
-                    return await interaction.followup.send(
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Role Removal Failed",
                             "Failed to remove role.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
+                        ephemeral=True,
                     )
+
+        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

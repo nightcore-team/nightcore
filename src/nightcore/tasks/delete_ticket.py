@@ -40,42 +40,47 @@ class DeleteTicketTask(Cog):
             closed_tickets = await get_all_closed_tickets(session)
 
             for ticket in closed_tickets:
-                if ticket.updated_at + timedelta(
-                    hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
+                if ticket.is_deleted:
+                    continue
+                if not ticket.updated_at + timedelta(
+                    seconds=config.bot.CLOSED_TICKET_ALIVE_HOURS
                 ) <= datetime.now(timezone.utc):
-                    guild = await ensure_guild_exists(
-                        self.bot, ticket.guild_id
-                    )
-                    if guild is None:
-                        logger.error(
-                            "[task] - Guild %s not found",
-                            ticket.guild_id,
-                        )
-                        continue
+                    continue
 
-                    logging_channel_id = await get_specified_channel(
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildLoggingConfig,
-                        channel_type=ChannelType.LOGGING_TICKETS,
-                    )
-
-                    self.bot.dispatch(
-                        "ticket_deleted",
-                        data=TicketEventData(
-                            guild=guild,
-                            channel_id=ticket.channel_id,
-                            author_id=ticket.author_id,
-                            moderator_id=ticket.moderator_id,
-                            logging_channel_id=logging_channel_id,
-                            state=TicketStateEnum.DELETED,
-                        ),
-                    )
-                    logger.info(
-                        "[task] - Deleted ticket %s in guild %s",
-                        ticket.ticket_number,
+                guild = await ensure_guild_exists(self.bot, ticket.guild_id)
+                if guild is None:
+                    logger.error(
+                        "[task] - Guild %s not found",
                         ticket.guild_id,
                     )
+                    continue
+
+                logging_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_TICKETS,
+                )
+
+                self.bot.dispatch(
+                    "ticket_deleted",
+                    data=TicketEventData(
+                        guild=guild,
+                        channel_id=ticket.channel_id,
+                        author_id=ticket.author_id,
+                        moderator_id=ticket.moderator_id,
+                        logging_channel_id=logging_channel_id,
+                        state=TicketStateEnum.DELETED,
+                    ),
+                )
+
+                ticket.is_deleted = True
+
+                logger.info(
+                    "[task] - Deleted ticket %s in guild %s",
+                    ticket.ticket_number,
+                    ticket.guild_id,
+                )
 
     @delete_ticket_task.before_loop
     async def before_delete_ticket_task(self):

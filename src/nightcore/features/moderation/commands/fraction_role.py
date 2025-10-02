@@ -64,6 +64,7 @@ class FractionRole(Cog):
     ) -> None:
         """Assigns a fraction role to a user."""
         guild = cast(Guild, interaction.guild)
+
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         # Ensure we have a guild Member object
@@ -88,7 +89,6 @@ class FractionRole(Cog):
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
-                ephemeral=True,
             )
 
         async with self.bot.uow.start() as session:
@@ -119,7 +119,6 @@ class FractionRole(Cog):
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
-                ephemeral=True,
             )
 
         target_role = await ensure_role_exists(guild, role_id)
@@ -130,7 +129,6 @@ class FractionRole(Cog):
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
-                ephemeral=True,
             )
 
         has_role = has_any_role(member, target_role.id)
@@ -149,7 +147,6 @@ class FractionRole(Cog):
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
-                            ephemeral=True,
                         )
                     await interaction.followup.send(
                         embed=SuccessMoveEmbed(
@@ -158,7 +155,6 @@ class FractionRole(Cog):
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
-                        ephemeral=True,
                     )
                 else:
                     return await interaction.followup.send(
@@ -168,7 +164,6 @@ class FractionRole(Cog):
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
-                        ephemeral=True,
                     )
             case "remove":
                 if has_role:
@@ -183,7 +178,6 @@ class FractionRole(Cog):
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
-                            ephemeral=True,
                         )
                     await interaction.followup.send(
                         embed=SuccessMoveEmbed(
@@ -192,7 +186,6 @@ class FractionRole(Cog):
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
-                        ephemeral=True,
                     )
                 else:
                     return await interaction.followup.send(
@@ -202,7 +195,6 @@ class FractionRole(Cog):
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
-                        ephemeral=True,
                     )
             case _:
                 return await interaction.followup.send(
@@ -212,7 +204,6 @@ class FractionRole(Cog):
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
-                    ephemeral=True,
                 )
 
         try:

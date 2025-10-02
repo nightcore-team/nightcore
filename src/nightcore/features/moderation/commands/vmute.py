@@ -165,18 +165,17 @@ class VMute(Cog):
         if mute_role_id is None:
             raise FieldNotConfiguredError("vmute role")
 
-        await interaction.response.defer(thinking=True)
-
         # Try cache first
         mrole = await ensure_role_exists(guild, mute_role_id)
         if mrole is None:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Mute role not found",
                     f"Failed to fetch mute role with ID {mute_role_id} in this server.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                )
+                ),
+                ephemeral=True,
             )
 
         has_role = has_any_role(member, mrole.id)
@@ -186,16 +185,17 @@ class VMute(Cog):
                 await member.add_roles(mrole, reason=reason)  # type: ignore
             except Exception as e:
                 logger.exception("Failed to add role: %s", e)
-                return await interaction.followup.send(
+                return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Role Assignment Failed",
                         "Failed to add role.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
         else:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "User Mute Failed",
                     f"{member.mention} already has mute.",
@@ -221,6 +221,8 @@ class VMute(Cog):
                     guild.id,
                     e,
                 )
+
+        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

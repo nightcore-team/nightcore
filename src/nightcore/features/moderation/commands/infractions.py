@@ -43,6 +43,7 @@ class Infractions(Cog):
         self,
         interaction: Interaction,
         user: discord.User,
+        ephemeral: bool = True,
     ):
         """Check user infractions."""
         guild = cast(Guild, interaction.guild)
@@ -98,19 +99,21 @@ class Infractions(Cog):
             interaction.user.id, pages, user, self.bot, last_7_days_infractions
         )
 
+        await interaction.response.defer(thinking=True, ephemeral=ephemeral)
+
         try:
-            await interaction.response.send_message(view=view.make_component())
+            await interaction.followup.send(view=view.make_component())
         except Exception as e:
             logger.exception(
                 "[command] - Failed to send infractions view: %s", e
             )
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Infractions Error",
                     "Failed to send infractions view.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                )
+                ),
             )
 
         logger.info(

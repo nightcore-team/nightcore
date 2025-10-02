@@ -161,7 +161,7 @@ class Rrban(Cog):
                     )
                 )
 
-        await interaction.response.defer()
+        await interaction.response.defer(thinking=True)
 
         try:
             self.bot.dispatch(

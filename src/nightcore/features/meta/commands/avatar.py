@@ -22,6 +22,7 @@ class Avatar(Cog):
         self,
         interaction: Interaction,
         user: discord.Member | discord.User | None = None,
+        ephemeral: bool = True,
     ):
         """Send a message displaying the user's avatar."""
 
@@ -37,7 +38,7 @@ class Avatar(Cog):
                 if user.avatar  # type: ignore
                 else user.default_avatar.url  # type: ignore
             ),
-            ephemeral=True,
+            ephemeral=ephemeral,
         )
 
         logger.info(

@@ -401,11 +401,11 @@ async def get_all_closed_tickets(
     return result.scalars().all()
 
 
-async def get_total_users_count(session: AsyncSession) -> int | None:
+async def get_total_users_count(session: AsyncSession) -> int:
     """Get the total number of users in the database."""
     stmt = select(func.count()).select_from(User)
 
-    return await session.scalar(stmt)
+    return cast(int, await session.scalar(stmt))
 
 
 async def get_organization_roles_full_json(

@@ -81,7 +81,8 @@ class MpMute(Cog):
             ):
                 raise FieldNotConfiguredError("moderation access")
 
-        mute_role_id = guild_config.mpmute_role_id
+            if not (mute_role_id := guild_config.mpmute_role_id):
+                raise FieldNotConfiguredError("mpmute role")
 
         has_moder_role = has_any_role_from_sequence(
             cast(discord.Member, interaction.user), moderation_access_roles
@@ -172,21 +173,17 @@ class MpMute(Cog):
 
         end_time = calculate_end_time(parsed_duration)
 
-        if mute_role_id is None:
-            raise FieldNotConfiguredError("mpmute role")
-
-        await interaction.response.defer(thinking=True)
-
         # Try cache first
         mrole = await ensure_role_exists(guild, mute_role_id)
         if mrole is None:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Mute role not found",
                     f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                )
+                ),
+                ephemeral=True,
             )
 
         has_role = has_any_role(member, mrole.id)
@@ -196,16 +193,17 @@ class MpMute(Cog):
                 await member.add_roles(mrole, reason=reason)  # type: ignore
             except Exception as e:
                 logger.exception("Failed to add role: %s", e)
-                return await interaction.followup.send(
+                return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Role Assignment Failed",
                         "Failed to add role.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
         else:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "User Mute Failed",
                     f"{member.mention} already has mute.",
@@ -214,6 +212,8 @@ class MpMute(Cog):
                 ),
                 ephemeral=True,
             )
+
+        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
