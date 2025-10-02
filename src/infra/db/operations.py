@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from async_lru import alru_cache
 from sqlalchemy import exists, func, select
@@ -29,6 +29,7 @@ from src.infra.db.models import (
 from src.infra.db.models._annot import OrgRoleWithoutTagAnnot
 from src.infra.db.models._enums import (
     ChannelType,
+    RoleRequestStateEnum,
     TicketStateEnum,
 )
 from src.config.config import config
@@ -154,6 +155,7 @@ async def create_punish(
     category: str,
     time_now: datetime,
     reason: str | None = None,
+    original_duration: str | None = None,
     duration: int | None = None,
     end_time: datetime | None = None,
 ) -> Punish:
@@ -167,6 +169,7 @@ async def create_punish(
         time_now=time_now,
         duration=duration,
         end_time=end_time,
+        original_duration=original_duration,
     )
     session.add(punish)
     alru_invalidator(get_user_infractions, guild_id=guild_id, user_id=user_id)
@@ -316,12 +319,13 @@ async def get_user_infractions_for_moderators(
     moderators: dict[int, str],
     from_date: datetime,
     to_date: datetime,
-) -> dict[int, dict[str, list[Punish] | str]]:
-    """Return infractions grouped by moderator_id for all given moderators."""
+) -> dict[int, dict[str, Any]]:
+    """Return infractions grouped by moderator_id."""
     if not moderators:
         return {}
 
-    stmt = (
+    # ---- Punishments ----
+    stmt_punish = (
         select(Punish)
         .where(
             Punish.guild_id == guild_id,
@@ -331,16 +335,60 @@ async def get_user_infractions_for_moderators(
         )
         .order_by(Punish.moderator_id.asc(), Punish.time_now.asc())
     )
-    result = (await session.scalars(stmt)).all()
+    punishments = (await session.scalars(stmt_punish)).all()
 
-    grouped: dict[int | str, dict[str, list[Punish] | str]] = {
-        mid: {"punishments": [], "nickname": nick}
+    # ---- Closed Tickets ----
+    stmt_tickets = (
+        select(TicketState)
+        .where(
+            TicketState.guild_id == guild_id,
+            TicketState.moderator_id.in_(moderators.keys()),
+            TicketState.updated_at >= from_date,
+            TicketState.updated_at <= to_date,
+            TicketState.state == TicketStateEnum.CLOSED,
+        )
+        .order_by(TicketState.moderator_id.asc(), TicketState.updated_at.asc())
+    )
+    tickets = (await session.scalars(stmt_tickets)).all()
+
+    # ---- Approved Role Requests ----
+    stmt_role_requests = (
+        select(RoleRequestState)
+        .where(
+            RoleRequestState.guild_id == guild_id,
+            RoleRequestState.moderator_id.in_(moderators.keys()),
+            RoleRequestState.updated_at >= from_date,
+            RoleRequestState.updated_at <= to_date,
+            RoleRequestState.state == RoleRequestStateEnum.APPROVED,
+        )
+        .order_by(
+            RoleRequestState.moderator_id.asc(),
+            RoleRequestState.updated_at.asc(),
+        )
+    )
+    role_requests = (await session.scalars(stmt_role_requests)).all()
+
+    # ---- Grouping by moderator ----
+    grouped: dict[int, dict[str, Any]] = {
+        mid: {
+            "punishments": [],
+            "tickets": [],
+            "role_requests": [],
+            "nickname": nick,
+        }
         for mid, nick in moderators.items()
     }
-    for punish in result:
-        grouped[punish.moderator_id]["punishments"].append(punish)  # type: ignore
 
-    return grouped  # type: ignore
+    for p in punishments:
+        grouped[p.moderator_id]["punishments"].append(p)
+
+    for t in tickets:
+        grouped[t.moderator_id]["tickets"].append(t)
+
+    for rr in role_requests:
+        grouped[rr.moderator_id]["role_requests"].append(rr)
+
+    return grouped
 
 
 async def count_user_infractions_last_7_days(

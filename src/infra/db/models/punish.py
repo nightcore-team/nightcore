@@ -16,6 +16,9 @@ class Punish(IdIntegerMixin, Base):
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     category: Mapped[str] = mapped_column(nullable=False)
     reason: Mapped[str] = mapped_column(nullable=True)
+    original_duration: Mapped[str] = mapped_column(
+        nullable=True
+    )  # оригинальная продолжительность наказания
     duration: Mapped[int] = mapped_column(
         nullable=True
     )  # срок выдачи наказания

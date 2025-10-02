@@ -76,6 +76,7 @@ class UserBanEvent(Cog):
                     moderator_id=data.moderator.id,
                     category=data.category,
                     reason=data.reason,
+                    original_duration=data.original_duration,
                     duration=data.duration,
                     end_time=end_time,
                     time_now=discord.utils.utcnow().astimezone(timezone.utc),

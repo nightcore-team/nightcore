@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import TypedDict
 
 from src.config.config import config
-from src.infra.db.models.punish import Punish
+from src.infra.db.models import Punish, RoleRequestState, TicketState
 from src.nightcore.utils import discord_ts
 
 logger = logging.getLogger(__name__)
@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 class ModeratorData(TypedDict):
     punishments: list[Punish]
+    tickets: list[TicketState]
+    role_requests: list[RoleRequestState]
     nickname: str
 
 
@@ -34,8 +36,8 @@ def build_infraction_pages(
     for p in punishments:
         line = f"**`[{p.category.upper()}]` | {discord_ts(p.time_now, style='d')} "  # noqa: E501
 
-        if p.duration:
-            line += f"| {p.duration} "
+        if p.original_duration:
+            line += f"| {p.original_duration} "
 
         if p.reason:
             if p.category == "notify" and notify_channel_id:
@@ -77,20 +79,18 @@ def build_moderators_stats(
     stats: dict[int, dict[str, str]] = {}
 
     for moderator_id, data in infractions.items():
-        punishes = data["punishments"]
-        _name = data["nickname"]
+        punishes = data.get("punishments", [])
+        _name = data.get("nickname", "")
+        tickets = data.get("tickets", [])
+        role_requests = data.get("role_requests", [])
         mute_count = sum(1 for p in punishes if p.category == "mute")
         ban_count = sum(1 for p in punishes if p.category == "ban")
         kick_count = sum(1 for p in punishes if p.category == "kick")
         vmute_count = sum(1 for p in punishes if p.category == "vmute")
         mpmute_count = sum(1 for p in punishes if p.category == "mpmute")
         ticketban_count = sum(1 for p in punishes if p.category == "ticketban")
-        # closed_tickets_count = sum(
-        #     1 for p in punishes if p.category == "ticketclose"
-        # )
-        # approved_role_requests_count = sum(
-        #     1 for p in punishes if p.category == "approverolerequest"
-        # )
+        closed_tickets_count = len(tickets)
+        approved_role_requests_count = len(role_requests)
         changed_roles_count = sum(
             1 for p in punishes if p.category == "role_remove"
         )
@@ -115,8 +115,8 @@ def build_moderators_stats(
             f"Vmute: {vmute_count}\n"
             f"Mpmute: {mpmute_count}\n"
             f"Ticketban: {ticketban_count}\n"
-            # f"Closed tickets: {closed_tickets_count}\n"
-            # f"Approved role requests: {approved_role_requests_count}\n"
+            f"Closed tickets: {closed_tickets_count}\n"
+            f"Approved role requests: {approved_role_requests_count}\n"
             f"Changed roles: {changed_roles_count}\n"
             f"Messages: {total_messages}\n\n"
             f"Total points: {total_points}"

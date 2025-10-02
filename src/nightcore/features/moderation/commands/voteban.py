@@ -214,7 +214,7 @@ class Voteban(Cog):
                 ),
                 ephemeral=True,
             )
-        await interaction.response.defer()
+        await interaction.response.defer(thinking=True, ephemeral=True)
 
         collected_files: list[File] = []
         attachments_by_msg: dict[
@@ -392,7 +392,6 @@ class Voteban(Cog):
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
-                ephemeral=True,
             )
 
         except Exception as e:
