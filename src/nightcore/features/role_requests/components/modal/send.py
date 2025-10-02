@@ -97,7 +97,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 ephemeral=True,
             )
 
-        if 1 < rank < 11:
+        if 1 > rank > 11:
             return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Rank must be between 1 and 10.",
