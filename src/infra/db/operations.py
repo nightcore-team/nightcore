@@ -9,6 +9,7 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config.config import config
 from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
     GuildClansConfig,
@@ -32,7 +33,6 @@ from src.infra.db.models._enums import (
     RoleRequestStateEnum,
     TicketStateEnum,
 )
-from src.config.config import config
 
 GuildT = TypeVar(
     "GuildT",

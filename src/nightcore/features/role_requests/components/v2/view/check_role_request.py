@@ -122,7 +122,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                     return await interaction.followup.send(
                         embed=ErrorEmbed(
                             "Request stat failed",
-                            "Another moderator is already processing this request.",
+                            "Another moderator is already processing this request.",  # noqa: E501
                             view.bot.user.name,  # type: ignore
                             view.bot.user.display_avatar.url,  # type: ignore
                         ),
