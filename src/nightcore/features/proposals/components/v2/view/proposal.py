@@ -72,21 +72,18 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
 
         for container in interaction.message.components:  # type: ignore
             for item in container.children:  # type: ignore
-                if isinstance(item, TextDisplay):
-                    if item.id == 2:
-                        view.proposals_count = extract_id_from_str(
-                            item.content
-                        )
-                    if item.id == 4:
-                        view.user_id = extract_id_from_str(item.content)
+                if item.id == 2:  # type: ignore
+                    view.proposals_count = extract_id_from_str(item.content)  # type: ignore
+                if item.id == 4:  # type: ignore
+                    view.user_id = extract_id_from_str(item.content)  # type: ignore
 
-                    if item.id == 5:
-                        view.description = item.content.replace("```", "")
+                if item.id == 5:  # type: ignore
+                    view.description = item.content.replace("```", "")  # type: ignore
 
         updated_view = ProposalViewV2(
             bot=view.bot,
             proposals_count=view.proposals_count,
-            description=view.description,
+            description=view.description,  # type: ignore
             user_id=view.user_id,
             status="Одобрено",
             color=Color.green(),
@@ -138,21 +135,18 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
 
         for container in interaction.message.components:  # type: ignore
             for item in container.children:  # type: ignore
-                if isinstance(item, TextDisplay):
-                    if item.id == 2:
-                        view.proposals_count = extract_id_from_str(
-                            item.content
-                        )
-                    if item.id == 4:
-                        view.user_id = extract_id_from_str(item.content)
+                if item.id == 2:  # type: ignore
+                    view.proposals_count = extract_id_from_str(item.content)  # type: ignore
+                if item.id == 4:  # type: ignore
+                    view.user_id = extract_id_from_str(item.content)  # type: ignore
 
-                    if item.id == 5:
-                        view.description = item.content.replace("```", "")
+                if item.id == 5:  # type: ignore
+                    view.description = item.content.replace("```", "")  # type: ignore
 
         updated_view = ProposalViewV2(
             bot=view.bot,
             proposals_count=view.proposals_count,
-            description=view.description,
+            description=view.description,  # type: ignore
             user_id=view.user_id,
             status="Отклонено",
             color=Color.red(),
@@ -177,6 +171,7 @@ class ProposalViewV2(LayoutView):
         moderator_id: int | None = None,
         answer: str | None = None,
         color: Color | None = None,
+        _build: bool = False,
     ):
         super().__init__(timeout=None)
 
@@ -189,7 +184,10 @@ class ProposalViewV2(LayoutView):
         self.moderator_id = moderator_id
         self.color = color
 
-        self.actions = None
+        self.actions = ManageProposalActionRow()
+
+        if _build:
+            self.make_component()
 
     def _disable_buttons(self):
         if self.actions:
@@ -224,7 +222,6 @@ class ProposalViewV2(LayoutView):
             container.add_item(TextDisplay[Self](f"```{self.answer}```"))
             container.add_item(Separator[Self]())
 
-        self.actions = ManageProposalActionRow()
         container.add_item(self.actions)
         container.add_item(Separator[Self]())
 

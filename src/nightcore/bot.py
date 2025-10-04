@@ -93,8 +93,8 @@ class Nightcore(Bot):
         self.add_view(CreateTicketViewV2(self))
         self.add_view(ManageTicketViewV2(self))
         self.add_view(CheckRoleRequestView(self))
-        self.add_view(ProposalViewV2(self))
         self.add_view(SendRoleRequestView(self))
+        self.add_view(ProposalViewV2(self, _build=True))
 
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""
