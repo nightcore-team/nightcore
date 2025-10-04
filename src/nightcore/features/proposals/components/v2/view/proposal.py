@@ -189,12 +189,13 @@ class ProposalViewV2(LayoutView):
         self.moderator_id = moderator_id
         self.color = color
 
+        self.actions = None
+
     def _disable_buttons(self):
-        for item in self.children:
-            if isinstance(item, ManageProposalActionRow):
-                for button in item.children:
-                    if isinstance(button, Button):
-                        button.disabled = True
+        if self.actions:
+            for item in self.actions.children:
+                if isinstance(item, Button):
+                    item.disabled = True
 
     def make_component(self, disable_all: bool = False) -> Self:
         """Create view."""
@@ -223,7 +224,8 @@ class ProposalViewV2(LayoutView):
             container.add_item(TextDisplay[Self](f"```{self.answer}```"))
             container.add_item(Separator[Self]())
 
-        container.add_item(ManageProposalActionRow())
+        self.actions = ManageProposalActionRow()
+        container.add_item(self.actions)
         container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)
@@ -240,3 +242,39 @@ class ProposalViewV2(LayoutView):
         self.add_item(container)
 
         return self
+
+
+class AdditionalProposalAnswerViewV2(LayoutView):
+    def __init__(
+        self,
+        bot: "Nightcore",
+        moderator_id: int,
+        description: str,
+        proposal_message_link: str,
+        color: Color | None = None,
+    ):
+        super().__init__(timeout=None)
+
+        container = Container[Self](accent_color=color)
+
+        container.add_item(
+            TextDisplay[Self](
+                f"## Дополнение к предложению: {proposal_message_link}"
+            )
+        )
+        container.add_item(Separator[Self]())
+        container.add_item(
+            TextDisplay[Self](f"### Ответ от: <@{moderator_id}>\n")
+        )
+        container.add_item(TextDisplay[Self](f"```{description}```"))
+        container.add_item(Separator[Self]())
+
+        now = datetime.now(timezone.utc)
+
+        container.add_item(
+            TextDisplay[Self](
+                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
+            )
+        )
+
+        self.add_item(container)

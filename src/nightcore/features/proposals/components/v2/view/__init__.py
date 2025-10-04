@@ -1,3 +1,3 @@
-from .proposal import ProposalViewV2
+from .proposal import AdditionalProposalAnswerViewV2, ProposalViewV2
 
-__all__ = ("ProposalViewV2",)
+__all__ = ("AdditionalProposalAnswerViewV2", "ProposalViewV2")
