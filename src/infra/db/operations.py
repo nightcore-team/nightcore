@@ -70,6 +70,19 @@ async def get_specified_channel(
     return await session.scalar(stmt)
 
 
+async def get_specified_field(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_type: type[GuildT],
+    field: str,
+) -> Any:
+    """Get the specified field from the database."""
+    column = getattr(config_type, field)
+    stmt = select(column).where(config_type.guild_id == guild_id)
+    return await session.scalar(stmt)
+
+
 async def get_moderation_access_roles(
     session: AsyncSession, *, guild_id: int
 ) -> list[int]:

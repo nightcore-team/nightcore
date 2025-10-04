@@ -5,6 +5,10 @@ import logging
 import discord
 from discord.ext.commands import Cog  # type: ignore
 
+from src.infra.db.models import MainGuildConfig
+from src.infra.db.models._enums import ChannelType
+from src.infra.db.operations import get_specified_channel
+
 # from discord.raw_models import RawMessageDeleteEvent, RawMessageUpdateEvent
 from src.nightcore.bot import Nightcore
 
@@ -23,7 +27,7 @@ class MessageEvent(Cog):
         if not guild:
             if not message.attachments:
                 return
-
+            # TODO: fix it -> user will get reply from bot anytime he sends 2 attachments in DM  # noqa: E501
             if len(message.attachments) > 1:
                 try:
                     return await message.reply(
@@ -43,7 +47,26 @@ class MessageEvent(Cog):
             except Exception as e:
                 logger.error("Failed to dispatch stats_provided event: %s", e)
 
-        logger.info("Message received: %s", message)
+        else:
+            async with self.bot.uow.start() as session:
+                if not (
+                    proposal_channel_id := await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=MainGuildConfig,
+                        channel_type=ChannelType.CREATE_PROPOSALS,
+                    )
+                ):
+                    logger.error(
+                        "[proposals] No proposal channel found for guild %s",
+                        guild.id,
+                    )
+
+            if message.channel.id == proposal_channel_id:
+                self.bot.dispatch("create_proposal", message)
+                return
+
+        logger.info("[message] Message received: %s", message)
         return
 
     # @Cog.listener()

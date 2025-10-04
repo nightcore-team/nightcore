@@ -54,6 +54,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.role_requests.commands.rrmessage",
         # role requests events
         "src.nightcore.features.role_requests.events.stats",
+        # proposal events
+        "src.nightcore.features.proposals.events.proposal",
         # global events
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",

@@ -12,6 +12,7 @@ from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
 from src.infra.db.uow import UnitOfWork
+from src.nightcore.features.proposals.components.v2 import ProposalViewV2
 from src.nightcore.features.role_requests.components.v2 import (
     CheckRoleRequestView,
     SendRoleRequestView,
@@ -92,23 +93,7 @@ class Nightcore(Bot):
         self.add_view(CreateTicketViewV2(self))
         self.add_view(ManageTicketViewV2(self))
         self.add_view(CheckRoleRequestView(self))
-
-        # async with self.uow.start() as session:
-        #     org_roles := await get_organization_roles_full_json(
-        #         session, guild_id=guild.id
-        #     )
-        #     if not org_roles:
-        #         logger.warning(
-        #             "No organization roles configured in any guilds."
-        #         )
-        #         return
-        #     options = [
-        #         SelectOption(
-        #             label=v["name"], value=str(v["role_id"]) + "," + str(k)
-        #         )
-        #         for k, v in org_roles.items()
-        #     ]
-
+        self.add_view(ProposalViewV2(self))
         self.add_view(SendRoleRequestView(self))
 
     async def load_extensions(self) -> None:

@@ -23,6 +23,7 @@ class ChannelType(Enum):
     NEW_TICKETS_CATEGORY = "new_tickets_category_id"
     CLOSED_TICKETS_CATEGORY = "closed_tickets_category_id"
     PINNED_TICKETS_CATEGORY = "pinned_tickets_category_id"
+    CREATE_PROPOSALS = "create_proposal_channel_id"
 
     ROLE_REQUESTS = "check_role_requests_channel_id"
 
