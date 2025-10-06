@@ -1,4 +1,5 @@
 from .object import (
+    channel_type,
     ensure_channel_is_messageable,
     ensure_guild_exists,
     ensure_member_exists,
@@ -14,6 +15,7 @@ from .on_ready_log import log_tree_summary
 from .time_utils import discord_ts
 
 __all__ = (
+    "channel_type",
     "discord_ts",
     "ensure_channel_is_messageable",
     "ensure_guild_exists",

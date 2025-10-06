@@ -1,4 +1,4 @@
-"""Handle guild channel create events."""
+"""Handle guild channel delete events."""
 
 import logging
 from typing import cast
@@ -17,16 +17,18 @@ from src.nightcore.utils import (
     ensure_messageable_channel_exists,
 )
 
+from .utils.overwrites import build_channel_overwrites_file  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 
-class CreateChannelHandler(Cog):
+class DeleteChannelHandler(Cog):
     def __init__(self, bot: Nightcore):
         self.bot = bot
 
     @Cog.listener()
-    async def on_guild_channel_create(self, channel: discord.abc.GuildChannel):
-        """Handle guild channel create event."""
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
+        """Handle guild channel delete event."""
         guild = cast(Guild, channel.guild)  # type: ignore
 
         async with self.bot.uow.start() as session:
@@ -55,34 +57,74 @@ class CreateChannelHandler(Cog):
 
         try:
             async for entry in guild.audit_logs(
-                limit=5, action=discord.AuditLogAction.channel_create
+                limit=5, action=discord.AuditLogAction.channel_delete
             ):
                 if entry.target.id == channel.id:  # type: ignore
                     embed = discord.Embed(
-                        title="Канал создан",
-                        color=discord.Color.green(),
+                        title="Канал удалён",
+                        color=discord.Color.red(),
                         timestamp=channel.created_at,
                     )
                     embed.add_field(name="Канал", value=f"{channel.mention}")
                     embed.add_field(name="ID канала", value=channel.id)
                     embed.add_field(
-                        name="Создан",
+                        name="Удален",
                         value=discord_ts(channel.created_at, "R"),
                     )
                     embed.add_field(
-                        name="Тип канала", value=channel_type(channel.type)
+                        name="Тип канала",
+                        value=channel_type(channel.type),  # type: ignore
                     )
+                    embed.add_field(
+                        name="NSFW",
+                        value="Да"
+                        if getattr(channel, "nsfw", False)
+                        else "Нет",
+                    )
+                    if k := getattr(channel, "rate_limit_per_user", "N/A"):
+                        embed.add_field(
+                            name="Медленный режим",
+                            value=k,
+                        )
+                    if channel.type == discord.ChannelType.voice:
+                        embed.add_field(
+                            name="Битрейт",
+                            value=getattr(channel, "bitrate", "N/A"),
+                        )
+                        embed.add_field(
+                            name="Макс. кол-во участников",
+                            value=getattr(channel, "user_limit", "N/A"),
+                        )
+
                     embed.set_footer(
                         text="Powered by nightcore",
                         icon_url=self.bot.user.display_avatar.url,  # type: ignore
                     )
                     if entry.user:
                         embed.add_field(
-                            name="Создатель",
+                            name="Удалён пользователем",
                             value=f"{entry.user.mention} ({entry.user.id})",
                             inline=False,
                         )
-                    await logging_channel.send(embed=embed)  # type: ignore
+
+                    file = None
+                    try:
+                        file = build_channel_overwrites_file(channel)
+                    except Exception as e:
+                        logger.exception(
+                            "[logging] Failed to build channel overwrites file: %s",  # noqa: E501
+                            e,
+                        )
+
+                    if file:
+                        await logging_channel.send(  # type: ignore
+                            embed=embed,
+                            file=file,
+                        )
+                    else:
+                        await logging_channel.send(  # type: ignore
+                            embed=embed,
+                        )
                     return
 
         except Exception as e:
@@ -92,5 +134,5 @@ class CreateChannelHandler(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the CreateChannelHandler cog."""
-    await bot.add_cog(CreateChannelHandler(bot))
+    """Setup the DeleteChannelHandler cog."""
+    await bot.add_cog(DeleteChannelHandler(bot))

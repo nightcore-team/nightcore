@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Sequence
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from discord import (
@@ -217,3 +218,9 @@ async def get_discord_user(bot: "Nightcore", user_id: int) -> User | None:
             )
             return None
     return user
+
+
+def channel_type(type: Enum) -> str:
+    """Convert a channel type enum to a human-readable string."""
+
+    return str(type).split(".")[-1].replace("_", " ").title()
