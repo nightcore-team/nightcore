@@ -86,15 +86,8 @@ class DeleteChannelHandler(Cog):
                             name="Медленный режим",
                             value=k,
                         )
-                    if channel.type == discord.ChannelType.voice:
-                        embed.add_field(
-                            name="Битрейт",
-                            value=getattr(channel, "bitrate", "N/A"),
-                        )
-                        embed.add_field(
-                            name="Макс. кол-во участников",
-                            value=getattr(channel, "user_limit", "N/A"),
-                        )
+
+                    self._check_voice_channel(channel, embed)
 
                     embed.set_footer(
                         text="Powered by nightcore",
@@ -130,6 +123,19 @@ class DeleteChannelHandler(Cog):
         except Exception as e:
             logger.exception(
                 "[logging] Failed to check audit log for channel create: %s", e
+            )
+
+    def _check_voice_channel(
+        self, channel: discord.abc.GuildChannel, embed: discord.Embed
+    ) -> None:
+        if channel.type == discord.ChannelType.voice:
+            embed.add_field(
+                name="Битрейт",
+                value=getattr(channel, "bitrate", "N/A"),
+            )
+            embed.add_field(
+                name="Макс. кол-во участников",
+                value=getattr(channel, "user_limit", "N/A"),
             )
 
 

@@ -56,12 +56,14 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.role_requests.events.stats",
         # proposal events
         "src.nightcore.features.proposals.events.proposal",
-        # global events
+        # === global events
         "src.nightcore.events.reaction",
         "src.nightcore.events.message",
         "src.nightcore.events.error",
+        # channels
         "src.nightcore.events.channel.create",
         "src.nightcore.events.channel.delete",
+        "src.nightcore.events.channel.update",
         # tasks
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",
