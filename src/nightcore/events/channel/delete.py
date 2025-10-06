@@ -1,6 +1,7 @@
 """Handle guild channel delete events."""
 
 import logging
+from datetime import datetime, timezone
 from typing import cast
 
 import discord
@@ -63,7 +64,7 @@ class DeleteChannelHandler(Cog):
                     embed = discord.Embed(
                         title="Канал удалён",
                         color=discord.Color.red(),
-                        timestamp=channel.created_at,
+                        timestamp=datetime.now(tz=timezone.utc),
                     )
                     embed.add_field(name="Канал", value=f"{channel.mention}")
                     embed.add_field(name="ID канала", value=channel.id)

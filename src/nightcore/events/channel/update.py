@@ -120,14 +120,13 @@ class UpdateChannelHandler(Cog):
         new: discord.abc.GuildChannel,
         embed: discord.Embed,
     ):
-        if old.topic and new.topic and old.topic != new.topic:  # type: ignore
-            old_topic = old.topic or "пусто"  # type: ignore
-            new_topic = new.topic or "пусто"  # type: ignore
-            embed.add_field(
-                name="Описание",
-                value=f"{old_topic} → {new_topic}",
-                inline=True,
-            )
+        old_topic = old.topic or "пусто"  # type: ignore
+        new_topic = new.topic or "пусто"  # type: ignore
+        embed.add_field(
+            name="Описание",
+            value=f"{old_topic} → {new_topic}",
+            inline=True,
+        )
 
     def _check_nsfw_change(
         self,
