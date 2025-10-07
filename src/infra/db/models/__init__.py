@@ -3,6 +3,7 @@ from .guild import (
     Base,  # noqa: F811
     GuildClansConfig,
     GuildEconomyConfig,
+    GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
     GuildModerationConfig,
@@ -22,6 +23,7 @@ __all__ = (
     "Clan",
     "GuildClansConfig",
     "GuildEconomyConfig",
+    "GuildInfomakerConfig",
     "GuildLevelsConfig",
     "GuildLoggingConfig",
     "GuildModerationConfig",

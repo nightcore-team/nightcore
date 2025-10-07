@@ -7,6 +7,7 @@ from ._groups import config as config_group
 # SIDE-EFFECT IMPORTS
 from .commands import (
     economy,
+    infomaker,
     levels,
     logging,
     main,
@@ -19,6 +20,7 @@ from .commands import (
 
 __all__ = (
     "economy",
+    "infomaker",
     "levels",
     "logging",
     "main",

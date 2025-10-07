@@ -121,10 +121,20 @@ class DeleteChannelHandler(Cog):
                         )
                     return
 
-        except Exception as e:
+        except discord.Forbidden as e:
             logger.exception(
-                "[logging] Failed to check audit log for channel create: %s", e
+                "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
+                guild.id,
+                e,
             )
+            return
+        except discord.HTTPException as e:
+            logger.exception(
+                "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+                guild.id,
+                e,
+            )
+            return
 
     def _check_voice_channel(
         self, channel: discord.abc.GuildChannel, embed: discord.Embed

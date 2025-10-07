@@ -68,6 +68,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.member.add",
         "src.nightcore.events.member.leave",
         "src.nightcore.events.member.ban",
+        "src.nightcore.events.member.update",
+        "src.nightcore.events.member._update.default",
         # tasks
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",

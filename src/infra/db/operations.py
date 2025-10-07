@@ -14,6 +14,7 @@ from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
     GuildClansConfig,
     GuildEconomyConfig,
+    GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
     GuildModerationConfig,
@@ -45,6 +46,7 @@ GuildT = TypeVar(
     GuildNotificationsConfig,
     GuildTicketsConfig,
     MainGuildConfig,
+    GuildInfomakerConfig,
 )
 
 

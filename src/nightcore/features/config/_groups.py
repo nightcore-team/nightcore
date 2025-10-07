@@ -32,3 +32,9 @@ levels = app_commands.Group(
     description="Configuration commands for the levels.",
     parent=config,
 )
+
+infomaker = app_commands.Group(
+    name="infomaker",
+    description="Configuration commands for the infomaker.",
+    parent=config,
+)
