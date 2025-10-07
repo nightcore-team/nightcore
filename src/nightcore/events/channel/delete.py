@@ -69,7 +69,7 @@ class DeleteChannelHandler(Cog):
                     embed.add_field(name="Канал", value=f"{channel.mention}")
                     embed.add_field(name="ID канала", value=channel.id)
                     embed.add_field(
-                        name="Удален",
+                        name="Создан",
                         value=discord_ts(channel.created_at, "R"),
                     )
                     embed.add_field(
