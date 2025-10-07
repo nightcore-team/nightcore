@@ -64,8 +64,8 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         if not has_moder_role:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -127,8 +127,8 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         if not has_moder_role:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
