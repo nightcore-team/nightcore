@@ -1,3 +1,5 @@
+"""Handle member add events."""
+
 import logging
 from datetime import datetime, timezone
 
@@ -50,7 +52,7 @@ class AddMemberHandler(Cog):
             return
 
         embed = discord.Embed(
-            title="Участник присоединился к серверу",
+            title="Пользователь присоединился к серверу",
             description=f"{member.mention} ({member.id})",
             color=discord.Color.green(),
             timestamp=datetime.now(timezone.utc),
