@@ -64,6 +64,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.channel.create",
         "src.nightcore.events.channel.delete",
         "src.nightcore.events.channel.update",
+        # members
+        "src.nightcore.events.member.add",
         # tasks
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",
