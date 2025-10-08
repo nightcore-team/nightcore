@@ -70,6 +70,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.member.ban",
         "src.nightcore.events.member.update",
         "src.nightcore.events.member._update.default",
+        "src.nightcore.events.member._update.infomaker",
         # tasks
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",

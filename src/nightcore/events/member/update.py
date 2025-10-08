@@ -18,7 +18,7 @@ class UpdateMemberHandler(Cog):
     ):
         """Handle member update events."""
         try:
-            # self.bot.dispatch("infomaker_member_update", before, after)
+            self.bot.dispatch("infomaker_member_update", before, after)
             self.bot.dispatch("default_member_update", before, after)
         except Exception as e:
             logger.exception(

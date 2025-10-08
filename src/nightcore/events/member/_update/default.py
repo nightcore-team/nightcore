@@ -1,3 +1,5 @@
+"""Handle default member update events."""
+
 import logging
 from datetime import datetime, timezone
 
@@ -24,8 +26,6 @@ class DefaultUpdateMemberHandler(Cog):
         self, before: discord.Member, after: discord.Member
     ) -> None:
         """Handle default member update events."""
-        logger.info(f"Member updated: {before} -> {after}")
-
         if not before:
             logger.warning("[logging] 'before' member is None.")
             return
