@@ -16,7 +16,7 @@ from ..utils.roles import roles_difference  # type: ignore
 logger = logging.getLogger(__name__)
 
 
-class InfomakerUpdateMemberHandler(Cog):
+class InfomakerUpdateMemberEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
@@ -152,5 +152,5 @@ class InfomakerUpdateMemberHandler(Cog):
 
 
 async def setup(bot: Nightcore) -> None:
-    """Setup the InfomakerUpdateMemberHandler cog."""
-    await bot.add_cog(InfomakerUpdateMemberHandler(bot))
+    """Setup the InfomakerUpdateMemberEvent cog."""
+    await bot.add_cog(InfomakerUpdateMemberEvent(bot))

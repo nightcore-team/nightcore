@@ -17,7 +17,7 @@ from src.nightcore.utils import (
 logger = logging.getLogger(__name__)
 
 
-class BanMemberHandler(Cog):
+class BanMemberEvent(Cog):
     def __init__(self, bot: Nightcore):
         self.bot = bot
 
@@ -87,5 +87,5 @@ class BanMemberHandler(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the BanMemberHandler cog."""
-    await bot.add_cog(BanMemberHandler(bot))
+    """Setup the BanMemberEvent cog."""
+    await bot.add_cog(BanMemberEvent(bot))

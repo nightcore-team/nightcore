@@ -15,7 +15,7 @@ from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
 logger = logging.getLogger(__name__)
 
 
-class LeaveMemberHandler(Cog):
+class LeaveMemberEvent(Cog):
     def __init__(self, bot: Nightcore):
         self.bot = bot
 
@@ -80,5 +80,5 @@ class LeaveMemberHandler(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the LeaveMemberHandler cog."""
-    await bot.add_cog(LeaveMemberHandler(bot))
+    """Setup the LeaveMemberEvent cog."""
+    await bot.add_cog(LeaveMemberEvent(bot))

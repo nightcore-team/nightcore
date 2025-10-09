@@ -12,6 +12,7 @@ from .guild import (
     GuildTicketsConfig,
     MainGuildConfig,
 )
+from .private_rooms import Base, PrivateRoomState  # noqa: F811
 from .punish import Base, Punish  # noqa: F811
 from .role_request import Base, RoleRequestState  # noqa: F811
 from .temp import Base, TempPunish  # noqa: F811
@@ -31,6 +32,7 @@ __all__ = (
     "GuildPrivateChannelsConfig",
     "GuildTicketsConfig",
     "MainGuildConfig",
+    "PrivateRoomState",
     "Punish",
     "RoleRequestState",
     "TempPunish",

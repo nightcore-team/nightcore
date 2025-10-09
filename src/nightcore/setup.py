@@ -68,9 +68,14 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.member.add",
         "src.nightcore.events.member.leave",
         "src.nightcore.events.member.ban",
-        "src.nightcore.events.member.update",
-        "src.nightcore.events.member._update.default",
-        "src.nightcore.events.member._update.infomaker",
+        "src.nightcore.events.member.update.gateway",
+        "src.nightcore.events.member.update.default",
+        "src.nightcore.events.member.update.infomaker",
+        # voice state
+        "src.nightcore.events.voice.gateway",
+        # private rooms
+        "src.nightcore.features.private_rooms.events.create",
+        "src.nightcore.features.private_rooms.events.delete",
         # tasks
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",

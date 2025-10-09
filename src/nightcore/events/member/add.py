@@ -18,7 +18,7 @@ from src.nightcore.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AddMemberHandler(Cog):
+class AddMemberEvent(Cog):
     def __init__(self, bot: Nightcore):
         self.bot = bot
 
@@ -88,5 +88,5 @@ class AddMemberHandler(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the AddMemberHandler cog."""
-    await bot.add_cog(AddMemberHandler(bot))
+    """Setup the AddMemberEvent cog."""
+    await bot.add_cog(AddMemberEvent(bot))

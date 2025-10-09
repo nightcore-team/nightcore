@@ -25,6 +25,8 @@ class ChannelType(Enum):
     PINNED_TICKETS_CATEGORY = "pinned_tickets_category_id"
     CREATE_PROPOSALS = "create_proposal_channel_id"
 
+    CREATE_PRIVATE_VOICE_CHANNEL = "private_rooms_create_channel_id"
+
     ROLE_REQUESTS = "check_role_requests_channel_id"
 
 

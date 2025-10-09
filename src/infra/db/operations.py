@@ -22,6 +22,7 @@ from src.infra.db.models import (
     GuildPrivateChannelsConfig,
     GuildTicketsConfig,
     MainGuildConfig,
+    PrivateRoomState,
     Punish,
     RoleRequestState,
     TempPunish,
@@ -189,6 +190,19 @@ async def create_punish(
     session.add(punish)
     alru_invalidator(get_user_infractions, guild_id=guild_id, user_id=user_id)
     return punish
+
+
+async def get_private_room_state(
+    session: AsyncSession, *, user_id: int
+) -> PrivateRoomState | None:
+    """Get the private room state for a user."""
+    stmt = (
+        select(PrivateRoomState)
+        .where(PrivateRoomState.user_id == user_id)
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
 
 
 async def create_temp_punish(

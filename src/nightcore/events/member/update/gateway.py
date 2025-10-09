@@ -8,7 +8,7 @@ from src.nightcore.bot import Nightcore
 logger = logging.getLogger(__name__)
 
 
-class UpdateMemberHandler(Cog):
+class UpdateMemberEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
@@ -27,5 +27,5 @@ class UpdateMemberHandler(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the UpdateMemberHandler cog."""
-    await bot.add_cog(UpdateMemberHandler(bot))
+    """Setup the UpdateMemberEvent cog."""
+    await bot.add_cog(UpdateMemberEvent(bot))

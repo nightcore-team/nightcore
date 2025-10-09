@@ -17,7 +17,7 @@ from ..utils.roles import roles_difference  # type: ignore
 logger = logging.getLogger(__name__)
 
 
-class DefaultUpdateMemberHandler(Cog):
+class DefaultUpdateMemberEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
@@ -206,5 +206,5 @@ class DefaultUpdateMemberHandler(Cog):
 
 
 async def setup(bot: Nightcore) -> None:
-    """Setup the DefaultUpdateMemberHandler cog."""
-    await bot.add_cog(DefaultUpdateMemberHandler(bot))
+    """Setup the DefaultUpdateMemberEvent cog."""
+    await bot.add_cog(DefaultUpdateMemberEvent(bot))
