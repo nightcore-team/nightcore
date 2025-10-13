@@ -156,7 +156,7 @@ class UpdateChannelHandler(Cog):
         if old_parent_id != new_parent_id:
 
             def fmt(pid):  # type: ignore
-                return f"<#{pid}>`{pid}`" if pid else "нет"
+                return f"<#{pid}> ({pid})" if pid else "нет"
 
             embed.add_field(
                 name="Категория",

@@ -3,6 +3,7 @@
 from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.infra.db.models._annot import Rules
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
 
@@ -28,12 +29,19 @@ class MainGuildConfig(IdIntegerMixin, Base):  #
     fraction_roles: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger), nullable=False, default=list
     )  #
-    voice_temp_roles: Mapped[dict] = mapped_column(
+    voice_temp_roles: Mapped[dict[int, int]] = mapped_column(
         JSON, nullable=False, default=dict
     )  #
-    faq: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    faq: Mapped[dict[str, str]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
     check_role_requests_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
+    )  #
+    guild_rules: Mapped["Rules"] = mapped_column(
+        JSON,
+        nullable=False,
+        default=lambda: {"chapters": []},  # type: ignore
     )  #
 
 
