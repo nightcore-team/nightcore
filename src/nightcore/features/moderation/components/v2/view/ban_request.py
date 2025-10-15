@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Self, cast
+from typing import TYPE_CHECKING, Self, cast
 
 import discord
 from discord import (
@@ -30,7 +30,9 @@ from discord.ui import (
     button,
 )
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.components.embed import (
     MissingPermissionsEmbed,
 )
@@ -226,7 +228,7 @@ class BanRequestViewV2(LayoutView):
         author_id: int,
         reason: str,
         target: User | Member,
-        bot: Nightcore,
+        bot: "Nightcore",
         duration: int,
         original_duration: str,
         delete_seconds: int,

@@ -1,7 +1,7 @@
 """View for paginating infractions."""
 
 from datetime import datetime, timezone
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, User
 from discord.interactions import Interaction
@@ -18,7 +18,9 @@ from discord.ui import (
     button,
 )
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.utils import discord_ts
 
 
@@ -77,7 +79,7 @@ class InfractionsViewV2(LayoutView):
         author_id: int,
         pages: list[str],
         user: User,
-        bot: Nightcore,
+        bot: "Nightcore",
         count_last_7_days_infractions: int,
         timeout: int = 180,
     ):

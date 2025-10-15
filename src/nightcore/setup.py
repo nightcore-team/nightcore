@@ -38,6 +38,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.unticketban",
         "src.nightcore.features.moderation.commands.rrban",
         "src.nightcore.features.moderation.commands.unrrban",
+        "src.nightcore.features.moderation.commands.notify",
         # moderation events
         "src.nightcore.features.moderation.events.kick",
         "src.nightcore.features.moderation.events.roles_change",
@@ -81,6 +82,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",
         # "src.nightcore.tasks.delete_role_request",
+        "src.nightcore.tasks.expired_notify",
     ]
 
     return Nightcore(

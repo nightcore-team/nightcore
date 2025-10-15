@@ -2,10 +2,13 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import discord
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.features.moderation.events.dto.base import (
     ModerationBaseEventData,
 )

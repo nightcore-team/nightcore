@@ -1,8 +1,10 @@
 """Utilities for parsing and handling legal clauses."""
 
+from typing import Any
 from discord import Color, Embed
 
 from src.config.config import config
+from src.infra.db.models._annot import Chapter, Rule, Rules
 
 
 def parse_clause(clause: str) -> list[int]:
@@ -45,7 +47,7 @@ def build_rules_embeds(title: str, text_lines: list[str]) -> list[list[Embed]]:
             embeds.append(current_embeds)
             current_embeds = [
                 Embed(
-                    color=Color.blue(),
+                    color=Color.blurple(),
                 )
             ]
             total_length = 0
@@ -76,3 +78,26 @@ def build_rules_embeds(title: str, text_lines: list[str]) -> list[list[Embed]]:
 parse_clause("2.3") -> [2, 3]
 parse_clause("1") -> [1]
 """
+
+
+def convert_dict_to_rules(data: dict[str, Any]) -> Rules:
+    """Convert a dictionary to a Rules object."""
+    rules = Rules(
+        chapters=[
+            Chapter(
+                number=c["number"],
+                title=c["title"],
+                rules=[
+                    Rule(
+                        number=r["number"],
+                        text=r["text"],
+                        subrules=[Rule(**sr) for sr in r.get("subrules", [])],
+                    )
+                    for r in c["rules"]
+                ],
+            )
+            for c in data["chapters"]
+        ]
+    )
+
+    return rules

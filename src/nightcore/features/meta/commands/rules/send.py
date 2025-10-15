@@ -3,10 +3,12 @@ from typing import cast  # noqa: D100
 from discord import Embed, Guild, Interaction
 
 from src.infra.db.models import MainGuildConfig
-from src.infra.db.models._annot import Chapter, Rule, Rules
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.meta.utils import build_rules_embeds
+from src.nightcore.features.meta.utils import (
+    build_rules_embeds,
+    convert_dict_to_rules,
+)
 from src.nightcore.services.config import specified_guild_config
 
 from ._groups import rules as rules_group
@@ -24,28 +26,12 @@ async def send_rules(
     async with specified_guild_config(
         bot=bot, guild_id=guild.id, config_type=MainGuildConfig
     ) as (guild_config, _):
-        rules_data = guild_config.guild_rules or {"chapters": []}
+        rules_data = cast(
+            dict[str, object], guild_config.guild_rules or {"chapters": []}
+        )
 
-    rules = Rules(
-        chapters=[
-            Chapter(
-                number=c["number"],  # type: ignore
-                title=c["title"],  # type: ignore
-                rules=[
-                    Rule(
-                        number=r["number"],  # type: ignore
-                        text=r["text"],  # type: ignore
-                        subrules=[
-                            Rule(**sr)  # type: ignore
-                            for sr in r.get("subrules", [])  # type: ignore
-                        ],
-                    )
-                    for r in c["rules"]  # type: ignore
-                ],
-            )
-            for c in rules_data["chapters"]  # type: ignore
-        ]
-    )
+    # json -> dataclass
+    rules = convert_dict_to_rules(rules_data)
 
     chapters = rules.chapters
 

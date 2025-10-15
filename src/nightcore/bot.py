@@ -12,6 +12,9 @@ from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
 from src.infra.db.uow import UnitOfWork
+from src.nightcore.features.moderation.components.v2 import (
+    NotifyViewV2,
+)
 from src.nightcore.features.proposals.components.v2 import ProposalViewV2
 from src.nightcore.features.role_requests.components.v2 import (
     CheckRoleRequestView,
@@ -81,7 +84,7 @@ class Nightcore(Bot):
 
     async def _warmup_guild_channels(self, guild: Guild) -> None:
         try:
-            await guild.fetch_channels()  # один HTTP-запит на гільдію
+            await guild.fetch_channels()
         except Exception as e:
             logger.error(
                 f"[failed] Failed to fetch channels for guild {guild.id}: {e}"
@@ -94,6 +97,7 @@ class Nightcore(Bot):
         self.add_view(ManageTicketViewV2(self))
         self.add_view(CheckRoleRequestView(self))
         self.add_view(SendRoleRequestView(self))
+        self.add_view(NotifyViewV2(self, _build=True))
         self.add_view(ProposalViewV2(self, _build=True))
 
     async def load_extensions(self) -> None:

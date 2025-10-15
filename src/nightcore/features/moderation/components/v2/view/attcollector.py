@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Self, cast
+from typing import TYPE_CHECKING, Self, cast
 
 import discord
 from discord import ButtonStyle, Member, User
@@ -19,7 +19,9 @@ from discord.ui import (
     button,
 )
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.utils import discord_ts
 
 logger = logging.getLogger(__name__)
@@ -102,7 +104,7 @@ class AttachmentsCollectorV2(LayoutView):
         self,
         author_id: int,
         user: User | Member,
-        bot: Nightcore,
+        bot: "Nightcore",
         timeout: int = 3600,
     ):
         super().__init__(timeout=timeout)

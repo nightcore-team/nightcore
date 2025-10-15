@@ -1,11 +1,12 @@
 """Base DTO for moderation events."""
 
 from abc import abstractmethod
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 import discord
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 
 class ModerationBaseEventData(Protocol):

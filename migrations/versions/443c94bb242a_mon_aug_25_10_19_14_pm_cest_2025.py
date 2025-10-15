@@ -1,7 +1,7 @@
-"""Mon Aug 25 10:19:14 PM CEST 2025
 
+"""Mon Aug 25 10:19:14 PM CEST 2025
 Revision ID: 443c94bb242a
-Revises: 
+Revises:
 Create Date: 2025-08-25 22:19:15.360216
 
 """

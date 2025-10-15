@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, TypeVar, cast
 
 from async_lru import alru_cache
-from sqlalchemy import exists, func, select
+from sqlalchemy import exists, extract, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +22,7 @@ from src.infra.db.models import (
     GuildPrivateChannelsConfig,
     GuildTicketsConfig,
     MainGuildConfig,
+    NotifyState,
     PrivateRoomState,
     Punish,
     RoleRequestState,
@@ -29,9 +30,10 @@ from src.infra.db.models import (
     TicketState,
     User,
 )
-from src.infra.db.models._annot import OrgRoleWithoutTagAnnot
+from src.infra.db.models._annot import OrgRoleWithoutTagAnnot, Rules
 from src.infra.db.models._enums import (
     ChannelType,
+    NotifyStateEnum,
     RoleRequestStateEnum,
     TicketStateEnum,
 )
@@ -60,6 +62,18 @@ async def get_specified_guild_config(
     return result.scalar_one_or_none()
 
 
+async def get_guild_rules(
+    session: AsyncSession, *, guild_id: int
+) -> Rules | None:
+    """Get the guild rules from the database."""
+    stmt = select(MainGuildConfig.guild_rules).where(
+        MainGuildConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
 async def get_specified_channel(
     session: AsyncSession,
     *,
@@ -73,19 +87,6 @@ async def get_specified_channel(
     return await session.scalar(stmt)
 
 
-async def get_specified_field(
-    session: AsyncSession,
-    *,
-    guild_id: int,
-    config_type: type[GuildT],
-    field: str,
-) -> Any:
-    """Get the specified field from the database."""
-    column = getattr(config_type, field)
-    stmt = select(column).where(config_type.guild_id == guild_id)
-    return await session.scalar(stmt)
-
-
 async def get_moderation_access_roles(
     session: AsyncSession, *, guild_id: int
 ) -> list[int]:
@@ -95,6 +96,17 @@ async def get_moderation_access_roles(
     )
     result = await session.scalar(stmt)
     return result or []
+
+
+async def get_all_pending_notifications(
+    session: AsyncSession,
+) -> Sequence[NotifyState]:
+    """Get all pending notifications."""
+    stmt = select(NotifyState).where(
+        NotifyState.state == NotifyStateEnum.PENDING
+    )
+    result = await session.scalars(stmt)
+    return result.all()
 
 
 async def get_head_moderation_access_roles(
@@ -247,6 +259,24 @@ async def get_latest_temp_punish(
             func.lower(TempPunish.category) == category.lower(),
         )
         .order_by(TempPunish.end_time.asc().nulls_last())
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def get_user_notify_by_end_time(
+    session: AsyncSession, *, guild_id: int, user_id: int, ts: int
+) -> NotifyState | None:
+    """Get the notify state for a user in a guild by end time."""
+    stmt = (
+        select(NotifyState)
+        .where(
+            NotifyState.guild_id == guild_id,
+            NotifyState.user_id == user_id,
+            func.floor(extract("epoch", NotifyState.end_time)) == ts,
+            NotifyState.state == NotifyStateEnum.PENDING,
+        )
         .limit(1)
     )
     res = await session.execute(stmt)

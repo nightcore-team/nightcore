@@ -1,0 +1,136 @@
+import logging  # noqa: D100
+from typing import Any, cast
+
+from discord import Guild, Member, app_commands
+from discord.ext.commands import Cog  # type: ignore
+from discord.interactions import Interaction
+
+from src.infra.db.models._annot import Chapter
+from src.infra.db.operations import (
+    get_guild_rules,
+    get_moderation_access_roles,
+)
+from src.nightcore.bot import Nightcore
+from src.nightcore.components.embed import (
+    EntityNotFoundEmbed,
+    MissingPermissionsEmbed,
+    ValidationErrorEmbed,
+)
+from src.nightcore.exceptions import FieldNotConfiguredError
+from src.nightcore.features.meta.utils import convert_dict_to_rules
+from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
+from src.nightcore.features.moderation.utils import (
+    calculate_end_time,
+    find_rule_by_index,
+    parse_duration,
+)
+from src.nightcore.utils import (
+    ensure_member_exists,
+    has_any_role_from_sequence,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class Notify(Cog):
+    def __init__(self, bot: Nightcore) -> None:
+        self.bot = bot
+
+    @app_commands.command(
+        name="notify", description="Отправить оповещение пользователю"
+    )
+    @app_commands.describe()
+    async def notify(
+        self,
+        interaction: Interaction["Nightcore"],
+        user: Member,
+        duration: str,
+        reason: str,
+    ):
+        """Sends a notification to a user."""
+
+        guild = cast(Guild, interaction.guild)
+
+        member = await ensure_member_exists(guild, user.id)
+
+        if member is None:
+            return await interaction.response.send_message(
+                embed=EntityNotFoundEmbed(
+                    "user",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        async with self.bot.uow.start() as session:
+            if not (
+                moderation_access_roles := await get_moderation_access_roles(
+                    session, guild_id=guild.id
+                )
+            ):
+                raise FieldNotConfiguredError("moderation access")
+
+            if not (
+                rules_data := cast(
+                    dict[str, Any],
+                    await get_guild_rules(session, guild_id=guild.id),
+                )
+            ):
+                raise FieldNotConfiguredError("rules")
+
+        has_moder_role = has_any_role_from_sequence(
+            cast(Member, interaction.user), moderation_access_roles
+        )
+        if not has_moder_role:
+            return await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        rules = convert_dict_to_rules(rules_data)
+
+        rule, index = find_rule_by_index(rules, reason)  # type: ignore
+        if isinstance(rule, Chapter):
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Please provide a valid rule number, not a chapter.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        parsed_duration = parse_duration(duration)
+
+        if not parsed_duration:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Invalid duration format.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        end_time = calculate_end_time(parsed_duration)
+
+        await interaction.response.send_message(
+            view=PrepareNotifyViewV2(
+                bot=self.bot,
+                user_id=member.id,
+                end_time=end_time,
+                content=f"{index}. {rule.text}"  # type: ignore
+                if index and rule.text  # type: ignore
+                else reason,
+            ),
+            ephemeral=True,
+        )
+
+
+async def setup(bot: Nightcore) -> None:
+    """Setup the Notify cog."""
+    await bot.add_cog(Notify(bot))

@@ -8,6 +8,8 @@ class ChannelType(Enum):
 
     NOTIFICATIONS = "notifications_channel_id"
     NIGHTCORE_NOTIFICATIONS = "notifications_from_bot_channel_id"
+    MODERATION_NOTIFICATIONS = "notifications_for_moderation_channel_id"
+
     LOGGING_BANS = "bans_log_channel_id"
     LOGGING_CLANS = "clans_log_channel_id"
     LOGGING_MEMBERS = "members_log_channel_id"
@@ -20,14 +22,18 @@ class ChannelType(Enum):
     LOGGING_REACTIONS = "reactions_log_channel_id"
     LOGGING_PRIVATE_CHANNELS = "private_rooms_log_channel_id"
     LOGGING_IGNORE = "message_log_ignoring_channels_ids"
+
     NEW_TICKETS_CATEGORY = "new_tickets_category_id"
     CLOSED_TICKETS_CATEGORY = "closed_tickets_category_id"
     PINNED_TICKETS_CATEGORY = "pinned_tickets_category_id"
+    CREATE_TICKETS = "create_ticket_channel_id"
+
     CREATE_PROPOSALS = "create_proposal_channel_id"
 
     CREATE_PRIVATE_VOICE_CHANNEL = "private_rooms_create_channel_id"
 
     ROLE_REQUESTS = "check_role_requests_channel_id"
+    RULES_CHANNEL = "rules_channel_id"
 
 
 class TicketStateEnum(Enum):
@@ -45,3 +51,8 @@ class RoleRequestStateEnum(Enum):
     DENIED = "denied"
     CANCELED = "canceled"
     EXPIRED = "expired"
+
+
+class NotifyStateEnum(Enum):
+    PENDING = "pending"
+    TIMED_OUT = "timed_out"
