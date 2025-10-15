@@ -404,7 +404,11 @@ class NotifyTimedOutViewV2(LayoutView):
         container = Container[Self]()
 
         # header
-        container.add_item(TextDisplay[Self](f"### <@{moderator_id}>"))
+        container.add_item(
+            TextDisplay[Self](
+                f"### <:8736notifyout:1428143076450369689> | Оповещение <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
+            )
+        )
         container.add_item(Separator[Self]())
 
         # body
