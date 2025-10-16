@@ -32,7 +32,7 @@ class DeleteTicketTask(Cog):
         if self.delete_ticket_task.is_running():
             self.delete_ticket_task.cancel()
 
-    @tasks.loop(seconds=5.0)
+    @tasks.loop(seconds=60.0)
     async def delete_ticket_task(self):
         """Task to delete tickets when their duration ends."""
         logger.info("[task] - Running delete ticket task")
@@ -43,7 +43,7 @@ class DeleteTicketTask(Cog):
                 if ticket.is_deleted:
                     continue
                 if not ticket.updated_at + timedelta(
-                    seconds=config.bot.CLOSED_TICKET_ALIVE_HOURS
+                    hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
                 ) <= datetime.now(timezone.utc):
                     continue
 

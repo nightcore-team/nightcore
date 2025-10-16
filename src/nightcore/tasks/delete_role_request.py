@@ -33,7 +33,7 @@ class DeleteRoleRequestTask(Cog):
         if self.delete_role_request_task.is_running():
             self.delete_role_request_task.cancel()
 
-    @tasks.loop(seconds=15.0)
+    @tasks.loop(seconds=60.0)
     async def delete_role_request_task(self):
         """Task to delete role requests when their duration ends."""
         logger.info("[task] - Running delete role request task")
