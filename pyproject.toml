@@ -10,6 +10,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "chat-exporter>=2.8.4",
     "discord-py>=2.6.3",
+    "httpx>=0.28.1",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",

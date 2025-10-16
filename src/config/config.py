@@ -2,6 +2,7 @@
 
 from functools import cached_property
 
+from src.infra.api.forum.config import Config as ForumConfig
 from src.infra.db.config import Config as DbConfig
 from src.nightcore.config import Config as BotConfig
 
@@ -16,6 +17,11 @@ class Config:
     def db(self) -> DbConfig:
         """Return the database configuration settings."""
         return DbConfig()  # type: ignore
+
+    @cached_property
+    def forum(self) -> ForumConfig:
+        """Return the forum API configuration settings."""
+        return ForumConfig()  # type: ignore
 
 
 config = Config()
