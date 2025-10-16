@@ -15,6 +15,7 @@ from src.infra.db.operations import (
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.components.v2.view import (
     NotifyTimedOutViewV2,
+    NotifyViewV2,
 )
 from src.nightcore.utils import (
     ensure_guild_exists,
@@ -113,6 +114,7 @@ class ExpiredNotifyTask(Cog):
                 notification_message = await ensure_message_exists(
                     self.bot, notifications_channel, notify.message_id
                 )
+
                 if not notification_message:
                     logger.error(
                         "[task] - Notification message %s not found in guild %s",  # noqa: E501
@@ -120,6 +122,22 @@ class ExpiredNotifyTask(Cog):
                         guild.id,
                     )
                     continue
+
+                view = NotifyViewV2(self.bot)
+                view.guild_id = guild.id
+                view.rebuild_component(
+                    notification_message.components, disabled=True
+                )
+
+                try:
+                    await notification_message.edit(view=view)
+                except Exception as e:
+                    logger.error(
+                        "[task] - Failed to edit notification message %s in guild %s: %s",  # noqa: E501
+                        notification_message.id,
+                        guild.id,
+                        e,
+                    )
 
                 try:
                     await moderation_notifications_channel.send(  # type: ignore

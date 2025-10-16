@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Guild, Message, SelectOption
+from discord.components import ActionRow as ActionRowOverride
 from discord.components import TextDisplay as TextDisplayOverride
 from discord.interactions import Interaction
 from discord.ui import (
@@ -38,6 +39,7 @@ from src.nightcore.features.tickets.utils import (
     extract_str_by_pattern,
 )
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
+from src.nightcore.utils.types import MessageComponentType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -331,6 +333,54 @@ class NotifyViewV2(LayoutView):
                 if isinstance(item, Button):
                     item.disabled = True
 
+    def rebuild_component(
+        self, components: list[MessageComponentType], disabled: bool = False
+    ) -> Self:
+        """Rebuilds the notify view component from existing components."""
+
+        for component in components:
+            for item in component.children:  # type: ignore
+                if isinstance(item, TextDisplayOverride):
+                    match item.id:
+                        case 2:
+                            self.user_id = extract_id_from_str(
+                                item.content.split(" ")[-1]
+                            )
+                        case 4:
+                            self.moderator_id = extract_str_by_pattern(
+                                item.content, r"<@!?(\d+)>"
+                            )
+                            self.profile_part = extract_str_by_pattern(
+                                item.content, r"\*\*`(.*?)`\*\*"
+                            )
+                        case 6:
+                            self.rules_channel_id = extract_str_by_pattern(
+                                item.content, r"<#(\d+)>"
+                            )
+                            self.content = extract_str_by_pattern(
+                                item.content, r"\`\`\`(.+)\`\`\`"
+                            )
+                        case 8:
+                            self.end_time = datetime.fromtimestamp(
+                                float(
+                                    extract_str_by_pattern(
+                                        item.content, r"<t:(\d+):[A-Za-z]>"
+                                    )  # type: ignore
+                                ),
+                                tz=timezone.utc,
+                            )
+                        case _:
+                            ...
+
+                if isinstance(item, ActionRowOverride):
+                    for btn in item.children:  # type: ignore
+                        if btn.id == 12:
+                            self.create_ticket_channel_id = btn.url[-19:-1]  # type: ignore
+
+        view = self.make_component(disabled=disabled)
+
+        return view
+
     def make_component(self, disabled: bool = False) -> Self:
         """Creates the notify view component."""
         self.clear_items()
@@ -371,7 +421,7 @@ class NotifyViewV2(LayoutView):
 
         self.actions = NotifyButtonsActionRow(
             guild_id=self.guild_id,
-            create_ticket_channel_id=self.create_ticket_channel_id,
+            create_ticket_channel_id=self.create_ticket_channel_id,  # type: ignore
         )
         container.add_item(self.actions)
         container.add_item(Separator[Self]())
