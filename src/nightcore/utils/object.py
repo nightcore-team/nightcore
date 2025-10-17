@@ -121,8 +121,14 @@ async def ensure_messageable_channel_exists(
     return channel
 
 
-async def ensure_member_exists(guild: Guild, user_id: int) -> Member | None:
+async def ensure_member_exists(
+    guild: Guild, user_id: int | None = None
+) -> Member | None:
     """Ensure that a member with the given user ID exists in the guild."""
+
+    if not user_id:
+        return None
+
     member = guild.get_member(user_id)
 
     if member is None:

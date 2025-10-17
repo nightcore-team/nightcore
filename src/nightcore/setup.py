@@ -79,10 +79,11 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.private_rooms.events.create",
         "src.nightcore.features.private_rooms.events.delete",
         # tasks
-        "src.nightcore.tasks.unpunish",
-        "src.nightcore.tasks.delete_ticket",
-        "src.nightcore.tasks.delete_role_request",
-        "src.nightcore.tasks.expired_notify",
+        # "src.nightcore.tasks.unpunish",
+        # "src.nightcore.tasks.delete_ticket",
+        # "src.nightcore.tasks.delete_role_request",
+        # "src.nightcore.tasks.expired_notify",
+        # "src.nightcore.tasks.check_forum",
     ]
 
     return Nightcore(

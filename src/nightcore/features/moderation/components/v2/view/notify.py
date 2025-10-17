@@ -396,7 +396,7 @@ class NotifyViewV2(LayoutView):
         container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](
-                f"<:97365hammer:1428061482590933062> Модератор <@{self.moderator_id}> обнаружил нарушение в персонализации вашего профиля Discord.\n"  # noqa: E501
+                f"**Модератор** <@{self.moderator_id}> обнаружил нарушение в персонализации вашего профиля Discord.\n"  # noqa: E501
                 f"Пожалуйста, смените **`{self.profile_part}`** в соответствии с правилами сервера.\n"  # noqa: E501, RUF001
                 "\n**В случае отказа или игнорирования требования — будет применено наказание.**"  # noqa: E501, RUF001
             )

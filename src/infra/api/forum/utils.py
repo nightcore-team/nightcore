@@ -1,7 +1,7 @@
 """Utility functions for forum operations."""
 
 
-def extract_discord_id(title: str) -> str:
+def extract_discord_id(title: str) -> int | None:
     """Extract the first sequence of digits from the title as a Discord ID."""
     i = 0
     n = len(title)
@@ -10,6 +10,6 @@ def extract_discord_id(title: str) -> str:
             start = i
             while i < n and title[i].isdigit():
                 i += 1
-            return title[start:i]
+            return int(title[start:i])
         i += 1
-    return ""
+    return None

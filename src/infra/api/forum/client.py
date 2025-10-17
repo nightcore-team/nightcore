@@ -6,9 +6,14 @@ from src.infra.api.base_client import IAPIClient
 from src.infra.api.forum.dto import Thread
 
 
-class ForumApi:
+class ForumAPIClient:
     def __init__(self, client: IAPIClient) -> None:
         self._client = client
+
+    @property
+    def client(self) -> IAPIClient:
+        """Get the base API client."""
+        return self._client
 
     async def get_threads_from_section(self, section_id: int) -> list[Thread]:
         """GET /threads?node_id={section_id}."""

@@ -18,6 +18,10 @@ class HttpxAPIClient(IAPIClient):
         default_headers: Mapping[str, str] | None = None,
         timeout: float = 30.0,
     ) -> None:
+        self.base_url = base_url
+        self.default_headers = default_headers
+        self.timeout = timeout
+
         self._client = httpx.AsyncClient(
             base_url=base_url,
             headers=default_headers,
@@ -42,7 +46,7 @@ class HttpxAPIClient(IAPIClient):
             logger.exception("[httpx] GET %s failed: %s", endpoint, e)
             raise
 
-    async def post_form(
+    async def post(
         self,
         endpoint: str,
         data: Mapping[str, Any],

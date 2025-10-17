@@ -6,6 +6,10 @@ from typing import Any, Protocol
 
 
 class IAPIClient(Protocol):
+    base_url: str
+    default_headers: Mapping[str, str] | None
+    timeout: float
+
     @abstractmethod
     def get(
         self,

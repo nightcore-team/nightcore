@@ -5,9 +5,9 @@ from typing import Any
 @dataclass(frozen=True)
 class Server:
     section_id: int
-    guild_id: str
-    channel_id: str
-    role_id: str
+    guild_id: int
+    channel_id: int
+    role_id: int
 
 
 @dataclass
@@ -33,3 +33,9 @@ class Thread:
             user_id=str(data.get("user_id") or ""),
             username=str(data.get("username") or ""),
         )
+
+    @property
+    def url(self) -> str:
+        """Get the URL of the thread."""
+
+        return f"/threads/{self.thread_id}"

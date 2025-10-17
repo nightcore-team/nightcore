@@ -11,6 +11,9 @@ from aiohttp import TCPConnector
 from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
+from src.config.config import config
+from src.infra.api.forum.client import ForumAPIClient
+from src.infra.api.httpx_client import HttpxAPIClient
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
@@ -27,6 +30,16 @@ from src.nightcore.features.tickets.components.v2 import (
 from src.nightcore.utils import log_tree_summary
 
 logger = logging.getLogger(__name__)
+
+
+class CustomAPICollection:
+    def __init__(self, http_client: HttpxAPIClient):
+        self.http_client = http_client
+
+    @property
+    def forum(self) -> ForumAPIClient:
+        """Get the Forum API client."""
+        return ForumAPIClient(self.http_client)
 
 
 class GuildOnlyTree(app_commands.CommandTree):
@@ -53,6 +66,13 @@ class Nightcore(Bot):
     ):
         self.cog_modules = cog_modules
         self.uow = uow
+        self.outside_http_client = HttpxAPIClient(
+            base_url=config.forum.FORUM_API_URL,
+            default_headers={
+                "XF-Api-Key": config.forum.FORUM_API_KEY,
+            },
+        )
+        self.apis = CustomAPICollection(self.outside_http_client)
 
         # custom tcp connector
         connector = TCPConnector(

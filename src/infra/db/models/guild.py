@@ -261,6 +261,13 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
     # )
 
 
+# TODO: feature guild complaint config instead of hardcoded dict
+# class GuildComplaintConfig(IdIntegerMixin, Base):
+#     guild_id: Mapped[int] = mapped_column(
+#         BigInteger, nullable=False, unique=True
+#     )
+
+
 class GuildNotificationsConfig(IdIntegerMixin, Base):  #
     """Notifications configuration for a guild."""
 
