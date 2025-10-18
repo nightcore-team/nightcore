@@ -157,7 +157,7 @@ class DeleteMessageEvent(Cog):
                 e,
             )
 
-        logger.info("[message] Message received: %s", message)
+        logger.info("[message] Message deleted: %s", message)
 
         return
 

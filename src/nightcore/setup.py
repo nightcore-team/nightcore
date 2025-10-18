@@ -60,6 +60,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.reaction",
         "src.nightcore.events.message.on",
         "src.nightcore.events.message.delete",
+        "src.nightcore.events.message.update",
         "src.nightcore.events.error",
         "src.nightcore.events.channel.create",
         "src.nightcore.events.channel.delete",
