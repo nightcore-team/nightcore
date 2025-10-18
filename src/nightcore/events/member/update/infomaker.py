@@ -11,7 +11,7 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_messageable_channel_exists
 
-from ..utils.roles import roles_difference  # type: ignore
+from .._utils.roles import roles_difference  # type: ignore
 
 logger = logging.getLogger(__name__)
 

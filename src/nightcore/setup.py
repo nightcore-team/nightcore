@@ -75,7 +75,11 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.member.update.infomaker",
         # voice state
         "src.nightcore.events.voice.gateway",
-        # private rooms
+        # roles
+        "src.nightcore.events.role.create",
+        "src.nightcore.events.role.delete",
+        "src.nightcore.events.role.update",
+        # === private rooms
         "src.nightcore.features.private_rooms.events.create",
         "src.nightcore.features.private_rooms.events.delete",
         # tasks

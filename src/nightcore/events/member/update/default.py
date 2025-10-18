@@ -12,7 +12,7 @@ from src.infra.db.operations import get_specified_channel
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import ensure_messageable_channel_exists
 
-from ..utils.roles import roles_difference  # type: ignore
+from .._utils.roles import roles_difference  # type: ignore
 
 logger = logging.getLogger(__name__)
 
