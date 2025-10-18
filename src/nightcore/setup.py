@@ -48,41 +48,36 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.events.ban",
         "src.nightcore.features.moderation.events.ticketban",
         "src.nightcore.features.moderation.events.rrban",
-        # tickets commands
+        # === tickets
         "src.nightcore.features.tickets.commands.ticketmessage",
-        # tickets events
         "src.nightcore.features.tickets.events.ticket",
-        # role requests commands
+        # === role requests
         "src.nightcore.features.role_requests.commands.rrmessage",
-        # role requests events
         "src.nightcore.features.role_requests.events.stats",
-        # proposal events
+        # === proposals
         "src.nightcore.features.proposals.events.proposal",
         # === global events
         "src.nightcore.events.reaction",
-        "src.nightcore.events.message",
+        "src.nightcore.events.message.on",
+        "src.nightcore.events.message.delete",
         "src.nightcore.events.error",
-        # channels
         "src.nightcore.events.channel.create",
         "src.nightcore.events.channel.delete",
         "src.nightcore.events.channel.update",
-        # members
         "src.nightcore.events.member.add",
         "src.nightcore.events.member.leave",
         "src.nightcore.events.member.ban",
         "src.nightcore.events.member.update.gateway",
         "src.nightcore.events.member.update.default",
         "src.nightcore.events.member.update.infomaker",
-        # voice state
         "src.nightcore.events.voice.gateway",
-        # roles
         "src.nightcore.events.role.create",
         "src.nightcore.events.role.delete",
         "src.nightcore.events.role.update",
         # === private rooms
         "src.nightcore.features.private_rooms.events.create",
         "src.nightcore.features.private_rooms.events.delete",
-        # tasks
+        # === tasks
         # "src.nightcore.tasks.unpunish",
         # "src.nightcore.tasks.delete_ticket",
         # "src.nightcore.tasks.delete_role_request",
