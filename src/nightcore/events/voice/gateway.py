@@ -5,7 +5,7 @@ import logging
 import discord
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildPrivateChannelsConfig
+from src.infra.db.models import GuildLoggingConfig, GuildPrivateChannelsConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     get_private_room_state,
@@ -41,18 +41,35 @@ class VoiceStateUpdateEvent(Cog):
                         config_type=GuildPrivateChannelsConfig,
                         channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
                     )
-                if create_private_room_channel_id:
-                    if after.channel.id == create_private_room_channel_id:
-                        self.bot.dispatch(
-                            "create_private_room", member, after.channel
-                        )
-                else:
-                    self.bot.dispatch(
-                        "voice_channel_join", member, before, after
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_VOICES,
                     )
 
+                if (
+                    create_private_room_channel_id
+                    and after.channel.id == create_private_room_channel_id
+                ):
+                    self.bot.dispatch(
+                        "create_private_room", member, after.channel
+                    )
+                else:
+                    try:
+                        self.bot.dispatch(
+                            "voice_channel_join",
+                            member,
+                            after,
+                            logging_channel_id,
+                        )
+                    except Exception as e:
+                        logger.exception(
+                            "[voice/join] Error dispatching voice channel join event: %s",  # noqa: E501
+                            e,
+                        )
                 logger.info(
-                    f"[voice] {member} joined voice channel {after.channel.name}"  # noqa: E501
+                    f"[voice/join] {member} joined voice channel {after.channel.name}"  # noqa: E501
                 )
 
             # check if member left a voice channel
@@ -60,6 +77,12 @@ class VoiceStateUpdateEvent(Cog):
                 async with self.bot.uow.start() as session:
                     private_room_state = await get_private_room_state(
                         session, user_id=member.id
+                    )
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_VOICES,
                     )
 
                 if (
@@ -73,12 +96,20 @@ class VoiceStateUpdateEvent(Cog):
                         private_room_state,
                     )
                 else:
-                    self.bot.dispatch(
-                        "voice_channel_leave", member, before, after
-                    )
-
+                    try:
+                        self.bot.dispatch(
+                            "voice_channel_leave",
+                            member,
+                            before,
+                            logging_channel_id,
+                        )
+                    except Exception as e:
+                        logger.exception(
+                            "[voice/leave] Error dispatching voice channel leave event: %s",  # noqa: E501
+                            e,
+                        )
                 logger.info(
-                    f"[voice] {member} left voice channel {before.channel.name}"  # noqa: E501
+                    f"[voice/leave] {member} left voice channel {before.channel.name}"  # noqa: E501
                 )
 
             elif (
@@ -95,6 +126,12 @@ class VoiceStateUpdateEvent(Cog):
                         guild_id=guild.id,
                         config_type=GuildPrivateChannelsConfig,
                         channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
+                    )
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_VOICES,
                     )
 
                 # if user switched to create-private channel from their private
@@ -127,6 +164,13 @@ class VoiceStateUpdateEvent(Cog):
                     and after.channel.id != private_room_state.channel_id
                 ):
                     self.bot.dispatch(
+                        "voice_channel_switch",
+                        member,
+                        before,
+                        after,
+                        logging_channel_id,
+                    )
+                    self.bot.dispatch(
                         "delete_private_room",
                         member,
                         before.channel,
@@ -145,6 +189,13 @@ class VoiceStateUpdateEvent(Cog):
                     and after.channel.id == create_private_room_channel_id
                 ):
                     self.bot.dispatch(
+                        "voice_channel_switch",
+                        member,
+                        before,
+                        after,
+                        logging_channel_id,
+                    )
+                    self.bot.dispatch(
                         "create_private_room", member, after.channel
                     )
                     logger.info(
@@ -156,7 +207,11 @@ class VoiceStateUpdateEvent(Cog):
                 # if user just switched between two non-private channels
                 else:
                     self.bot.dispatch(
-                        "voice_channel_switch", member, before, after
+                        "voice_channel_switch",
+                        member,
+                        before,
+                        after,
+                        logging_channel_id,
                     )
                     logger.info(
                         "[voice] %s switched voice channel from %s to %s",
