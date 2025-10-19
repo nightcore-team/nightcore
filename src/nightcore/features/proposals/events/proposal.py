@@ -11,6 +11,9 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.features.proposals.components.v2 import (
     ProposalViewV2,
 )
+from src.nightcore.features.proposals.utils import (
+    strip_discord_markdown_to_plain,
+)
 from src.nightcore.services.config import specified_guild_config
 
 logger = logging.getLogger(__name__)
@@ -42,10 +45,12 @@ class CreateProposalEvent(Cog):
                 guild_config.proposals_count + 1,
             )
 
+        description = strip_discord_markdown_to_plain(message.content)
+
         view = ProposalViewV2(
             bot=self.bot,
             proposals_count=proposals_count,
-            description=message.content,
+            description=description,
             user_id=message.author.id,
         ).make_component()
 

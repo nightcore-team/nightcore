@@ -5,6 +5,9 @@ import discord
 from discord.ui import Modal, TextInput
 
 from src.config.config import config
+from src.nightcore.features.proposals.utils import (
+    strip_discord_markdown_to_plain,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -39,7 +42,7 @@ class CheckProposalModal(Modal, title="Рассмотрение предложе
     async def on_submit(self, interaction: discord.Interaction):
         """Handles the submission of the ban form modal."""
         try:
-            reason = self.reason.value
+            reason = strip_discord_markdown_to_plain(self.reason.value)
 
             additional_view = None
             self.view.moderator_id = interaction.user.id
