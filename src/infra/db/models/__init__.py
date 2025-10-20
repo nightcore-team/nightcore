@@ -1,4 +1,4 @@
-from .clan import Base, Clan
+from .clan import Base, Clan, ClanMember
 from .guild import (
     Base,  # noqa: F811
     GuildClansConfig,
@@ -23,6 +23,7 @@ from .user import Base, User  # noqa: F811
 __all__ = (
     "Base",
     "Clan",
+    "ClanMember",
     "GuildClansConfig",
     "GuildEconomyConfig",
     "GuildInfomakerConfig",

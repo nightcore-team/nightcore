@@ -48,6 +48,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.events.ban",
         "src.nightcore.features.moderation.events.ticketban",
         "src.nightcore.features.moderation.events.rrban",
+        # === clans
+        "src.nightcore.features.clans",
         # === tickets
         "src.nightcore.features.tickets.commands.ticketmessage",
         "src.nightcore.features.tickets.events.ticket",

@@ -6,6 +6,7 @@ from ._groups import config as config_group
 
 # SIDE-EFFECT IMPORTS
 from .commands import (
+    clans,
     economy,
     infomaker,
     levels,
@@ -19,6 +20,7 @@ from .commands import (
 )
 
 __all__ = (
+    "clans",
     "economy",
     "infomaker",
     "levels",

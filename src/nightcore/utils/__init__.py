@@ -10,6 +10,7 @@ from .object import (
     get_discord_user,
     has_any_role,
     has_any_role_from_sequence,
+    safe_delete_role,
 )
 from .on_ready_log import log_tree_summary
 from .time_utils import discord_ts
@@ -28,4 +29,5 @@ __all__ = (
     "has_any_role",
     "has_any_role_from_sequence",
     "log_tree_summary",
+    "safe_delete_role",
 )

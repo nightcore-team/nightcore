@@ -164,10 +164,10 @@ class GuildClansConfig(IdIntegerMixin, Base):  # ---
     clan_shop_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    clan_shop_products: Mapped[dict[str, float]] = mapped_column(
+    clan_shop_items: Mapped[dict[str, float]] = mapped_column(
         JSON, nullable=False, default=dict
     )
-    clan_access_roles_ids: Mapped[list[int] | None] = mapped_column(
+    clans_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
     create_clan_role_id: Mapped[int | None] = mapped_column(
@@ -176,7 +176,7 @@ class GuildClansConfig(IdIntegerMixin, Base):  # ---
     clan_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
-    clan_reputation: Mapped[float] = mapped_column(
+    clan_reputation_per_payday: Mapped[float] = mapped_column(
         Float, nullable=False, default=0.0
     )
     clan_improvements: Mapped[list[int]] = mapped_column(

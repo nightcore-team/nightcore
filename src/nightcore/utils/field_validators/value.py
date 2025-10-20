@@ -109,9 +109,13 @@ def str_value(field: str, value: str | None) -> FieldSpec | None:
     )
 
 
-def list_csv(field: str, csv: str | None) -> FieldSpec | None:
+def list_csv(
+    field: str, csv: str | None, _len: int | None = None
+) -> FieldSpec | None:
     """Creates a FieldSpec for a list of integers from a comma-separated string."""  # noqa: E501
     parsed = _parse_csv_ints(csv)
+    if _len is not None and parsed is not None and len(parsed) != _len:
+        return None
     if parsed is None:
         return None
 

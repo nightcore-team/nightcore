@@ -8,53 +8,53 @@ from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
-from src.infra.db.models.guild import GuildEconomyConfig
+from src.infra.db.models.guild import GuildClansConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
-from src.nightcore.features.config._groups import economy as economy_group
+from src.nightcore.features.config._groups import clans as clans_group
+from src.nightcore.features.config.utils import shop_items_dict_value
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
-    float_value,
     format_changes,
+    int_id_value,
     list_csv,
     split_changes,
-    str_value,
     update_id_list,
 )
 
 logger = logging.getLogger(__name__)
 
 
-@economy_group.command(name="setup", description="Configure economy settings.")
+@clans_group.command(name="setup", description="Configure clans settings.")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    shop_buy_ping_roles="Roles to ping when buying from the shop.",
-    economy_access_roles="Roles that have access to economy commands.",
-    # cases_drop="Drop from cases.",
-    # shop_items="Items available in the shop.",
-    reward_bonus="Bonus rewards for /reward.",
-    coin_name="Name of the local currency.",
-    # colors="...",
+    shop_threads_channel="Channel for shop threads.",
+    shop_buy_ping_roles="Roles to ping when buying from the shop. (str, str, str)",  # noqa: E501
+    shop_items="Items available in the shop. (str, int | str, int)",
+    reputation_per_payday="Reputation points awarded per payday. int",
+    payday_channel="Channel for payday announcements.",
+    improvements_costs="Costs for clan improvements (int, int, int).",
 )
 async def setup(
     interaction: Interaction,
+    shop_threads_channel: discord.TextChannel | None = None,
     shop_buy_ping_roles: str | None = None,
-    economy_access_roles: str | None = None,
-    # cases_drop: str | None = None,
-    # shop_items: str | None = None,
-    reward_bonus: float | None = None,
-    coin_name: str | None = None,
-    # colors: str | None = None,
+    shop_items: str | None = None,
+    reputation_per_payday: int | None = None,
+    payday_channel: discord.TextChannel | None = None,
+    improvements_costs: str | None = None,
 ):
-    """Configure economy settings."""
+    """Configure clans settings."""
 
     specs: list[FieldSpec | None] = [
-        list_csv("economy_shop_buy_ping_roles_ids", shop_buy_ping_roles),
-        list_csv("economy_access_roles_ids", economy_access_roles),
-        float_value("reward_bonus", reward_bonus),
-        str_value("coin_name", coin_name),
+        int_id_value("clan_shop_channel_id", shop_threads_channel),
+        list_csv("clan_buy_ping_roles_ids", shop_buy_ping_roles),
+        shop_items_dict_value("clan_shop_items", shop_items),
+        int_id_value("clan_reputation_per_payday", reputation_per_payday),
+        int_id_value("clan_payday_channel_id", payday_channel),
+        list_csv("clan_improvements", improvements_costs, _len=3),
     ]
 
     specs = [s for s in specs if s is not None]
@@ -76,7 +76,7 @@ async def setup(
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
-        config_type=GuildEconomyConfig,
+        config_type=GuildClansConfig,
     ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 
@@ -85,7 +85,7 @@ async def setup(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Economy Configuration",
+            title="Clans Configuration",
             description=description,
             color=discord.Color.green(),
         ),
@@ -101,7 +101,7 @@ async def setup(
     )
 
 
-@economy_group.command(name="update_economy_access")
+@clans_group.command(name="update_clans_access")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
@@ -111,43 +111,43 @@ async def setup(
 )
 @app_commands.describe(
     role="The role to update",
-    option="Whether to add or remove the role from the fraction access list",
+    option="Whether to add or remove the role from the clans access list.",
 )
-async def update_economy_access(
+async def update_clans_access(
     interaction: Interaction,
     role: discord.Role,
     option: Literal["add", "remove"],
 ):
-    """Update the list of roles with `economy` access."""
+    """Update the list of roles with `clans` access."""
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
-        config_type=GuildEconomyConfig,
+        config_type=GuildClansConfig,
     ) as (guild_config, _):
         new_list, changed, state = update_id_list(
-            guild_config.economy_access_roles_ids,
+            guild_config.clans_access_roles_ids,
             role.id,
             option,
         )
         if changed:
-            guild_config.economy_access_roles_ids = new_list
+            guild_config.clans_access_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the economy access list."
+        desc = f"Role <@&{role.id}> already in the clans access list."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the economy access list."
+        desc = f"Role <@&{role.id}> not in the clans access list."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the economy access list."
+        desc = f"Role <@&{role.id}> added to the clans access list."
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the economy access list."
+        desc = f"Role <@&{role.id}> removed from the clans access list."
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Economy Configuration",
+            title="Clans Configuration",
             description=desc,
             color=color,
         ),

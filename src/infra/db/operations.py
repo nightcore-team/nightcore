@@ -12,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.config import config
 from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
+    Clan,
+    ClanMember,
     GuildClansConfig,
     GuildEconomyConfig,
     GuildInfomakerConfig,
@@ -33,6 +35,7 @@ from src.infra.db.models import (
 from src.infra.db.models._annot import OrgRoleWithoutTagAnnot, Rules
 from src.infra.db.models._enums import (
     ChannelType,
+    ClanMemberRoleEnum,
     NotifyStateEnum,
     RoleRequestStateEnum,
     TicketStateEnum,
@@ -215,6 +218,55 @@ async def create_punish(
     session.add(punish)
     alru_invalidator(get_user_infractions, guild_id=guild_id, user_id=user_id)
     return punish
+
+
+async def create_clan(
+    session: AsyncSession, *, guild_id: int, name: str, role_id: int
+) -> Clan:
+    """Create a new clan in the database."""
+    clan = Clan(guild_id=guild_id, name=name, role_id=role_id)
+    session.add(clan)
+    return clan
+
+
+async def create_clan_member(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    clan_id: int,
+    user_id: int,
+    role: ClanMemberRoleEnum,
+) -> ClanMember:
+    """Create a new clan member in the database."""
+    clan_member = ClanMember(
+        guild_id=guild_id, clan_id=clan_id, user_id=user_id, role=role
+    )
+    session.add(clan_member)
+    return clan_member
+
+
+async def get_clan_member(
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> ClanMember | None:
+    """Get the clan member configuration from the database."""
+    stmt = select(ClanMember).where(
+        ClanMember.guild_id == guild_id, ClanMember.user_id == user_id
+    )
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_clan(
+    session: AsyncSession, *, guild_id: int, clan_name: str
+) -> Clan | None:
+    """Get the clan configuration from the database."""
+    stmt = select(Clan).where(
+        Clan.guild_id == guild_id, Clan.name == clan_name
+    )
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
 
 
 async def get_private_room_state(

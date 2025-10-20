@@ -36,6 +36,10 @@ class ChannelType(Enum):
     RULES_CHANNEL = "rules_channel_id"
 
 
+class FieldTypeEnum(Enum):
+    CLANS_ACCESS = "clans_access_roles_ids"
+
+
 class TicketStateEnum(Enum):
     OPENED = "opened"
     PINNED = "pinned"
@@ -56,3 +60,9 @@ class RoleRequestStateEnum(Enum):
 class NotifyStateEnum(Enum):
     PENDING = "pending"
     TIMED_OUT = "timed_out"
+
+
+class ClanMemberRoleEnum(Enum):
+    LEADER = "leader"
+    DEPUTY = "deputy"
+    MEMBER = "member"

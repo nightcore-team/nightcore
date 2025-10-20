@@ -230,3 +230,16 @@ def channel_type(type: Enum) -> str:
     """Convert a channel type enum to a human-readable string."""
 
     return str(type).split(".")[-1].replace("_", " ").title()
+
+
+async def safe_delete_role(role: Role, reason: str) -> None:
+    """Safely delete a role, logging any errors."""
+    try:
+        await role.delete(reason=reason)
+    except Exception as e:
+        logger.error(
+            "[safe_delete_role] Failed deleting role %s in guild %s: %s",
+            role.id,
+            role.guild.id,
+            e,
+        )

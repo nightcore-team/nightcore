@@ -33,6 +33,12 @@ levels = app_commands.Group(
     parent=config,
 )
 
+clans = app_commands.Group(
+    name="clans",
+    description="Configuration commands for the clans.",
+    parent=config,
+)
+
 infomaker = app_commands.Group(
     name="infomaker",
     description="Configuration commands for the infomaker.",

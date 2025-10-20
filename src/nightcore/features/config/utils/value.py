@@ -12,6 +12,7 @@ from src.nightcore.utils.field_validators import (
 )
 
 
+# TODO: add exceptions
 def _to_org_roles(s: str | None):
     """Converts a list of parts into a roles specification."""
 
@@ -62,6 +63,26 @@ def _to_level_roles(s: str | None):
     return result
 
 
+def _to_shop_items(s: str | None):
+    parts = parse_str_parts(s)
+    result: dict[str, int] = {}
+
+    for part in parts:
+        if len(part) != 2:
+            continue  # skip invalid parts
+        item_name, item_price_raw = part
+        if not item_name:
+            continue  # skip if item name is empty
+        try:
+            item_price = int(item_price_raw)
+        except ValueError:
+            continue  # skip if price is not a valid integer
+
+        result[item_name] = item_price
+
+    return result
+
+
 def _to_temp_voice_roles(s: str | None):
     parts = parse_str_parts(s)
     result: dict[int, int] = {}
@@ -92,6 +113,19 @@ def _to_temp_voice_roles(s: str | None):
         result[voice_id] = role_id
 
     return result
+
+
+def shop_items_dict_value(field: str, value: str | None) -> FieldSpec | None:
+    """Creates a FieldSpec for shop items dictionary from a string representation."""  # noqa: E501
+    if value is None:
+        return None
+
+    return FieldSpec(
+        field=field,
+        value=value,
+        kind=ValueKind.DICT,
+        transform=_to_shop_items,
+    )
 
 
 def org_roles_dict_value(field: str, value: str | None) -> FieldSpec | None:

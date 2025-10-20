@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
     reactions="The channel to log reaction updates.",
     private_rooms="The channel to log private room updates.",
     economy="The channel to log economy moves.",
+    clans="The channel to log clan activities.",
     ignoring_channels="The channels to ignore for logging. Type: `id,id,id,...`",  # noqa: E501
 )
 async def setup(
