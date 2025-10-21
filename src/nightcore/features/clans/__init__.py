@@ -6,11 +6,13 @@ from ._groups import clan as clan_main_group
 
 # SIDE-EFFECT IMPORTS
 from .commands import create, delete, info, seq
+from .commands.manage import invite
 
 __all__ = (
     "create",
     "delete",
     "info",
+    "invite",
     "seq",
 )
 

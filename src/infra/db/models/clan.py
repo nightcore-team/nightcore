@@ -72,7 +72,7 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
     )
 
     __table_args__ = (
-        # унікальна назва клану в межах гільдії
+        # уникальное название клана в пределах гильдии
         UniqueConstraint("guild_id", "name", name="uq_clan_guild_name"),
     )
 

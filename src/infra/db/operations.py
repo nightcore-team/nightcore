@@ -8,6 +8,7 @@ from async_lru import alru_cache
 from sqlalchemy import exists, extract, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.config.config import config
 from src.infra.cache.async_lru import alru_invalidator
@@ -254,12 +255,18 @@ async def get_clans(session: AsyncSession, *, guild_id: int) -> Sequence[Clan]:
 
 
 async def get_clan_member(
-    session: AsyncSession, *, guild_id: int, user_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    with_relations: bool = False,
 ) -> ClanMember | None:
     """Get the clan member configuration from the database."""
     stmt = select(ClanMember).where(
         ClanMember.guild_id == guild_id, ClanMember.user_id == user_id
     )
+    if with_relations:
+        stmt = stmt.options(selectinload(ClanMember.clan))
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
