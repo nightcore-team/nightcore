@@ -51,7 +51,7 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
         order_by="ClanMember.role",
     )
 
-    leader: Mapped["ClanMember | None"] = relationship(
+    leader: Mapped["ClanMember"] = relationship(
         primaryjoin=lambda: and_(
             Clan.id == ClanMember.clan_id,
             ClanMember.role == ClanMemberRoleEnum.LEADER,
