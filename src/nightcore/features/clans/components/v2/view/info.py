@@ -160,7 +160,12 @@ class ClanInfoViewV2(LayoutView):
 
 
 class ClanListViewV2(LayoutView):
-    def __init__(self, bot: "Nightcore", clans: Sequence[Clan]) -> None:
+    def __init__(
+        self,
+        bot: "Nightcore",
+        clans: Sequence[Clan],
+        sort_by: str | None = None,
+    ) -> None:
         super().__init__(timeout=180)
 
         container = Container[Self]()
@@ -172,15 +177,46 @@ class ClanListViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         for clan in clans:
-            container.add_item(
-                TextDisplay[Self](
-                    f"**{clan.name}**\n"
-                    f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
-                    f"Дата создания: {discord_ts(clan.created_at)}\n"
-                    f"Роль: <@&{clan.role_id}>\n"
-                    f"Участники: {len(clan.members)}/{clan.max_members}\n\n"
-                )
-            )
+            match sort_by:
+                case "members":
+                    container.add_item(
+                        TextDisplay[Self](
+                            f"**{clan.name}**\n"
+                            f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                            f"Роль: <@&{clan.role_id}>\n"
+                            f"Участники: {len(clan.members)}/{clan.max_members}\n\n"  # noqa: E501
+                        )
+                    )
+                case "reputation":
+                    container.add_item(
+                        TextDisplay[Self](
+                            f"**{clan.name}**\n"
+                            f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                            f"Роль: <@&{clan.role_id}>\n"
+                            f"Репутация: {clan.coins}\n\n"
+                        )
+                    )
+                case "created_at":
+                    container.add_item(
+                        TextDisplay[Self](
+                            f"**{clan.name}**\n"
+                            f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                            f"Роль: <@&{clan.role_id}>\n"
+                            f"Дата создания: {discord_ts(clan.created_at)}\n\n"
+                        )
+                    )
+
+                case _:
+                    container.add_item(
+                        TextDisplay[Self](
+                            f"**{clan.name}**\n"
+                            f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                            f"Роль: <@&{clan.role_id}>\n"
+                            f"Участники: {len(clan.members)}/{clan.max_members}\n"  # noqa: E501
+                            f"Репутация: {clan.coins}\n"
+                            f"Дата создания: {discord_ts(clan.created_at)}\n\n"
+                        )
+                    )
 
         container.add_item(Separator[Self]())
 

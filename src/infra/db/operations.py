@@ -254,6 +254,40 @@ async def get_clans(session: AsyncSession, *, guild_id: int) -> Sequence[Clan]:
     return result.all()
 
 
+async def get_clans_by_spec(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    spec: str | None = None,
+) -> Sequence[Clan]:
+    """Get clans for a guild ordered by the specified spec (e.g., 'reputation' or 'members')."""  # noqa: E501
+    stmt = select(Clan).where(Clan.guild_id == guild_id).limit(10)
+
+    match spec:
+        case "members":
+            stmt = (
+                select(Clan)
+                .join(Clan.members)
+                .where(Clan.guild_id == guild_id)
+                .group_by(Clan.id)
+                .order_by(func.count(ClanMember.id).desc())
+                .limit(10)
+            )
+        case "created_at":
+            # Order by a Clan column if it exists, otherwise fall back to id
+            stmt = stmt.order_by(Clan.created_at.asc())
+
+        case "reputation":
+            stmt = stmt.order_by(Clan.coins.desc())
+
+        case _:
+            stmt = stmt.order_by(Clan.id.asc())
+
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
 async def get_clan_member(
     session: AsyncSession,
     *,
