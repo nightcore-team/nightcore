@@ -300,7 +300,9 @@ async def get_clan_member(
         ClanMember.guild_id == guild_id, ClanMember.user_id == user_id
     )
     if with_relations:
-        stmt = stmt.options(selectinload(ClanMember.clan))
+        stmt = stmt.options(
+            selectinload(ClanMember.clan).selectinload(Clan.deputies)
+        )
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
