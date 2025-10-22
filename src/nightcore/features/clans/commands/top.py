@@ -1,3 +1,5 @@
+"""Command to show top clans on the server."""
+
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands

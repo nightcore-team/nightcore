@@ -5,7 +5,7 @@ from src.nightcore.bot import Nightcore
 from ._groups import clan as clan_main_group
 
 # SIDE-EFFECT IMPORTS
-from .commands import info, seq, top
+from .commands import info, leave, seq, top
 from .commands.manage import create, delete, invite, kick
 
 __all__ = (
@@ -14,6 +14,7 @@ __all__ = (
     "info",
     "invite",
     "kick",
+    "leave",
     "seq",
     "top",
 )
