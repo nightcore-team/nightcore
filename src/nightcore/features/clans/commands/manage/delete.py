@@ -19,7 +19,7 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
-from src.nightcore.features.clans._groups import clan as clan_main_group
+from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
     ensure_role_exists,
@@ -30,10 +30,12 @@ from src.nightcore.utils import (
 logger = logging.getLogger(__name__)
 
 
-@clan_main_group.command(name="delete", description="Delete an existing clan.")
+@manage_clan_group.command(
+    name="delete", description="Delete an existing clan."
+)
 @app_commands.describe()
-@app_commands.autocomplete(clan_id=clans_autocomplete)
-async def delete(interaction: Interaction["Nightcore"], clan_id: str):
+@app_commands.autocomplete(clan=clans_autocomplete)
+async def delete(interaction: Interaction["Nightcore"], clan: str):
     """Delete an existing clan."""
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
@@ -42,7 +44,6 @@ async def delete(interaction: Interaction["Nightcore"], clan_id: str):
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
-    clan = None
     # check user permissions
     async with bot.uow.start() as session:
         clans_access_roles_ids = await get_specified_field(
@@ -65,10 +66,10 @@ async def delete(interaction: Interaction["Nightcore"], clan_id: str):
 
         try:
             # get clan
-            clan = await get_clan_by_id(
-                session, guild_id=guild.id, clan_id=int(clan_id)
+            dbclan = await get_clan_by_id(
+                session, guild_id=guild.id, clan_id=int(clan)
             )
-            if not clan:
+            if not dbclan:
                 await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка удаления клана",
@@ -86,7 +87,7 @@ async def delete(interaction: Interaction["Nightcore"], clan_id: str):
                 "[clans] Failed to delete clan in guild %s: %s", guild.id, e
             )
 
-    role = await ensure_role_exists(guild, clan.role_id)  # type: ignore
+    role = await ensure_role_exists(guild, dbclan.role_id)  # type: ignore
     if role:
         asyncio.create_task(safe_delete_role(role, "Удаление роли клана"))  # noqa: RUF006
 

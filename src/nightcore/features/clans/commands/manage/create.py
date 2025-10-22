@@ -23,7 +23,7 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
-from src.nightcore.features.clans._groups import clan as clan_main_group
+from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.utils import (
     ensure_member_exists,
     has_any_role_from_sequence,
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@clan_main_group.command(name="create", description="Create a new clan.")
+@manage_clan_group.command(name="create", description="Create a new clan.")
 @app_commands.describe()
 async def create(
     interaction: Interaction["Nightcore"],

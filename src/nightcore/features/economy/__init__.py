@@ -2,21 +2,12 @@ from discord import app_commands
 
 from src.nightcore.bot import Nightcore
 
-from ._groups import clan as clan_main_group
+from ._groups import give as give_group
 
 # SIDE-EFFECT IMPORTS
-from .commands import info, seq, top
-from .commands.manage import create, delete, invite, kick
+from .commands.give import clanrep
 
-__all__ = (
-    "create",
-    "delete",
-    "info",
-    "invite",
-    "kick",
-    "seq",
-    "top",
-)
+__all__ = ("clanrep",)
 
 
 async def setup(bot: Nightcore):
@@ -25,4 +16,4 @@ async def setup(bot: Nightcore):
         isinstance(cmd, app_commands.AppCommand) and cmd.name == "config"  # type: ignore
         for cmd in bot.tree.get_commands()
     ):
-        bot.tree.add_command(clan_main_group)
+        bot.tree.add_command(give_group)
