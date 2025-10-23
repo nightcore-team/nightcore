@@ -6,7 +6,14 @@ from ._groups import clan as clan_main_group
 
 # SIDE-EFFECT IMPORTS
 from .commands import info, leave, seq, top
-from .commands.manage import change_deputy, create, delete, invite, kick
+from .commands.manage import (
+    change_deputy,
+    create,
+    delete,
+    invite,
+    kick,
+    settings,
+)
 
 __all__ = (
     "change_deputy",
@@ -17,6 +24,7 @@ __all__ = (
     "kick",
     "leave",
     "seq",
+    "settings",
     "top",
 )
 

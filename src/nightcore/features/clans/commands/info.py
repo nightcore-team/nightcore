@@ -35,17 +35,18 @@ async def info(interaction: Interaction["Nightcore"], clan: str):
         dbclan = await get_clan_by_id(
             session, guild_id=guild.id, clan_id=clan_id
         )
-        if not dbclan:
-            await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка получения информации о клане",  # noqa: RUF001
-                    "Не удалось найти данный клан в базе данных.",  # noqa: RUF001
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-            return
+
+    if not dbclan:
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка получения информации о клане",  # noqa: RUF001
+                "Не удалось найти данный клан в базе данных.",  # noqa: RUF001
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
 
     view = ClanInfoViewV2(
         bot=bot,

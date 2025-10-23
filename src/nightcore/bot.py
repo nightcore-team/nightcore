@@ -75,15 +75,15 @@ class Nightcore(Bot):
         self.apis = CustomAPICollection(self.outside_http_client)
 
         # custom tcp connector
-        connector = TCPConnector(
-            limit=0, ttl_dns_cache=300, enable_cleanup_closed=True
-        )
+        # connector = TCPConnector(
+        #     limit=0, ttl_dns_cache=300, enable_cleanup_closed=True
+        # )
         super().__init__(
             command_prefix=".",
             intents=discord.Intents.all(),
             help_command=None,
             tree_cls=GuildOnlyTree,
-            connector=connector,
+            # connector=connector,
             chunk_guilds_at_startup=True,
         )
         self.chunked_guilds: int = 0

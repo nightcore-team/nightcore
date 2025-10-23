@@ -83,17 +83,6 @@ async def change_deputy(
                 ephemeral=True,
             )
 
-        if len(leader.clan.deputies) + 1 > leader.clan.max_deputies:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка изменения заместителя",
-                    "Превышено максимальное количество заместителей в клане.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
         clan_member = await get_clan_member(
             session,
             guild_id=guild.id,
@@ -112,6 +101,16 @@ async def change_deputy(
 
         match option:
             case "add":
+                if len(leader.clan.deputies) + 1 > leader.clan.max_deputies:
+                    return await interaction.response.send_message(
+                        embed=ErrorEmbed(
+                            "Ошибка изменения заместителя",
+                            "Превышено максимальное количество заместителей в клане.",
+                            bot.user.display_name,  # type: ignore
+                            bot.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
                 if clan_member.role == ClanMemberRoleEnum.DEPUTY:
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
