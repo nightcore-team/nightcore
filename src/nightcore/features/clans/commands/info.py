@@ -1,6 +1,7 @@
 """Clan deletion command."""
 
 import logging
+import time
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -25,6 +26,8 @@ logger = logging.getLogger(__name__)
 @app_commands.autocomplete(clan=clans_autocomplete)
 async def info(interaction: Interaction["Nightcore"], clan: str):
     """Get information about a clan."""
+
+    start_time = time.perf_counter()
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
@@ -63,4 +66,18 @@ async def info(interaction: Interaction["Nightcore"], clan: str):
         reputation_multiplier=dbclan.payday_multipler,
     )
 
+    end_time = time.perf_counter()
+    logger.info(
+        "[clans/info] Info command for clan %s took %.4f seconds",
+        clan_id,
+        end_time - start_time,
+    )
+
+    start_time = time.perf_counter()
     await interaction.response.send_message(view=view, ephemeral=True)
+    end_time = time.perf_counter()
+    logger.info(
+        "[clans/info] Sending info response message for clan %s took %.4f seconds",  # noqa: E501
+        clan_id,
+        end_time - start_time,
+    )

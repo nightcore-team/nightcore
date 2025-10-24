@@ -1,6 +1,7 @@
 """Autocomplete utils for clans feature."""
 
 import logging
+import time
 from typing import TYPE_CHECKING, Final, cast
 
 from discord import Guild, app_commands
@@ -22,6 +23,7 @@ async def clans_autocomplete(
     current: str,
 ) -> list[app_commands.Choice[str]]:
     """Autocomplete function to get fraction roles for the guild."""
+    start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
     async with interaction.client.uow.start() as session:
@@ -30,6 +32,13 @@ async def clans_autocomplete(
     result: list[app_commands.Choice[str]] = []
     for clan in clans:
         result.append(app_commands.Choice(name=clan.name, value=str(clan.id)))
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[clans/autocomplete] Autocomplete for guild %s took %.4f seconds ",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
 
     return result
 
