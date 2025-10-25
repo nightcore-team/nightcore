@@ -72,3 +72,27 @@ async def clans_improvements_autocomplete(
     ]
 
     return result
+
+
+async def clans_shop_autocomplete(
+    interaction: Interaction["Nightcore"],
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get clan shop items for the guild."""
+    guild = cast(Guild, interaction.guild)
+
+    async with specified_guild_config(
+        interaction.client, guild_id=guild.id, config_type=GuildClansConfig
+    ) as (guild_config, _):
+        shop_items: dict[str, float] = guild_config.clan_shop_items
+
+    result: list[app_commands.Choice[str]] = []
+
+    for item, price in shop_items.items():
+        result.append(
+            app_commands.Choice(
+                name=f"{item} — цена: {price}", value=f"{item},{price}"
+            )
+        )
+
+    return result

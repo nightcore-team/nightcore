@@ -1,0 +1,491 @@
+"""Clan shop view."""
+
+import asyncio
+import logging
+import re
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Self, cast
+
+from discord import ButtonStyle, Guild, Message, Thread
+from discord import Container as ContainerOverride
+from discord.interactions import Interaction
+from discord.ui import (
+    ActionRow,
+    Button,
+    Container,
+    LayoutView,
+    Separator,
+    TextDisplay,
+    button,
+)
+
+from src.infra.db.models._enums import ShopOrderStateEnum
+from src.infra.db.operations import get_clan_by_name, get_shop_order_state
+from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.features.clans.events.dto.notify import (
+    ClanShopPurchaseNotifyDTO,
+)
+from src.nightcore.utils import discord_ts
+from src.nightcore.utils.types import MessageComponentType
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
+
+logger = logging.getLogger(__name__)
+
+
+class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
+    """Clan shop action row."""
+
+    @button(
+        label="Одобрить",
+        style=ButtonStyle.success,
+        emoji="<:52104checkmark:1414732973005340672>",
+        custom_id="clan_shop:approve",
+    )
+    async def approve(
+        self,
+        interaction: Interaction,
+        button: Button["ClanShopViewV2"],
+    ):
+        """Approve shop request button."""
+        view = cast("ClanShopViewV2", self.view)
+        guild = cast(Guild, interaction.guild)
+        bot = view.bot
+
+        message = cast(Message, interaction.message)
+        thread = cast(Thread, interaction.channel)
+
+        view.parse_main_component_data(components=message.components)
+
+        outcome = ""
+
+        async with bot.uow.start() as session:
+            shop_order = await get_shop_order_state(
+                session=session,
+                guild_id=guild.id,
+                custom_id=view.custom_id,  # type: ignore
+            )
+            if not shop_order:
+                outcome = "order_not_found"
+
+            if not outcome:
+                if shop_order.state != ShopOrderStateEnum.PENDING:  # type: ignore
+                    outcome = "invalid_state"
+                else:
+                    clan = await get_clan_by_name(
+                        session=session,
+                        guild_id=guild.id,
+                        clan_name=view.clan_name,  # type: ignore
+                    )
+                    if not clan:
+                        outcome = "clan_not_found"
+                    else:
+                        if clan.coins < view.item_price:  # type: ignore
+                            outcome = "insufficient_funds"
+                        else:
+                            clan.coins -= view.item_price  # type: ignore
+                            shop_order.state = ShopOrderStateEnum.APPROVED  # type: ignore
+                            outcome = "success"
+
+                            await session.delete(shop_order)
+
+        if outcome == "order_not_found":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка одобрения покупки",
+                    "Заказ не найден в базе данных.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        elif outcome == "invalid_state":
+            await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка одобрения покупки",
+                    "Заказ уже был обработан ранее.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        elif outcome == "clan_not_found":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка одобрения покупки",
+                    "Клан не найден в базе данных.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        elif outcome == "insufficient_funds":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка одобрения покупки",
+                    "Недостаточно средств на балансе клана.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        elif outcome == "success":
+            await interaction.response.send_message(
+                embed=SuccessMoveEmbed(
+                    "Покупка одобрена",
+                    f"Покупка товара **{view.item_name}** для клана "
+                    f"**{view.clan_name}** была успешно одобрена.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        try:
+            await asyncio.gather(
+                message.edit(view=view.make_component(disable_all=True)),
+                thread.edit(archived=True, locked=True),
+            )
+        except Exception as e:
+            logger.error(
+                "[clans] Error occurred while editing message and thread: %s",
+                e,
+            )
+            return
+
+        bot.dispatch(
+            "clan_shop_purchase",
+            dto=ClanShopPurchaseNotifyDTO(
+                guild_id=guild.id,
+                user_id=cast(int, view.user_id),
+                moderator_id=interaction.user.id,
+                state=ShopOrderStateEnum.APPROVED,
+                clan_name=cast(str, view.clan_name),
+                clan_role_id=cast(int, view.clan_role_id),
+                item_name=cast(str, view.item_name),
+                item_price=cast(float, view.item_price),
+                clan_balance_before=cast(float, view.clan_balance_before),
+                custom_id=cast(str, view.custom_id),
+            ),
+        )
+
+    @button(
+        label="Отклонить",
+        style=ButtonStyle.danger,
+        emoji="<:9349_nope:1414732960841859182>",
+        custom_id="clan_shop:decline",
+    )
+    async def decline(
+        self,
+        interaction: Interaction,
+        button: Button["ClanShopViewV2"],
+    ):
+        """Decline shop request button."""
+
+        view = cast("ClanShopViewV2", self.view)
+        guild = cast(Guild, interaction.guild)
+        bot = view.bot
+
+        message = cast(Message, interaction.message)
+        thread = cast(Thread, interaction.channel)
+
+        view.parse_main_component_data(components=message.components)
+
+        outcome = ""
+
+        async with bot.uow.start() as session:
+            shop_order = await get_shop_order_state(
+                session=session,
+                guild_id=guild.id,
+                custom_id=view.custom_id,  # type: ignore
+            )
+            if not shop_order:
+                outcome = "order_not_found"
+
+            if not outcome:
+                if shop_order.state != ShopOrderStateEnum.PENDING:  # type: ignore
+                    outcome = "invalid_state"
+                else:
+                    shop_order.state = ShopOrderStateEnum.DENIED  # type: ignore
+                    outcome = "success"
+
+        if outcome == "order_not_found":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка отклонения покупки",
+                    "Заказ не найден в базе данных.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        elif outcome == "invalid_state":
+            await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка отклонения покупки",
+                    "Заказ уже был обработан ранее.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+        elif outcome == "success":
+            await interaction.response.send_message(
+                embed=SuccessMoveEmbed(
+                    "Покупка отклонена",
+                    f"Покупка товара **{view.item_name}** для клана "
+                    f"**{view.clan_name}** была отклонена.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
+            try:
+                await asyncio.gather(
+                    message.edit(view=view.make_component(disable_all=True)),
+                    thread.edit(archived=True, locked=True),
+                )
+            except Exception as e:
+                logger.error(
+                    "[clans] Error occurred while editing message and thread: %s",  # noqa: E501
+                    e,
+                )
+                return
+
+            bot.dispatch(
+                "clan_shop_purchase",
+                dto=ClanShopPurchaseNotifyDTO(
+                    guild_id=guild.id,
+                    user_id=cast(int, view.user_id),
+                    moderator_id=interaction.user.id,
+                    state=ShopOrderStateEnum.DENIED,
+                    clan_name=cast(str, view.clan_name),
+                    clan_role_id=cast(int, view.clan_role_id),
+                    item_name=cast(str, view.item_name),
+                    item_price=cast(float, view.item_price),
+                    clan_balance_before=cast(float, view.clan_balance_before),
+                    custom_id=cast(str, view.custom_id),
+                ),
+            )
+
+
+class ClanShopViewV2(LayoutView):
+    """Clan shop view v2."""
+
+    def __init__(
+        self,
+        bot: "Nightcore",
+        leadership_roles_ids: list[int] | None = None,
+        user_id: int | None = None,
+        clan_name: str | None = None,
+        clan_role_id: int | None = None,
+        clan_balance_before: float | None = None,
+        item_name: str | None = None,
+        item_price: float | None = None,
+        custom_id: str | None = None,
+        _build: bool = False,
+    ) -> None:
+        super().__init__(timeout=None)
+
+        self.bot = bot
+        self.leadership_roles_ids = leadership_roles_ids or []
+        self.user_id = user_id
+        self.clan_name = clan_name
+        self.clan_role_id = clan_role_id
+        self.clan_balance_before = clan_balance_before
+        self.item_name = item_name
+        self.item_price = item_price
+        self.custom_id = custom_id
+
+        self.actions = ClanShopActionRow()
+
+        if _build:
+            self.make_component()
+
+    def _disable_buttons(self):
+        if self.actions:
+            for item in self.actions.children:
+                if isinstance(item, Button):
+                    item.disabled = True
+
+    def parse_main_component_data(
+        self, components: list[MessageComponentType]
+    ) -> None:
+        """Parse main data from components."""
+
+        roles_pattern = re.compile(r"<@&(\d+)>")
+
+        main_pattern = re.compile(
+            r"> Пользователь:\s*<@(\d+)>\s*\(`(\d+)`\)\s*\n"
+            r"> Клан:\s*\*\*(.+?)\*\*\s*\(<@&(\d+)>\)\s*\n"
+            r"> Баланс клана:\s*\*\*(\d+(?:\.\d+)?)\*\*\s*\n"
+            r"> Товар:\s*\*\*(.+?)\*\*\s*\n"
+            r"> Цена:\s*\*\*(\d+(?:\.\d+)?)\*\*\s*\n"
+            r"> Идентификатор покупки:\s*\*\*([0-9a-fA-F\-]+)\*\*"
+        )
+
+        for component in components:
+            if isinstance(component, ContainerOverride):
+                for item in component.children:
+                    if item.id == 2:  # type: ignore
+                        logger.info(
+                            "Parsing leadership roles IDs: %s",
+                            item.content,  # type: ignore
+                        )
+                        content = item.content  # type: ignore
+                        self.leadership_roles_ids = [
+                            int(rid)
+                            for rid in roles_pattern.findall(content)  # type: ignore
+                        ]
+                    if item.id == 7:  # type: ignore
+                        content = item.content  # type: ignore
+
+                        try:
+                            match = main_pattern.search(str(content))  # type: ignore
+                            logger.info("Parsed shop view data: %s", match)
+
+                            if not match:
+                                logger.error("Content to parse: %r", content)  # type: ignore
+                                raise ValueError(
+                                    "Failed to parse main component data."
+                                )
+                        except Exception as e:
+                            raise e
+
+                        self.user_id = int(match.group(1))
+                        self.clan_name = match.group(3)
+                        self.clan_role_id = int(match.group(4))
+                        self.clan_balance_before = float(match.group(5))
+                        self.item_name = match.group(6)
+                        self.item_price = float(match.group(7))
+                        self.custom_id = match.group(8)
+
+        return None
+
+    def make_component(self, disable_all: bool = False) -> Self:
+        """Create the clan shop view component."""
+
+        self.clear_items()
+
+        container = Container[Self]()  # 1
+        container.add_item(  # 2
+            TextDisplay[Self](
+                f"{','.join(f'<@&{rid}>' for rid in self.leadership_roles_ids)}"  # noqa: E501
+            )
+        )
+        container.add_item(Separator[Self]())  # 3
+        container.add_item(  # 4
+            TextDisplay[Self](
+                "## <:9183shoppingcart:1431625159235731516> Запрос на покупку товара"  # noqa: E501
+            )
+        )
+        container.add_item(Separator[Self]())  # 5
+
+        # 6
+        container.add_item(TextDisplay[Self]("### Информация о покупке:"))  # noqa: RUF001
+        # 7
+        container.add_item(
+            TextDisplay[Self](
+                f"> Пользователь: <@{self.user_id}> (`{self.user_id}`)\n"
+                f"> Клан: **{self.clan_name}** (<@&{self.clan_role_id}>)\n"
+                f"> Баланс клана: **{self.clan_balance_before}**\n"
+                f"> Товар: **{self.item_name}**\n"
+                f"> Цена: **{self.item_price}**\n"
+                f"> Идентификатор покупки: **{self.custom_id}**"
+            )
+        )
+        # 8
+        container.add_item(Separator[Self]())
+
+        # 9 (10, 11)
+        container.add_item(self.actions)
+        # 12
+        container.add_item(Separator[Self]())
+
+        # 13
+        container.add_item(
+            TextDisplay[Self](
+                "Товар будет выдан после проверки модерацией вашего запроса."
+            )
+        )
+        # 14
+        container.add_item(Separator[Self]())
+
+        # 15
+        now = datetime.now(timezone.utc)
+        container.add_item(
+            TextDisplay[Self](
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+            )
+        )
+
+        if disable_all:
+            self._disable_buttons()
+
+        self.add_item(container)
+
+        return self
+
+
+class ShopNotifyViewV2(LayoutView):
+    """Shop notify view v2."""
+
+    def __init__(
+        self,
+        bot: "Nightcore",
+        state: ShopOrderStateEnum,
+        moderator_id: int,
+        clan_name: str,
+        clan_role_id: int,
+        clan_balance_before: float,
+        item_name: str,
+        item_price: float,
+        custom_id: str,
+    ) -> None:
+        super().__init__(timeout=None)
+        self.bot = bot
+
+        container = Container[Self]()
+
+        container.add_item(
+            TextDisplay[Self](
+                "## <:9183shoppingcart:1431625159235731516> Уведомление о покупке товара"  # noqa: E501, RUF001
+            )
+        )
+        container.add_item(Separator[Self]())
+
+        description = ""
+        if state == ShopOrderStateEnum.APPROVED:
+            description = (
+                f"<@{moderator_id}> одобрил(а) вашу покупку в магазине."  # noqa: RUF001
+            )
+        elif state == ShopOrderStateEnum.DENIED:
+            description = (
+                f"<@{moderator_id}> отклонил(а) вашу покупку в магазине."  # noqa: RUF001
+            )
+
+        container.add_item(TextDisplay[Self](f"{description}"))
+        container.add_item(Separator[Self]())
+
+        container.add_item(TextDisplay[Self]("### Информация о покупке:"))  # noqa: RUF001
+
+        container.add_item(
+            TextDisplay[Self](
+                f"> Клан: **{clan_name}** (<@&{clan_role_id}>)\n"
+                f"> Баланс клана: **{clan_balance_before}**\n"
+                f"> Товар: **{item_name}**\n"
+                f"> Цена: **{item_price}**\n"
+                f"> Идентификатор покупки: **{custom_id}**"
+            )
+        )
+        container.add_item(Separator[Self]())
+
+        now = datetime.now(timezone.utc)
+        container.add_item(
+            TextDisplay[Self](
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+            )
+        )
+
+        self.add_item(container)

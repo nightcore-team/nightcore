@@ -29,6 +29,7 @@ from src.infra.db.models import (
     PrivateRoomState,
     Punish,
     RoleRequestState,
+    ShopOrderState,
     TempPunish,
     TicketState,
     User,
@@ -124,6 +125,22 @@ async def get_all_pending_notifications(
     )
     result = await session.scalars(stmt)
     return result.all()
+
+
+async def get_shop_order_state(
+    session: AsyncSession, *, guild_id: int, custom_id: str
+) -> ShopOrderState | None:
+    """Get the shop order state from the database."""
+    stmt = (
+        select(ShopOrderState)
+        .where(
+            ShopOrderState.guild_id == guild_id,
+            ShopOrderState.custom_id == custom_id,
+        )
+        .with_for_update()
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def get_head_moderation_access_roles(

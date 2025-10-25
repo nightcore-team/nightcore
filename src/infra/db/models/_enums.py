@@ -66,3 +66,9 @@ class ClanMemberRoleEnum(Enum):
     LEADER = "leader"
     DEPUTY = "deputy"
     MEMBER = "member"
+
+
+class ShopOrderStateEnum(Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"

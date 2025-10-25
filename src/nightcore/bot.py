@@ -7,7 +7,6 @@ from collections.abc import Awaitable
 from datetime import datetime, timezone
 
 import discord
-from aiohttp import TCPConnector
 from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
@@ -15,6 +14,7 @@ from src.config.config import config
 from src.infra.api.forum.client import ForumAPIClient
 from src.infra.api.httpx_client import HttpxAPIClient
 from src.infra.db.uow import UnitOfWork
+from src.nightcore.features.clans.components.v2 import ClanShopViewV2
 from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
 )
@@ -113,12 +113,20 @@ class Nightcore(Bot):
 
     async def init_views(self) -> None:
         """Initialize persistent views."""
-        self.add_view(CreateTicketViewV2(self))
-        self.add_view(ManageTicketViewV2(self))
-        self.add_view(CheckRoleRequestView(self))
-        self.add_view(SendRoleRequestView(self))
-        self.add_view(NotifyViewV2(self, _build=True))
-        self.add_view(ProposalViewV2(self, _build=True))
+
+        views: list[discord.ui.LayoutView] = [
+            CreateTicketViewV2(self),
+            ClanShopViewV2(self, _build=True),
+            ManageTicketViewV2(self),
+            CheckRoleRequestView(self),
+            SendRoleRequestView(self),
+            NotifyViewV2(self, _build=True),
+            ProposalViewV2(self, _build=True),
+        ]
+
+        for view in views:
+            logger.info("Loading persistent view: %s", view.__class__.__name__)
+            self.add_view(view)
 
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""

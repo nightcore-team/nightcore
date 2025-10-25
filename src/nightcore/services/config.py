@@ -1,9 +1,12 @@
 """Service for managing guild configurations in the Nightcore application."""
 
+from typing import TYPE_CHECKING
 from contextlib import asynccontextmanager
-
 from src.infra.db.operations import GuildT, get_specified_guild_config
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.exceptions import (
     ConfigMissingButCreatingError,
     ConfigMissingError,
@@ -12,7 +15,7 @@ from src.nightcore.exceptions import (
 
 @asynccontextmanager
 async def specified_guild_config(
-    bot: Nightcore,
+    bot: "Nightcore",
     guild_id: int,
     config_type: type[GuildT],
     _create: bool = True,
