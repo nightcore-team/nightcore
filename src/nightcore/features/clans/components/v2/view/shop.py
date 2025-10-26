@@ -1,6 +1,5 @@
 """Clan shop view."""
 
-import asyncio
 import logging
 import re
 from datetime import datetime, timezone
@@ -143,10 +142,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
         try:
-            await asyncio.gather(
-                message.edit(view=view.make_component(disable_all=True)),
-                thread.edit(archived=True, locked=True),
-            )
+            await message.edit(view=view.make_component(disable_all=True))
+            await thread.edit(archived=True, locked=True)
         except Exception as e:
             logger.error(
                 "[clans] Error occurred while editing message and thread: %s",
@@ -162,10 +159,10 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 moderator_id=interaction.user.id,
                 state=ShopOrderStateEnum.APPROVED,
                 clan_name=cast(str, view.clan_name),
-                clan_role_id=cast(int, view.clan_role_id),
                 item_name=cast(str, view.item_name),
                 item_price=cast(float, view.item_price),
                 clan_balance_before=cast(float, view.clan_balance_before),
+                clan_balance_after=cast(float, view.clan_balance_after),
                 custom_id=cast(str, view.custom_id),
             ),
         )
@@ -242,10 +239,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
             try:
-                await asyncio.gather(
-                    message.edit(view=view.make_component(disable_all=True)),
-                    thread.edit(archived=True, locked=True),
-                )
+                await message.edit(view=view.make_component(disable_all=True))
+                await thread.edit(archived=True, locked=True)
             except Exception as e:
                 logger.error(
                     "[clans] Error occurred while editing message and thread: %s",  # noqa: E501
@@ -261,10 +256,10 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                     moderator_id=interaction.user.id,
                     state=ShopOrderStateEnum.DENIED,
                     clan_name=cast(str, view.clan_name),
-                    clan_role_id=cast(int, view.clan_role_id),
                     item_name=cast(str, view.item_name),
                     item_price=cast(float, view.item_price),
                     clan_balance_before=cast(float, view.clan_balance_before),
+                    clan_balance_after=cast(float, view.clan_balance_after),
                     custom_id=cast(str, view.custom_id),
                 ),
             )
@@ -281,6 +276,7 @@ class ClanShopViewV2(LayoutView):
         clan_name: str | None = None,
         clan_role_id: int | None = None,
         clan_balance_before: float | None = None,
+        clan_balance_after: float | None = None,
         item_name: str | None = None,
         item_price: float | None = None,
         custom_id: str | None = None,
@@ -294,6 +290,7 @@ class ClanShopViewV2(LayoutView):
         self.clan_name = clan_name
         self.clan_role_id = clan_role_id
         self.clan_balance_before = clan_balance_before
+        self.clan_balance_after = clan_balance_after
         self.item_name = item_name
         self.item_price = item_price
         self.custom_id = custom_id
@@ -319,7 +316,8 @@ class ClanShopViewV2(LayoutView):
         main_pattern = re.compile(
             r"> Пользователь:\s*<@(\d+)>\s*\(`(\d+)`\)\s*\n"
             r"> Клан:\s*\*\*(.+?)\*\*\s*\(<@&(\d+)>\)\s*\n"
-            r"> Баланс клана:\s*\*\*(\d+(?:\.\d+)?)\*\*\s*\n"
+            r"> Баланс клана \(до\):\s*\*\*(\d+(?:\.\d+)?)\*\*\s*\n"
+            r"> Баланс клана \(после\):\s*\*\*(\d+(?:\.\d+)?)\*\*\s*\n"
             r"> Товар:\s*\*\*(.+?)\*\*\s*\n"
             r"> Цена:\s*\*\*(\d+(?:\.\d+)?)\*\*\s*\n"
             r"> Идентификатор покупки:\s*\*\*([0-9a-fA-F\-]+)\*\*"
@@ -357,9 +355,10 @@ class ClanShopViewV2(LayoutView):
                         self.clan_name = match.group(3)
                         self.clan_role_id = int(match.group(4))
                         self.clan_balance_before = float(match.group(5))
-                        self.item_name = match.group(6)
-                        self.item_price = float(match.group(7))
-                        self.custom_id = match.group(8)
+                        self.clan_balance_after = float(match.group(6))
+                        self.item_name = match.group(7)
+                        self.item_price = float(match.group(8))
+                        self.custom_id = match.group(9)
 
         return None
 
@@ -389,7 +388,8 @@ class ClanShopViewV2(LayoutView):
             TextDisplay[Self](
                 f"> Пользователь: <@{self.user_id}> (`{self.user_id}`)\n"
                 f"> Клан: **{self.clan_name}** (<@&{self.clan_role_id}>)\n"
-                f"> Баланс клана: **{self.clan_balance_before}**\n"
+                f"> Баланс клана (до): **{self.clan_balance_before}**\n"
+                f"> Баланс клана (после): **{self.clan_balance_after}**\n"
                 f"> Товар: **{self.item_name}**\n"
                 f"> Цена: **{self.item_price}**\n"
                 f"> Идентификатор покупки: **{self.custom_id}**"
@@ -437,8 +437,8 @@ class ShopNotifyViewV2(LayoutView):
         state: ShopOrderStateEnum,
         moderator_id: int,
         clan_name: str,
-        clan_role_id: int,
         clan_balance_before: float,
+        clan_balance_after: float,
         item_name: str,
         item_price: float,
         custom_id: str,
@@ -472,8 +472,9 @@ class ShopNotifyViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"> Клан: **{clan_name}** (<@&{clan_role_id}>)\n"
-                f"> Баланс клана: **{clan_balance_before}**\n"
+                f"> Клан: **{clan_name}**\n"
+                f"> Баланс клана (до): **{clan_balance_before}**\n"
+                f"> Баланс клана (после): **{clan_balance_after}**\n"
                 f"> Товар: **{item_name}**\n"
                 f"> Цена: **{item_price}**\n"
                 f"> Идентификатор покупки: **{custom_id}**"

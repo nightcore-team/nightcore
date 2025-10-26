@@ -49,6 +49,8 @@ async def shop(
     iname = name
     icost = float(cost)
 
+    clan: Clan | None = None
+
     outcome = ""
 
     async with specified_guild_config(
@@ -103,9 +105,8 @@ async def shop(
         )
 
     if outcome == "success":
-        # try to get clan shop channel for creating thread
-        # create view for clan shop purchase
-        # send to channel
+        assert clan is not None
+
         clan_shop_channel_id = guild_config.clan_shop_channel_id
         if not clan_shop_channel_id:
             return await interaction.response.send_message(
@@ -175,9 +176,10 @@ async def shop(
             bot,
             leadership_roles_ids=leadership_access_roles_ids,
             user_id=interaction.user.id,
-            clan_name=clan.name,  # type: ignore
-            clan_role_id=clan.role_id,  # type: ignore
-            clan_balance_before=clan.coins,  # type: ignore
+            clan_name=clan.name,
+            clan_role_id=clan.role_id,
+            clan_balance_before=clan.coins,
+            clan_balance_after=clan.coins - icost,
             item_name=iname,
             item_price=icost,
         )

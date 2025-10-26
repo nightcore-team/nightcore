@@ -11,8 +11,8 @@ class ClanShopPurchaseNotifyDTO:
     user_id: int
     moderator_id: int
     clan_name: str
-    clan_role_id: int
     clan_balance_before: float
+    clan_balance_after: float
     item_name: str
     item_price: float
     custom_id: str

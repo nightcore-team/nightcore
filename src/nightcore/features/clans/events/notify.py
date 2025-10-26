@@ -49,10 +49,10 @@ class ClanShopNotifyEvent(Cog):
                 moderator_id=dto.moderator_id,
                 state=dto.state,
                 clan_name=dto.clan_name,
-                clan_role_id=dto.clan_role_id,
                 item_name=dto.item_name,
                 item_price=dto.item_price,
                 clan_balance_before=dto.clan_balance_before,
+                clan_balance_after=dto.clan_balance_after,
                 custom_id=dto.custom_id,
             )
 
