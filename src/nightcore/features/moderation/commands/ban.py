@@ -24,11 +24,11 @@ from src.nightcore.features.moderation.components.modal import BanFormModal
 from src.nightcore.features.moderation.events import UserBannedEventData
 from src.nightcore.features.moderation.utils import (
     calculate_end_time,
-    compare_top_roles,
     parse_duration,
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
+    compare_top_roles,
     ensure_member_exists,
     has_any_role_from_sequence,
 )

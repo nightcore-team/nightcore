@@ -57,7 +57,7 @@ def summarize_tree(tree: app_commands.CommandTree) -> dict[str, str | Any]:
 
     for top in top_cmds:
         if isinstance(top, app_commands.Group):
-            entries: list[dict] = []
+            entries: list[dict[str, Any]] = []
             leaf_count = 0
             for qname, obj in walk_group(top, prefix=f"{top.name} "):  # type: ignore
                 if isinstance(obj, app_commands.Group):
@@ -94,12 +94,13 @@ def summarize_tree(tree: app_commands.CommandTree) -> dict[str, str | Any]:
                 }
             )
         else:
-            cast(list, result["top_level"]).append(
+            cast(list[str], result["top_level"]).append(
                 {"name": top.name, "type": "leaf", "qualified": top.name}  # type: ignore
             )
             overall_leaf += 1
 
     result["leaf_overall"] = overall_leaf
+
     return result
 
 

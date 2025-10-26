@@ -22,11 +22,11 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UserMutedEventData
 from src.nightcore.features.moderation.utils import (
     calculate_end_time,
-    compare_top_roles,
     parse_duration,
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
+    compare_top_roles,
     ensure_member_exists,
     ensure_role_exists,
     has_any_role,

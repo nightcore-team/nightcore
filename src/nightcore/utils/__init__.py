@@ -1,5 +1,6 @@
 from .object import (
     channel_type,
+    compare_top_roles,
     ensure_channel_is_messageable,
     ensure_guild_exists,
     ensure_member_exists,
@@ -17,6 +18,7 @@ from .time_utils import discord_ts
 
 __all__ = (
     "channel_type",
+    "compare_top_roles",
     "discord_ts",
     "ensure_channel_is_messageable",
     "ensure_guild_exists",

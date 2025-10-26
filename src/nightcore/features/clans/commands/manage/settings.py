@@ -26,6 +26,7 @@ from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
     has_any_role_from_sequence,
+    compare_top_roles,
 )
 
 if TYPE_CHECKING:
@@ -124,16 +125,22 @@ async def settings(
 
                 # change clan role
                 if outcome is None and new_role:
-                    try:
-                        clan_entity.role_id = new_role.id
-                        changed_role_to = new_role.id
-                    except Exception as e:
-                        logger.error(
-                            "[clans] Error changing clan role in guild %s: %s",
-                            guild.id,
-                            e,
-                        )
-                        outcome = "role_change_internal_error"
+                    if not compare_top_roles(guild, new_role):
+                        outcome = "role_high_than_bot"
+                    else:
+                        if new_role.permissions.administrator:
+                            outcome = "role_has_administrator_permissions"
+                        else:
+                            try:
+                                clan_entity.role_id = new_role.id
+                                changed_role_to = new_role.id
+                            except Exception as e:
+                                logger.error(
+                                    "[clans] Error changing clan role in guild %s: %s",  # noqa: E501
+                                    guild.id,
+                                    e,
+                                )
+                                outcome = "role_change_internal_error"
 
     if outcome == "config_missing":
         raise FieldNotConfiguredError("clans access")
@@ -173,6 +180,28 @@ async def settings(
             embed=ErrorEmbed(
                 "Ошибка назначения лидера",
                 f"{new_leader.mention} уже является лидером клана.",  # type: ignore[union-attr]
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "role_has_administrator_permissions":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения роли клана",
+                "Роль клана не может иметь права администратора.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "role_high_than_bot":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения роли клана",
+                "Роль клана должна быть ниже верхней роли бота.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

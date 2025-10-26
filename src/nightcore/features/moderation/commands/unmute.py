@@ -20,11 +20,9 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UserUnmutedEventData
-from src.nightcore.features.moderation.utils import (
-    compare_top_roles,
-)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
+    compare_top_roles,
     ensure_member_exists,
     ensure_role_exists,
     has_any_role,
