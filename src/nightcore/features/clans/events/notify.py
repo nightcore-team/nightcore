@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING
 from discord.ext.commands import Cog  # type: ignore
 
 from src.nightcore.features.clans.components.v2 import ShopNotifyViewV2
-from src.nightcore.utils import ensure_guild_exists, ensure_member_exists
+from src.nightcore.utils import (
+    ensure_guild_exists,
+    ensure_member_exists,
+    ensure_messageable_channel_exists,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -43,19 +47,19 @@ class ClanShopNotifyEvent(Cog):
             )
             return
 
-        try:
-            view = ShopNotifyViewV2(
-                bot=self.bot,
-                moderator_id=dto.moderator_id,
-                state=dto.state,
-                clan_name=dto.clan_name,
-                item_name=dto.item_name,
-                item_price=dto.item_price,
-                clan_balance_before=dto.clan_balance_before,
-                clan_balance_after=dto.clan_balance_after,
-                custom_id=dto.custom_id,
-            )
+        view = ShopNotifyViewV2(
+            bot=self.bot,
+            moderator_id=dto.moderator_id,
+            state=dto.state,
+            clan_name=dto.clan_name,
+            item_name=dto.item_name,
+            item_price=dto.item_price,
+            clan_balance_before=dto.clan_balance_before,
+            clan_balance_after=dto.clan_balance_after,
+            custom_id=dto.custom_id,
+        )
 
+        try:
             await member.send(
                 view=view,
             )
@@ -66,7 +70,37 @@ class ClanShopNotifyEvent(Cog):
                 dto.guild_id,
                 e,
             )
-            return
+
+            if not dto.notifications_channel_id:
+                logger.error(
+                    "[clans/shop/notify] No notifications channel configured for guild %s.",  # noqa: E501
+                    dto.guild_id,
+                )
+                return
+            else:
+                channel = await ensure_messageable_channel_exists(
+                    guild, dto.notifications_channel_id
+                )
+                if not channel:
+                    logger.error(
+                        "[clans/shop/notify] Notifications channel %s not found in guild %s.",  # noqa: E501
+                        dto.notifications_channel_id,
+                        dto.guild_id,
+                    )
+                    return
+
+                try:
+                    await channel.send(  # type: ignore
+                        view=view,
+                    )
+                except Exception as e:
+                    logger.error(
+                        "[clans/shop/notify] Error sending notification to channel %s in guild %s: %s",  # noqa: E501
+                        dto.notifications_channel_id,
+                        dto.guild_id,
+                        e,
+                    )
+                    return
 
 
 async def setup(bot: "Nightcore") -> None:

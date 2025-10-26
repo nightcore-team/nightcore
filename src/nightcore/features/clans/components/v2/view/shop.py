@@ -18,8 +18,13 @@ from discord.ui import (
     button,
 )
 
-from src.infra.db.models._enums import ShopOrderStateEnum
-from src.infra.db.operations import get_clan_by_name, get_shop_order_state
+from src.infra.db.models import GuildNotificationsConfig
+from src.infra.db.models._enums import ChannelType, ShopOrderStateEnum
+from src.infra.db.operations import (
+    get_clan_by_name,
+    get_shop_order_state,
+    get_specified_channel,
+)
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.clans.events.dto.notify import (
     ClanShopPurchaseNotifyDTO,
@@ -60,12 +65,22 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
 
         outcome = ""
 
+        await interaction.response.defer()
+
         async with bot.uow.start() as session:
             shop_order = await get_shop_order_state(
                 session=session,
                 guild_id=guild.id,
                 custom_id=view.custom_id,  # type: ignore
             )
+
+            nightcore_notifications_channel_id = await get_specified_channel(
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildNotificationsConfig,
+                channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
+            )
+
             if not shop_order:
                 outcome = "order_not_found"
 
@@ -91,7 +106,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                             await session.delete(shop_order)
 
         if outcome == "order_not_found":
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка одобрения покупки",
                     "Заказ не найден в базе данных.",
@@ -101,7 +116,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
         elif outcome == "invalid_state":
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка одобрения покупки",
                     "Заказ уже был обработан ранее.",
@@ -111,7 +126,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
         elif outcome == "clan_not_found":
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка одобрения покупки",
                     "Клан не найден в базе данных.",
@@ -121,7 +136,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
         elif outcome == "insufficient_funds":
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка одобрения покупки",
                     "Недостаточно средств на балансе клана.",
@@ -131,7 +146,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
         elif outcome == "success":
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=SuccessMoveEmbed(
                     "Покупка одобрена",
                     f"Покупка товара **{view.item_name}** для клана "
@@ -164,6 +179,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 clan_balance_before=cast(float, view.clan_balance_before),
                 clan_balance_after=cast(float, view.clan_balance_after),
                 custom_id=cast(str, view.custom_id),
+                notifications_channel_id=nightcore_notifications_channel_id,
             ),
         )
 
@@ -191,12 +207,22 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
 
         outcome = ""
 
+        await interaction.response.defer()
+
         async with bot.uow.start() as session:
             shop_order = await get_shop_order_state(
                 session=session,
                 guild_id=guild.id,
                 custom_id=view.custom_id,  # type: ignore
             )
+
+            nightcore_notifications_channel_id = await get_specified_channel(
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildNotificationsConfig,
+                channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
+            )
+
             if not shop_order:
                 outcome = "order_not_found"
 
@@ -208,7 +234,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                     outcome = "success"
 
         if outcome == "order_not_found":
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка отклонения покупки",
                     "Заказ не найден в базе данных.",
@@ -218,7 +244,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
         elif outcome == "invalid_state":
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка отклонения покупки",
                     "Заказ уже был обработан ранее.",
@@ -228,7 +254,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             )
 
         elif outcome == "success":
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=SuccessMoveEmbed(
                     "Покупка отклонена",
                     f"Покупка товара **{view.item_name}** для клана "
@@ -261,6 +287,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                     clan_balance_before=cast(float, view.clan_balance_before),
                     clan_balance_after=cast(float, view.clan_balance_after),
                     custom_id=cast(str, view.custom_id),
+                    notifications_channel_id=nightcore_notifications_channel_id,
                 ),
             )
 

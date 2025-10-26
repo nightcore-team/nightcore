@@ -17,3 +17,4 @@ class ClanShopPurchaseNotifyDTO:
     item_price: float
     custom_id: str
     state: ShopOrderStateEnum
+    notifications_channel_id: int | None
