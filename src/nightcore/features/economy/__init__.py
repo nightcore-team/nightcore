@@ -5,9 +5,9 @@ from src.nightcore.bot import Nightcore
 from ._groups import give as give_group
 
 # SIDE-EFFECT IMPORTS
-from .commands.give import clanrep
+from .commands.give import clanrep, coins
 
-__all__ = ("clanrep",)
+__all__ = ("clanrep", "coins")
 
 
 async def setup(bot: Nightcore):

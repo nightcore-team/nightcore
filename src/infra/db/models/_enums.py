@@ -10,6 +10,7 @@ class ChannelType(Enum):
     NIGHTCORE_NOTIFICATIONS = "notifications_from_bot_channel_id"
     MODERATION_NOTIFICATIONS = "notifications_for_moderation_channel_id"
 
+    LOGGING_ECONOMY = "economy_log_channel_id"
     LOGGING_BANS = "bans_log_channel_id"
     LOGGING_CLANS = "clans_log_channel_id"
     LOGGING_MEMBERS = "members_log_channel_id"

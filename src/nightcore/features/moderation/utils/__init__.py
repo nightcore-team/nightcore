@@ -10,7 +10,7 @@ from .punishments import (
     build_moderators_stats,
     build_moderstats_pages,
 )
-from .role_utils import compare_top_roles, fraction_roles_autocomplete
+from .role_utils import fraction_roles_autocomplete
 from .time_utils import (
     calculate_end_time,
     compare_date_range,
@@ -24,7 +24,6 @@ __all__ = (
     "build_moderstats_pages",
     "calculate_end_time",
     "compare_date_range",
-    "compare_top_roles",
     "find_rule_by_index",
     "fraction_roles_autocomplete",
     "parse_date_utc",

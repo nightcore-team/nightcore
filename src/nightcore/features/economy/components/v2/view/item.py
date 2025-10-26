@@ -1,5 +1,3 @@
-"""Balance View V2 component."""
-
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 
@@ -11,32 +9,32 @@ if TYPE_CHECKING:
 from src.nightcore.utils import discord_ts
 
 
-class BalanceViewV2(LayoutView):
+class AwardNotificationViewV2(LayoutView):
     def __init__(
-        self,
-        bot: "Nightcore",
-        user_id: int,
-        coin_name: str | None,
-        balance: float,
+        self, bot: "Nightcore", user_id: int, item_name: str, amount: int
     ):
-        super().__init__(timeout=60)
+        super().__init__(timeout=30)
 
         container = Container[Self]()
 
         container.add_item(
             TextDisplay[Self](
-                "## <:10845currency:1432050187492130836> Информация о балансе"  # noqa: RUF001
+                "## <:73173rocket:1432056646456049736> Уведомление о выдаче предмета"  # noqa: E501, RUF001
             )
         )
         container.add_item(Separator[Self]())
 
-        description = (
-            f"> **Пользователь:** <@{user_id}>\n> **Баланс:** {balance}"
+        container.add_item(
+            TextDisplay[Self](f"<@{user_id}> вам выдал(а) предмет.")  # noqa: RUF001
         )
-        if coin_name:
-            description += f" {coin_name}"
+        container.add_item(Separator[Self]())
 
-        container.add_item(TextDisplay[Self](description))
+        container.add_item(TextDisplay[Self]("### Информация о предмете: "))  # noqa: RUF001
+        container.add_item(
+            TextDisplay[Self](
+                f"> Название: **{item_name}**\n> Количество: **{amount}**"
+            )
+        )
         container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)

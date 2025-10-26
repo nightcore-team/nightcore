@@ -13,8 +13,6 @@ from chat_exporter import (  # type: ignore
 from discord.ext.commands import Cog  # type: ignore
 
 from src.nightcore.bot import Nightcore
-
-# TODO: вынести в глобальные утилиты (сед модер лог).
 from src.nightcore.features.moderation.utils import send_moderation_log
 from src.nightcore.features.tickets.events.dto import TicketEventData
 from src.nightcore.utils import ensure_messageable_channel_exists

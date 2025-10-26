@@ -54,6 +54,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.clans.events.notify",
         # === economy
         "src.nightcore.features.economy",
+        "src.nightcore.features.economy.commands.balance",
+        "src.nightcore.features.economy.events.award_notify",
         # === tickets
         "src.nightcore.features.tickets.commands.ticketmessage",
         "src.nightcore.features.tickets.events.ticket",
@@ -93,7 +95,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # "src.nightcore.tasks.delete_role_request",
         # "src.nightcore.tasks.expired_notify",
         # "src.nightcore.tasks.check_forum",
-        "src.nightcore.tasks.clan_reputation",
+        # "src.nightcore.tasks.clan_reputation",
     ]
 
     return Nightcore(

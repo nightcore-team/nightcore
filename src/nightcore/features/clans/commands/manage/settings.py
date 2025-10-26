@@ -25,8 +25,8 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
-    has_any_role_from_sequence,
     compare_top_roles,
+    has_any_role_from_sequence,
 )
 
 if TYPE_CHECKING:
