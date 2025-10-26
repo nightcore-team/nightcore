@@ -1,5 +1,6 @@
 from .info import ClanInfoViewV2, ClanListViewV2
 from .invite import ClanInviteViewV2
+from .payday import ClansPaydayViewV2
 from .shop import ClanShopViewV2, ShopNotifyViewV2
 
 __all__ = (
@@ -7,5 +8,6 @@ __all__ = (
     "ClanInviteViewV2",
     "ClanListViewV2",
     "ClanShopViewV2",
+    "ClansPaydayViewV2",
     "ShopNotifyViewV2",
 )

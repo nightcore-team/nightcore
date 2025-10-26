@@ -3,6 +3,7 @@ from .view import (
     ClanInviteViewV2,
     ClanListViewV2,
     ClanShopViewV2,
+    ClansPaydayViewV2,
     ShopNotifyViewV2,
 )
 
@@ -11,5 +12,6 @@ __all__ = (
     "ClanInviteViewV2",
     "ClanListViewV2",
     "ClanShopViewV2",
+    "ClansPaydayViewV2",
     "ShopNotifyViewV2",
 )

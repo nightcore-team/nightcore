@@ -247,6 +247,15 @@ async def create_clan(
     return clan
 
 
+async def get_all_clans(
+    session: AsyncSession,
+) -> Sequence[Clan]:
+    """Get all clans from the database."""
+    stmt = select(Clan)
+    result = await session.scalars(stmt)
+    return result.all()
+
+
 async def create_clan_member(
     session: AsyncSession,
     *,
@@ -326,10 +335,16 @@ async def get_clan_member(
 
 
 async def get_clan_by_id(
-    session: AsyncSession, *, guild_id: int, clan_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    clan_id: int | None = None,
 ) -> Clan | None:
     """Get clan by id."""
-    stmt = select(Clan).where(Clan.guild_id == guild_id, Clan.id == clan_id)
+    stmt = select(Clan).where(Clan.guild_id == guild_id)
+    if clan_id:
+        stmt = stmt.where(Clan.id == clan_id)
+
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
