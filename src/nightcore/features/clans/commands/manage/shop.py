@@ -10,7 +10,6 @@ from discord.interactions import Interaction
 from src.infra.db.models import (
     Clan,
     GuildClansConfig,
-    GuildModerationConfig,
     ShopOrderState,
 )
 from src.infra.db.models._enums import ClanMemberRoleEnum, ShopOrderStateEnum
@@ -63,11 +62,11 @@ async def shop(
             user_id=interaction.user.id,
             with_relations=True,
         )
-        leadership_access_roles_ids = await get_specified_field(
+        clan_buy_ping_roles_ids = await get_specified_field(
             session,
             guild_id=guild.id,
-            config_type=GuildModerationConfig,
-            field_name="leadership_access_roles_ids",
+            config_type=GuildClansConfig,
+            field_name="clan_buy_ping_roles_ids",
         )
         if not clan_member or clan_member.role not in [
             ClanMemberRoleEnum.LEADER,
@@ -174,7 +173,7 @@ async def shop(
 
         view = ClanShopViewV2(
             bot,
-            leadership_roles_ids=leadership_access_roles_ids,
+            ping_roles_ids=clan_buy_ping_roles_ids,
             user_id=interaction.user.id,
             clan_name=clan.name,
             clan_role_id=clan.role_id,
@@ -187,6 +186,7 @@ async def shop(
         try:
             async with bot.uow.start() as session:
                 state = ShopOrderState(
+                    custom_id=thread.id,
                     guild_id=guild.id,
                     user_id=interaction.user.id,
                     state=ShopOrderStateEnum.PENDING,
@@ -207,8 +207,13 @@ async def shop(
             )
 
         try:
-            _ = asyncio.create_task(thread.add_user(interaction.user))  # noqa: RUF006
-            message = await thread.send(view=view.make_component())
+            message, _ = await asyncio.gather(
+                thread.send(view=view.make_component()),
+                interaction.followup.send(
+                    f"Ваш запрос на покупку был успешно создан: {thread.jump_url}",  # noqa: E501
+                    ephemeral=True,
+                ),
+            )
         except Exception as e:
             logger.exception(
                 "[clans/shop] Failed to send clan shop message: %s", e
@@ -229,7 +234,4 @@ async def shop(
             message.edit(view=view.make_component())
         )
 
-        return await interaction.followup.send(
-            f"Ваш запрос на покупку был успешно создан: {thread.jump_url}",
-            ephemeral=True,
-        )
+        return

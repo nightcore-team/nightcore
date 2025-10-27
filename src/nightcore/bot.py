@@ -17,6 +17,10 @@ from src.infra.api.forum.client import ForumAPIClient
 from src.infra.api.httpx_client import HttpxAPIClient
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
+from src.nightcore.features.economy.components.v2 import (
+    CoinsShopOrderViewV2,
+    CoinsShopViewV2,
+)
 from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
 )
@@ -124,6 +128,8 @@ class Nightcore(Bot):
         views: list[discord.ui.LayoutView] = [
             CreateTicketViewV2(self),
             ClanShopViewV2(self, _build=True),
+            CoinsShopViewV2(self),
+            CoinsShopOrderViewV2(self, _build=True),
             ManageTicketViewV2(self),
             CheckRoleRequestView(self),
             SendRoleRequestView(self),

@@ -1,6 +1,6 @@
 """Guild model for the Nightcore bot database."""
 
-from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String
+from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._annot import Rules
@@ -107,13 +107,15 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     economy_shop_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
-    economy_shop: Mapped[dict] = mapped_column(
-        JSON, nullable=False, default=dict
+    economy_shop_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
     )
-    economy_products: Mapped[dict[str, float]] = mapped_column(
-        JSON, nullable=False, default=dict
+    economy_shop_items: Mapped[dict[str, float]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
-    colors: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    colors: Mapped[dict[str, str]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
+    )
     drop_from_cases: Mapped[list[str] | None] = mapped_column(
         ARRAY(String), nullable=True
     )

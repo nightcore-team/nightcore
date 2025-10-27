@@ -12,6 +12,7 @@ from src.infra.db.models.guild import GuildEconomyConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import economy as economy_group
+from src.nightcore.features.config.utils import shop_items_dict_value
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
@@ -22,6 +23,7 @@ from src.nightcore.utils.field_validators import (
     split_changes,
     str_value,
     update_id_list,
+    int_id_value,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,7 @@ logger = logging.getLogger(__name__)
     shop_buy_ping_roles="Roles to ping when buying from the shop.",
     economy_access_roles="Roles that have access to economy commands.",
     # cases_drop="Drop from cases.",
-    # shop_items="Items available in the shop.",
+    shop_items="Items available in the shop.",
     reward_bonus="Bonus rewards for /reward.",
     coin_name="Name of the local currency.",
     # colors="...",
@@ -43,7 +45,8 @@ async def setup(
     shop_buy_ping_roles: str | None = None,
     economy_access_roles: str | None = None,
     # cases_drop: str | None = None,
-    # shop_items: str | None = None,
+    economy_shop: discord.TextChannel | None = None,
+    shop_items: str | None = None,
     reward_bonus: float | None = None,
     coin_name: str | None = None,
     # colors: str | None = None,
@@ -53,6 +56,8 @@ async def setup(
     specs: list[FieldSpec | None] = [
         list_csv("economy_shop_buy_ping_roles_ids", shop_buy_ping_roles),
         list_csv("economy_access_roles_ids", economy_access_roles),
+        shop_items_dict_value("economy_shop_items", shop_items),
+        int_id_value("economy_shop_channel_id", economy_shop),
         float_value("reward_bonus", reward_bonus),
         str_value("coin_name", coin_name),
     ]

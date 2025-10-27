@@ -58,7 +58,9 @@ async def give_clanrep(
         if not economy_access_roles_ids:
             raise FieldNotConfiguredError("economy access")
 
-        if not has_any_role_from_sequence(user, economy_access_roles_ids):
+        if not has_any_role_from_sequence(
+            cast(Member, interaction.user), economy_access_roles_ids
+        ):
             outcome = "missing_permissions"
 
         coin_name = guild_config.coin_name
@@ -88,7 +90,8 @@ async def give_clanrep(
                 "Не удалось выдать монеты пользователю.",  # noqa: RUF001
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
-            )
+            ),
+            ephemeral=True,
         )
 
     if outcome == "coin_name_not_configured":
@@ -98,7 +101,8 @@ async def give_clanrep(
                 "Название монеты не настроено на этом сервере.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
-            )
+            ),
+            ephemeral=True,
         )
 
     if outcome == "missing_permissions":
@@ -106,7 +110,8 @@ async def give_clanrep(
             embed=MissingPermissionsEmbed(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
-            )
+            ),
+            ephemeral=True,
         )
 
     if outcome == "success":
@@ -117,7 +122,8 @@ async def give_clanrep(
                 f"**{amount} {coin_name}**.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
-            )
+            ),
+            ephemeral=True,
         )
 
         bot.dispatch(

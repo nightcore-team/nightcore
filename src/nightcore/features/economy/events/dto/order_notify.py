@@ -1,18 +1,17 @@
-"""DTO for notifying about clan shop purchases."""
-
 from dataclasses import dataclass
+
+from discord import Guild
 
 from src.infra.db.models._enums import ShopOrderStateEnum
 
 
 @dataclass
-class ClanShopPurchaseNotifyDTO:
-    guild_id: int
+class CoinsShopOrderNotifyDTO:
+    guild: Guild
     user_id: int
     moderator_id: int
-    clan_name: str
-    clan_balance_before: float
-    clan_balance_after: float
+    user_balance_before: float
+    user_balance_after: float
     item_name: str
     item_price: float
     custom_id: str
