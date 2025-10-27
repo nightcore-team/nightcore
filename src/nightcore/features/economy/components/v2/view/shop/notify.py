@@ -30,7 +30,7 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
         user_balance_after: float,
         item_name: str,
         item_price: float,
-        custom_id: str,
+        custom_id: int,
     ) -> None:
         super().__init__(timeout=None)
         self.bot = bot

@@ -1,7 +1,9 @@
 """Module for clan shop notification events."""
 
+import asyncio
 import logging
-from typing import TYPE_CHECKING
+from collections.abc import Awaitable
+from typing import TYPE_CHECKING, Any
 
 from discord.ext.commands import Cog  # type: ignore
 
@@ -9,10 +11,9 @@ from src.nightcore.features.economy.components.v2 import (
     CoinsShopOrderNotifyViewV2,
 )
 from src.nightcore.utils import (
-    ensure_guild_exists,
     ensure_member_exists,
-    ensure_messageable_channel_exists,
 )
+from src.nightcore.utils.log import send_log_message
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -32,76 +33,43 @@ class CoinsShopNotifyEvent(Cog):
         self, dto: "CoinsShopOrderNotifyDTO"
     ) -> None:
         """Handle coins shop purchase notification event."""
-        guild = await ensure_guild_exists(self.bot, dto.guild.id)
-        if not guild:
-            logger.error(
-                "[clans/shop/notify] Guild %s not found for shop purchase notification.",  # noqa: E501
-                dto.guild.id,
-            )
-            return
 
-        member = await ensure_member_exists(guild, dto.user_id)
+        member = await ensure_member_exists(dto.guild, dto.user_id)
         if not member:
             logger.error(
-                "[clans/shop/notify] Member %s not found in guild %s for shop purchase notification.",  # noqa: E501
+                "[%s/log] Member %s not found in guild %s.",
+                dto.event_type,
                 dto.user_id,
                 dto.guild.id,
             )
-            return
 
-        view = CoinsShopOrderNotifyViewV2(
-            bot=self.bot,
-            moderator_id=dto.moderator_id,
-            state=dto.state,
-            item_name=dto.item_name,
-            item_price=dto.item_price,
-            user_balance_before=dto.user_balance_before,
-            user_balance_after=dto.user_balance_after,
-            custom_id=dto.custom_id,
-        )
+        gather_list: list[Awaitable[Any]] = []
+
+        gather_list.append(send_log_message(bot=self.bot, dto=dto))
+
+        if member:
+            view = CoinsShopOrderNotifyViewV2(
+                bot=self.bot,
+                moderator_id=dto.moderator_id,
+                state=dto.state,
+                item_name=dto.item_name,
+                item_price=dto.item_price,
+                user_balance_before=dto.user_balance_before,
+                user_balance_after=dto.user_balance_after,
+                custom_id=dto.custom_id,
+            )
+            gather_list.append(member.send(view=view))
 
         try:
-            await member.send(
-                view=view,
-            )
+            await asyncio.gather(*gather_list, return_exceptions=True)
         except Exception as e:
-            logger.error(
-                "[clans/shop/notify] Error occurred while processing shop purchase notification for member %s in guild %s: %s",  # noqa: E501
+            logger.exception(
+                "[%s/log] Failed to run gather for user %s in guild %s: %s",
+                dto.event_type,
                 dto.user_id,
                 dto.guild.id,
                 e,
             )
-
-            if not dto.notifications_channel_id:
-                logger.error(
-                    "[clans/shop/notify] No notifications channel configured for guild %s.",  # noqa: E501
-                    dto.guild.id,
-                )
-                return
-            else:
-                channel = await ensure_messageable_channel_exists(
-                    guild, dto.notifications_channel_id
-                )
-                if not channel:
-                    logger.error(
-                        "[clans/shop/notify] Notifications channel %s not found in guild %s.",  # noqa: E501
-                        dto.notifications_channel_id,
-                        dto.guild.id,
-                    )
-                    return
-
-                try:
-                    await channel.send(  # type: ignore
-                        view=view,
-                    )
-                except Exception as e:
-                    logger.error(
-                        "[clans/shop/notify] Error sending notification to channel %s in guild %s: %s",  # noqa: E501
-                        dto.notifications_channel_id,
-                        dto.guild.id,
-                        e,
-                    )
-                    return
 
 
 async def setup(bot: "Nightcore") -> None:

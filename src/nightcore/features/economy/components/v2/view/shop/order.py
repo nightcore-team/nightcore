@@ -17,7 +17,11 @@ from discord.ui import (
     button,
 )
 
-from src.infra.db.models import GuildEconomyConfig, GuildNotificationsConfig
+from src.infra.db.models import (
+    GuildEconomyConfig,
+    GuildLoggingConfig,
+    GuildNotificationsConfig,
+)
 from src.infra.db.models._enums import ChannelType, ShopOrderStateEnum
 from src.infra.db.operations import (
     get_or_create_user,
@@ -28,6 +32,7 @@ from src.infra.db.operations import (
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
+    SuccessDeniedEmbed,
     SuccessMoveEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
@@ -74,6 +79,13 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                 session=session,
                 guild_id=guild.id,
                 custom_id=view.custom_id,  # type: ignore
+            )
+
+            economy_logging_channel_id = await get_specified_channel(
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
             economy_access_roles_ids = await get_specified_field(
@@ -189,6 +201,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
             "coins_shop_order_notify",
             dto=CoinsShopOrderNotifyDTO(
                 guild=guild,
+                event_type="coins_shop_order_notify",
                 user_id=cast(int, view.user_id),
                 moderator_id=interaction.user.id,
                 state=ShopOrderStateEnum.APPROVED,
@@ -196,7 +209,8 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                 item_price=cast(float, view.item_price),
                 user_balance_before=cast(float, view.user_balance_before),
                 user_balance_after=cast(float, view.user_balance_after),
-                custom_id=cast(str, view.custom_id),
+                custom_id=cast(int, view.custom_id),
+                logging_channel_id=economy_logging_channel_id,
                 notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
             ),
         )
@@ -232,6 +246,13 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                 session=session,
                 guild_id=guild.id,
                 custom_id=view.custom_id,  # type: ignore
+            )
+
+            economy_logging_channel_id = await get_specified_channel(
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
             economy_access_roles_ids = await get_specified_field(
@@ -299,7 +320,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
 
         elif outcome == "success":
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                embed=SuccessDeniedEmbed(
                     "Покупка одобрена",
                     f"Покупка товара **{view.item_name}** была отклонена.",
                     bot.user.display_name,  # type: ignore
@@ -321,6 +342,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                 "coins_shop_order_notify",
                 dto=CoinsShopOrderNotifyDTO(
                     guild=guild,
+                    event_type="coins_shop_order_notify",
                     user_id=cast(int, view.user_id),
                     moderator_id=interaction.user.id,
                     state=ShopOrderStateEnum.DENIED,
@@ -328,7 +350,8 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                     item_name=cast(str, view.item_name),
                     item_price=cast(float, view.item_price),
                     user_balance_after=cast(float, view.user_balance_after),
-                    custom_id=cast(str, view.custom_id),
+                    custom_id=cast(int, view.custom_id),
+                    logging_channel_id=economy_logging_channel_id,
                     notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
                 ),
             )
@@ -346,7 +369,7 @@ class CoinsShopOrderViewV2(LayoutView):
         user_balance_after: float | None = None,
         item_name: str | None = None,
         item_price: float | None = None,
-        custom_id: str | None = None,
+        custom_id: int | None = None,
         _build: bool = False,
     ) -> None:
         super().__init__(timeout=None)

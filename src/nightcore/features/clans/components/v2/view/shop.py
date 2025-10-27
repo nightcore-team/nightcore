@@ -18,7 +18,11 @@ from discord.ui import (
     button,
 )
 
-from src.infra.db.models import GuildClansConfig, GuildNotificationsConfig
+from src.infra.db.models import (
+    GuildClansConfig,
+    GuildLoggingConfig,
+    GuildNotificationsConfig,
+)
 from src.infra.db.models._enums import ChannelType, ShopOrderStateEnum
 from src.infra.db.operations import (
     get_clan_by_name,
@@ -29,6 +33,7 @@ from src.infra.db.operations import (
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
+    SuccessDeniedEmbed,
     SuccessMoveEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
@@ -78,6 +83,13 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 session=session,
                 guild_id=guild.id,
                 custom_id=view.custom_id,  # type: ignore
+            )
+
+            clans_logging_channel_id = await get_specified_channel(
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_CLANS,
             )
 
             clans_access_roles_ids = await get_specified_field(
@@ -199,9 +211,10 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             return
 
         bot.dispatch(
-            "clan_shop_purchase",
+            "clan_shop_order_notify",
             dto=ClanShopOrderNotifyDTO(
-                guild_id=guild.id,
+                guild=guild,
+                event_type="clan_shop_order_notify",
                 user_id=cast(int, view.user_id),
                 moderator_id=interaction.user.id,
                 state=ShopOrderStateEnum.APPROVED,
@@ -211,6 +224,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 clan_balance_before=cast(float, view.clan_balance_before),
                 clan_balance_after=cast(float, view.clan_balance_after),
                 custom_id=cast(int, view.custom_id),
+                logging_channel_id=clans_logging_channel_id,
                 notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
             ),
         )
@@ -246,6 +260,13 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 session=session,
                 guild_id=guild.id,
                 custom_id=view.custom_id,  # type: ignore
+            )
+
+            clans_loggings_channel_id = await get_specified_channel(
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_CLANS,
             )
 
             clans_access_roles_ids = await get_specified_field(
@@ -313,7 +334,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
 
         elif outcome == "success":
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                embed=SuccessDeniedEmbed(
                     "Покупка отклонена",
                     f"Покупка товара **{view.item_name}** для клана "
                     f"**{view.clan_name}** была отклонена.",
@@ -333,9 +354,10 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 return
 
             bot.dispatch(
-                "clan_shop_purchase",
+                "clan_shop_order_notify",
                 dto=ClanShopOrderNotifyDTO(
-                    guild_id=guild.id,
+                    guild=guild,
+                    event_type="clan_shop_order_notify",
                     user_id=cast(int, view.user_id),
                     moderator_id=interaction.user.id,
                     state=ShopOrderStateEnum.DENIED,
@@ -345,6 +367,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                     clan_balance_before=cast(float, view.clan_balance_before),
                     clan_balance_after=cast(float, view.clan_balance_after),
                     custom_id=cast(int, view.custom_id),
+                    logging_channel_id=clans_loggings_channel_id,
                     notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
                 ),
             )
@@ -526,7 +549,7 @@ class ShopNotifyViewV2(LayoutView):
         clan_balance_after: float,
         item_name: str,
         item_price: float,
-        custom_id: str,
+        custom_id: int,
     ) -> None:
         super().__init__(timeout=None)
         self.bot = bot
