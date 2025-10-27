@@ -169,9 +169,10 @@ async def is_user_ticketbanned(
 
 
 # TODO: rewrite to use all models (like in get_specified_guild_config)
-async def get_or_create_user(  # noqa: D103
+async def get_or_create_user(
     session: AsyncSession, *, guild_id: int, user_id: int
 ) -> tuple[User, bool]:
+    """Get or create a user in the database."""
     stmt = (
         insert(User)
         .values(guild_id=guild_id, user_id=user_id)
