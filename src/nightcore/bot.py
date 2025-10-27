@@ -3,10 +3,12 @@
 import asyncio
 import contextlib
 import logging
+import time
 from collections.abc import Awaitable
 from datetime import datetime, timezone
 
 import discord
+from aiohttp import TCPConnector
 from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
@@ -75,15 +77,20 @@ class Nightcore(Bot):
         self.apis = CustomAPICollection(self.outside_http_client)
 
         # custom tcp connector
-        # connector = TCPConnector(
-        #     limit=0, ttl_dns_cache=300, enable_cleanup_closed=True
-        # )
+        connector = TCPConnector(
+            limit=100,  # Максимум 100 одночасних з'єднань
+            ttl_dns_cache=300,  # Кешувати DNS на 5 хвилин
+            enable_cleanup_closed=True,
+            force_close=False,  # Не закривати з'єднання після кожного запиту  # noqa: E501, RUF003
+            keepalive_timeout=60,  # Тримати з'єднання 60 секунд
+        )
+
         super().__init__(
             command_prefix=".",
             intents=discord.Intents.all(),
             help_command=None,
             tree_cls=GuildOnlyTree,
-            # connector=connector,
+            connector=connector,
             chunk_guilds_at_startup=True,
         )
         self.chunked_guilds: int = 0
@@ -148,6 +155,13 @@ class Nightcore(Bot):
         logger.info("Setup hook started...")
 
         await self.load_extensions()
+
+        start = time.perf_counter()
+        await self.http.get_bot_gateway()
+        end = time.perf_counter()
+        logger.info(
+            f"[gateway] Fetched bot gateway in {(end - start) * 1000:.2f}ms"
+        )
 
         try:
             logger.info("Starting command sync...")

@@ -5,11 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiohttp>=3.12.15",
     "alembic>=1.16.4",
     "async-lru>=2.0.5",
     "asyncpg>=0.30.0",
     "chat-exporter>=2.8.4",
-    "discord-py>2.6.3",
+    "discord-py[speed]>2.6.3",
     "httpx>=0.28.1",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",
