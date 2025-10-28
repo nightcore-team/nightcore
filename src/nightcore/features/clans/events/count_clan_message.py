@@ -45,7 +45,7 @@ class CountClanMessageEvent(Cog):
 
             clan = user.clan
 
-            exp_multiplier = guild_config.clan_reputation_per_message
+            exp_multiplier = guild_config.base_exp_multiplier
             new_current_exp = clan.current_exp + exp_multiplier
 
             if new_current_exp >= clan.exp_to_level:

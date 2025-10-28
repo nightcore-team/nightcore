@@ -185,10 +185,10 @@ class GuildClansConfig(IdIntegerMixin, Base):  # ---
         ARRAY(BigInteger), nullable=True
     )
     clan_reputation_per_payday: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default=text("0")
+        Integer, nullable=False, default=1, server_default=text("1")
     )
-    clan_reputation_per_message: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default=text("0")
+    base_exp_multiplier: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
     )
     clan_improvements: Mapped[list[int]] = mapped_column(
         ARRAY(Integer), nullable=False, default=list

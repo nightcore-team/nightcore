@@ -50,13 +50,12 @@ async def setup(
 ):
     """Configure clans settings."""
 
-    # TODO: change clan_reputation_per_messsage to base_exp_multiplier
     specs: list[FieldSpec | None] = [
         int_id_value("clan_shop_channel_id", shop_threads_channel),
         list_csv("clan_buy_ping_roles_ids", shop_buy_ping_roles),
         shop_items_dict_value("clan_shop_items", shop_items),
         int_id_value("clan_reputation_per_payday", reputation_per_payday),
-        int_id_value("clan_reputation_per_message", base_exp_multiplier),
+        int_id_value("base_exp_multiplier", base_exp_multiplier),
         int_id_value("clan_payday_channel_id", payday_channel),
         list_csv("clan_improvements", improvements_costs, _len=3),
     ]
