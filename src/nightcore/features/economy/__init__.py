@@ -8,9 +8,9 @@ if TYPE_CHECKING:
 from ._groups import give as give_group
 
 # SIDE-EFFECT IMPORTS
-from .commands.give import clanrep, coins
+from .commands.give import clanexp, clanrep, coins, exp
 
-__all__ = ("clanrep", "coins")
+__all__ = ("clanexp", "clanrep", "coins", "exp")
 
 
 async def setup(bot: "Nightcore"):

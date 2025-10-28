@@ -1,4 +1,4 @@
-"""Give clan reputation command."""
+"""Give user experience command."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -29,14 +29,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command(name="coins", description="Give coins to user.")
+@give_group.command(name="exp", description="Give experience to user.")
 @app_commands.describe()
-async def give_coins(
+async def give_exp(
     interaction: Interaction["Nightcore"],
     user: Member,
     amount: int,
 ):
-    """Give coins to a user."""
+    """Give experience to a user."""
 
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
@@ -63,42 +63,27 @@ async def give_coins(
         ):
             outcome = "missing_permissions"
 
-        coin_name = guild_config.coin_name
-        if not coin_name:
-            outcome = "coin_name_not_configured"
-
         if not outcome:
             try:
                 user_record, _ = await get_or_create_user(
                     session, guild_id=guild.id, user_id=user.id
                 )
-                user_record.coins += amount
+                user_record.current_exp += amount
                 outcome = "success"
             except Exception as e:
                 logger.exception(
-                    "[give/coins] Failed to give coins to user %s in guild %s: %s",  # noqa: E501
+                    "[give/exp] Failed to give experience to user %s in guild %s: %s",  # noqa: E501
                     user.id,
                     guild.id,
                     e,
                 )
-                outcome = "give_coins_error"
+                outcome = "give_exp_error"
 
-    if outcome == "give_coins_error":
+    if outcome == "give_exp_error":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
-                "Ошибка выдачи монет",
-                "Не удалось выдать монеты пользователю.",  # noqa: RUF001
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
-    if outcome == "coin_name_not_configured":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка выдачи монет",
-                "Название монеты не настроено на этом сервере.",
+                "Ошибка выдачи опыта",
+                "Не удалось выдать опыт пользователю.",  # noqa: RUF001
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -117,9 +102,9 @@ async def give_coins(
     if outcome == "success":
         await interaction.response.send_message(
             embed=SuccessMoveEmbed(
-                "Выдача монет успешна",
+                "Выдача опыта успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
-                f"**{amount} {coin_name}**.",
+                f"**{amount} опыта**.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -130,11 +115,11 @@ async def give_coins(
             "user_items_changed",
             dto=AwardNotificationEventDTO(
                 guild=guild,
-                event_type="give_coins",
+                event_type="give_exp",
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=cast(str, coin_name),
+                item_name="опыт",
                 amount=amount,
             ),
         )
