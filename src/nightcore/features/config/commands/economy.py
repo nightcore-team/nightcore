@@ -17,13 +17,12 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
-    float_value,
     format_changes,
+    int_id_value,
     list_csv,
     split_changes,
     str_value,
     update_id_list,
-    int_id_value,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,7 +46,7 @@ async def setup(
     # cases_drop: str | None = None,
     economy_shop: discord.TextChannel | None = None,
     shop_items: str | None = None,
-    reward_bonus: float | None = None,
+    reward_bonus: int | None = None,
     coin_name: str | None = None,
     # colors: str | None = None,
 ):
@@ -58,7 +57,7 @@ async def setup(
         list_csv("economy_access_roles_ids", economy_access_roles),
         shop_items_dict_value("economy_shop_items", shop_items),
         int_id_value("economy_shop_channel_id", economy_shop),
-        float_value("reward_bonus", reward_bonus),
+        int_id_value("reward_bonus", reward_bonus),
         str_value("coin_name", coin_name),
     ]
 

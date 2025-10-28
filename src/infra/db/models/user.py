@@ -7,7 +7,6 @@ from sqlalchemy import (
     BigInteger,
     DateTime,
     Integer,
-    SmallInteger,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -39,8 +38,8 @@ class User(IdIntegerMixin, Base):
     temp_voice_activity: Mapped["datetime | None"] = mapped_column(
         DateTime, nullable=True
     )
-    reward_time: Mapped[int] = mapped_column(
-        SmallInteger, nullable=False, default=0
+    reward_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     ticket_ban: Mapped[bool] = mapped_column(nullable=False, default=False)
     role_request_ban: Mapped[bool] = mapped_column(
@@ -49,6 +48,3 @@ class User(IdIntegerMixin, Base):
     battle_pass_level: Mapped[int] = mapped_column(nullable=False, default=0)
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
     inventory: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)  # type: ignore
-
-    # def __repr__(self):
-    #     return f"<User user_id={self.user_id} guild_id={self.guild_id} coins={self.coins}>" # noqa: E501

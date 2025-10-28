@@ -103,7 +103,9 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     economy_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
-    reward_bonus: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reward_bonus: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
     economy_shop_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
