@@ -134,24 +134,30 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
     level_notify_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    base_exp_multiplier: Mapped[float | None] = mapped_column(
+    base_exp_multiplier: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1
+    )
+    temp_exp_multiplier: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )
+    base_coins_multiplier: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1
+    )
+    temp_coins_multiplier: Mapped[int | None] = mapped_column(
         Float, nullable=True
     )
-    temp_exp_multiplier: Mapped[float | None] = mapped_column(
-        Float, nullable=True
+    bonus_access_roles_ids: Mapped[dict[int, int]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
-    base_coins_multiplier: Mapped[float | None] = mapped_column(
-        Float, nullable=True
+    level_roles: Mapped[dict[str, int]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
-    temp_coins_multipler: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
-    bonus_access_roles_ids: Mapped[list[str] | None] = mapped_column(
-        ARRAY(BigInteger), nullable=True
-    )
-    level_roles: Mapped[dict[int, int]] = mapped_column(
-        JSON, nullable=False, default=dict
-    )
+    count_messages_type: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default="channel_only",
+        server_default=text("'channel_only'"),
+    )  # all | channel_only
 
 
 class GuildClansConfig(IdIntegerMixin, Base):  # ---

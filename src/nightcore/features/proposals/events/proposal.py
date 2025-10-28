@@ -27,9 +27,6 @@ class CreateProposalEvent(Cog):
     async def on_create_proposal(self, message: Message):
         """Handle create proposal event."""
         guild = cast(Guild, message.guild)
-        if message.author.bot:
-            return
-
         await message.delete()
 
         if not message.content and message.attachments:

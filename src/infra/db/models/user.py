@@ -6,6 +6,7 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     DateTime,
+    Integer,
     SmallInteger,
     UniqueConstraint,
 )
@@ -24,13 +25,13 @@ class User(IdIntegerMixin, Base):
         BigInteger, nullable=False, unique=True
     )
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    coins: Mapped[float] = mapped_column(nullable=False, default=0.0)
+    coins: Mapped[int] = mapped_column(nullable=False, default=0)
     level: Mapped[int] = mapped_column(nullable=False, default=0)
     current_exp: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
+        Integer, nullable=False, default=0
     )
     exp_to_level: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
+        Integer, nullable=False, default=0
     )
     voice_activity: Mapped[int] = mapped_column(
         BigInteger, nullable=False, default=0
@@ -46,9 +47,7 @@ class User(IdIntegerMixin, Base):
         nullable=False, default=False
     )
     battle_pass_level: Mapped[int] = mapped_column(nullable=False, default=0)
-    battle_pass_points: Mapped[float] = mapped_column(
-        nullable=False, default=0.0
-    )
+    battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
     inventory: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)  # type: ignore
 
     # def __repr__(self):

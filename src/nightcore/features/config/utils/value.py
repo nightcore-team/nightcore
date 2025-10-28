@@ -63,6 +63,38 @@ def _to_level_roles(s: str | None):
     return result
 
 
+def _to_bonus_roles(s: str | None):
+    parts = parse_str_parts(s)
+    result: dict[int, int] = {}
+
+    for part in parts:
+        if len(part) != 2:
+            raise LevelRolesParsingError(
+                "Expected 2 parts: role_id, multiplier"
+            )
+        role_id_raw, multiplier_raw = part
+        if not any((role_id_raw, multiplier_raw)):
+            raise LevelRolesParsingError(
+                "Role ID and multiplier cannot be empty"
+            )
+        try:
+            multiplier = int(multiplier_raw)
+        except ValueError as e:
+            raise LevelRolesParsingError(
+                f"Invalid multiplier: {multiplier_raw}"
+            ) from e
+        try:
+            role_id = int(role_id_raw)
+        except ValueError as e:
+            raise LevelRolesParsingError(
+                f"Invalid role ID: {role_id_raw}"
+            ) from e
+
+        result[role_id] = multiplier
+
+    return result
+
+
 def _to_shop_items(s: str | None):
     parts = parse_str_parts(s)
     result: dict[str, int] = {}
@@ -151,6 +183,19 @@ def level_roles_dict_value(field: str, value: str | None) -> FieldSpec | None:
         value=value,
         kind=ValueKind.DICT,
         transform=_to_level_roles,
+    )
+
+
+def bonus_roles_dict_value(field: str, value: str | None) -> FieldSpec | None:
+    """Creates a FieldSpec for a roles dictionary from a string representation."""  # noqa: E501
+    if value is None:
+        return None
+
+    return FieldSpec(
+        field=field,
+        value=value,
+        kind=ValueKind.DICT,
+        transform=_to_bonus_roles,
     )
 
 

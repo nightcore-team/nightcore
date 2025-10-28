@@ -5,9 +5,9 @@ import logging
 import discord
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import MainGuildConfig, GuildLevelsConfig
+from src.infra.db.models import GuildLevelsConfig, MainGuildConfig
 from src.infra.db.models._enums import ChannelType
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_channel, get_specified_field
 from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,9 @@ class OnMessageEvent(Cog):
     @Cog.listener()
     async def on_message(self, message: discord.Message):
         """Handle message create events."""
+
+        if message.author.bot:
+            return
 
         guild = message.guild
 
@@ -47,6 +50,13 @@ class OnMessageEvent(Cog):
                         guild.id,
                     )
 
+                count_messages_type = await get_specified_field(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLevelsConfig,
+                    field_name="count_messages_type",
+                )
+
                 count_messages_channel_id = await get_specified_channel(
                     session,
                     guild_id=guild.id,
@@ -55,7 +65,7 @@ class OnMessageEvent(Cog):
                 )
                 if not count_messages_channel_id:
                     logger.error(
-                        "[levels] No count messages channel found for guild %s",
+                        "[levels] No count messages channel found for guild %s",  # noqa: E501
                         guild.id,
                     )
 
@@ -63,9 +73,11 @@ class OnMessageEvent(Cog):
                 self.bot.dispatch("create_proposal", message)
                 return
 
-            if message.channel.id == count_messages_channel_id:
+            if count_messages_type == "channel_only":
+                if message.channel.id == count_messages_channel_id:
+                    self.bot.dispatch("count_message", message)
+            elif count_messages_type == "all":
                 self.bot.dispatch("count_message", message)
-                return
 
         logger.info("[message] Message received: %s", message)
 

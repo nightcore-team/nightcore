@@ -60,6 +60,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.economy.events.award_notify",
         "src.nightcore.features.economy.events.transfer_notify",
         "src.nightcore.features.economy.events.order_notify",
+        "src.nightcore.features.economy.events.count_message",
         # === tickets
         "src.nightcore.features.tickets.commands.ticketmessage",
         "src.nightcore.features.tickets.events.ticket",

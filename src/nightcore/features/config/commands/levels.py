@@ -1,7 +1,7 @@
 """Levels configuration commands for the Nightcore bot."""
 
 import logging
-from typing import cast
+from typing import Literal, cast
 
 import discord
 from discord import Guild, app_commands
@@ -12,7 +12,10 @@ from src.infra.db.models.guild import GuildLevelsConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import levels as levels_group
-from src.nightcore.features.config.utils import level_roles_dict_value
+from src.nightcore.features.config.utils import (
+    bonus_roles_dict_value,
+    level_roles_dict_value,
+)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
@@ -20,8 +23,8 @@ from src.nightcore.utils.field_validators import (
     float_value,
     format_changes,
     int_id_value,
-    list_csv,
     split_changes,
+    str_value,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,25 +37,33 @@ logger = logging.getLogger(__name__)
     level_notify_channel="Channel for level-up notifications.",
     exp_multiplier="Experience points multiplier for levels.",
     coins_multiplier="Coins multiplier for levels.",
-    roles_with_bonus="Roles that receive bonus experience points.",
+    roles_with_bonus="Roles that receive bonus experience points. (format: role,bonus|role2,bonus2|...)",  # noqa: E501
     roles_per_level="Roles assigned at each level (format: level1:role1|level2:role2|...).",  # noqa: E501
+)
+@app_commands.choices(
+    count_messages_type=[
+        app_commands.Choice(name="All", value="all"),
+        app_commands.Choice(name="Channel Only", value="channel_only"),
+    ]
 )
 async def setup(
     interaction: Interaction,
     count_messages_channel: discord.TextChannel | None = None,
+    count_messages_type: Literal["all", "channel_only"] | None = None,
     level_notify_channel: discord.TextChannel | None = None,
-    exp_multiplier: float | None = None,
-    coins_multiplier: float | None = None,
+    exp_multiplier: int | None = None,
+    coins_multiplier: int | None = None,
     roles_with_bonus: str | None = None,
     roles_per_level: str | None = None,
 ):
     """Configure levels settings for the guild."""
     specs: list[FieldSpec | None] = [
         int_id_value("count_messages_channel_id", count_messages_channel),
+        str_value("count_messages_type", count_messages_type),
         int_id_value("level_notify_channel_id", level_notify_channel),
         float_value("base_exp_multiplier", exp_multiplier),
         float_value("base_coins_multiplier", coins_multiplier),
-        list_csv("bonus_access_roles_ids", roles_with_bonus),
+        bonus_roles_dict_value("bonus_access_roles_ids", roles_with_bonus),
         level_roles_dict_value("level_roles", roles_per_level),
     ]
 
