@@ -7,7 +7,11 @@ from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLevelsConfig, MainGuildConfig
 from src.infra.db.models._enums import ChannelType
-from src.infra.db.operations import get_specified_channel, get_specified_field
+from src.infra.db.operations import (
+    get_clan_member,
+    get_specified_channel,
+    get_specified_field,
+)
 from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
@@ -69,6 +73,12 @@ class OnMessageEvent(Cog):
                         guild.id,
                     )
 
+                clan_member = await get_clan_member(
+                    session,
+                    guild_id=guild.id,
+                    user_id=message.author.id,
+                )
+
             if message.channel.id == proposal_channel_id:
                 self.bot.dispatch("create_proposal", message)
                 return
@@ -78,6 +88,9 @@ class OnMessageEvent(Cog):
                     self.bot.dispatch("count_message", message)
             elif count_messages_type == "all":
                 self.bot.dispatch("count_message", message)
+
+            if clan_member:
+                self.bot.dispatch("count_clan_message", message)
 
         logger.info("[message] Message received: %s", message)
 

@@ -184,8 +184,11 @@ class GuildClansConfig(IdIntegerMixin, Base):  # ---
     clan_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
-    clan_reputation_per_payday: Mapped[float] = mapped_column(
-        Float, nullable=False, default=0.0
+    clan_reputation_per_payday: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    clan_reputation_per_message: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     clan_improvements: Mapped[list[int]] = mapped_column(
         ARRAY(Integer), nullable=False, default=list

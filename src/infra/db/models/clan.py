@@ -5,6 +5,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Index,
+    Integer,
     String,
     UniqueConstraint,
     and_,
@@ -30,12 +31,12 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
     # Economy & progression
     coins: Mapped[float] = mapped_column(nullable=False, default=0.0)
     current_exp: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
+        Integer, nullable=False, default=0
     )
     exp_to_level: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
+        Integer, nullable=False, default=0
     )
-    level: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # Limits and config
     max_deputies: Mapped[int] = mapped_column(nullable=False, default=1)
@@ -46,8 +47,8 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
     members: Mapped[list["ClanMember"]] = relationship(
         back_populates="clan",
         cascade="all, delete-orphan",
-        passive_deletes=True,  # покладаємось на ON DELETE CASCADE в БД
-        lazy="selectin",  # дефолтний режим завантаження для уникнення N+1
+        passive_deletes=True,
+        lazy="selectin",
         order_by="ClanMember.role",
     )
 

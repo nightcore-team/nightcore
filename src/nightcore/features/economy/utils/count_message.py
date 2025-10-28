@@ -20,18 +20,18 @@ def calculate_user_exp_to_level(level: int) -> int:
     return int(x * math.pow(level, y) - (x * level))
 
 
-# def calculate_clan_exp_to_level(level: int) -> int:
-#     """
-#     Calculate experience required for clan to reach the next level.
+def calculate_clan_exp_to_level(level: int) -> int:
+    """
+    Calculate experience required for clan to reach the next level.
 
-#     Formula: 40 * level^1.85 - 40 * level
+    Formula: 40 * level^1.85 - 40 * level
 
-#     Args:
-#         level: Current clan level
+    Args:
+        level: Current clan level
 
-#     Returns:
-#         Experience points required for next level
-#     """
-#     x = 40.0
-#     y = 1.85
-#     return int(x * math.pow(level, y) - (x * level))
+    Returns:
+        Experience points required for next level
+    """
+    x = 40.0
+    y = 1.85
+    return int(x * math.pow(level, y) - (x * level))
