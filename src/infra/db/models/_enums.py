@@ -36,6 +36,8 @@ class ChannelType(Enum):
     ROLE_REQUESTS = "check_role_requests_channel_id"
     RULES_CHANNEL = "rules_channel_id"
 
+    COUNT_MESSAGES = "count_messages_channel_id"
+
 
 class FieldTypeEnum(Enum):
     CLANS_ACCESS = "clans_access_roles_ids"

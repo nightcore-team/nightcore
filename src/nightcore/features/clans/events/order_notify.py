@@ -46,11 +46,12 @@ class ClanShopNotifyEvent(Cog):
 
         gather_list.append(send_log_message(bot=self.bot, dto=dto))
 
+        notifications_channel = None
         if dto.notifications_channel_id:
-            channel = await ensure_messageable_channel_exists(
+            notifications_channel = await ensure_messageable_channel_exists(
                 dto.guild, dto.notifications_channel_id
             )
-            if not channel:
+            if not notifications_channel:
                 logger.error(
                     "[%s/log] Notifications channel %s not found in guild %s.",
                     dto.event_type,
@@ -64,6 +65,7 @@ class ClanShopNotifyEvent(Cog):
                 dto.guild.id,
             )
 
+        # Намагаємось відправити в ДМ
         if member:
             view = ShopNotifyViewV2(
                 bot=self.bot,
@@ -76,7 +78,36 @@ class ClanShopNotifyEvent(Cog):
                 clan_balance_after=dto.clan_balance_after,
                 custom_id=dto.custom_id,
             )
-            gather_list.append(member.send(view=view))
+
+            try:
+                await member.send(view=view)
+                logger.info(
+                    "[%s/log] Successfully sent DM to user %s in guild %s.",
+                    dto.event_type,
+                    dto.user_id,
+                    dto.guild.id,
+                )
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send DM to user %s in guild %s: %s. Trying notifications channel...",  # noqa: E501
+                    dto.event_type,
+                    dto.user_id,
+                    dto.guild.id,
+                    e,
+                )
+
+                # fallback
+                if notifications_channel:
+                    gather_list.append(
+                        notifications_channel.send(view=view)  # type: ignore
+                    )
+                else:
+                    logger.error(
+                        "[%s/log] No notifications channel available for fallback for user %s in guild %s.",  # noqa: E501
+                        dto.event_type,
+                        dto.user_id,
+                        dto.guild.id,
+                    )
 
         try:
             await asyncio.gather(*gather_list, return_exceptions=True)
