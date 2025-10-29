@@ -24,3 +24,14 @@ class Rule:
     number: str
     text: str
     subrules: list["Rule"]
+
+
+class CasesAnnot(TypedDict): ...
+
+
+class ColorsAnnot(TypedDict): ...
+
+
+class UserInventoryAnnot(TypedDict):
+    cases: CasesAnnot
+    colors: ColorsAnnot

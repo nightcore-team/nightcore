@@ -6,6 +6,7 @@ from .shop import (
     CoinsShopOrderViewV2,
     CoinsShopViewV2,
 )
+from .top import UsersListViewV2
 from .transfer import TransferCoinsViewV2
 
 __all__ = (
@@ -16,4 +17,5 @@ __all__ = (
     "CoinsShopViewV2",
     "TransferCoinsViewV2",
     "UserProfileViewV2",
+    "UsersListViewV2",
 )

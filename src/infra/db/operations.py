@@ -239,6 +239,37 @@ async def create_punish(
     return punish
 
 
+async def get_users_by_spec(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    spec: str | None = None,
+) -> Sequence[User]:
+    """Get users for a guild ordered by the specified spec."""
+
+    stmt = select(User).where(User.guild_id == guild_id).limit(10)
+
+    match spec:
+        case "voice" | "voice_activity":
+            stmt = stmt.order_by(User.voice_activity.desc())
+
+        case "coins":
+            stmt = stmt.order_by(User.coins.desc())
+
+        case "level":
+            stmt = stmt.order_by(User.level.desc(), User.current_exp.desc())
+
+        case "messages":
+            stmt = stmt.order_by(User.messages_count.desc())
+
+        case _:
+            stmt = stmt.order_by(User.level.desc(), User.current_exp.desc())
+
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
 async def create_clan(
     session: AsyncSession, *, guild_id: int, name: str, role_id: int
 ) -> Clan:
