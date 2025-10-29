@@ -5,6 +5,7 @@ from .view import (
     CoinsShopOrderViewV2,
     CoinsShopViewV2,
     TransferCoinsViewV2,
+    UserProfileViewV2,
 )
 
 __all__ = (
@@ -14,4 +15,5 @@ __all__ = (
     "CoinsShopOrderViewV2",
     "CoinsShopViewV2",
     "TransferCoinsViewV2",
+    "UserProfileViewV2",
 )

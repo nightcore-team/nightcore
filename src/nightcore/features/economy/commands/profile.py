@@ -1,4 +1,4 @@
-"""Check user's balance command."""
+"""Check user's profile command."""
 
 from typing import TYPE_CHECKING, cast
 
@@ -8,25 +8,26 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_or_create_user
-from src.nightcore.features.economy.components.v2 import BalanceViewV2
+from src.nightcore.features.economy.components.v2 import UserProfileViewV2
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils import format_voice_time
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 
-class Balance(Cog):
+class Profile(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(name="balance", description="Check user's balance.")
+    @app_commands.command(name="profile", description="Check user's profile.")
     @app_commands.describe(
-        user="The user to check the balance for. Defaults to yourself."
+        user="The user to check the profile for. Defaults to yourself."
     )
-    async def balance(
+    async def profile(
         self, interaction: Interaction, user: Member | None = None
     ):
-        """Check user's balance."""
+        """Check user's profile."""
 
         guild = cast(Guild, interaction.guild)
 
@@ -43,11 +44,23 @@ class Balance(Cog):
                 session, guild_id=guild.id, user_id=member.id
             )
 
-        view = BalanceViewV2(self.bot, member.id, coin_name, user_record.coins)
+        view = UserProfileViewV2(
+            bot=self.bot,
+            user_id=member.id,
+            lvl=user_record.level,
+            current_exp=user_record.current_exp,
+            exp_to_lvl=user_record.exp_to_level,
+            balance=user_record.coins,
+            coin_name=coin_name,
+            voice_activity=format_voice_time(user_record.voice_activity),
+            messages_count=user_record.messages_count,
+            joined_at=member.joined_at,
+            avatar_url=member.display_avatar.url,
+        )
 
         await interaction.response.send_message(view=view, ephemeral=True)
 
 
 async def setup(bot: "Nightcore") -> None:
-    """Setup the Balance cog."""
-    await bot.add_cog(Balance(bot))
+    """Setup the Profile cog."""
+    await bot.add_cog(Profile(bot))

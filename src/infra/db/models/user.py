@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Integer,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,6 +27,9 @@ class User(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     coins: Mapped[int] = mapped_column(nullable=False, default=0)
     level: Mapped[int] = mapped_column(nullable=False, default=0)
+    messages_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
     current_exp: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )
@@ -36,7 +40,7 @@ class User(IdIntegerMixin, Base):
         BigInteger, nullable=False, default=0
     )
     temp_voice_activity: Mapped["datetime | None"] = mapped_column(
-        DateTime, nullable=True
+        DateTime(timezone=True), nullable=True
     )
     reward_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

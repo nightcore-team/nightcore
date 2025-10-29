@@ -14,7 +14,7 @@ from .object import (
     safe_delete_role,
 )
 from .on_ready_log import log_tree_summary
-from .time_utils import discord_ts
+from .time_utils import discord_ts, format_voice_time
 
 __all__ = (
     "channel_type",
@@ -26,6 +26,7 @@ __all__ = (
     "ensure_message_exists",
     "ensure_messageable_channel_exists",
     "ensure_role_exists",
+    "format_voice_time",
     "get_all_members_with_specified_role",
     "get_discord_user",
     "has_any_role",

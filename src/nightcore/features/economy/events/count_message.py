@@ -191,6 +191,8 @@ class CountMessageEvent(Cog):
                 user_id=message.author.id,
             )
 
+            user.messages_count += 1
+
             levelup_channel_id = guild_config.level_notify_channel_id
 
             if t := guild_config.temp_exp_multiplier:
