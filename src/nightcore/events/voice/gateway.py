@@ -31,8 +31,9 @@ class VoiceStateUpdateEvent(Cog):
         guild = member.guild
 
         try:
-            # user joined a voice channel
+            self.bot.dispatch("count_voice_activity", member, before, after)
 
+            # user joined a voice channel
             if before.channel is None and after.channel is not None:
                 async with self.bot.uow.start() as session:
                     create_private_room_channel_id = await get_specified_channel(  # noqa: E501
