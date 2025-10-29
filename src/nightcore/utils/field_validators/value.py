@@ -10,6 +10,7 @@ class ValueKind(Enum):
     INT = auto()
     FLOAT = auto()
     STR = auto()
+    LIST_DICT = auto()
     LIST_INT = auto()
     LIST_STR = auto()
     DICT = auto()

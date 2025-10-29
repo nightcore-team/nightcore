@@ -3,7 +3,7 @@
 from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._annot import Rules
+from src.infra.db.models._annot import CoinDropAnnot, ColorDropAnnot, Rules
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
 
@@ -118,8 +118,11 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     colors: Mapped[dict[str, str]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
-    drop_from_cases: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String), nullable=True
+    drop_from_coins_case: Mapped[list[CoinDropAnnot]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
+    )
+    drop_from_colors_case: Mapped[list[ColorDropAnnot]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
 
 

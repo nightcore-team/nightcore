@@ -12,7 +12,11 @@ from src.infra.db.models.guild import GuildEconomyConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import economy as economy_group
-from src.nightcore.features.config.utils import shop_items_dict_value
+from src.nightcore.features.config.utils import (
+    coins_drop_dict_value,
+    colors_drop_dict_value,
+    shop_items_dict_value,
+)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
@@ -33,22 +37,22 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     shop_buy_ping_roles="Roles to ping when buying from the shop.",
     economy_access_roles="Roles that have access to economy commands.",
-    # cases_drop="Drop from cases.",
     shop_items="Items available in the shop.",
     reward_bonus="Bonus rewards for /reward.",
     coin_name="Name of the local currency.",
-    # colors="...",
+    coins_drop="Configuration for coin drops. coins, chance | coins, chance | ...",  # noqa: E501
+    colors_drop="Configuration for color drops. name, role_id, chance | name, role_id, chance | ...",  # noqa: E501
 )
 async def setup(
     interaction: Interaction,
     shop_buy_ping_roles: str | None = None,
     economy_access_roles: str | None = None,
-    # cases_drop: str | None = None,
     economy_shop: discord.TextChannel | None = None,
     shop_items: str | None = None,
     reward_bonus: int | None = None,
     coin_name: str | None = None,
-    # colors: str | None = None,
+    coins_drop: str | None = None,
+    colors_drop: str | None = None,
 ):
     """Configure economy settings."""
 
@@ -59,6 +63,8 @@ async def setup(
         int_id_value("economy_shop_channel_id", economy_shop),
         int_id_value("reward_bonus", reward_bonus),
         str_value("coin_name", coin_name),
+        coins_drop_dict_value("drop_from_coins_case", coins_drop),
+        colors_drop_dict_value("drop_from_colors_case", colors_drop),
     ]
 
     specs = [s for s in specs if s is not None]

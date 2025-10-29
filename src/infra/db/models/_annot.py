@@ -35,3 +35,18 @@ class ColorsAnnot(TypedDict): ...
 class UserInventoryAnnot(TypedDict):
     cases: CasesAnnot
     colors: ColorsAnnot
+
+
+class CoinDropAnnot(TypedDict):
+    """Single coin drop configuration."""
+
+    amount: int
+    chance: float
+
+
+class ColorDropAnnot(TypedDict):
+    """Single color drop configuration."""
+
+    name: str
+    role_id: int
+    chance: float

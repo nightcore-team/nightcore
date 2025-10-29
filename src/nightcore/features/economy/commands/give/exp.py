@@ -43,6 +43,17 @@ async def give_exp(
 
     outcome = ""
 
+    if user == bot.user:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи опыта",
+                "Невозможно выдать опыт боту.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
     ) as (guild_config, session):

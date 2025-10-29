@@ -53,5 +53,8 @@ class User(IdIntegerMixin, Base):
     battle_pass_level: Mapped[int] = mapped_column(nullable=False, default=0)
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
     inventory: Mapped[UserInventoryAnnot] = mapped_column(
-        JSON, nullable=False, default=dict, server_default=text("'{}'")
+        JSON,
+        nullable=False,
+        default=dict,
+        server_default=text('\'{"cases": {}, "colors": {}}\'::json'),
     )

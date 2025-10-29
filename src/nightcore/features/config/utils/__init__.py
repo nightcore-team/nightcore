@@ -1,5 +1,7 @@
 from .value import (
     bonus_roles_dict_value,
+    coins_drop_dict_value,
+    colors_drop_dict_value,
     level_roles_dict_value,
     org_roles_dict_value,
     shop_items_dict_value,
@@ -8,6 +10,8 @@ from .value import (
 
 __all__ = (
     "bonus_roles_dict_value",
+    "coins_drop_dict_value",
+    "colors_drop_dict_value",
     "level_roles_dict_value",
     "org_roles_dict_value",
     "shop_items_dict_value",

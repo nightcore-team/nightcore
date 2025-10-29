@@ -95,6 +95,48 @@ def _to_bonus_roles(s: str | None):
     return result
 
 
+def _to_coins_drop(s: str | None):
+    parts = parse_str_parts(s)
+    result: list[dict[str, int | float]] = []
+
+    for part in parts:
+        if len(part) != 2:
+            raise ValueError("Expected 2 parts: amount, chance")
+        amount_raw, chance_raw = part
+        if not any((amount_raw, chance_raw)):
+            raise ValueError("Amount and chance cannot be empty")
+        try:
+            amount = int(amount_raw)
+            chance = float(chance_raw)
+        except ValueError:
+            raise ValueError("Invalid amount or chance")  # noqa: B904
+
+        result.append({"amount": amount, "chance": chance})
+
+    return result
+
+
+def _to_colors_drop(s: str | None):
+    parts = parse_str_parts(s)
+    result: list[dict[str, int | str]] = []
+
+    for part in parts:
+        if len(part) != 3:
+            raise ValueError("Expected 3 parts: name, role_id, chance")
+        name, role_id_raw, chance_raw = part
+        if not any((name, role_id_raw, chance_raw)):
+            raise ValueError("Name, role ID, and chance cannot be empty")
+        try:
+            role_id = int(role_id_raw)
+            chance = int(chance_raw)
+        except ValueError:
+            raise ValueError("Invalid role ID or chance")  # noqa: B904
+
+        result.append({"name": name, "role_id": role_id, "chance": chance})
+
+    return result
+
+
 def _to_shop_items(s: str | None):
     parts = parse_str_parts(s)
     result: dict[str, int] = {}
@@ -183,6 +225,32 @@ def level_roles_dict_value(field: str, value: str | None) -> FieldSpec | None:
         value=value,
         kind=ValueKind.DICT,
         transform=_to_level_roles,
+    )
+
+
+def coins_drop_dict_value(field: str, value: str | None) -> FieldSpec | None:
+    """Creates a FieldSpec for a list of coin drop configurations from a string representation."""  # noqa: E501
+    if value is None:
+        return None
+
+    return FieldSpec(
+        field=field,
+        value=value,
+        kind=ValueKind.LIST_DICT,
+        transform=_to_coins_drop,
+    )
+
+
+def colors_drop_dict_value(field: str, value: str | None) -> FieldSpec | None:
+    """Creates a FieldSpec for a list of color drop configurations from a string representation."""  # noqa: E501
+    if value is None:
+        return None
+
+    return FieldSpec(
+        field=field,
+        value=value,
+        kind=ValueKind.LIST_DICT,
+        transform=_to_colors_drop,
     )
 
 
