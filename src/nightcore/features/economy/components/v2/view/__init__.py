@@ -1,4 +1,5 @@
 from .balance import BalanceViewV2
+from .case import CaseHelpViewV2, CaseOpenViewV2
 from .item import AwardNotificationViewV2
 from .profile import UserProfileViewV2
 from .shop import (
@@ -12,6 +13,8 @@ from .transfer import TransferCoinsViewV2
 __all__ = (
     "AwardNotificationViewV2",
     "BalanceViewV2",
+    "CaseHelpViewV2",
+    "CaseOpenViewV2",
     "CoinsShopOrderNotifyViewV2",
     "CoinsShopOrderViewV2",
     "CoinsShopViewV2",

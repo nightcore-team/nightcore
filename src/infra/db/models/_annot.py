@@ -26,27 +26,28 @@ class Rule:
     subrules: list["Rule"]
 
 
-class CasesAnnot(TypedDict): ...
+class CasesAnnot(TypedDict):
+    """{"case_name": amount}."""
 
 
-class ColorsAnnot(TypedDict): ...
+class ColorsAnnot(TypedDict):
+    """["color_name"]."""
 
 
 class UserInventoryAnnot(TypedDict):
     cases: CasesAnnot
-    colors: ColorsAnnot
+    colors: list[str]
 
 
 class CoinDropAnnot(TypedDict):
     """Single coin drop configuration."""
 
     amount: int
-    chance: float
+    chance: int
 
 
 class ColorDropAnnot(TypedDict):
     """Single color drop configuration."""
 
-    name: str
     role_id: int
-    chance: float
+    chance: int

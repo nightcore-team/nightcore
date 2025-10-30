@@ -121,7 +121,7 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     drop_from_coins_case: Mapped[list[CoinDropAnnot]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
-    drop_from_colors_case: Mapped[list[ColorDropAnnot]] = mapped_column(
+    drop_from_colors_case: Mapped[dict[str, ColorDropAnnot]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
 

@@ -71,13 +71,6 @@ async def give_case(
     ) as (guild_config, session):
         economy_access_roles_ids = guild_config.economy_access_roles_ids
 
-        logging_channel_id = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildLoggingConfig,
-            channel_type=ChannelType.LOGGING_ECONOMY,
-        )
-
         if not economy_access_roles_ids:
             raise FieldNotConfiguredError("economy access")
 
@@ -85,6 +78,13 @@ async def give_case(
             cast(Member, interaction.user), economy_access_roles_ids
         ):
             outcome = "missing_permissions"
+
+        logging_channel_id = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildLoggingConfig,
+            channel_type=ChannelType.LOGGING_ECONOMY,
+        )
 
         if not outcome:
             try:

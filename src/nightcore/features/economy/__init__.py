@@ -7,10 +7,19 @@ from ._groups import case as case_group
 from ._groups import give as give_group
 
 # SIDE-EFFECT IMPORTS
-from .commands.case import open
-from .commands.give import case, clanexp, clanrep, coins, exp
+from .commands.case import help, open
+from .commands.give import case, clanexp, clanrep, coins, color, exp
 
-__all__ = ("case", "clanexp", "clanrep", "coins", "exp", "open")
+__all__ = (
+    "case",
+    "clanexp",
+    "clanrep",
+    "coins",
+    "color",
+    "exp",
+    "help",
+    "open",
+)
 
 
 async def setup(bot: "Nightcore"):

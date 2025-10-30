@@ -11,6 +11,7 @@ class ValueKind(Enum):
     FLOAT = auto()
     STR = auto()
     LIST_DICT = auto()
+    DICT_COLORS = auto()
     LIST_INT = auto()
     LIST_STR = auto()
     DICT = auto()

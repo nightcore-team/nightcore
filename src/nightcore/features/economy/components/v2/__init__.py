@@ -1,6 +1,8 @@
 from .view import (
     AwardNotificationViewV2,
     BalanceViewV2,
+    CaseHelpViewV2,
+    CaseOpenViewV2,
     CoinsShopOrderNotifyViewV2,
     CoinsShopOrderViewV2,
     CoinsShopViewV2,
@@ -12,6 +14,8 @@ from .view import (
 __all__ = (
     "AwardNotificationViewV2",
     "BalanceViewV2",
+    "CaseHelpViewV2",
+    "CaseOpenViewV2",
     "CoinsShopOrderNotifyViewV2",
     "CoinsShopOrderViewV2",
     "CoinsShopViewV2",

@@ -46,6 +46,40 @@ def apply_field_changes(
             )
             continue
 
+        if spec.kind == ValueKind.DICT_COLORS:
+            if old_val is None:
+                old_comp = {}
+            elif isinstance(old_val, list):
+                old_comp = {}
+                for idx, color_drop in enumerate(old_val, start=1):  # type: ignore
+                    key = f"color_{idx}"
+                    old_comp[key] = color_drop
+            else:
+                old_comp = dict(old_val)
+
+            new_comp = {}
+            if isinstance(new_val, list):
+                for idx, color_drop in enumerate(new_val, start=1):  # type: ignore
+                    key = f"color_{idx}"
+                    new_comp[key] = color_drop
+            else:
+                new_comp = dict(new_val)
+
+            changed = old_comp != new_comp
+            if changed:
+                setattr(model, spec.field, new_comp)
+
+            results.append(
+                Change(
+                    field=spec.field,
+                    old=old_comp,
+                    new=new_comp,
+                    changed=changed,
+                    kind=spec.kind,
+                )
+            )
+            continue
+
         # simple types
         changed = old_val != new_val
         if changed:

@@ -13,11 +13,12 @@ from src.infra.db.models._annot import CoinDropAnnot, ColorDropAnnot
 from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.features.economy._groups import case as case_group
+from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.utils import cases_autocomplete
+from src.nightcore.features.economy.utils.case import CASES_NAMES
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def open_coins_case(drops: list[CoinDropAnnot]) -> tuple[int, float]:
+def open_coins_case(drops: list[CoinDropAnnot]) -> tuple[int, int]:
     """Open coins case and get reward.
 
     Args:
@@ -51,22 +52,30 @@ def open_coins_case(drops: list[CoinDropAnnot]) -> tuple[int, float]:
     return selected_amount, drop["chance"]
 
 
-def open_colors_case(drops: list[ColorDropAnnot]) -> tuple[int, str, float]:
-    """Open colors case and get reward."""
+def open_colors_case(drops: dict[str, ColorDropAnnot]) -> tuple[str, int, int]:
+    """Open colors case and get reward.
 
+    Args:
+        drops: Dictionary of color drops with role_id and chance
+
+    Returns:
+        Tuple of (color_key, role_id, chance)
+        Example: ("color_1", 1433436907865378800, 20)
+    """
     if not drops:
         raise ValueError("Case has no drops configured")
 
-    role_ids = [drop["role_id"] for drop in drops]
-    chances = [drop["chance"] for drop in drops]
+    color_keys = list(drops.keys())
+    role_ids = [drop["role_id"] for drop in drops.values()]
+    chances = [drop["chance"] for drop in drops.values()]
 
-    # Weighted random choice
-    selected_role_id = random.choices(role_ids, weights=chances, k=1)[0]
+    selected_index = random.choices(range(len(drops)), weights=chances, k=1)[0]
 
-    # Get info about this drop
-    drop = next(d for d in drops if d["role_id"] == selected_role_id)
+    color_key = color_keys[selected_index]
+    role_id = role_ids[selected_index]
+    chance = chances[selected_index]
 
-    return drop["role_id"], drop["name"], drop["chance"]
+    return color_key, role_id, chance
 
 
 @case_group.command(name="open", description="Открыть кейс.")
@@ -87,6 +96,7 @@ async def open_case(
     coins_reward = 0
     color_role_id = 0
     color_name = ""
+    chance = 0
 
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
@@ -109,7 +119,7 @@ async def open_case(
                         if not guild_config.drop_from_coins_case:
                             outcome = "case_not_configured"
                         else:
-                            coins_reward, _ = open_coins_case(
+                            coins_reward, chance = open_coins_case(
                                 guild_config.drop_from_coins_case
                             )
 
@@ -123,28 +133,26 @@ async def open_case(
                             attributes.flag_modified(user, "inventory")
 
                             coin_name = guild_config.coin_name or "коинов"
-                            reward_text = (
-                                f"Ваш приз: {coins_reward} {coin_name}"
-                            )
+                            reward_text = f"{coins_reward} {coin_name}"
                             outcome = "success"
 
                     case "colors_case":
                         if not guild_config.drop_from_colors_case:
                             outcome = "case_not_configured"
                         else:
-                            color_role_id, color_name, _ = open_colors_case(
-                                guild_config.drop_from_colors_case
+                            color_name, color_role_id, chance = (
+                                open_colors_case(
+                                    guild_config.drop_from_colors_case
+                                )
                             )
 
-                            role_id_str = str(color_role_id)
-
                             if "colors" not in user.inventory:
-                                user.inventory["colors"] = {}
+                                user.inventory["colors"] = []
 
-                            if role_id_str in user.inventory["colors"]:
-                                user.inventory["colors"][role_id_str] += 1
+                            if color_name in user.inventory["colors"]:
+                                pass
                             else:
-                                user.inventory["colors"][role_id_str] = 1
+                                user.inventory["colors"].append(color_name)
 
                             # remove case from inventory
                             user.inventory["cases"][case] -= 1  # type: ignore
@@ -153,7 +161,7 @@ async def open_case(
 
                             attributes.flag_modified(user, "inventory")
 
-                            reward_text = f"Ваш приз: цвет **{color_name}** (<@&{color_role_id}>)"  # noqa: E501
+                            reward_text = f"цвет <@&{color_role_id}>"
                             outcome = "success"
 
                     case _:
@@ -172,9 +180,9 @@ async def open_case(
     if outcome == "no_case":
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.default_avatar.url,  # type: ignore
                 "У вас нет такого кейса для открытия.",  # noqa: RUF001
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -185,7 +193,7 @@ async def open_case(
                 "Ошибка открытия кейса",
                 "Этот кейс не настроен на этом сервере.",
                 bot.user.display_name,  # type: ignore
-                bot.user.default_avatar.url,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -193,9 +201,9 @@ async def open_case(
     if outcome == "unknown_case":
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.default_avatar.url,  # type: ignore
                 "Неизвестный тип кейса.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -206,24 +214,21 @@ async def open_case(
                 "Ошибка открытия кейса",
                 "Произошла ошибка при открытии кейса.",
                 bot.user.display_name,  # type: ignore
-                bot.user.default_avatar.url,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
 
     if outcome == "success":
         # TODO: make more beautiful view for case opening
-        case_names = {
-            "coins_case": "Кейс с коинами",  # noqa: RUF001
-            "colors_case": "Кейс с цветами",  # noqa: RUF001
-        }
+        view = CaseOpenViewV2(
+            bot=bot,
+            case_name=CASES_NAMES.get(case, case).lower(),
+            reward=reward_text,
+            chance=chance,
+        )
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
-                "Открытие кейса",
-                f"Вы успешно открыли **{case_names.get(case, case).lower()}**\n{reward_text}",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
+            view=view,
             ephemeral=True,
         )
 

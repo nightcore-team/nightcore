@@ -121,18 +121,18 @@ def _to_colors_drop(s: str | None):
     result: list[dict[str, int | str]] = []
 
     for part in parts:
-        if len(part) != 3:
-            raise ValueError("Expected 3 parts: name, role_id, chance")
-        name, role_id_raw, chance_raw = part
-        if not any((name, role_id_raw, chance_raw)):
-            raise ValueError("Name, role ID, and chance cannot be empty")
+        if len(part) != 2:
+            raise ValueError("Expected 2 parts: role_id, chance")
+        role_id_raw, chance_raw = part
+        if not any((role_id_raw, chance_raw)):
+            raise ValueError("Role ID and chance cannot be empty")
         try:
             role_id = int(role_id_raw)
             chance = int(chance_raw)
         except ValueError:
             raise ValueError("Invalid role ID or chance")  # noqa: B904
 
-        result.append({"name": name, "role_id": role_id, "chance": chance})
+        result.append({"role_id": role_id, "chance": chance})
 
     return result
 
@@ -249,7 +249,7 @@ def colors_drop_dict_value(field: str, value: str | None) -> FieldSpec | None:
     return FieldSpec(
         field=field,
         value=value,
-        kind=ValueKind.LIST_DICT,
+        kind=ValueKind.DICT_COLORS,
         transform=_to_colors_drop,
     )
 

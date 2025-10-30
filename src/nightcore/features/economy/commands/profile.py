@@ -44,6 +44,13 @@ class Profile(Cog):
                 session, guild_id=guild.id, user_id=member.id
             )
 
+            drop_from_colors = guild_config.drop_from_colors_case or {}
+            users_colors = [
+                drop_from_colors[color_key]["role_id"]
+                for color_key in user_record.inventory.get("colors", [])
+                if color_key in drop_from_colors
+            ]
+
         view = UserProfileViewV2(
             bot=self.bot,
             user_id=member.id,
@@ -56,6 +63,8 @@ class Profile(Cog):
             messages_count=user_record.messages_count,
             joined_at=member.joined_at,
             avatar_url=member.display_avatar.url,
+            cases=user_record.inventory.get("cases", {}),
+            colors=users_colors,
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)

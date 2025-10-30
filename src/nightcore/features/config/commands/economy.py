@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
     reward_bonus="Bonus rewards for /reward.",
     coin_name="Name of the local currency.",
     coins_drop="Configuration for coin drops. coins, chance | coins, chance | ...",  # noqa: E501
-    colors_drop="Configuration for color drops. name, role_id, chance | name, role_id, chance | ...",  # noqa: E501
+    colors_drop="Configuration for color drops. role_id, chance | role_id, chance | ...",  # noqa: E501
 )
 async def setup(
     interaction: Interaction,

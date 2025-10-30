@@ -16,6 +16,8 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.infra.db.models._annot import CasesAnnot
+from src.nightcore.features.economy.utils.case import CASES_NAMES
 from src.nightcore.utils import discord_ts
 
 
@@ -33,8 +35,8 @@ class UserProfileViewV2(LayoutView):
         messages_count: int,
         joined_at: datetime | None,
         avatar_url: str,
-        # color cases
-        # coins cases
+        cases: CasesAnnot,
+        colors: list[int],
     ):
         super().__init__(timeout=10)
 
@@ -60,6 +62,27 @@ class UserProfileViewV2(LayoutView):
             )
         )
         container.add_item(Separator[Self]())
+
+        if cases:
+            container.add_item(TextDisplay[Self]("### Кейсы: "))
+            container.add_item(
+                TextDisplay[Self](
+                    "\n".join(
+                        f"> {CASES_NAMES.get(case_name, case_name)}, количество: {count}"  # noqa: E501
+                        for case_name, count in cases.items()
+                    )
+                )
+            )
+            container.add_item(Separator[Self]())
+
+        if colors:
+            container.add_item(TextDisplay[Self]("### Цвета: "))
+            container.add_item(
+                TextDisplay[Self](
+                    "\n".join(f"> <@&{role_id}>" for role_id in colors)
+                )
+            )
+            container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)
         joined_ts = discord_ts(joined_at, "R") if joined_at else "N/A"

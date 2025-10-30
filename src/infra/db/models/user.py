@@ -55,6 +55,6 @@ class User(IdIntegerMixin, Base):
     inventory: Mapped[UserInventoryAnnot] = mapped_column(
         JSON,
         nullable=False,
-        default=dict,
-        server_default=text('\'{"cases": {}, "colors": {}}\'::json'),
+        default=lambda: {"cases": {}, "colors": []},  # type: ignore
+        server_default=text('\'{"cases": {}, "colors": []}\'::json'),
     )
