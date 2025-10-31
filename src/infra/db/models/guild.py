@@ -124,6 +124,12 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     drop_from_colors_case: Mapped[dict[str, ColorDropAnnot]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
+    last_roulette_games: Mapped[list[str]] = mapped_column(
+        ARRAY(String),
+        nullable=False,
+        default=list,
+        server_default=text("'{}'::text[]"),
+    )
 
 
 class GuildLevelsConfig(IdIntegerMixin, Base):  #

@@ -64,7 +64,11 @@ class UserProfileViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         if cases:
-            container.add_item(TextDisplay[Self]("### Кейсы: "))
+            container.add_item(
+                TextDisplay[Self](
+                    "### <:1559astralbubbles:1433833240002560225> Кейсы: "
+                )
+            )
             container.add_item(
                 TextDisplay[Self](
                     "\n".join(
@@ -76,7 +80,11 @@ class UserProfileViewV2(LayoutView):
             container.add_item(Separator[Self]())
 
         if colors:
-            container.add_item(TextDisplay[Self]("### Цвета: "))
+            container.add_item(
+                TextDisplay[Self](
+                    "### <:1559astralbubbles:1433833240002560225> Цвета: "
+                )
+            )
             container.add_item(
                 TextDisplay[Self](
                     "\n".join(f"> <@&{role_id}>" for role_id in colors)

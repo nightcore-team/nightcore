@@ -7,3 +7,7 @@ give = app_commands.Group(
 case = app_commands.Group(
     name="case", description="Commands related to cases."
 )
+
+casino = app_commands.Group(
+    name="casino", description="Commands related to casino games."
+)

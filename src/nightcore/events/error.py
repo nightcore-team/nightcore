@@ -67,6 +67,35 @@ async def setup(bot: Nightcore):
                 )
             return
 
+        if isinstance(original, app_commands.CommandOnCooldown):
+            logger.info(
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Команда на перезарядке",
+                        f"Пожалуйста, подождите {original.retry_after:.2f} секунд перед повторным использованием этой команды.",  # noqa: E501
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Команда на перезарядке",
+                        f"Пожалуйста, подождите {original.retry_after:.2f} секунд перед повторным использованием этой команды.",  # noqa: E501
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            return
+
         if isinstance(original, ConfigMissingError):
             logger.info(
                 "%s handled guild=%s user=%s",
@@ -220,12 +249,12 @@ async def setup(bot: Nightcore):
         logger.exception("Unhandled app command error", exc_info=error)
         if not interaction.response.is_done():
             await interaction.response.send_message(
-                "Unexpected error occurred. Please contact the administrator.",
+                "Unexpected error occurred. Please contact the developer.",
                 ephemeral=True,
             )
         else:
             await interaction.followup.send(
-                "Unexpected error occurred. Please contact the administrator.",
+                "Unexpected error occurred. Please contact the developer.",
                 ephemeral=True,
             )
         return

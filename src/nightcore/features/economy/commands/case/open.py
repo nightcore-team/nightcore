@@ -1,7 +1,6 @@
 """Open case command."""
 
 import logging
-import random
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
@@ -9,7 +8,6 @@ from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models._annot import CoinDropAnnot, ColorDropAnnot
 from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -18,7 +16,11 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.utils import cases_autocomplete
-from src.nightcore.features.economy.utils.case import CASES_NAMES
+from src.nightcore.features.economy.utils.case import (
+    CASES_NAMES,
+    open_coins_case,
+    open_colors_case,
+)
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -26,56 +28,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-def open_coins_case(drops: list[CoinDropAnnot]) -> tuple[int, int]:
-    """Open coins case and get reward.
-
-    Args:
-        drops: List of coin drops with amount and chance
-
-    Returns:
-        Tuple of (coins_amount, drop_chance)
-    """
-    if not drops:
-        raise ValueError("Case has no drops configured")
-
-    amounts = [drop["amount"] for drop in drops]
-    chances = [drop["chance"] for drop in drops]
-
-    # Weighted random choice
-    selected_amount = random.choices(amounts, weights=chances, k=1)[0]
-
-    # Get chance of this drop
-    drop = next(d for d in drops if d["amount"] == selected_amount)
-
-    return selected_amount, drop["chance"]
-
-
-def open_colors_case(drops: dict[str, ColorDropAnnot]) -> tuple[str, int, int]:
-    """Open colors case and get reward.
-
-    Args:
-        drops: Dictionary of color drops with role_id and chance
-
-    Returns:
-        Tuple of (color_key, role_id, chance)
-        Example: ("color_1", 1433436907865378800, 20)
-    """
-    if not drops:
-        raise ValueError("Case has no drops configured")
-
-    color_keys = list(drops.keys())
-    role_ids = [drop["role_id"] for drop in drops.values()]
-    chances = [drop["chance"] for drop in drops.values()]
-
-    selected_index = random.choices(range(len(drops)), weights=chances, k=1)[0]
-
-    color_key = color_keys[selected_index]
-    role_id = role_ids[selected_index]
-    chance = chances[selected_index]
-
-    return color_key, role_id, chance
 
 
 @case_group.command(name="open", description="Открыть кейс.")
