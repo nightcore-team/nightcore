@@ -61,6 +61,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.economy.commands.shopmessage",
         "src.nightcore.features.economy.commands.reward",
         "src.nightcore.features.economy.commands.profile",
+        "src.nightcore.features.economy.commands.paint",
         "src.nightcore.features.economy.events.award_notify",
         "src.nightcore.features.economy.events.transfer_notify",
         "src.nightcore.features.economy.events.order_notify",
