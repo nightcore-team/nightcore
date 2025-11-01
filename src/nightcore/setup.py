@@ -16,6 +16,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.meta.commands.about",
         "src.nightcore.features.meta.commands.rules",
         "src.nightcore.features.meta.commands.rolemembers",
+        # faq commands
+        "src.nightcore.features.faq",
         # config commands
         "src.nightcore.features.config",  # dir
         # moderation commands

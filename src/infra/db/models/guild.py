@@ -3,7 +3,12 @@
 from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._annot import CoinDropAnnot, ColorDropAnnot, Rules
+from src.infra.db.models._annot import (
+    CoinDropAnnot,
+    ColorDropAnnot,
+    FAQPageAnnot,
+    Rules,
+)
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
 
@@ -32,17 +37,21 @@ class MainGuildConfig(IdIntegerMixin, Base):  #
     voice_temp_roles: Mapped[dict[int, int]] = mapped_column(
         JSON, nullable=False, default=dict
     )  #
-    faq: Mapped[dict[str, str]] = mapped_column(
-        JSON, nullable=False, default=dict
+    faq: Mapped[list[FAQPageAnnot]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'::json"),
     )
     check_role_requests_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
-    )  #
+    )
     guild_rules: Mapped["Rules"] = mapped_column(
         JSON,
         nullable=False,
         default=lambda: {"chapters": []},  # type: ignore
-    )  #
+        server_default=text("'{'chapters': []}'::json"),
+    )
 
 
 class GuildLoggingConfig(IdIntegerMixin, Base):  #

@@ -22,9 +22,7 @@ class User(IdIntegerMixin, Base):
         UniqueConstraint("guild_id", "user_id", name="ux_user_guild_user"),
     )
 
-    user_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, unique=True
-    )
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     coins: Mapped[int] = mapped_column(nullable=False, default=0)
     level: Mapped[int] = mapped_column(nullable=False, default=0)

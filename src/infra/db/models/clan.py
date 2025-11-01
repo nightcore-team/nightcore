@@ -104,11 +104,11 @@ class ClanMember(IdIntegerMixin, Base):
     clan: Mapped["Clan"] = relationship(back_populates="members")
 
     __table_args__ = (
-        # унікальний учасник в межах гільдії
+        # uniq user per clan in guild
         UniqueConstraint("guild_id", "user_id", name="uq_member_guild_user"),
-        # для швидких вибірок по клану і ролі (лідер/заступники/мембери)  # noqa: E501, RUF003
+        # one role per clan
         Index("ix_clan_members_clan_role", "clan_id", "role"),
-        # ВАЖЛИВО (PostgreSQL): рівно один лідер на клан — частковий унікальний індекс  # noqa: E501
+        # one leader per clan
         Index(
             "uq_one_leader_per_clan",
             "clan_id",

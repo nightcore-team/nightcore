@@ -51,3 +51,9 @@ class ColorDropAnnot(TypedDict):
 
     role_id: int
     chance: int
+
+
+class FAQPageAnnot(TypedDict):
+    title: str
+    description: str
+    content: str

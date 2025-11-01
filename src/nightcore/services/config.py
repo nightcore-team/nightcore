@@ -1,7 +1,8 @@
 """Service for managing guild configurations in the Nightcore application."""
 
-from typing import TYPE_CHECKING
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
+
 from src.infra.db.operations import GuildT, get_specified_guild_config
 
 if TYPE_CHECKING:

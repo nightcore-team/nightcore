@@ -21,6 +21,7 @@ from src.nightcore.features.economy.components.v2 import (
     CoinsShopOrderViewV2,
     CoinsShopViewV2,
 )
+from src.nightcore.features.faq.components.v2 import FAQViewV2
 from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
 )
@@ -135,6 +136,7 @@ class Nightcore(Bot):
             SendRoleRequestView(self),
             NotifyViewV2(self, _build=True),
             ProposalViewV2(self, _build=True),
+            FAQViewV2(self, _build=True),
         ]
 
         for view in views:
