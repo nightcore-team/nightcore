@@ -44,9 +44,7 @@ async def shop(
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    name, cost = item.split(",")
-    iname = name
-    icost = float(cost)
+    iname = item
 
     clan: Clan | None = None
 
@@ -74,14 +72,31 @@ async def shop(
         ]:
             outcome = "missing_permissions"
 
+        icost = guild_config.clan_shop_items.get(iname, None)
+        if icost is None:
+            outcome = "invalid_item"
+
         if not outcome:
             # get clan
             clan = cast(Clan, clan_member.clan)  # type: ignore
 
-            if not (clan.coins > icost):
+            if not (
+                clan.coins > icost  # type: ignore
+            ):  # (icost can't be None here)
                 outcome = "insufficient_funds"
             else:
                 outcome = "success"
+
+    if outcome == "invalid_item":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка покупки",
+                "Выбранный предмет не существует в магазине клана.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     if outcome == "missing_permissions":
         return await interaction.response.send_message(
@@ -178,7 +193,7 @@ async def shop(
             clan_name=clan.name,
             clan_role_id=clan.role_id,
             clan_balance_before=clan.coins,
-            clan_balance_after=clan.coins - icost,
+            clan_balance_after=clan.coins - icost,  # type: ignore
             item_name=iname,
             item_price=icost,
         )

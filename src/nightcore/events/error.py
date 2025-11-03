@@ -1,12 +1,14 @@
 """Error events module."""
 
 import logging
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.components.embed.error import (
     ErrorEmbed,
     NoConfigFoundButCreatedEmbed,
@@ -27,7 +29,7 @@ from src.nightcore.features.config.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore") -> None:
     """Setup the error handling for application commands."""
 
     @bot.tree.error

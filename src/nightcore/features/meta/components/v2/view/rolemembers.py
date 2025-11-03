@@ -141,13 +141,6 @@ class RoleMembersViewV2(LayoutView):
         container.add_item(self.main_text)
         container.add_item(Separator[Self]())
 
-        if len(self.pages) > 1:
-            self.pagination = PaginationButtons()
-            container.add_item(self.pagination)
-            container.add_item(Separator[Self]())
-        else:
-            self.pagination = None
-
         # Footer
         now = datetime.now(timezone.utc)
         self.footer_text = TextDisplay[Self](

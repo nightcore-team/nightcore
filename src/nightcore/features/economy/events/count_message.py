@@ -240,12 +240,13 @@ class CountMessageEvent(Cog):
 
                 user.current_exp = overflow_exp
                 user.exp_to_level = new_exp_to_level
-                user.battle_pass_points += 8
                 user.coins += coins_multiplier
-                exp_to_level = new_exp_to_level - overflow_exp
+                user.battle_pass_points += 100
+                exp_to_level = +(new_exp_to_level - overflow_exp)
             else:
                 user.current_exp = new_current_exp
                 user.coins += coins_multiplier
+                user.battle_pass_points += 8
 
             level_roles = guild_config.level_roles
 

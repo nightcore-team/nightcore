@@ -19,7 +19,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # faq commands
         "src.nightcore.features.faq",
         # config commands
-        "src.nightcore.features.config",  # dir
+        "src.nightcore.features.config",
         # moderation commands
         "src.nightcore.features.moderation.commands.kick",
         "src.nightcore.features.moderation.commands.fraction_role",
@@ -70,6 +70,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.economy.events.order_notify",
         "src.nightcore.features.economy.events.count_message",
         "src.nightcore.features.economy.events.count_voice_activity",
+        # === battlepass
+        "src.nightcore.features.battlepass.commands.battlepass",
         # === tickets
         "src.nightcore.features.tickets.commands.ticketmessage",
         "src.nightcore.features.tickets.events.ticket",
@@ -84,6 +86,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.message.delete",
         "src.nightcore.events.message.update",
         "src.nightcore.events.error",
+        "src.nightcore.events.interaction",
         "src.nightcore.events.channel.create",
         "src.nightcore.events.channel.delete",
         "src.nightcore.events.channel.update",

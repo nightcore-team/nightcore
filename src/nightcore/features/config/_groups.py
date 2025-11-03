@@ -44,3 +44,9 @@ infomaker = app_commands.Group(
     description="Configuration commands for the infomaker.",
     parent=config,
 )
+
+battlepass = app_commands.Group(
+    name="battlepass",
+    description="Configuration commands for the battlepass.",
+    parent=config,
+)

@@ -18,9 +18,13 @@ from .commands import (
     private_channels,
     tickets,
 )
+from .commands.battlepass import add_level, change_level, delete_level
 
 __all__ = (
+    "add_level",
+    "change_level",
     "clans",
+    "delete_level",
     "economy",
     "infomaker",
     "levels",

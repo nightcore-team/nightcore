@@ -57,3 +57,18 @@ class FAQPageAnnot(TypedDict):
     title: str
     description: str
     content: str
+
+
+class BattlepassRewardAnnot(TypedDict):
+    """Battlepass reward configuration."""
+
+    name: str
+    amount: int
+
+
+class BattlepassLevelAnnot(TypedDict):
+    """Battlepass level configuration."""
+
+    level: int
+    exp_required: int
+    reward: BattlepassRewardAnnot

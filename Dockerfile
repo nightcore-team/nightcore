@@ -21,8 +21,6 @@ RUN rm -f pyproject.toml uv.lock .python-version
 
 FROM python:3.13-slim-bookworm
 
-# У базовому образі python:3.13-slim немає користувача "app" — це не критично для кешу,
-# але може зламати COPY --chown. Можна прибрати chown або створити користувача.
 COPY --from=builder /app /app
 
 WORKDIR /app

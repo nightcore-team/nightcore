@@ -8,6 +8,7 @@ from src.infra.db.models._annot import (
     ColorDropAnnot,
     FAQPageAnnot,
     Rules,
+    BattlepassLevelAnnot,
 )
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
@@ -139,6 +140,12 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         default=list,
         server_default=text("'{}'::text[]"),
     )
+    battlepass_rewards: Mapped[list[BattlepassLevelAnnot]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'::json"),
+    )
 
 
 class GuildLevelsConfig(IdIntegerMixin, Base):  #
@@ -192,7 +199,7 @@ class GuildClansConfig(IdIntegerMixin, Base):  # ---
     clan_shop_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    clan_shop_items: Mapped[dict[str, float]] = mapped_column(
+    clan_shop_items: Mapped[dict[str, int]] = mapped_column(
         JSON, nullable=False, default=dict
     )
     clans_access_roles_ids: Mapped[list[int] | None] = mapped_column(

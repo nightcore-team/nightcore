@@ -29,7 +29,7 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
     )  # Discord role for the clan
 
     # Economy & progression
-    coins: Mapped[float] = mapped_column(nullable=False, default=0.0)
+    coins: Mapped[int] = mapped_column(nullable=False, default=0)
     current_exp: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )

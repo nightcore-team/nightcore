@@ -73,10 +73,11 @@ class FAQViewV2(LayoutView):
                 )
                 faqbutton.callback = self.button_callback
                 container.add_item(
+                    TextDisplay[Self](f"### {page['title']}"),
+                )
+                container.add_item(
                     Section[Self](
-                        TextDisplay[Self](
-                            f"### {page['title']}\n> {page['description']}"
-                        ),
+                        TextDisplay[Self](f"> {page['description']}"),
                         accessory=faqbutton,
                     )
                 )
@@ -144,6 +145,50 @@ class FAQViewV2(LayoutView):
             await interaction.response.send_message(
                 view=FAQPageViewV2(self.bot, faq_page), ephemeral=True
             )
+
+
+async def handle_faq_button_callback(
+    interaction: Interaction["Nightcore"], page_title: str
+) -> None:
+    """Handle FAQ page button clicks and return page content."""
+
+    bot = interaction.client
+    guild = cast(Guild, interaction.guild)
+
+    faq_page: FAQPageAnnot | None = None
+    outcome = ""
+    async with specified_guild_config(bot, guild.id, MainGuildConfig) as (
+        guild_config,
+        _,
+    ):
+        faq_pages = guild_config.faq or []
+
+        for page in faq_pages:
+            if page["title"] == page_title:
+                faq_page = page
+                break
+        else:
+            outcome = "page_not_found"
+
+        if not outcome:
+            outcome = "success"
+
+    if outcome == "page_not_found":
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка получения страницы FAQ",
+                f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501, RUF001
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "success" and faq_page:
+        await interaction.response.send_message(
+            view=FAQPageViewV2(bot, faq_page), ephemeral=True
+        )
 
 
 class FAQPageViewV2(LayoutView):

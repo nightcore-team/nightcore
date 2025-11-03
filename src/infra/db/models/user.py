@@ -48,7 +48,9 @@ class User(IdIntegerMixin, Base):
     role_request_ban: Mapped[bool] = mapped_column(
         nullable=False, default=False
     )
-    battle_pass_level: Mapped[int] = mapped_column(nullable=False, default=0)
+    battle_pass_level: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
     inventory: Mapped[UserInventoryAnnot] = mapped_column(
         JSON,

@@ -13,6 +13,7 @@ from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
 from src.config.config import config
+from src.infra.api.base_client import IAPIClient
 from src.infra.api.forum.client import ForumAPIClient
 from src.infra.api.httpx_client import HttpxAPIClient
 from src.infra.db.uow import UnitOfWork
@@ -21,7 +22,6 @@ from src.nightcore.features.economy.components.v2 import (
     CoinsShopOrderViewV2,
     CoinsShopViewV2,
 )
-from src.nightcore.features.faq.components.v2 import FAQViewV2
 from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
 )
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class CustomAPICollection:
-    def __init__(self, http_client: HttpxAPIClient):
+    def __init__(self, http_client: IAPIClient):
         self.http_client = http_client
 
     @property
@@ -136,7 +136,6 @@ class Nightcore(Bot):
             SendRoleRequestView(self),
             NotifyViewV2(self, _build=True),
             ProposalViewV2(self, _build=True),
-            FAQViewV2(self, _build=True),
         ]
 
         for view in views:

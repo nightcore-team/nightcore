@@ -63,9 +63,7 @@ async def clans_improvements_autocomplete(
         costs = guild_config.clan_improvements
 
     result: list[app_commands.Choice[str]] = [
-        app_commands.Choice(
-            name=f"{improvement} — цена: {cost}", value=f"{i},{cost}"
-        )
+        app_commands.Choice(name=f"{improvement} — цена: {cost}", value=f"{i}")
         for i, (improvement, cost) in enumerate(
             zip(CLAN_IMPROVEMENTS, costs, strict=False)
         )
@@ -91,7 +89,7 @@ async def clans_shop_autocomplete(
     for item, price in shop_items.items():
         result.append(
             app_commands.Choice(
-                name=f"{item} — цена: {price}", value=f"{item},{price}"
+                name=f"{item} — цена: {price}", value=f"{item}"
             )
         )
 

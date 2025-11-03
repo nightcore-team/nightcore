@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import Clan
+from src.infra.db.models import Clan, GuildClansConfig
 from src.infra.db.models._enums import ClanMemberRoleEnum
 from src.infra.db.operations import get_clan_member
 from src.nightcore.components.embed import (
@@ -15,6 +15,7 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.utils import clans_improvements_autocomplete
+from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -34,11 +35,12 @@ async def improvements(
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    iindex, icost = map(int, improvement.split(","))
-
     outcome = ""
 
-    async with bot.uow.start() as session:
+    async with specified_guild_config(bot, guild.id, GuildClansConfig) as (
+        guild_config,
+        session,
+    ):
         # get clanmember
         clan_member = await get_clan_member(
             session,
@@ -51,6 +53,14 @@ async def improvements(
             ClanMemberRoleEnum.DEPUTY,
         ]:
             outcome = "missing_permissions"
+
+        icost = 0
+        iindex = 0
+        try:
+            iindex = int(improvement)
+            icost = guild_config.clan_improvements[iindex]
+        except (IndexError, ValueError, KeyError):
+            outcome = "invalid_improvement"
 
         if not outcome:
             # get clan
@@ -86,6 +96,17 @@ async def improvements(
                             outcome = "x2_payday_already_active"
                     case _:
                         outcome = "invalid_improvement"
+
+    if outcome == "invalid_improvement":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка улучшения клана",
+                "Недопустимое улучшение.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     if outcome == "missing_permissions":
         return await interaction.response.send_message(
@@ -134,17 +155,6 @@ async def improvements(
             embed=ErrorEmbed(
                 "Ошибка улучшения клана",
                 "Улучшение x2 Payday уже активно.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
-    if outcome == "invalid_improvement":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка улучшения клана",
-                "Недопустимое улучшение.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
