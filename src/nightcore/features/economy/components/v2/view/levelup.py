@@ -1,3 +1,5 @@
+"""Level Up View V2 Component."""
+
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 

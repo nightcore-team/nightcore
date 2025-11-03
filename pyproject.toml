@@ -10,7 +10,7 @@ dependencies = [
     "async-lru>=2.0.5",
     "asyncpg>=0.30.0",
     "chat-exporter>=2.8.4",
-    "discord-py[speed]>2.6.3",
+    "discord-py",
     "httpx>=0.28.1",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",
@@ -20,6 +20,9 @@ dependencies = [
 
 [dependency-groups]
 dev = ["ruff>=0.12.7"]
+
+[tool.uv.sources]
+discord-py = { git = "https://github.com/Rapptz/discord.py.git" }
 
 # ================================= RUFF
 [tool.ruff]

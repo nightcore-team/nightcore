@@ -33,7 +33,6 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.tickets.utils import (
     extract_id_from_str,
     extract_str_by_pattern,
@@ -85,7 +84,14 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     channel_type=ChannelType.NOTIFICATIONS,
                 )
             ):
-                raise FieldNotConfiguredError("notifications channel")
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка отправки оповещения",
+                        "Канал оповещений не настроен.",
+                        view.bot.user.display_name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    )
+                )
 
             if not (
                 rules_channel := await get_specified_channel(
@@ -95,7 +101,14 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     channel_type=ChannelType.RULES_CHANNEL,
                 )
             ):
-                raise FieldNotConfiguredError("rules channel")
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка отправки оповещения",
+                        "Канал с правилами не настроен.",  # noqa: RUF001
+                        view.bot.user.display_name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    )
+                )
 
             if not (
                 create_ticket_channel_id := await get_specified_channel(
@@ -105,7 +118,14 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     channel_type=ChannelType.CREATE_TICKETS,
                 )
             ):
-                raise FieldNotConfiguredError("create ticket channel")
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка отправки оповещения",
+                        "Канал создания тикетов не настроен.",
+                        view.bot.user.display_name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    )
+                )
 
         notifications_channel = await ensure_messageable_channel_exists(
             guild, notifications_channel_id

@@ -48,146 +48,146 @@ logger = logging.getLogger(__name__)
 
 
 class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
-    @button(
-        label="Запросить статистику",
-        custom_id="role_request:stats",
-        style=ButtonStyle.grey,
-        emoji="<:72151staff:1421169506230866050>",
-    )
-    async def request_stats(
-        self,
-        interaction: Interaction["Nightcore"],
-        button: Button["CheckRoleRequestView"],
-    ) -> None:
-        """Handle the cancel button interaction."""
-        guild = cast(Guild, interaction.guild)
-        view = cast("CheckRoleRequestView", self.view)
-        view.state = RoleRequestStateEnum.REQUESTED
-        view.moderator_id = interaction.user.id
+    # @button(
+    #     label="Запросить статистику",
+    #     custom_id="role_request:stats",
+    #     style=ButtonStyle.grey,
+    #     emoji="<:72151staff:1421169506230866050>",
+    # )
+    # async def request_stats(
+    #     self,
+    #     interaction: Interaction["Nightcore"],
+    #     button: Button["CheckRoleRequestView"],
+    # ) -> None:
+    #     """Handle the cancel button interaction."""
+    #     guild = cast(Guild, interaction.guild)
+    #     view = cast("CheckRoleRequestView", self.view)
+    #     view.state = RoleRequestStateEnum.REQUESTED
+    #     view.moderator_id = interaction.user.id
 
-        await interaction.response.defer()
+    #     await interaction.response.defer()
 
-        # connect information from components
-        for component in interaction.message.components:  # type: ignore
-            for item in component.children:  # type: ignore
-                if isinstance(item, TextDisplayOverride):  # noqa: SIM102
-                    if "User | ID" in item.content:
-                        content = item.content
-                        content_parts = content.split("\n")
-                        view.interaction_user_id = extract_id_from_str(
-                            content_parts[0].split("|")[1].strip()
-                        )
-                        view.interaction_user_nick = (
-                            content_parts[1].split(":")[1].strip()
-                        )
-                        view.role_requested_id = extract_id_from_str(
-                            content_parts[2].split(":")[1].strip()
-                        )
-                        break
+    #     # connect information from components
+    #     for component in interaction.message.components:  # type: ignore
+    #         for item in component.children:  # type: ignore
+    # if isinstance(item, TextDisplayOverride):
+    #                 if "User | ID" in item.content:
+    #                     content = item.content
+    #                     content_parts = content.split("\n")
+    #                     view.interaction_user_id = extract_id_from_str(
+    #                         content_parts[0].split("|")[1].strip()
+    #                     )
+    #                     view.interaction_user_nick = (
+    #                         content_parts[1].split(":")[1].strip()
+    #                     )
+    #                     view.role_requested_id = extract_id_from_str(
+    #                         content_parts[2].split(":")[1].strip()
+    #                     )
+    #                     break
 
-        member = await ensure_member_exists(
-            guild,
-            cast(int, view.interaction_user_id),
-        )
-        if not member:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Request stat failed",
-                    "Cannot find this user in guild.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+    #     member = await ensure_member_exists(
+    #         guild,
+    #         cast(int, view.interaction_user_id),
+    #     )
+    #     if not member:
+    #         return await interaction.followup.send(
+    #             embed=ErrorEmbed(
+    #                 "Request stat failed",
+    #                 "Cannot find this user in guild.",
+    #                 view.bot.user.name,  # type: ignore
+    #                 view.bot.user.display_avatar.url,  # type: ignore
+    #             ),
+    #             ephemeral=True,
+    #         )
 
-        async with view.bot.uow.start() as session:
-            try:
-                last_rr = await get_latest_user_role_request(
-                    session,
-                    guild_id=guild.id,
-                    user_id=cast(int, view.interaction_user_id),
-                )
-                if not last_rr:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "Request stat failed",
-                            "Cannot find this role request in database.",
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
+    #     async with view.bot.uow.start() as session:
+    #         try:
+    #             last_rr = await get_latest_user_role_request(
+    #                 session,
+    #                 guild_id=guild.id,
+    #                 user_id=cast(int, view.interaction_user_id),
+    #             )
+    #             if not last_rr:
+    #                 return await interaction.followup.send(
+    #                     embed=ErrorEmbed(
+    #                         "Request stat failed",
+    #                         "Cannot find this role request in database.",
+    #                         view.bot.user.name,  # type: ignore
+    #                         view.bot.user.display_avatar.url,  # type: ignore
+    #                     ),
+    #                     ephemeral=True,
+    #                 )
 
-                if last_rr.state == RoleRequestStateEnum.REQUESTED:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "Request stat failed",
-                            "Another moderator is already processing this request.",  # noqa: E501
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
+    #             if last_rr.state == RoleRequestStateEnum.REQUESTED:
+    #                 return await interaction.followup.send(
+    #                     embed=ErrorEmbed(
+    #                         "Request stat failed",
+    #                         "Another moderator is already processing this request.",  # noqa: E501
+    #                         view.bot.user.name,  # type: ignore
+    #                         view.bot.user.display_avatar.url,  # type: ignore
+    #                     ),
+    #                     ephemeral=True,
+    #                 )
 
-                last_rr.state = RoleRequestStateEnum.REQUESTED
-                last_rr.moderator_id = interaction.user.id
+    #             last_rr.state = RoleRequestStateEnum.REQUESTED
+    #             last_rr.moderator_id = interaction.user.id
 
-                nightcore_notifications_channel_id = (
-                    await get_specified_channel(
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildNotificationsConfig,
-                        channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
-                    )
-                )
+    #             nightcore_notifications_channel_id = (
+    #                 await get_specified_channel(
+    #                     session,
+    #                     guild_id=guild.id,
+    #                     config_type=GuildNotificationsConfig,
+    #                     channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
+    #                 )
+    #             )
 
-            except Exception as e:
-                logger.exception(
-                    "Failed to get role request from %s in %s: %s",
-                    view.interaction_user_id,
-                    guild.id,
-                    e,
-                )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Request stat failed",
-                        "An error occurred while fetching the role request from the database.",  # noqa: E501
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+    #         except Exception as e:
+    #             logger.exception(
+    #                 "Failed to get role request from %s in %s: %s",
+    #                 view.interaction_user_id,
+    #                 guild.id,
+    #                 e,
+    #             )
+    #             return await interaction.followup.send(
+    #                 embed=ErrorEmbed(
+    #                     "Request stat failed",
+    #                     "An error occurred while fetching the role request from the database.",  # noqa: E501
+    #                     view.bot.user.name,  # type: ignore
+    #                     view.bot.user.display_avatar.url,  # type: ignore
+    #                 ),
+    #                 ephemeral=True,
+    #             )
 
-        # change button to disabled
-        view = view.make_component()
-        stats_button = view.get_component("role_request:stats")
-        if not isinstance(stats_button, Button):
-            return
-        stats_button.disabled = True
-        await interaction.message.edit(view=view)  # type: ignore
+    #     # change button to disabled
+    #     view = view.make_component()
+    #     stats_button = view.get_component("role_request:stats")
+    #     if not isinstance(stats_button, Button):
+    #         return
+    #     stats_button.disabled = True
+    #     await interaction.message.edit(view=view)  # type: ignore
 
-        await interaction.followup.send(
-            view=RoleRequestStateView(
-                bot=view.bot,
-                moderator_id=interaction.user.id,
-                user_id=cast(int, view.interaction_user_id),
-                state=RoleRequestStateEnum.REQUESTED,
-            )
-        )
+    #     await interaction.followup.send(
+    #         view=RoleRequestStateView(
+    #             bot=view.bot,
+    #             moderator_id=interaction.user.id,
+    #             user_id=cast(int, view.interaction_user_id),
+    #             state=RoleRequestStateEnum.REQUESTED,
+    #         )
+    #     )
 
-        await send_role_request_dm(
-            moderator_id=interaction.user.id,
-            reserve_channel=nightcore_notifications_channel_id,
-            user=member,
-            state=RoleRequestStateEnum.REQUESTED,
-        )
+    #     await send_role_request_dm(
+    #         moderator_id=interaction.user.id,
+    #         reserve_channel=nightcore_notifications_channel_id,
+    #         user=member,
+    #         state=RoleRequestStateEnum.REQUESTED,
+    #     )
 
-        logger.info(
-            "Moderator %s requested stats from user %s in guild %s",
-            interaction.user.id,
-            view.interaction_user_id,
-            guild.id,
-        )
+    #     logger.info(
+    #         "Moderator %s requested stats from user %s in guild %s",
+    #         interaction.user.id,
+    #         view.interaction_user_id,
+    #         guild.id,
+    #     )
 
     @button(
         label="Одобрить запрос",
@@ -568,8 +568,6 @@ class CheckRoleRequestView(LayoutView):
         if self.state:
             state_str = ""
             match self.state:
-                case RoleRequestStateEnum.REQUESTED:
-                    state_str = f"<:f9776stars:1421150081037369516> Запрос на статистику был **отправлен** модератором: <@{self.moderator_id}>"  # noqa: E501
                 case RoleRequestStateEnum.APPROVED:
                     state_str = f"<:15932stars:1421150093960286389> Запрос на статистику был **одобрен** модератором: <@{self.moderator_id}>"  # noqa: E501
                 case RoleRequestStateEnum.DENIED:

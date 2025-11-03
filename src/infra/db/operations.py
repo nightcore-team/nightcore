@@ -677,8 +677,6 @@ async def get_role_requests_to_delete(
         RoleRequestState.state.in_(
             [
                 "pending",
-                "requested",
-                "has_stats",
             ]
         ),
         RoleRequestState.updated_at <= boundary,

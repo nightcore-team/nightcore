@@ -52,8 +52,6 @@ class TicketStateEnum(Enum):
 
 class RoleRequestStateEnum(Enum):
     PENDING = "pending"
-    REQUESTED = "requested"
-    STATS_PROVIDED = "has_stats"
     APPROVED = "approved"
     DENIED = "denied"
     CANCELED = "canceled"

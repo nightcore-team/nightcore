@@ -61,13 +61,6 @@ class RoleRequestStateView(LayoutView):
         _is_stats: bool = False
         text = ""
         match state:
-            case RoleRequestStateEnum.STATS_PROVIDED:
-                _is_stats = True
-                header_text = f"### <:72151staff:1421169506230866050> | STATS <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
-                text = f"Пользователь <@{user_id}> предоставил вам запрошенную статистику."  # noqa: E501
-            case RoleRequestStateEnum.REQUESTED:
-                header_text = f"### <:72151staff:1421169506230866050> | REQUESTED <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
-                text = f"Вы запросили статистику у пользователя <@{user_id}>."  # noqa: RUF001
             case RoleRequestStateEnum.APPROVED:
                 header_text = f"### <:52104checkmark:1414732973005340672> | APPROVED <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
                 text = f"Вы успешно одобрили пользователю <@{user_id}> роль <@&{role_id}>."  # noqa: E501

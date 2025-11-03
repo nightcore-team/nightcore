@@ -36,7 +36,6 @@ from src.nightcore.components.embed import (
     SuccessDeniedEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.clans.events.dto import (
     ClanShopOrderNotifyDTO,
 )
@@ -99,7 +98,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 field_name="clans_access_roles_ids",
             )
             if not clans_access_roles_ids:
-                raise FieldNotConfiguredError("clans access")
+                outcome = "rules_channel_not_configured"
 
             if not has_any_role_from_sequence(
                 cast(Member, interaction.user),
@@ -147,6 +146,16 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                     bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
+            )
+
+        if outcome == "rules_channel_not_configured":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка одобрения покупки",
+                    "Канал с правилами не настроен.",  # noqa: RUF001
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
             )
 
         if outcome == "order_not_found":
@@ -276,7 +285,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 field_name="clans_access_roles_ids",
             )
             if not clans_access_roles_ids:
-                raise FieldNotConfiguredError("clans access")
+                outcome = "clans_access_not_configured"
 
             if not has_any_role_from_sequence(
                 cast(Member, interaction.user),
@@ -310,6 +319,16 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                     bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
+            )
+
+        if outcome == "clans_access_not_configured":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка отклонения покупки",
+                    "Роли с доступом к кланам не настроены.",  # noqa: RUF001
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                )
             )
 
         if outcome == "order_not_found":

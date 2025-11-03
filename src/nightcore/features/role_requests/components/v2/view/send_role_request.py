@@ -33,7 +33,6 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.modal import (
     SendRoleRequestModal,
 )
@@ -86,7 +85,15 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 session, guild_id=guild.id
             )
             if not org_roles:
-                raise FieldNotConfiguredError("organization roles")
+                return await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Role Request Failed",
+                        "Organization roles are not configured.",
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
 
             options = [
                 SelectOption(label=v["name"], value=f"{v['role_id']},{k}")
@@ -114,11 +121,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
             last_rr = await get_latest_user_role_request(
                 session, guild_id=guild.id, user_id=user.id
             )
-            if last_rr and last_rr.state in (
-                RoleRequestStateEnum.PENDING,
-                RoleRequestStateEnum.REQUESTED,
-                RoleRequestStateEnum.STATS_PROVIDED,
-            ):
+            if last_rr and last_rr.state in (RoleRequestStateEnum.PENDING,):
                 await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Role Request Failed",
@@ -362,6 +365,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         button: Button["SendRoleRequestView"],
     ) -> None:
         """Handle the remove roles button interaction."""
+
         guild = cast(Guild, interaction.guild)
         view = cast(SendRoleRequestView, self.view)
         user = cast(Member, interaction.user)
@@ -372,7 +376,15 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("organization roles")
+                return await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Ошибка при снятии ролей",
+                        "Каналы организационных ролей не настроены.",
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
 
         if not has_any_role_from_sequence(user, org_roles_ids):
             return await interaction.response.send_message(
