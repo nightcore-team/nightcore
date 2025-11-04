@@ -1,4 +1,4 @@
-"""Give color to user command."""
+"""Command to give color to a user."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -34,10 +34,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command(name="color", description="Выдать пользователю цвет.")
+@give_group.command(name="color", description="Выдать пользователю цвет")
 @app_commands.describe(
-    user="Пользователь, которому выдается цвет.",
-    color="Цвет для выдачи.",
+    user="Пользователь, которому выдается цвет",
+    color="Цвет для выдачи",
 )
 @app_commands.autocomplete(color=all_colors_autocomplete)
 async def give_color(
@@ -54,11 +54,11 @@ async def give_color(
         role_name, role_id, _color = color.split(",")
         role_id = int(role_id)
     except Exception as e:
-        logger.error("[give_color] Error parsing color: %s", e)
+        logger.error("[give/color] Error parsing color: %s", e)
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка выдачи цвета",
-                "Не удалось определить цвет.",  # noqa: RUF001
+                "Не удалось определить цвет.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -146,7 +146,7 @@ async def give_color(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка выдачи цвета",
-                "У пользователя уже есть этот цвет.",  # noqa: RUF001
+                "У пользователя уже есть этот цвет.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -156,7 +156,7 @@ async def give_color(
     if outcome == "missing_permissions":
         return await interaction.response.send_message(
             embed=MissingPermissionsEmbed(
-                "Не удалось выдать цвет пользователю.",  # noqa: RUF001
+                "Не удалось выдать цвет пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -178,7 +178,7 @@ async def give_color(
             "user_items_changed",
             dto=AwardNotificationEventDTO(
                 guild=guild,
-                event_type="give_color",
+                event_type="give/color",
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,

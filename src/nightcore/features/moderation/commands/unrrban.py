@@ -31,10 +31,11 @@ class Unrrban(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="unrrban", description="Unrrban a user in the server"
+        name="unrrban",
+        description="Снять блокировку на запрос роли с пользователя",
     )
     @app_commands.describe(
-        user="The user to unban", reason="The reason for unbanning the user"
+        user="Пользователь для снятия бана", reason="Причина снятия бана"
     )
     async def unrrban(
         self,
@@ -48,7 +49,7 @@ class Unrrban(Cog):
         if guild.me == user:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot unrrban me.",
+                    "Вы не можете снять блокировку на запрос роли с меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -65,7 +66,7 @@ class Unrrban(Cog):
                 moderation_access_roles
                 := guild_config.moderation_access_roles_ids
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
             has_moder_role = has_any_role_from_sequence(
                 cast(discord.Member, interaction.user), moderation_access_roles
@@ -97,8 +98,8 @@ class Unrrban(Cog):
                 )
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Unrrban Failed",
-                        "Failed to unrrban user. ",
+                        "Ошибка снятия блокировки на запрос роли",
+                        "Не удалось снять блокировку на запрос роли с пользователя.",  # noqa: E501
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -108,11 +109,11 @@ class Unrrban(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Unrrbaned",
-                f"<@{user.id}> has been unrrbaned by moderator {interaction.user.mention}",  # noqa: E501
+                "Блокировка на запрос роли снята",
+                f"Блокировка на запрос роли с <@{user.id}> была снята модератором {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Reason", value=reason, inline=True)
+            ).add_field(name="Причина", value=reason, inline=True)
         )
 
         try:

@@ -1,5 +1,6 @@
-"""Change an existing battlepass level command."""
+"""Subcommand to change a battle pass level."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -23,12 +24,16 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+logger = logging.getLogger(__name__)
 
-@battlepass_group.command(name="change_level")
+
+@battlepass_group.command(
+    name="change_level", description="Изменить уровень боевого пропуска"
+)
 @app_commands.describe(
-    new_required_exp="Количество EXP для этого уровня",
-    new_reward_type="Тип награды",
-    new_reward_amount="Количество",
+    new_required_exp="Новое количество EXP для этого уровня",
+    new_reward_type="Новый тип награды",
+    new_reward_amount="Новое количество",
 )
 @app_commands.choices(
     new_reward_type=BATTLEPASS_REWARDS_CHOICES,
@@ -159,3 +164,13 @@ async def change_level(
             ),
             ephemeral=True,
         )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s change_level=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501
+        interaction.user.id,
+        guild.id,
+        level,
+        new_required_exp,
+        new_reward_type,
+        new_reward_amount,
+    )

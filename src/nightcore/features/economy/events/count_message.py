@@ -1,4 +1,4 @@
-"""Count message event handler."""
+"""Handle count message events."""
 
 import asyncio
 import logging
@@ -287,6 +287,13 @@ class CountMessageEvent(Cog):
                 author.id,
                 guild.id,
             )
+
+        logger.info(
+            "[%s/log] - invoked user=%s guild=%s",
+            "economy/levelup",
+            author.id,
+            guild.id,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

@@ -1,4 +1,4 @@
-"""Moderstats configuration commands for the Nightcore bot."""
+"""Subgroup to configure notifications system."""
 
 import logging
 from typing import cast
@@ -25,13 +25,13 @@ logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
-    name="notifications", description="Configure notifications settings."
+    name="notifications", description="Настроить систему уведомлений"
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    notifications="The channel to send notifications (/notify)",
-    moderation_notifications="The channel to send moderation notifications",
-    nightcore_notifications="The channel to send Nightcore notifications",
+    notifications="Канал для отправки уведомлений (/notify)",
+    moderation_notifications="Канал для отправки уведомлений для модерации",
+    nightcore_notifications="Канал для отправки уведомлений от Nightcore",
 )
 async def notifications(
     interaction: Interaction,
@@ -79,7 +79,7 @@ async def notifications(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Notifications Configuration",
+            title="Настройка системы уведомлений",
             description=description,
             color=discord.Color.green(),
         ),

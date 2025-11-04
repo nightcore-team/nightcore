@@ -1,4 +1,4 @@
-"""Handle user items changed events in the economy feature."""
+"""Handle clan items changed events."""
 
 import asyncio
 import logging
@@ -8,34 +8,47 @@ from typing import TYPE_CHECKING, Any
 from discord.ext.commands import Cog  # type: ignore
 
 from src.nightcore.features.economy.components.v2 import (
-    TransferCoinsViewV2,
+    AwardNotificationViewV2,
 )
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-    from src.nightcore.features.economy.events.dto import (
-        TransferCoinsEventDTO,
+    from src.nightcore.features.clans.events.dto import (
+        AwardNotificationEventDTO,
     )
 
+from src.nightcore.utils import (
+    ensure_member_exists,
+)
 from src.nightcore.utils.log import send_log_message
 
 logger = logging.getLogger(__name__)
 
 
-class TransferCoinsEvent(Cog):
+class ClanItemsChangedEvent(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
     @Cog.listener()
-    async def on_transfer_coins(
+    async def on_clan_items_changed(
         self,
-        dto: "TransferCoinsEventDTO",
+        dto: "AwardNotificationEventDTO",
     ):
-        """Handle user items changed event."""
+        """Handle clan items changed event."""
 
-        view = TransferCoinsViewV2(
-            self.bot,
-            user_id=dto.sender_id,
+        member = await ensure_member_exists(dto.guild, dto.user_id)
+        if not member:
+            logger.error(
+                "[%s/log] Member %s not found in guild %s",
+                dto.event_type,
+                dto.user_id,
+                dto.guild.id,
+            )
+            return
+
+        view = AwardNotificationViewV2(
+            bot=self.bot,
+            user_id=dto.user_id,
             item_name=dto.item_name,
             amount=dto.amount,
         )
@@ -51,7 +64,7 @@ class TransferCoinsEvent(Cog):
                 dto.guild.id,
             )
 
-        gather_list.append(dto.receiver.send(view=view))
+        gather_list.append(member.send(view=view))
 
         try:
             await asyncio.gather(*gather_list)
@@ -59,16 +72,15 @@ class TransferCoinsEvent(Cog):
             logger.exception(
                 "[%s/log] Failed to run gather for user %s in guild %s: %s",
                 dto.event_type,
-                dto.receiver.id,
+                dto.user_id,
                 dto.guild.id,
                 e,
             )
 
         logger.info(
-            "[%s/log] - invoked sender=%s receiver=%s guild=%s item_name=%s amount=%s",  # noqa: E501
+            "[%s/log] - invoked user=%s guild=%s item_name=%s amount=%s",
             dto.event_type,
-            dto.sender_id,
-            dto.receiver.id,
+            dto.user_id,
             dto.guild.id,
             dto.item_name,
             dto.amount,
@@ -76,5 +88,5 @@ class TransferCoinsEvent(Cog):
 
 
 async def setup(bot: "Nightcore") -> None:
-    """Setup the TransferCoinsEvent cog."""
-    await bot.add_cog(TransferCoinsEvent(bot))
+    """Setup the ClanItemsChangedEvent cog."""
+    await bot.add_cog(ClanItemsChangedEvent(bot))

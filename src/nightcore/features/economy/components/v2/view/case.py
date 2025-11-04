@@ -1,4 +1,8 @@
-"""Views related to cases."""
+"""
+V2 views components related to cases.
+
+Used for displaying case opening results and help information about cases.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
@@ -66,20 +70,20 @@ class CaseHelpViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <a:68842universebox:1433433538581106768> Информация о кейсах"  # noqa: E501, RUF001
+                "## <a:68842universebox:1433433538581106768> Информация о кейсах"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](
-                "**Доступные виды кейсов: кейс с коинами, кейс с цветами.**\n"  # noqa: RUF001
+                "**Доступные виды кейсов: кейс с коинами, кейс с цветами.**\n"
                 "> Чтобы открыть кейс, используйте команду **`/case open`**"
             )
         )
         container.add_item(Separator[Self]())
 
         container.add_item(
-            TextDisplay[Self]("### Кейс с коинами"),  # noqa: RUF001
+            TextDisplay[Self]("### Кейс с коинами"),
         )
         container.add_item(
             TextDisplay[Self](
@@ -91,7 +95,7 @@ class CaseHelpViewV2(LayoutView):
             ),
         )
         container.add_item(Separator[Self]())
-        container.add_item(TextDisplay[Self]("### Кейс с цветами"))  # noqa: RUF001
+        container.add_item(TextDisplay[Self]("### Кейс с цветами"))
         container.add_item(
             TextDisplay[Self](
                 "\n".join(

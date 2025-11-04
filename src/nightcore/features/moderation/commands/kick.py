@@ -34,11 +34,10 @@ class Kick(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="kick", description="Kick a user from the server"
+        name="kick",
+        description="Кикнуть пользователя с сервера",
     )
-    @app_commands.describe(
-        user="The user to kick", reason="The reason for kicking the user"
-    )
+    @app_commands.describe(user="Пользователь для кика", reason="Причина кика")
     async def kick(
         self,
         interaction: Interaction,
@@ -54,7 +53,7 @@ class Kick(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -67,7 +66,7 @@ class Kick(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
         has_moder_role = has_any_role_from_sequence(
             cast(discord.Member, interaction.user), moderation_access_roles
@@ -87,7 +86,17 @@ class Kick(Cog):
         if is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot kick moderators.",
+                    "Вы не можете кикнуть модераторов.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if member.guild_permissions.administrator:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Вы не можете заблокировать администраторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -99,7 +108,7 @@ class Kick(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to kick members.",
+                    "У меня нет прав для кика участников.",
                 ),
                 ephemeral=True,
             )
@@ -107,7 +116,7 @@ class Kick(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot kick me.",
+                    "Вы не можете кикнуть меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -119,7 +128,7 @@ class Kick(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I cannot kick this user because he has a higher role than me.",  # noqa: E501
+                    "Я не могу кикнуть этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
@@ -149,8 +158,8 @@ class Kick(Cog):
             logger.exception("[command] - Failed to kick user: %s", e)
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Kick Error",
-                    "Failed to kick the user.",
+                    "Ошибка кика",  # type: ignore
+                    "Не удалось кикнуть пользователя.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -161,8 +170,8 @@ class Kick(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Kicked",
-                f"Successfully kicked {member.mention} from the server.",
+                "Пользователь кикнут",  # type: ignore
+                f"Пользователь <@{member.id}> был кикнут модератором {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )

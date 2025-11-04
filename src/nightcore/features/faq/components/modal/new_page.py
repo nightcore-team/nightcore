@@ -1,5 +1,10 @@
-"""FAQ New Page Modal Component."""
+"""
+FAQ New Page Modal Component.
 
+Used for creating new FAQ pages in guilds.
+"""
+
+import logging
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import Guild, TextStyle
@@ -13,6 +18,8 @@ from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+logger = logging.getLogger(__name__)
 
 
 class NewFAQPageModal(Modal, title="Настроить страницу"):
@@ -86,7 +93,7 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
             await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка создания страницы FAQ",
-                    f"Страница с заголовком '{title}' уже существует.",  # noqa: RUF001
+                    f"Страница с заголовком '{title}' уже существует.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -98,7 +105,7 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
             await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка создания страницы FAQ",
-                    "Страница с таким описанием уже существует.",  # noqa: RUF001
+                    "Страница с таким описанием уже существует.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -110,10 +117,17 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
             await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Страница FAQ создана",
-                    f"Страница с заголовком '{title}' успешно создана.",  # noqa: RUF001
+                    f"Страница с заголовком '{title}' успешно создана.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
+
+        logger.info(
+            "[modal] - FAQ page created user=%s guild=%s title=%s",
+            interaction.user.id,
+            guild.id,
+            title,
+        )
+        return

@@ -1,4 +1,4 @@
-"""Paint command."""
+"""Command to apply a color role to yourself."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -24,9 +24,9 @@ class Paint(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(name="paint", description="Применить на себя цвет.")
+    @app_commands.command(name="paint", description="Применить на себя цвет")
     @app_commands.autocomplete(color=own_colors_autocomplete)
-    @app_commands.describe(color="Цвет, который вы хотите применить.")
+    @app_commands.describe(color="Цвет, который вы хотите применить")
     async def paint(
         self,
         interaction: Interaction["Nightcore"],
@@ -146,8 +146,8 @@ class Paint(Cog):
         if outcome == "no_color_to_reset":
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Ошибка сброса цвета",  # noqa: RUF001
-                    "У вас нет активного цвета для сброса.",  # noqa: RUF001
+                    "Ошибка сброса цвета",
+                    "У вас нет активного цвета для сброса.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -157,7 +157,7 @@ class Paint(Cog):
         if outcome == "reset_success":
             return await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
-                    "Сброс цвета",  # noqa: RUF001
+                    "Сброс цвета",
                     "Вы успешно сбросили свой цвет.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -169,7 +169,7 @@ class Paint(Cog):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
-                    "У вас нет этого цвета в инвентаре.",  # noqa: RUF001
+                    "У вас нет этого цвета в инвентаре.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -213,7 +213,7 @@ class Paint(Cog):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
-                    "У бота нет прав для управления ролями.\n"  # noqa: RUF001
+                    "У бота нет прав для управления ролями.\n"
                     "Обратитесь к администрации.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -243,13 +243,13 @@ class Paint(Cog):
                 ephemeral=True,
             )
 
-            logger.info(
-                "[paint] User %s applied color %s (role %s) in guild %s",
-                member.id,
-                color,
-                role.id,  # type: ignore
-                guild.id,
-            )
+        logger.info(
+            "[command] - invoked user=%s guild=%s role_id=%s color=%s",
+            member.id,
+            color,
+            role.id,  # type: ignore
+            guild.id,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

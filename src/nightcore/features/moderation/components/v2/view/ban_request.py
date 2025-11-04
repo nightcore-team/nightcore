@@ -85,13 +85,13 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         async with view.approve_lock:
             if view.is_closed:
                 return await interaction.response.send_message(
-                    "This ban request has already been closed.",
+                    "Этот запрос на бан уже был закрыт.",
                     ephemeral=True,
                 )
 
             if moderator.id in view.in_favor:
                 return await interaction.response.send_message(
-                    "You have already voted in favor of this ban request.",
+                    "Вы уже проголосовали.",
                     ephemeral=True,
                 )
 
@@ -183,13 +183,13 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
         if view.is_closed:
             return await interaction.response.send_message(
-                "This ban request has already been closed.",
+                "Этот запрос на бан уже был закрыт.",
                 ephemeral=True,
             )
 
         if user.id in view.against:
             return await interaction.response.send_message(
-                "You have already voted against this ban request.",
+                "Вы уже проголосовали.",
                 ephemeral=True,
             )
 

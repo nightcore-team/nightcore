@@ -1,4 +1,4 @@
-"""Get moderation stats command for the Nightcore bot."""
+"""Command to get stats for a moderator."""
 
 import logging
 from typing import cast
@@ -43,13 +43,13 @@ class GetModerationStats(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="getmoderstats", description="Get moderation stats for a user"
+        name="getmoderstats", description="Получить статистику модерации"
     )
     @app_commands.describe(
-        user="The user to get stats for",
-        from_date="The start date.",
-        to_date="The end date.",
-        ephemeral="Whether the response should be ephemeral",
+        user="Пользователь для получения статистики",
+        from_date="Дата начала.",
+        to_date="Дата окончания.",
+        ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
     async def getmoderstats(
         self,
@@ -70,7 +70,7 @@ class GetModerationStats(Cog):
             if not member:
                 return await interaction.response.send_message(
                     embed=EntityNotFoundEmbed(
-                        "Member",
+                        "пользователь",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -100,13 +100,13 @@ class GetModerationStats(Cog):
                 moderation_access_roles
                 := guild_config.moderation_access_roles_ids
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
             if not (
                 trackable_moderation_role
                 := guild_config.trackable_moderation_role_id
             ):
-                raise FieldNotConfiguredError("global moderation role")
+                raise FieldNotConfiguredError("отслеживаемая роль модерации")
 
             moderators: list[discord.Member] = []
             if member:
@@ -118,7 +118,7 @@ class GetModerationStats(Cog):
                 else:
                     return await interaction.response.send_message(
                         embed=ValidationErrorEmbed(
-                            "This user is not a moderator to get stats for.",
+                            "Этот пользователь не является модератором для получения статистики.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -132,8 +132,8 @@ class GetModerationStats(Cog):
             if not moderators:
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Get Moderation Stats Error.",
-                        "No moderators found.",
+                        "Ошибка получения статистики.",
+                        "Не удалось найти модераторов с отслеживаемой ролью.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -162,16 +162,6 @@ class GetModerationStats(Cog):
                 ephemeral=True,
             )
 
-        if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "You cannot get stats for me.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
         await interaction.response.defer(ephemeral=ephemeral)
 
         stats = build_moderators_stats(
@@ -194,7 +184,7 @@ class GetModerationStats(Cog):
         pages = build_moderstats_pages(stats)
 
         embed = discord.Embed(
-            title=f"Moderation stats from {from_dt.date()} to {to_dt.date()}",
+            title=f"Статистика модерации с {from_dt.date()} по {to_dt.date()}",
             color=discord.Color.blurple(),
         )
 

@@ -1,4 +1,4 @@
-"""Avatar command for the Nightcore bot."""
+"""Command to get a user's banner."""
 
 import logging
 
@@ -16,8 +16,10 @@ class Banner(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(name="banner", description="Get user's banner")
-    @app_commands.describe(user="The user to get the banner of.")
+    @app_commands.command(
+        name="banner", description="Получить баннер пользователя"
+    )
+    @app_commands.describe(user="Пользователь, чей баннер нужно получить")
     async def banner(
         self,
         interaction: Interaction,
@@ -53,7 +55,7 @@ class Banner(Cog):
 
         else:
             await interaction.response.send_message(
-                "У пользователя нет баннера.",  # noqa: RUF001
+                "У пользователя нет баннера.",
                 ephemeral=True,
             )
         logger.info(

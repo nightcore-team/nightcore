@@ -41,10 +41,13 @@ class Ticketban(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="ticketban", description="Ban a user from creating tickets"
+        name="ticketban",
+        description="Заблокировать пользователю создание тикетов",
     )
     @app_commands.describe(
-        user="The user to ban", reason="The reason for banning the user"
+        user="Пользователь для блокировки",
+        reason="Причина блокировки",
+        duration="Длительность блокировки",
     )
     async def ticketban(
         self,
@@ -62,7 +65,7 @@ class Ticketban(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -72,7 +75,7 @@ class Ticketban(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot ban tickets for me.",
+                    "Вы не можете заблокировать меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -84,7 +87,7 @@ class Ticketban(Cog):
         if not parsed_duration:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Invalid duration format.",
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -97,7 +100,7 @@ class Ticketban(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
             has_moder_role = has_any_role_from_sequence(
                 cast(discord.Member, interaction.user), moderation_access_roles
@@ -117,7 +120,7 @@ class Ticketban(Cog):
             if is_member_moderator:
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        "You cannot ban tickets for moderators.",
+                        "Вы не можете заблокировать модераторов.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -133,7 +136,7 @@ class Ticketban(Cog):
                 ):
                     return await interaction.response.send_message(
                         embed=ValidationErrorEmbed(
-                            "This user is already ticket banned.",
+                            "Этот пользователь уже имеет блокировку на создание тикетов.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -148,8 +151,8 @@ class Ticketban(Cog):
                 )
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Ticketban Failed",
-                        "Failed to ticketban the user. ",
+                        "Ошибка блокировки тикетов",
+                        "Не удалось заблокировать пользователя.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     )
@@ -173,8 +176,8 @@ class Ticketban(Cog):
                 )
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Ticketban Failed",
-                        "Failed to ticketban the user. ",
+                        "Ошибка блокировки тикетов",
+                        "Не удалось заблокировать пользователя.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     )
@@ -205,13 +208,13 @@ class Ticketban(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Ticketbanned",
-                f"{member.mention} has been ticketbanned by moderator {interaction.user.mention}",  # noqa: E501
+                "Блокировка на создание тикетов",
+                f"<@{member.id}> заблокирован модератором {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
-            .add_field(name="Reason", value=reason, inline=True)
-            .add_field(name="Duration", value=duration, inline=True)
+            .add_field(name="Причина", value=reason, inline=True)
+            .add_field(name="Длительность", value=duration, inline=True)
         )
 
         logger.info(

@@ -1,4 +1,4 @@
-"""Moderstats configuration commands for the Nightcore bot."""
+"""Subcommand to configure moderstats settings."""
 
 import logging
 from typing import cast
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
-    name="moderstats", description="Configure moderation stats settings."
+    name="moderstats", description="Настроить систему статистики модерации"
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
@@ -40,8 +40,8 @@ logger = logging.getLogger(__name__)
     role_request="Role request score",  #
     role_remove="Role remove score",  #
     message="Message score",  #
-    role="Trackable moderation role",  #
-    channel="Count moderator messages channel",  #
+    role="Роль для отслеживания статистики модерации",  #
+    channel="Канал для подсчета сообщений модераторов",  #
 )
 async def moderstats(
     interaction: Interaction,
@@ -103,7 +103,7 @@ async def moderstats(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Moderstats Configuration",
+            title="Настройка системы статистики модерации",
             description=description,
             color=discord.Color.green(),
         ),

@@ -1,5 +1,6 @@
 """Add a new FAQ page command."""
 
+import logging
 from typing import TYPE_CHECKING
 
 from discord import app_commands
@@ -10,6 +11,8 @@ from src.nightcore.features.faq.components.modal import NewFAQPageModal
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+logger = logging.getLogger(__name__)
 
 
 @faq_group.command(
@@ -24,3 +27,9 @@ async def add_faq_page(
 
     modal = NewFAQPageModal(bot=interaction.client)
     await interaction.response.send_modal(modal)
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s",
+        interaction.user.id,
+        interaction.guild.id,  # type: ignore
+    )

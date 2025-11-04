@@ -30,10 +30,10 @@ class UnBan(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="unban", description="Unban a user in the server"
+        name="unban", description="Разбанить пользователя на сервере"
     )
     @app_commands.describe(
-        user="The user to unban", reason="The reason for unbanning the user"
+        user="Пользователь для разбана", reason="Причина разбана пользователя"
     )
     async def unban(
         self,
@@ -87,7 +87,7 @@ class UnBan(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to unban members.",
+                    "У меня нет прав на разбан участников.",
                 ),
                 ephemeral=True,
             )
@@ -95,7 +95,7 @@ class UnBan(Cog):
         if guild.me == user:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot unban me.",
+                    "Вы не можете разбанить меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -107,8 +107,8 @@ class UnBan(Cog):
         except discord.NotFound:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "User Not Banned",
-                    f"<@{user.id}> is not banned in this server.",
+                    "Пользователь не забанен",
+                    f"<@{user.id}> не забанен на этом сервере.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -121,8 +121,8 @@ class UnBan(Cog):
                 logger.exception("Failed to unban user: %s", e)
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Unban Failed",
-                        f"Failed to unban <@{user.id}>.",
+                        "Ошибка разбана",
+                        f"Не удалось разбанить <@{user.id}>.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -133,11 +133,11 @@ class UnBan(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Unbanned",
-                f"<@{user.id}> has been unbanned by moderator {interaction.user.mention}",  # noqa: E501
+                "Пользователь разбанен",
+                f"<@{user.id}> был разбанен модератором {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Reason", value=reason, inline=True)
+            ).add_field(name="Причина", value=reason, inline=True)
         )
 
         try:

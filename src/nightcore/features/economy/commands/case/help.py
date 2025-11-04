@@ -1,4 +1,4 @@
-"""Open case command."""
+"""Command to get information about cases."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -21,11 +21,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@case_group.command(name="help", description="Узнать информацию о кейсах.")  # noqa: RUF001
+@case_group.command(name="help", description="Узнать информацию о кейсах")
 async def open_case(
     interaction: Interaction["Nightcore"],
 ):
-    """Open case and get reward."""
+    """Get information about cases."""
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
@@ -57,7 +57,7 @@ async def open_case(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка получения информации",
-                "не удалось получить информацию о кейсах.",  # noqa: RUF001
+                "не удалось получить информацию о кейсах.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             )
@@ -71,6 +71,10 @@ async def open_case(
             colors_drops=color_drop,
         )
 
-        return await interaction.response.send_message(
-            view=view, ephemeral=True
-        )
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s",
+        interaction.user.id,
+        guild.id,
+    )

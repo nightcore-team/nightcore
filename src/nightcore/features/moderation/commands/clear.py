@@ -1,4 +1,4 @@
-"""Clear command for the Nightcore bot."""
+"""Command to clear messages in text channel."""
 
 import logging
 from datetime import timezone
@@ -12,6 +12,7 @@ from discord.interactions import Interaction
 from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
+    ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
@@ -28,9 +29,9 @@ class Clear(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="clear", description="Clear messages from a channel"
+        name="clear", description="Очистить сообщения в канале"
     )
-    @app_commands.describe(number="The number of messages to clear (1-20)")
+    @app_commands.describe(number="Количество сообщений для очистки (1-20)")
     async def clear(
         self,
         interaction: Interaction,
@@ -45,7 +46,7 @@ class Clear(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
         has_moder_role = has_any_role_from_sequence(
             cast(discord.Member, interaction.user), moderation_access_roles
@@ -64,7 +65,7 @@ class Clear(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to manage messages.",
+                    "У меня нет разрешения на управление сообщениями.",
                 ),
                 ephemeral=True,
             )
@@ -74,7 +75,7 @@ class Clear(Cog):
         if number < 1 or number > 20:
             return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
-                    "Please provide a number between 1 and 20.",
+                    "Пожалуйста, укажите число от 1 до 20.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -107,17 +108,19 @@ class Clear(Cog):
         except Exception as e:
             logger.exception("[command] - Failed to clear messages: %s", e)
             return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
-                    "Failed to clear messages. Ensure I have the necessary permissions and try again.",  # noqa: E501
+                embed=ErrorEmbed(
+                    "Ошибка очистки сообщений",
+                    "Не удалось очистить сообщения в текущем канале.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "Messages Cleared",
-                f"Successfully cleared {number} messages from the channel.",
+                "Сообщения очищены",
+                f"Успешно очищено {number} сообщений из канала.",
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             ),

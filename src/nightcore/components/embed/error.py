@@ -6,8 +6,8 @@ from discord import Color, Embed
 class NoConfigFoundButCreatedEmbed(Embed):
     def __init__(self, footer_text: str, footer_icon_url: str):
         super().__init__(
-            title="No Configuration Found",
-            description="No config found for this guild, but it will be created now. Please run this command again.",  # noqa
+            title="Конфигурация не найдена",
+            description="Конфигурация не найдена для этого сервера, но она будет создана сейчас. Пожалуйста, выполните эту команду снова.",  # noqa: E501
             color=Color.red(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)
@@ -16,8 +16,8 @@ class NoConfigFoundButCreatedEmbed(Embed):
 class NoConfigFoundEmbed(Embed):
     def __init__(self, footer_text: str, footer_icon_url: str):
         super().__init__(
-            title="No Configuration Found",
-            description="No config found for this guild.",
+            title="Конфигурация не найдена",
+            description="Конфигурация не найдена для этого сервера.",
             color=Color.red(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)
@@ -26,8 +26,8 @@ class NoConfigFoundEmbed(Embed):
 class NoOptionsSuppliedEmbed(Embed):
     def __init__(self, footer_text: str, footer_icon_url: str):
         super().__init__(
-            title="No Options Supplied",
-            description="No options were supplied for this command.",
+            title="Не предоставлены параметры",  # noqa: RUF001
+            description="Для этой команды не было предоставлено никаких параметров.",  # noqa: E501
             color=Color.yellow(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)
@@ -36,7 +36,7 @@ class NoOptionsSuppliedEmbed(Embed):
 class ValidationErrorEmbed(Embed):
     def __init__(self, msg: str, footer_text: str, footer_icon_url: str):
         super().__init__(
-            title="Validation Error occurred",
+            title="Ошибка валидации данных",
             description=msg,
             color=Color.red(),
         )
@@ -52,9 +52,9 @@ class MissingPermissionsEmbed(Embed):
         msg: str | None = None,
     ):
         super().__init__(
-            title="Missing Permissions",
+            title="Отсутствие необходимых прав",
             description=msg
-            or "You do not have permission to use this command.",
+            or "У вас нет прав для использования этой команды.",
             color=Color.red(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)
@@ -63,8 +63,8 @@ class MissingPermissionsEmbed(Embed):
 class EntityNotFoundEmbed(Embed):
     def __init__(self, entity: str, footer_text: str, footer_icon_url: str):
         super().__init__(
-            title="Entity Not Found",
-            description=f"The specified {entity} was not found on the server.",
+            title="Сущность не найдена",
+            description=f"Указанная сущность `{entity}` не найдена на сервере.",  # noqa: E501
             color=Color.red(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)

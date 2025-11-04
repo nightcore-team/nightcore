@@ -69,6 +69,14 @@ class CountClanMessageEvent(Cog):
             else:
                 clan.current_exp = new_current_exp
 
+        logger.info(
+            "[%s/log] - invoked user=%s guild=%s clan=%s",
+            "economy/levelup",
+            author.id,
+            guild.id,
+            clan.id,
+        )
+
 
 async def setup(bot: "Nightcore") -> None:
     """Setup the CountClanMessageEvent cog."""

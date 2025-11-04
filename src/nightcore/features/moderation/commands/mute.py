@@ -1,4 +1,4 @@
-"""Mute command for the Nightcore bot."""
+"""Command to mute a user."""
 
 import logging
 from datetime import timezone
@@ -40,9 +40,13 @@ class Mute(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(name="mute", description="Mute a user in the server")
+    @app_commands.command(
+        name="mute", description="Заблокировать чат пользователю"
+    )
     @app_commands.describe(
-        user="The user to mute", reason="The reason for muting the user"
+        user="Пользователь для блокировки",
+        duration="Длительность блокировки",
+        reason="Причина блокировки",
     )
     async def mute(
         self,
@@ -59,7 +63,7 @@ class Mute(Cog):
         if not parsed_duration:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Invalid duration format.",
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -72,7 +76,7 @@ class Mute(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -111,7 +115,7 @@ class Mute(Cog):
         if is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot mute moderators.",
+                    "Вы не можете заблокировать чат модераторам.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -121,7 +125,7 @@ class Mute(Cog):
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot mute administrators.",
+                    "Вы не можете заблокировать чат администраторам.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -133,7 +137,7 @@ class Mute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to mute members.",
+                    "У меня нет прав для блокировки чата участников.",
                 ),
                 ephemeral=True,
             )
@@ -141,7 +145,7 @@ class Mute(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot mute me.",
+                    "Вы не можете заблокировать чат мне.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -153,7 +157,7 @@ class Mute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I cannot mute this user because he has a higher role than me.",  # noqa: E501
+                    "Я не могу заблокировать чат этому пользователю, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
@@ -169,8 +173,8 @@ class Mute(Cog):
                     if mrole is None:
                         return await interaction.response.send_message(
                             embed=ErrorEmbed(
-                                "Mute role not found",
-                                f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
+                                "Роль блокировки не найдена",
+                                f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
@@ -179,8 +183,8 @@ class Mute(Cog):
                 else:
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "Mute role not found",
-                            f"The mute role with ID {mute_role_id} was not configured.",  # noqa: E501
+                            "Роль блокировки не найдена",
+                            f"Роль блокировки с ID {mute_role_id} не настроена.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -196,8 +200,8 @@ class Mute(Cog):
                         logger.exception("Failed to add role: %s", e)
                         return await interaction.response.send_message(
                             embed=ErrorEmbed(
-                                "Role Assignment Failed",
-                                "Failed to add role.",
+                                "Ошибка добавления роли",
+                                "Не удалось добавить роль блокировки пользователю.",  # noqa: E501
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
@@ -206,8 +210,8 @@ class Mute(Cog):
                 else:
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "User Mute Failed",
-                            f"{member.mention} already has mute.",
+                            "Ошибка блокировки",
+                            f"У {member.mention} уже есть блокировка чата.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -221,8 +225,8 @@ class Mute(Cog):
                     else:
                         return await interaction.response.send_message(
                             embed=ErrorEmbed(
-                                "User Mute Failed",
-                                f"{member.mention} is already timed out.",
+                                "Ошибка блокировки",
+                                f"{member.mention} уже в тайм-ауте.",
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
@@ -233,8 +237,8 @@ class Mute(Cog):
                     logger.exception("Failed to timeout member: %s", e)
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "User Timeout Failed",
-                            "Failed to timeout user.",
+                            "Ошибка тайм-аута",
+                            "Не удалось установить тайм-аут пользователю.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -243,8 +247,8 @@ class Mute(Cog):
             case _:
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Invalid Mute Type",
-                        "Mute type must be 'role' or 'timeout'.",
+                        "Неизвестный тип блокировки",
+                        "Тип блокировки должен быть 'role' или 'timeout'.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -255,13 +259,13 @@ class Mute(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Muted",
-                f"{member.mention} has been muted by moderator {interaction.user.mention}",  # noqa: E501
+                "Блокировка чата",
+                f"{interaction.user.mention} выдал мут пользователю {member.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
-            .add_field(name="Reason", value=reason, inline=True)
-            .add_field(name="Duration", value=duration, inline=True),
+            .add_field(name="Причина", value=reason, inline=True)
+            .add_field(name="Длительность", value=duration, inline=True),
             ephemeral=False,
         )
 

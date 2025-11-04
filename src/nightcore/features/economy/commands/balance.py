@@ -1,5 +1,6 @@
-"""Check user's balance command."""
+"""Command to check user's balance."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
@@ -14,14 +15,18 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+logger = logging.getLogger(__name__)
+
 
 class Balance(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(name="balance", description="Check user's balance.")
+    @app_commands.command(
+        name="balance", description="Посмотреть баланс пользователя"
+    )
     @app_commands.describe(
-        user="The user to check the balance for. Defaults to yourself."
+        user="Пользователь, чей баланс нужно проверить. По умолчанию - вы сами"
     )
     async def balance(
         self, interaction: Interaction, user: Member | None = None
@@ -46,6 +51,13 @@ class Balance(Cog):
         view = BalanceViewV2(self.bot, member.id, coin_name, user_record.coins)
 
         await interaction.response.send_message(view=view, ephemeral=True)
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s target_user=%s",
+            interaction.user.id,
+            guild.id,
+            member.id,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

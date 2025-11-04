@@ -1,4 +1,4 @@
-"""Clan creation command."""
+"""Command to change clan deputy."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @manage_clan_group.command(
-    name="change_deputy", description="Change the clan deputy. (Add/remove)"
+    name="change_deputy", description="Изменить заместителя клана."
 )
 @app_commands.choices(
     option=[
@@ -33,7 +33,10 @@ logger = logging.getLogger(__name__)
         app_commands.Choice(name="Снять", value="remove"),
     ]
 )
-@app_commands.describe()
+@app_commands.describe(
+    member="Участник, которого вы хотите назначить/снять с должности заместителя.",  # noqa: E501
+    option="Выберите, хотите ли вы назначить или снять заместителя.",
+)
 async def change_deputy(
     interaction: Interaction["Nightcore"],
     member: Member,
@@ -55,104 +58,165 @@ async def change_deputy(
             ephemeral=True,
         )
 
+    # Змінні для винесення з context manager
+    outcome = ""
+    clan_name = ""
+    member_name = ""
+    current_deputies_count = 0
+    max_deputies = 0
+
     async with bot.uow.start() as session:
-        # get clanmember
         leader = await get_clan_member(
             session,
             guild_id=guild.id,
             user_id=user.id,
             with_relations=True,
         )
+
         if not leader:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка изменения заместителя",
-                    "Вы не состоите в клане.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
+            outcome = "not_in_clan"
+        elif leader.role != ClanMemberRoleEnum.LEADER:
+            outcome = "not_leader"
+        else:
+            clan_member = await get_clan_member(
+                session,
+                guild_id=guild.id,
+                user_id=member.id,
             )
 
-        if leader.role != ClanMemberRoleEnum.LEADER:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+            if not clan_member or clan_member.clan_id != leader.clan_id:
+                outcome = "member_not_in_clan"
+            else:
+                clan_name = leader.clan.name
+                member_name = member.display_name
+                current_deputies_count = len(leader.clan.deputies)
+                max_deputies = leader.clan.max_deputies
 
-        clan_member = await get_clan_member(
-            session,
-            guild_id=guild.id,
-            user_id=member.id,
+                match option:
+                    case "add":
+                        if current_deputies_count >= max_deputies:
+                            outcome = "max_deputies_reached"
+                        elif clan_member.role == ClanMemberRoleEnum.DEPUTY:
+                            outcome = "already_deputy"
+                        else:
+                            clan_member.role = ClanMemberRoleEnum.DEPUTY
+                            await session.flush()
+                            outcome = "deputy_added"
+
+                    case "remove":
+                        if clan_member.role != ClanMemberRoleEnum.DEPUTY:
+                            outcome = "not_deputy"
+                        else:
+                            clan_member.role = ClanMemberRoleEnum.MEMBER
+                            await session.flush()
+                            outcome = "deputy_removed"
+
+                    case _:
+                        outcome = "invalid_option"
+
+    if outcome == "not_in_clan":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения заместителя",
+                "Вы не состоите в клане.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
         )
-        if not clan_member or clan_member.clan_id != leader.clan_id:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка изменения заместителя",
-                    "Указанный пользователь не состоит в вашем клане.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
-        match option:
-            case "add":
-                if len(leader.clan.deputies) + 1 > leader.clan.max_deputies:
-                    return await interaction.response.send_message(
-                        embed=ErrorEmbed(
-                            "Ошибка изменения заместителя",
-                            "Превышено максимальное количество заместителей в клане.",
-                            bot.user.display_name,  # type: ignore
-                            bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-                if clan_member.role == ClanMemberRoleEnum.DEPUTY:
-                    return await interaction.response.send_message(
-                        embed=ErrorEmbed(
-                            "Ошибка изменения заместителя",
-                            "Указанный пользователь уже является заместителем.",  # noqa: E501
-                            bot.user.display_name,  # type: ignore
-                            bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-                clan_member.role = ClanMemberRoleEnum.DEPUTY
-            case "remove":
-                if clan_member.role != ClanMemberRoleEnum.DEPUTY:
-                    return await interaction.response.send_message(
-                        embed=ErrorEmbed(
-                            "Ошибка изменения заместителя",
-                            "Указанный пользователь не является заместителем.",
-                            bot.user.display_name,  # type: ignore
-                            bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-                clan_member.role = ClanMemberRoleEnum.MEMBER
-            case _:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка изменения заместителя",
-                        "Неверная опция. Используйте 'add' или 'remove'.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+    if outcome == "not_leader":
+        return await interaction.response.send_message(
+            embed=MissingPermissionsEmbed(
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
-        await session.flush()
+    if outcome == "member_not_in_clan":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения заместителя",
+                "Указанный пользователь не состоит в вашем клане.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
-    return await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
-            "Изменение заместителя",
-            f"Роль пользователя **{member.display_name}** успешно изменена на **{clan_member.role.value.lower()}**.",  # noqa: E501
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
-        ),
-        ephemeral=True,
+    if outcome == "max_deputies_reached":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения заместителя",
+                f"Превышено максимальное количество заместителей в клане ({current_deputies_count}/{max_deputies}).",  # noqa: E501
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "already_deputy":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения заместителя",
+                "Указанный пользователь уже является заместителем.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "not_deputy":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения заместителя",
+                "Указанный пользователь не является заместителем.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "invalid_option":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения заместителя",
+                "Неверная опция. Используйте 'add' или 'remove'.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "deputy_added":
+        await interaction.response.send_message(
+            embed=SuccessMoveEmbed(
+                "Заместитель назначен",
+                f"Пользователь **{member_name}** был назначен заместителем клана **{clan_name}**.",  # noqa: E501
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "deputy_removed":
+        await interaction.response.send_message(
+            embed=SuccessMoveEmbed(
+                "Заместитель снят",
+                f"Пользователь **{member_name}** был снят с заместителя клана **{clan_name}**.",  # noqa: E501
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s clan_name=%s member=%s option=%s outcome=%s",  # noqa: E501
+        interaction.user.id,
+        guild.id,
+        clan_name,
+        member.id,
+        option,
+        outcome,
     )

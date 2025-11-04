@@ -1,4 +1,9 @@
-"""FAQ view component v2."""
+"""
+FAQ view v2 component.
+
+Used for displaying FAQ information in guilds.
+Handles FAQ page button interactions.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
@@ -63,7 +68,7 @@ class FAQViewV2(LayoutView):
             container.add_item(Separator())
 
         # sections for each FAQ page
-        if self.faq_pages:
+        if self.faq_pages and len(self.faq_pages) > 0:
             for page in self.faq_pages:
                 faqbutton = Button[Self](
                     label="Подробнее",
@@ -84,7 +89,7 @@ class FAQViewV2(LayoutView):
                 container.add_item(Separator[Self]())
         else:
             container.add_item(
-                TextDisplay[Self]("В FAQ этого сервера нет страниц.")  # noqa: RUF001
+                TextDisplay[Self]("В FAQ этого сервера нет страниц.")
             )
             container.add_item(Separator[Self]())
 
@@ -133,7 +138,7 @@ class FAQViewV2(LayoutView):
             await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения страницы FAQ",
-                    f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501, RUF001
+                    f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -177,7 +182,7 @@ async def handle_faq_button_callback(
         await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка получения страницы FAQ",
-                f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501, RUF001
+                f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

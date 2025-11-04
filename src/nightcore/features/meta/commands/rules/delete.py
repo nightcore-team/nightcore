@@ -1,4 +1,7 @@
-import json  # noqa: D100
+"""Command to delete chapters or rules."""
+
+import json
+import logging
 from typing import Any, cast
 
 from discord import Guild, Interaction, app_commands
@@ -14,8 +17,11 @@ from src.nightcore.services.config import specified_guild_config
 
 from ._groups import rules as rules_group
 
+logger = logging.getLogger(__name__)
+
 
 @rules_group.command(name="delete", description="Удалить главу или правило")
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     clause="Номер пункта (например, '1' для главы, '1.1' для правила, '1.1.1' для подпункта)",  # noqa: E501
 )
@@ -24,8 +30,6 @@ async def delete_chapter_or_rule(
     clause: str,
 ):
     """Delete a chapter or rule."""
-    # check if user has permissions
-    ...
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
@@ -193,9 +197,16 @@ async def delete_chapter_or_rule(
         embed=SuccessMoveEmbed(
             "Удаление главы или правила",
             message
-            + "\n\nНе забудьте заново опубликовать правила командой /rules send",  # noqa: E501, RUF001
+            + "\n\nНе забудьте заново опубликовать правила командой /rules send",  # noqa: E501
             bot.user.display_name,  # type: ignore
             bot.user.avatar.url,  # type: ignore
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s clause=%s",
+        interaction.user.id,
+        guild.id,
+        clause,
     )

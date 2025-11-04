@@ -1,4 +1,4 @@
-"""About command for the Nightcore bot."""
+"""Command to get information about the bot."""
 
 import logging
 import os
@@ -23,7 +23,8 @@ class About(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="about", description="Information about the bot"
+        name="about",
+        description="Информация о боте",
     )
     async def about(self, interaction: discord.Interaction):
         """Display information about the bot."""
@@ -45,14 +46,15 @@ class About(Cog):
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
 
-        # Bot creation date from snowflake
+        # TODO: create LayoutView for this
         try:
             create_time = snowflake_time(self.bot.user.id)  # type: ignore
         except Exception:
             create_time = datetime.now(timezone.utc)
 
         embed = discord.Embed(
-            title="Information about Nightcore", color=discord.Color.blurple()
+            title="Информация о боте",
+            color=discord.Color.blurple(),
         )
 
         embed.add_field(

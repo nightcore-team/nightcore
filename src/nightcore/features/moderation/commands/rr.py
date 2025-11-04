@@ -42,10 +42,11 @@ class Rr(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="rr", description="Remove organization role from a user"
+        name="rr",
+        description="Удалить организационную роль у пользователя",
     )
     @app_commands.describe(
-        user="The user to remove the role from",
+        user="Пользователь, у которого нужно удалить роль",
     )
     async def rr(
         self,
@@ -61,7 +62,7 @@ class Rr(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -100,7 +101,7 @@ class Rr(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to remove roles.",
+                    "У меня нет прав для удаления ролей.",
                 ),
                 ephemeral=True,
             )
@@ -108,7 +109,7 @@ class Rr(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot remove roles from me.",
+                    "Вы не можете удалить роли у меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -124,8 +125,9 @@ class Rr(Cog):
 
         if not user_org_roles:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "User has no organization roles.",
+                embed=ErrorEmbed(
+                    "Ошибка снятия роли",
+                    "У пользователя нет организационных ролей.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -151,8 +153,8 @@ class Rr(Cog):
                 logger.exception("[command] - Failed to remove role: %s", e)
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
-                        "Role Removal Failed",
-                        "Failed to remove role.",
+                        "Ошибка снятия роли",
+                        "Не удалось снять роль с пользователя.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -182,8 +184,8 @@ class Rr(Cog):
 
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
-                    "Role Removed",
-                    f"Successfully removed role {role.mention} from {member.mention}.",  # noqa: E501
+                    "Роль удалена",
+                    f"Роль {role.mention} успешно снята с {member.mention}.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 )

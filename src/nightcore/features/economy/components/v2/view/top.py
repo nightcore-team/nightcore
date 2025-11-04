@@ -1,4 +1,8 @@
-"""Clan info view v2."""
+"""
+User list view v2 component.
+
+Used for displaying a list of users with their stats by chosen criteria.
+"""
 
 from collections.abc import Sequence
 from datetime import datetime, timezone

@@ -1,4 +1,8 @@
-"""Coins Shop Order View V2."""
+"""
+Coins Shop Order View V2.
+
+Used for displaying and managing shop orders.
+"""
 
 import logging
 import re
@@ -137,7 +141,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка одобрения покупки",
-                    "Роли с доступом к экономике не настроены.",  # noqa: RUF001
+                    "Роли с доступом к экономике не настроены.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 )
@@ -302,7 +306,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка отклонения покупки",
-                    "Роли с доступом к экономике не настроены.",  # noqa: RUF001
+                    "Роли с доступом к экономике не настроены.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 )
@@ -486,7 +490,7 @@ class CoinsShopOrderViewV2(LayoutView):
         container.add_item(Separator[Self]())  # 5
 
         # 6
-        container.add_item(TextDisplay[Self]("### Информация о покупке:"))  # noqa: RUF001
+        container.add_item(TextDisplay[Self]("### Информация о покупке:"))
         # 7
         container.add_item(
             TextDisplay[Self](

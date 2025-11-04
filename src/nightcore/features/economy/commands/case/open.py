@@ -1,4 +1,4 @@
-"""Open case command."""
+"""Command to open case."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@case_group.command(name="open", description="Открыть кейс.")
+@case_group.command(name="open", description="Открыть кейс")
 @app_commands.describe(case="Кейс для открытия.")
 @app_commands.autocomplete(case=cases_autocomplete)
 async def open_case(
@@ -132,7 +132,7 @@ async def open_case(
     if outcome == "no_case":
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
-                "У вас нет такого кейса для открытия.",  # noqa: RUF001
+                "У вас нет такого кейса для открытия.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -172,7 +172,6 @@ async def open_case(
         )
 
     if outcome == "success":
-        # TODO: make more beautiful view for case opening
         view = CaseOpenViewV2(
             bot=bot,
             case_name=CASES_NAMES.get(case, case).lower(),
@@ -184,10 +183,10 @@ async def open_case(
             ephemeral=True,
         )
 
-        logger.info(
-            "[case/open] User %s opened case %s in guild %s, got reward: %s",
-            member.id,
-            case,
-            guild.id,
-            reward_text,
-        )
+    logger.info(
+        "[command] - invoked user=%s guild=%s case=%s reward=%s",
+        member.id,
+        case,
+        guild.id,
+        reward_text,
+    )

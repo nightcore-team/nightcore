@@ -1,4 +1,4 @@
-"""Rolemembers command for the Nightcore bot."""
+"""Command to get members of a role."""
 
 import logging
 
@@ -19,9 +19,10 @@ class RoleMembers(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="rolemembers", description="Get members of a role"
+        name="rolemembers",
+        description="Получить список участников с определённой ролью",
     )
-    @app_commands.describe(role="The role to get members of.")
+    @app_commands.describe(role="Роль, участников которой нужно получить")
     async def role_members(
         self,
         interaction: Interaction,

@@ -127,7 +127,7 @@ class ForumComplaintProcessor:
                     url=f"{self._api.client.base_url.replace('/api', '')}{thread.url}",  # noqa: E501
                     moderator_id=discord_id if discord_id else 0,
                     ping_role_id=server.role_id,
-                    reason=reason if reason else "Не указана",  # noqa: RUF001
+                    reason=reason if reason else "Не указана",
                 )
             )
 

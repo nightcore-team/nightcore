@@ -1,5 +1,6 @@
 """Change an existing FAQ page command."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -15,6 +16,8 @@ from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+logger = logging.getLogger(__name__)
 
 
 @faq_group.command(
@@ -54,7 +57,7 @@ async def change_faq_page(
         await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка изменения страницы FAQ",
-                f"Страница с названием '{page}' не найдена в FAQ этого сервера.",  # noqa: E501, RUF001
+                f"Страница с названием '{page}' не найдена в FAQ этого сервера.",  # noqa: E501
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -65,3 +68,10 @@ async def change_faq_page(
     if outcome == "success":
         modal = ChangeFAQPageModal(bot=interaction.client, page=page_to_change)  # type: ignore
         await interaction.response.send_modal(modal)
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s page=%s",
+        interaction.user.id,
+        guild.id,
+        page,
+    )

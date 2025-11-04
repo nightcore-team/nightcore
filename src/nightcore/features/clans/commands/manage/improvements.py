@@ -1,4 +1,4 @@
-"""Clan invitation command."""
+"""Command to manage clan improvements."""
 
 from typing import TYPE_CHECKING, cast
 
@@ -22,9 +22,9 @@ if TYPE_CHECKING:
 
 
 @clan_manage_group.command(
-    name="improvements", description="Manage clan improvements."
+    name="improvements", description="Управление клановыми улучшениями."
 )
-@app_commands.describe(improvement="The improvement to apply.")
+@app_commands.describe(improvement="Улучшение, которое нужно применить.")
 @app_commands.autocomplete(improvement=clans_improvements_autocomplete)
 async def improvements(
     interaction: Interaction["Nightcore"],

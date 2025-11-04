@@ -1,4 +1,4 @@
-"""Logging configuration commands for the Nightcore bot."""
+"""Subgroup to configure logging system."""
 
 import logging
 from typing import Literal, cast
@@ -26,22 +26,24 @@ from src.nightcore.utils.field_validators import (
 logger = logging.getLogger(__name__)
 
 
-@logging_group.command(name="setup", description="Configure logging settings.")
+@logging_group.command(
+    name="setup", description="Настроить систему логирования."
+)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    bans="The channel to log bans.",
-    voices="The channel to log voice state changes.",
-    members="The channel to log member updates.",
-    channels="The channel to log channel updates.",
-    roles="The channel to log role updates.",
-    messages="The channel to log message updates.",
-    moderation="The channel to log moderation actions.",
-    tickets="The channel to log ticket updates.",
-    reactions="The channel to log reaction updates.",
-    private_rooms="The channel to log private room updates.",
-    economy="The channel to log economy moves.",
-    clans="The channel to log clan activities.",
-    ignoring_channels="The channels to ignore for logging. Type: `id,id,id,...`",  # noqa: E501
+    bans="Канал для логирования банов.",
+    voices="Канал для логирования изменений голосового состояния.",
+    members="Канал для логирования обновлений участников.",
+    channels="Канал для логирования обновлений каналов.",
+    roles="Канал для логирования обновлений ролей.",
+    messages="Канал для логирования обновлений сообщений.",
+    moderation="Канал для логирования действий модерации.",
+    tickets="Канал для логирования обновлений тикетов.",
+    reactions="Канал для логирования обновлений реакций.",
+    private_rooms="Канал для логирования обновлений приватных комнат.",
+    economy="Канал для логирования обновлений экономики.",
+    clans="Канал для логирования обновлений кланов.",
+    ignoring_channels="Каналы для игнорирования при логировании. Формат: id,id,id,...",  # noqa: E501
 )
 async def setup(
     interaction: Interaction,
@@ -104,7 +106,7 @@ async def setup(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Logging Configuration",
+            title="Настройка системы логирования",
             description=description,
             color=discord.Color.green(),
         ),
@@ -124,13 +126,13 @@ async def setup(
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    channel="The channel to update",
-    option="Whether to add or remove the channel from the ignore list",
+    channel="Канал для обновления",
+    option="Добавить или удалить канал из списка игнорируемых",
 )
 async def update_ignoring_channels(
     interaction: Interaction,
@@ -152,22 +154,21 @@ async def update_ignoring_channels(
             guild_config.message_log_ignoring_channels_ids = new_list
 
     if state == "exists":
-        desc = f"Channel <@&{channel.id}> already exists in the ignore list."
+        desc = f"Канал <@#{channel.id}> уже существует в списке игнорируемых."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Channel <#{channel.id}> is not in the ignore list."
+        desc = f"Канал <#{channel.id}> не в списке игнорируемых."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Channel <#{channel.id}> added to the ignore list."
+        desc = f"Канал <#{channel.id}> добавлен в список игнорируемых."
         color = discord.Color.blurple()
-    else:  # removed
-        desc = f"Channel <#{channel.id}> removed from the ignore list."
+    else:
+        desc = f"Канал <#{channel.id}> удален из списка игнорируемых."
         color = discord.Color.blurple()
 
-    # TODO: create embed component for configs
     await interaction.response.send_message(
         embed=Embed(
-            title="Logging Configuration",
+            title="Настройка системы логирования",
             description=desc,
             color=color,
         ),

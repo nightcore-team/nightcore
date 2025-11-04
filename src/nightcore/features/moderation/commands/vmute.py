@@ -1,4 +1,4 @@
-"""Voice mute command for the Nightcore bot."""
+"""Command to mute a user in voice chat."""
 
 import logging
 from datetime import timezone
@@ -41,10 +41,12 @@ class VMute(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="vmute", description="Mute a user in voice chat in the server"
+        name="vmute",
+        description="Выдать пользователю блокировку голосовых каналов.",
     )
     @app_commands.describe(
-        user="The user to mute", reason="The reason for muting the user"
+        user="Пользователь для блокировки",
+        reason="Причина блокировки пользователя",
     )
     async def vmute(
         self,
@@ -62,7 +64,7 @@ class VMute(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -79,7 +81,7 @@ class VMute(Cog):
                 moderation_access_roles
                 := guild_config.moderation_access_roles_ids
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
         mute_role_id = guild_config.vmute_role_id
 
@@ -101,7 +103,7 @@ class VMute(Cog):
         if is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot mute moderators.",
+                    "Вы не можете заблокировать модераторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -111,7 +113,7 @@ class VMute(Cog):
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot mute administrators.",
+                    "Вы не можете заблокировать администраторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -123,7 +125,7 @@ class VMute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to mute members.",
+                    "У меня нет прав для блокировки участников.",  # noqa: RUF001
                 ),
                 ephemeral=True,
             )
@@ -131,7 +133,7 @@ class VMute(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot mute me.",
+                    "Вы не можете заблокировать меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -143,7 +145,7 @@ class VMute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I cannot mute this user because he has a higher role than me.",  # noqa: E501
+                    "Я не могу заблокировать этого пользователя, потому что у него роль выше моей.",  # noqa: E501, RUF001
                 ),
                 ephemeral=True,
             )
@@ -153,7 +155,7 @@ class VMute(Cog):
         if not parsed_duration:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Invalid duration format.",
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -170,8 +172,8 @@ class VMute(Cog):
         if mrole is None:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Mute role not found",
-                    f"Failed to fetch mute role with ID {mute_role_id} in this server.",  # noqa: E501
+                    "Роль блокировки не найдена",
+                    f"Не удалось найти роль блокировки с ID {mute_role_id} на этом сервере.",  # noqa: E501, RUF001
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -187,8 +189,8 @@ class VMute(Cog):
                 logger.exception("Failed to add role: %s", e)
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Role Assignment Failed",
-                        "Failed to add role.",
+                        "Ошибка назначения роли",
+                        "Не удалось добавить роль.",  # noqa: RUF001
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -197,8 +199,8 @@ class VMute(Cog):
         else:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "User Mute Failed",
-                    f"{member.mention} already has mute.",
+                    "Ошибка блокировки пользователя",
+                    f"{member.mention} уже заблокирован.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -226,13 +228,13 @@ class VMute(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Muted",
-                f"{member.mention} has been muted in voice channels by moderator {interaction.user.mention}",  # noqa: E501
+                "Блокировка голосовых каналов выдана",
+                f"{member.mention} был заблокирован в голосовых каналах модератором {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
-            .add_field(name="Reason", value=reason, inline=True)
-            .add_field(name="Duration", value=duration, inline=True)
+            .add_field(name="Причина", value=reason, inline=True)
+            .add_field(name="Длительность", value=duration, inline=True)
         )
 
         try:

@@ -33,7 +33,11 @@ from src.infra.db.operations import (
     get_specified_channel,
     get_specified_guild_config,
 )
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.embed import (
+    ErrorEmbed,
+    MissingPermissionsEmbed,
+    SuccessMoveEmbed,
+)
 from src.nightcore.features.tickets.events.dto import TicketEventData
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
 
@@ -42,14 +46,13 @@ from .manage_ticket import ManageTicketViewV2
 logger = logging.getLogger(__name__)
 
 
-# TODO: add missing permissions and error embeds
 class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
     def __init__(self):
         super().__init__()
 
     @button(
         style=ButtonStyle.grey,
-        label="Create Ticket",
+        label="Создать тикет",
         emoji="<:29909ticket:1418324338142220309>",
         custom_id="ticket:create",
     )
@@ -65,8 +68,20 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
 
         if not guild.me.guild_permissions.manage_channels:
             return await interaction.followup.send(
-                "I do not have permission to manage channels.",
+                embed=MissingPermissionsEmbed(
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                    "У меня недостаточно прав для управления каналами.",  # noqa: RUF001
+                ),
             )
+
+        outcome = ""
+        current_tickets_count = 0
+        new_tickets_category_id = 0
+        create_ticket_ping_role_id = 0
+        logging_channel_id: int | None = None
+        new_channel_id = 0
+        ticket_jump_url = ""
 
         async with view.bot.uow.start() as session:
             guild_config = await get_specified_guild_config(
@@ -74,72 +89,141 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 config_type=GuildTicketsConfig,
                 guild_id=guild.id,
             )
+
             if guild_config is None:
                 logger.error(
                     "Failed to find ticket guild config in guild %s",
                     guild.id,
                 )
-                return await interaction.followup.send(
-                    "Ticket system is not configured in this server.",
-                )
-
-            if not all(
-                [
-                    guild_config.create_ticket_ping_role_id,
-                    guild_config.new_tickets_category_id,
-                    guild_config.pinned_tickets_category_id,
-                    guild_config.closed_tickets_category_id,
-                ]
-            ):
-                logger.error(
-                    "Not all ticket categories are configured in guild %s",
-                    guild.id,
-                )
-                return await interaction.followup.send(
-                    "Ticket system is not configured in this server.",
-                )
-
-            dbuser, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=user.id
-            )
-            if dbuser.ticket_ban:
-                return await interaction.followup.send(
-                    "You are ticket banned and cannot create tickets.",
-                )
-
-            last_ticket = await get_latest_user_ticket(
-                session, guild_id=guild.id, user_id=user.id
-            )
-            if last_ticket and last_ticket.state != TicketStateEnum.CLOSED:
-                return await interaction.followup.send(
-                    "You already have an open ticket.",
-                )
+                outcome = "ticket_system_not_configured"
             else:
-                current_tickets_count = guild_config.tickets_count + 1
+                if not all(
+                    [
+                        guild_config.create_ticket_ping_role_id,
+                        guild_config.new_tickets_category_id,
+                        guild_config.pinned_tickets_category_id,
+                        guild_config.closed_tickets_category_id,
+                    ]
+                ):
+                    logger.error(
+                        "Not all ticket categories are configured in guild %s",
+                        guild.id,
+                    )
+                    outcome = "ticket_system_not_configured"
+                else:
+                    new_tickets_category_id = (
+                        guild_config.new_tickets_category_id
+                    )
+                    create_ticket_ping_role_id = (
+                        guild_config.create_ticket_ping_role_id
+                    )
 
-                first_ticket = TicketState(
-                    ticket_number=current_tickets_count,
+                    dbuser, _ = await get_or_create_user(
+                        session, guild_id=guild.id, user_id=user.id
+                    )
+
+                    if dbuser.ticket_ban:
+                        outcome = "user_ticket_banned"
+                    else:
+                        last_ticket = await get_latest_user_ticket(
+                            session, guild_id=guild.id, user_id=user.id
+                        )
+
+                        if (
+                            last_ticket
+                            and last_ticket.state != TicketStateEnum.CLOSED
+                        ):
+                            outcome = "user_has_open_ticket"
+                        else:
+                            try:
+                                current_tickets_count = (
+                                    guild_config.tickets_count + 1
+                                )
+
+                                guild_config.tickets_count = (
+                                    current_tickets_count
+                                )
+
+                                outcome = "ready_to_create"
+
+                            except Exception as e:
+                                logger.error(
+                                    "Failed to prepare ticket in guild %s, user %s: %s",  # noqa: E501
+                                    guild.id,
+                                    user.id,
+                                    e,
+                                )
+                                outcome = "ticket_creation_failed"
+
+            if outcome == "ready_to_create":
+                logging_channel_id = await get_specified_channel(
+                    session,
                     guild_id=guild.id,
-                    author_id=user.id,
-                    state=TicketStateEnum.OPENED,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_TICKETS,
                 )
 
-                guild_config.tickets_count = current_tickets_count
+        if outcome == "ticket_system_not_configured":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Система тикетов не настроена",
+                    "Система тикетов не настроена на этом сервере.",
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
 
+        if outcome == "user_ticket_banned":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Вы забанены",
+                    "Вам запрещено создавать тикеты.",
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+
+        if outcome == "user_has_open_ticket":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "У вас уже есть открытый тикет",  # noqa: RUF001
+                    "У вас уже есть открытый тикет. Пожалуйста, закройте его перед созданием нового.",  # noqa: E501, RUF001
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+
+        if outcome == "ticket_creation_failed":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка создания тикета",
+                    "Не удалось создать тикет. Пожалуйста, попробуйте позже.",  # noqa: RUF001
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+
+        if outcome == "ready_to_create":
             new_tickets_category = cast(
                 CategoryChannel,
                 await ensure_messageable_channel_exists(
                     guild,
-                    guild_config.new_tickets_category_id,  # type: ignore
+                    cast(int, new_tickets_category_id),
                 ),
             )
+
             if not new_tickets_category:
                 logger.error(
                     "Failed to find new tickets category in guild %s",
                     guild.id,
                 )
                 return await interaction.followup.send(
-                    "Ticket system is not configured in this server.",
+                    embed=ErrorEmbed(
+                        "Категория не найдена",
+                        "Система тикетов настроена неправильно.",
+                        view.bot.user.display_name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
                 )
 
             try:
@@ -157,40 +241,18 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     overwrites=overwrites,
                 )
 
-                first_ticket.channel_id = channel.id
-                session.add(first_ticket)
+                new_channel_id = channel.id
 
                 message = await channel.send(
                     view=ManageTicketViewV2(
                         view.bot,
-                        ping_role_id=guild_config.create_ticket_ping_role_id,
+                        ping_role_id=create_ticket_ping_role_id,
                         interaction_user_id=interaction.user.id,
                     ),
                 )
 
-                logging_channel_id = await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildLoggingConfig,
-                    channel_type=ChannelType.LOGGING_TICKETS,
-                )
+                ticket_jump_url = message.jump_url
 
-                if logging_channel_id:
-                    view.bot.dispatch(
-                        "ticket_changed",
-                        data=TicketEventData(
-                            guild,
-                            channel.id,
-                            user.id,
-                            None,
-                            TicketStateEnum.OPENED,
-                            logging_channel_id,
-                        ),
-                    )
-
-                await interaction.followup.send(
-                    f"Your ticket has been created: {message.jump_url}",
-                )
             except Exception as e:
                 logger.error(
                     "Failed to create ticket channel in guild %s, category: %s, %s",  # noqa: E501
@@ -200,12 +262,62 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 )
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
-                        "Ticket Creation Failed",
-                        "Failed to create ticket channel.",
-                        view.bot.user.name,  # type: ignore
+                        "Ошибка создания канала",
+                        "Не удалось создать канал тикета.",  # noqa: RUF001
+                        view.bot.user.display_name,  # type: ignore
                         view.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+
+            async with view.bot.uow.start() as session:
+                try:
+                    ticket_state = TicketState(
+                        ticket_number=current_tickets_count,
+                        guild_id=guild.id,
+                        author_id=user.id,
+                        channel_id=new_channel_id,
+                        state=TicketStateEnum.OPENED,
+                    )
+                    session.add(ticket_state)
+                    await session.commit()
+
+                    logger.info(
+                        "[Ticket] Created ticket #%s for user %s in guild %s (channel: %s)",  # noqa: E501
+                        current_tickets_count,
+                        user.id,
+                        guild.id,
+                        new_channel_id,
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        "Failed to save ticket state in guild %s, user %s: %s",
+                        guild.id,
+                        user.id,
+                        e,
+                    )
+
+            if logging_channel_id:
+                view.bot.dispatch(
+                    "ticket_changed",
+                    data=TicketEventData(
+                        guild,
+                        new_channel_id,
+                        user.id,
+                        None,
+                        TicketStateEnum.OPENED,
+                        logging_channel_id,
+                    ),
+                )
+
+            await interaction.followup.send(
+                embed=SuccessMoveEmbed(
+                    "Тикет создан",
+                    f"Ваш тикет был создан: [Перейти к тикету]({ticket_jump_url})",  # noqa: E501
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
 
 
 class CreateTicketViewV2(LayoutView):
@@ -223,13 +335,13 @@ class CreateTicketViewV2(LayoutView):
         container = Container[Self]()
 
         # Header
-        container.add_item(TextDisplay[Self]("## Ask your question"))
+        container.add_item(TextDisplay[Self]("## Задайте ваш вопрос"))
         container.add_item(Separator[Self]())
 
         # main text
         container.add_item(
             TextDisplay[Self](
-                "Here you can ask support agents a question regarding...\n...the rules or behavior on the Discord server"  # noqa: E501
+                "Здесь вы можете задать вопрос агентам поддержки относительно...\n...правил или поведения на Discord сервере"  # noqa: E501
             )
         )
 

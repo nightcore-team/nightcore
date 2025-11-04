@@ -1,6 +1,7 @@
 """Utilities for parsing and handling legal clauses."""
 
 from typing import Any
+
 from discord import Color, Embed
 
 from src.config.config import config

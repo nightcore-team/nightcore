@@ -1,4 +1,4 @@
-"""Moderation configuration commands for the Nightcore bot."""
+"""Subgroup to configure infomaker settings."""
 
 import logging
 from typing import Literal, cast
@@ -29,12 +29,12 @@ logger = logging.getLogger(__name__)
 
 
 @infomaker_group.command(
-    name="setup", description="Configure infomaker settings."
+    name="setup", description="Настроить логирование для инфомейкера."
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    admins_roles="Роли администраторов, которые будут логироваться.",
-    leaders_roles="Роли лидеров, которые будут логироваться.",
+    admins_roles="Роли администраторов, которые будут логироваться. Формат: role_id,role_id,role_id,...",  # noqa: E501
+    leaders_roles="Роли лидеров, которые будут логироваться. Формат: role_id,role_id,role_id,...",  # noqa: E501
     admins_logging_channel="Канал, в который будут отправляться логи административных ролей.",  # noqa: E501
     leaders_logging_channel="Канал, в который будут отправляться логи лидерских ролей.",  # noqa: E501
 )
@@ -86,7 +86,7 @@ async def setup_infomaker(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Infomaker Configuration",
+            title="Настройка логирования для инфомейкера",
             description=description,
             color=discord.Color.green(),
         ),
@@ -102,17 +102,20 @@ async def setup_infomaker(
     )
 
 
-@infomaker_group.command(name="update_admins_roles")
+@infomaker_group.command(
+    name="update_admins_roles",
+    description="Обновить логируемые роли администраторов.",
+)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the leadership access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка логируемых ролей",
 )
 async def update_admins_roles(
     interaction: Interaction,
@@ -134,23 +137,23 @@ async def update_admins_roles(
             guild_config.admins_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the admin infomaker roles list."
+        desc = f"Роль <@&{role.id}> уже в списке логируемых ролей администраторов."  # noqa: E501
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the admin infomaker roles list."
+        desc = (
+            f"Роль <@&{role.id}> не в списке логируемых ролей администраторов."
+        )
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the admin infomaker roles list."
+        desc = f"Роль <@&{role.id}> добавлена в список логируемых ролей администраторов."  # noqa: E501
         color = discord.Color.blurple()
-    else:  # removed
-        desc = (
-            f"Role <@&{role.id}> removed from the admin infomaker roles list."
-        )
+    else:
+        desc = f"Роль <@&{role.id}> удалена из списка логируемых ролей администраторов."  # noqa: E501
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Infomaker Configuration",
+            title="Настройка логирования для инфомейкера",
             description=desc,
             color=color,
         ),
@@ -166,17 +169,20 @@ async def update_admins_roles(
     )
 
 
-@infomaker_group.command(name="update_leaders_roles")
+@infomaker_group.command(
+    name="update_leaders_roles",
+    description="Обновить логируемые роли лидеров.",
+)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the leadership access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка логируемых ролей",
 )
 async def update_leaders_roles(
     interaction: Interaction,
@@ -198,25 +204,25 @@ async def update_leaders_roles(
             guild_config.leaders_roles_ids = new_list
 
     if state == "exists":
-        desc = (
-            f"Role <@&{role.id}> already in the leader infomaker roles list."
-        )
+        desc = f"Роль <@&{role.id}> уже в списке логируемых ролей лидеров."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the leader infomaker roles list."
+        desc = f"Роль <@&{role.id}> не в списке логируемых ролей лидеров."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the leader infomaker roles list."
-        color = discord.Color.blurple()
-    else:  # removed
         desc = (
-            f"Role <@&{role.id}> removed from the leader infomaker roles list."
+            f"Роль <@&{role.id}> добавлена в список логируемых ролей лидеров."
+        )
+        color = discord.Color.blurple()
+    else:
+        desc = (
+            f"Роль <@&{role.id}> удалена из списка логируемых ролей лидеров."
         )
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Infomaker Configuration",
+            title="Настройка логирования для инфомейкера",
             description=desc,
             color=color,
         ),

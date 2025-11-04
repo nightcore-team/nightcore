@@ -1,4 +1,4 @@
-"""Clan creation command."""
+"""Command to manage clan settings."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -37,12 +37,12 @@ logger = logging.getLogger(__name__)
 
 
 @manage_clan_group.command(
-    name="settings", description="Manage clan settings."
+    name="settings", description="Управление настройками клана."
 )
 @app_commands.describe(
-    clan="The clan to manage.",
-    new_leader="The new leader of the clan.",
-    new_role="The new role associated with the clan.",
+    clan="Клан, настройки которого вы хотите изменить.",
+    new_leader="Новый лидер клана.",
+    new_role="Новая роль, связанная с кланом.",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 async def settings(
@@ -243,7 +243,7 @@ async def settings(
         else "Настройки клана успешно обновлены."
     )
 
-    return await interaction.response.send_message(
+    await interaction.response.send_message(
         embed=SuccessMoveEmbed(
             "Настройки клана обновлены",
             details
@@ -253,4 +253,13 @@ async def settings(
             bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s clan=%s changed_leader_to=%s changed_role_to=%s",  # noqa: E501
+        interaction.user.id,
+        guild.id,
+        clan,
+        changed_leader_to,
+        changed_role_to,
     )

@@ -29,7 +29,7 @@ class TicketEvent(Cog):
         """Handle ticket change events."""
 
         logger.info(
-            "[event] on_ticket_changed - %s: Guild: %s, Member: %s, Moderator: %s",  # noqa: E501
+            "[tickets/event] on_ticket_changed - %s: Guild: %s, Member: %s, Moderator: %s",  # noqa: E501
             data.state.value,
             data.guild.id,
             data.author_id,
@@ -48,7 +48,7 @@ class TicketEvent(Cog):
             )
         else:
             logger.warning(
-                "[event] on_ticket_changed - Guild: %s, logging channel is not set",  # noqa: E501
+                "[tickets/event] on_ticket_changed - Guild: %s, logging channel is not set",  # noqa: E501
                 data.guild.id,
             )
             return
@@ -57,7 +57,7 @@ class TicketEvent(Cog):
             await asyncio.gather(*gather_list, return_exceptions=True)
         except Exception as e:
             logger.exception(
-                "[event] on_ticket_changed - %s: Failed to send log message: %s",  # noqa: E501
+                "[tickets/event] on_ticket_changed - %s: Failed to send log message: %s",  # noqa: E501
                 data.state.value,
                 e,
             )
@@ -66,7 +66,7 @@ class TicketEvent(Cog):
     async def on_ticket_deleted(self, data: TicketEventData) -> None:
         """Called when a ticket is deleted."""
         logger.info(
-            "[event] on_ticket_deleted - %s: Guild: %s, Member: %s, Moderator: %s",  # noqa: E501
+            "[tickets/event] on_ticket_deleted - %s: Guild: %s, Member: %s, Moderator: %s",  # noqa: E501
             data.state.value,
             data.guild.id,
             data.author_id,
@@ -78,7 +78,7 @@ class TicketEvent(Cog):
         )
         if not ticket_channel:
             logger.error(
-                "[event] on_ticket_deleted - Guild: %s, Channel: %s not found",
+                "[tickets/event] on_ticket_deleted - Guild: %s, Channel: %s not found",  # noqa: E501
                 data.guild.id,
                 data.channel_id,
             )
@@ -111,7 +111,7 @@ class TicketEvent(Cog):
             )
         else:
             logger.warning(
-                "[event] on_ticket_deleted - Guild: %s, logging channel is not set",  # noqa: E501
+                "[tickets/event] on_ticket_deleted - Guild: %s, logging channel is not set",  # noqa: E501
                 data.guild.id,
             )
             return
@@ -122,7 +122,7 @@ class TicketEvent(Cog):
             await asyncio.gather(*gather_list, return_exceptions=True)
         except Exception as e:
             logger.exception(
-                "[event] on_ticket_deleted - %s: Failed to send log message: %s",  # noqa: E501
+                "[tickets/event] on_ticket_deleted - %s: Failed to send log message: %s",  # noqa: E501
                 data.state.value,
                 e,
             )

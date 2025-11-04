@@ -1,5 +1,6 @@
-"""Delete an existing battlepass level command."""
+"""Subcommand to delete a battle pass level."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -20,8 +21,12 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+logger = logging.getLogger(__name__)
 
-@battlepass_group.command(name="delete_level")
+
+@battlepass_group.command(
+    name="delete_level", description="Удалить уровень боевого пропуска"
+)
 @app_commands.describe(
     level="Уровень, который нужно удалить",
 )
@@ -97,3 +102,10 @@ async def delete_level(
             ),
             ephemeral=True,
         )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s delete_level=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501
+        interaction.user.id,
+        guild.id,
+        level,
+    )

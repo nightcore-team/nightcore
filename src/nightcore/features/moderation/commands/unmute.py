@@ -37,10 +37,10 @@ class UnMute(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="unmute", description="Unmute a user in the server"
+        name="unmute", description="Разблокировать чат пользователю"
     )
     @app_commands.describe(
-        user="The user to unmute", reason="The reason for unmuting the user"
+        user="Пользователь для разблокировки", reason="Причина разблокировки"
     )
     async def mute(
         self,
@@ -57,7 +57,7 @@ class UnMute(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -99,7 +99,7 @@ class UnMute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to unmute members.",
+                    "У меня нет прав для разблокировки чата участников.",
                 ),
                 ephemeral=True,
             )
@@ -107,7 +107,7 @@ class UnMute(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot unmute me.",
+                    "Вы не можете разблокировать чат мне.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -119,7 +119,7 @@ class UnMute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I cannot unmute this user because he has a higher role than me.",  # noqa: E501
+                    "Я не могу разблокировать чат этому пользователю, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
@@ -133,8 +133,8 @@ class UnMute(Cog):
                 if mute_role_id is None or mrole is None:
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "Mute role not found",
-                            f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
+                            "Роль блокировки не найдена",
+                            f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -146,8 +146,8 @@ class UnMute(Cog):
                     if not has_role:
                         return await interaction.response.send_message(
                             embed=ErrorEmbed(
-                                "Mute role not found",
-                                "The mute role was not found in this user.",
+                                "Роль блокировки не найдена",
+                                "Роль блокировки не найдена у этого пользователя.",  # noqa: E501
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
@@ -165,8 +165,8 @@ class UnMute(Cog):
                             )
                             return await interaction.response.send_message(
                                 embed=ErrorEmbed(
-                                    "Role Removal Failed",
-                                    "Failed to remove role.",
+                                    "Ошибка удаления роли",
+                                    "Не удалось снять роль мута с пользователя.",  # noqa: E501
                                     self.bot.user.name,  # type: ignore
                                     self.bot.user.display_avatar.url,  # type: ignore
                                 ),
@@ -185,8 +185,8 @@ class UnMute(Cog):
                         )
                         return await interaction.response.send_message(
                             embed=ErrorEmbed(
-                                "Timeout Removal Failed",
-                                "Failed to remove timeout.",
+                                "Ошибка снятия тайм-аута",
+                                "Не удалось снять тайм-аут.",
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
@@ -195,8 +195,8 @@ class UnMute(Cog):
                 else:
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "User Not Timed Out",
-                            "The user is not currently timed out.",
+                            "Пользователь не в тайм-ауте",
+                            "У пользователя в данный момент нет тайм-аута.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -209,8 +209,8 @@ class UnMute(Cog):
                 )
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Unknown Mute Type",
-                        "The specified mute type is unknown.",
+                        "Неизвестный тип блокировки",
+                        "Указанный тип блокировки неизвестен.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -220,11 +220,11 @@ class UnMute(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Unmuted",
-                f"{member.mention} has been unmuted by moderator {interaction.user.mention}",  # noqa: E501
+                "Блокировка чата снята",
+                f"Блокировка чата {member.mention} снята модератором {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Reason", value=reason, inline=True)
+            ).add_field(name="Причина", value=reason, inline=True)
         )
 
         try:

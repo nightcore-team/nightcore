@@ -1,6 +1,6 @@
 from .coinsshop import CoinsShopViewV2
-from .notify import CoinsShopOrderNotifyViewV2
 from .order import CoinsShopOrderViewV2
+from .order_notify import CoinsShopOrderNotifyViewV2
 
 __all__ = (
     "CoinsShopOrderNotifyViewV2",

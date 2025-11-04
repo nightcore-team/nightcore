@@ -1,4 +1,4 @@
-"""Ping command for the Nightcore bot."""
+"""Command to check bot latency."""
 
 from discord import app_commands
 from discord.ext.commands import Cog  # type: ignore
@@ -11,14 +11,10 @@ class Ping(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(name="ping", description="Check the bot's latency.")
+    @app_commands.command(name="ping", description="Посмотреть задержку бота")
     async def ping(self, interaction: Interaction):
-        """Send a message displaying the bot's current latency.
+        """Send a message displaying the bot's current latency."""
 
-        Args:
-            interaction : discord.Interaction
-                The interaction that triggered the command.
-        """
         await interaction.response.send_message(
             f"Pong! Latency: {self.bot.latency * 1000:.2f} ms", ephemeral=True
         )

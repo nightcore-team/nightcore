@@ -1,4 +1,4 @@
-"""Avatar command for the Nightcore bot."""
+"""Command to get a user's avatar."""
 
 import logging
 
@@ -16,8 +16,10 @@ class Avatar(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(name="avatar", description="Get user's avatar")
-    @app_commands.describe(user="The user to get the avatar of.")
+    @app_commands.command(
+        name="avatar", description="Получить аватар пользователя"
+    )
+    @app_commands.describe(user="Пользователь, чей аватар нужно получить")
     async def avatar(
         self,
         interaction: Interaction,

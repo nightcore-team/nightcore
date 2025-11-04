@@ -1,4 +1,4 @@
-"""Count voice activity event."""
+"""Handle count user voice activity event."""
 
 import logging
 from datetime import datetime, timezone
@@ -128,6 +128,13 @@ class CountVoiceActivityEvent(Cog):
                 else:
                     # continue counting
                     return
+
+        logger.info(
+            "[%s/log] - invoked user=%s guild=%s",
+            "economy/levelup",
+            member.id,
+            guild.id,
+        )
 
 
 async def setup(bot: "Nightcore"):

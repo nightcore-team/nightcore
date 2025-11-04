@@ -1,4 +1,4 @@
-"""Daily reward command."""
+"""Command to take daily coins reward."""
 
 import logging
 from datetime import datetime, timedelta, timezone
@@ -25,7 +25,7 @@ class Reward(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="reward", description="Claim your daily reward."
+        name="reward", description="Забрать ежедневную награду."
     )
     async def reward(self, interaction: Interaction["Nightcore"]) -> None:
         """Claim your daily reward."""
@@ -81,6 +81,12 @@ class Reward(Cog):
                 ),
                 ephemeral=True,
             )
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s",
+            interaction.user.id,
+            guild.id,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

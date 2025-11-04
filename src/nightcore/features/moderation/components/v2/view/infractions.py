@@ -35,7 +35,7 @@ class PaginationButtons(ActionRow["InfractionsViewV2"]):
         """Ensure that only the author can interact with the view."""
         if interaction.user.id != self.view.author_id:  # type: ignore
             await interaction.response.send_message(
-                "You can't manage this pagination.", ephemeral=True
+                "Вы не можете управлять этой пагинацией.", ephemeral=True
             )
             return False
         return True
@@ -118,10 +118,10 @@ class InfractionsViewV2(LayoutView):
 
         # Header
         self.header_text = TextDisplay[Self](
-            f"### Infractions\n"
-            f"Name: {self.user.global_name}\n"
+            f"### Список нарушений пользователя\n"
+            f"Имя: {self.user.global_name}\n"
             f"ID: **`{self.user.id}`**\n"
-            f"Infractions last 7d: {self.count_last_7_days_infractions}"
+            f"Количество нарушений за последние 7 дней: {self.count_last_7_days_infractions}"  # noqa: E501
         )
         header_section = Section[Self](
             self.header_text,

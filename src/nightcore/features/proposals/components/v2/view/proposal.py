@@ -1,3 +1,5 @@
+"""Proposal view v2 component."""
+
 import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
@@ -18,8 +20,7 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.operations import get_moderation_access_roles
-from src.nightcore.components.embed import MissingPermissionsEmbed
-from src.nightcore.exceptions import FieldNotConfiguredError
+from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
 from src.nightcore.features.proposals.components.modal import (
     CheckProposalModal,
 )
@@ -50,13 +51,25 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         view.moderator_id = interaction.user.id
         message = cast(Message, interaction.message)
 
+        outcome = ""
         async with view.bot.uow.start() as session:
             if not (
                 moderation_access_roles := await get_moderation_access_roles(
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                outcome = "moderation_access_not_configured"
+
+        if outcome == "moderation_access_not_configured":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка конфигурации",
+                    "Роли с доступом к модерации не настроены.",  # noqa: RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         has_moder_role = has_any_role_from_sequence(
             cast(Member, interaction.user), moderation_access_roles
@@ -88,6 +101,7 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
             status="Одобрено",
             color=Color.green(),
         )
+
         # send modal
         modal = CheckProposalModal(
             bot=view.bot,
@@ -113,13 +127,25 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         view.moderator_id = interaction.user.id
         message = cast(Message, interaction.message)
 
+        outcome = ""
         async with view.bot.uow.start() as session:
             if not (
                 moderation_access_roles := await get_moderation_access_roles(
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                outcome = "moderation_access_not_configured"
+
+        if outcome == "moderation_access_not_configured":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка конфигурации",
+                    "Роли с доступом к модерации не настроены.",  # noqa: RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         has_moder_role = has_any_role_from_sequence(
             cast(Member, interaction.user), moderation_access_roles
@@ -212,14 +238,14 @@ class ProposalViewV2(LayoutView):
                 f"Автор предложения: <@{self.user_id}>\nСтатус: **{self.status}**"  # noqa: E501, RUF001
             )
         )
-        container.add_item(TextDisplay[Self](f"```{self.description}```"))
+        container.add_item(TextDisplay[Self](f"{self.description}"))
         container.add_item(Separator[Self]())
 
         if self.answer:
             container.add_item(
                 TextDisplay[Self](f"### Ответ от: <@{self.moderator_id}>\n")
             )
-            container.add_item(TextDisplay[Self](f"```{self.answer}```"))
+            container.add_item(TextDisplay[Self](f"{self.answer}"))
             container.add_item(Separator[Self]())
 
         container.add_item(self.actions)
@@ -263,7 +289,7 @@ class AdditionalProposalAnswerViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](f"### Ответ от: <@{moderator_id}>\n")
         )
-        container.add_item(TextDisplay[Self](f"```{description}```"))
+        container.add_item(TextDisplay[Self](f"{description}"))
         container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)

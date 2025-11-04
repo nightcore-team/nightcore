@@ -120,6 +120,17 @@ class ClanShopNotifyEvent(Cog):
                 e,
             )
 
+        logger.info(
+            "[%s/log] - invoked user=%s guild=%s item_name=%s item_price=%s balance_before=%s balance_after=%s",  # noqa: E501
+            dto.event_type,
+            dto.user_id,
+            dto.guild.id,
+            dto.item_name,
+            dto.item_price,
+            dto.clan_balance_before,
+            dto.clan_balance_after,
+        )
+
 
 async def setup(bot: "Nightcore") -> None:
     """Setup the ClanShopNotifyEvent cog."""

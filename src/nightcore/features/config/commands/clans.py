@@ -1,4 +1,4 @@
-"""Economy configuration command for Nightcore bot."""
+"""Subgroup to configure clans settings."""
 
 import logging
 from typing import Literal, cast
@@ -27,16 +27,16 @@ from src.nightcore.utils.field_validators import (
 logger = logging.getLogger(__name__)
 
 
-@clans_group.command(name="setup", description="Configure clans settings.")
+@clans_group.command(name="setup", description="Настроить систему кланов.")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    shop_threads_channel="Channel for shop threads.",
-    shop_buy_ping_roles="Roles to ping when buying from the shop. (str, str, str)",  # noqa: E501
-    shop_items="Items available in the shop. (str, int | str, int)",
-    reputation_per_payday="Reputation points awarded per payday. int",
-    payday_channel="Channel for payday announcements.",
-    base_exp_multiplier="Reputation points awarded per message. int",
-    improvements_costs="Costs for clan improvements (int, int, int).",
+    shop_threads_channel="Канал, под которым создаются ветки с покупками.",  # noqa: RUF001
+    shop_buy_ping_roles="Роли для упоминания при покупке в магазине. Формат: role_id, role_id, ...",  # noqa: E501
+    shop_items="Товары, доступные в магазине. Формат: item_name, price | item_name, price | ...",  # noqa: E501
+    reputation_per_payday="Количество репутации, выдаваемой в пейдэй.",
+    payday_channel="Канал для объявлений о дне зарплаты.",  # noqa: RUF001
+    base_exp_multiplier="Базовый множитель опыта, выдаваемого за сообщение.",
+    improvements_costs="Стоимость улучшений клана (Всего их 3). Формат: cost,cost,cost",  # noqa: E501, RUF001
 )
 async def setup(
     interaction: Interaction,
@@ -88,7 +88,7 @@ async def setup(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Clans Configuration",
+            title="Настройка системы кланов",
             description=description,
             color=discord.Color.green(),
         ),
@@ -104,17 +104,20 @@ async def setup(
     )
 
 
-@clans_group.command(name="update_clans_access")
+@clans_group.command(
+    name="update_clans_access",
+    description="Обновить список ролей с доступом к кланам.",  # noqa: RUF001
+)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the clans access list.",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка доступа к кланам.",
 )
 async def update_clans_access(
     interaction: Interaction,
@@ -136,21 +139,21 @@ async def update_clans_access(
             guild_config.clans_access_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the clans access list."
+        desc = f"Роль <@&{role.id}> уже в списке доступа к кланам."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the clans access list."
+        desc = f"Роль <@&{role.id}> не в списке доступа к кланам."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the clans access list."
+        desc = f"Роль <@&{role.id}> добавлена в список доступа к кланам."
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the clans access list."
+        desc = f"Роль <@&{role.id}> удалена из списка доступа к кланам."
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Clans Configuration",
+            title="Настройка системы кланов",
             description=desc,
             color=color,
         ),

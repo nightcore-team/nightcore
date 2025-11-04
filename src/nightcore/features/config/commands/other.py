@@ -1,4 +1,4 @@
-"""Main configuration command for Nightcore bot."""
+"""Subgroup to configure other settings."""
 
 import logging
 from typing import Literal, cast
@@ -11,10 +11,9 @@ from discord.interactions import Interaction
 from src.infra.db.models.guild import MainGuildConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
-from src.nightcore.features.config._groups import main as main_group
+from src.nightcore.features.config._groups import other as other_group
 from src.nightcore.features.config.utils import (
     org_roles_dict_value,
-    temp_voice_roles_dict_value,
 )
 from src.nightcore.services.config import (
     specified_guild_config,
@@ -32,24 +31,24 @@ from src.nightcore.utils.field_validators import (
 logger = logging.getLogger(__name__)
 
 
-@main_group.command(name="setup", description="Configure main settings.")
+@other_group.command(
+    name="setup", description="Настроить остальные настройки."
+)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    rules_channel="The channel for rules",
-    proposal_channel="The channel for proposals",
-    organizational_roles="The roles for the organizations",
-    fraction_roles="The roles for the fractions",
-    voice_temp_roles="The roles for the voice temp rooms",
-    # faq=""
+    rules_channel="Канал для правил",
+    proposal_channel="Канал для предложений",
+    organizational_roles="Организационные роли. Формат: org name, tag, role_id | org name, tag, role_id | ...",  # noqa: E501
+    fraction_roles="Фракционные роли. Формат: role_id, role_id, ...",
+    role_request_channel="Канал для проверки запросов на роли",
 )
 async def setup(
     interaction: Interaction,
     rules_channel: discord.TextChannel | None = None,  #
     proposal_channel: discord.TextChannel | None = None,  #
-    voice_temp_roles: str | None = None,  #
+    # voice_temp_roles: str | None = None,  #
     organizational_roles: str | None = None,  #
     fraction_roles: str | None = None,  #
-    # faq: str | None = None, #
     role_request_channel: discord.TextChannel | None = None,  #
 ):
     """Configure moderation settings."""
@@ -59,7 +58,7 @@ async def setup(
         int_id_value("create_proposal_channel_id", proposal_channel),
         int_id_value("check_role_requests_channel_id", role_request_channel),
         org_roles_dict_value("organizational_roles", organizational_roles),
-        temp_voice_roles_dict_value("voice_temp_roles", voice_temp_roles),
+        # temp_voice_roles_dict_value("voice_temp_roles", voice_temp_roles),
         list_csv("fraction_roles", fraction_roles),
     ]
 
@@ -91,7 +90,7 @@ async def setup(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Main Configuration",
+            title="Остальные настройки",
             description=description,
             color=discord.Color.green(),
         ),
@@ -107,19 +106,19 @@ async def setup(
     )
 
 
-@main_group.command(
-    name="update_fraction_roles", description="Update the fraction roles."
+@other_group.command(
+    name="update_fraction_roles", description="Обновить фракционные роли"
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the fraction roles list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка фракционных ролей",
 )
 async def update_fraction_roles(
     interaction: Interaction,
@@ -141,21 +140,21 @@ async def update_fraction_roles(
             guild_config.fraction_roles = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the fraction roles list."
+        desc = f"Роль <@&{role.id}> уже в списке фракционных ролей."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the fraction roles list."
+        desc = f"Роль <@&{role.id}> не в списке фракционных ролей."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the fraction roles list."
+        desc = f"Роль <@&{role.id}> добавлена в список фракционных ролей."
         color = discord.Color.blurple()
-    else:  # removed
-        desc = f"Role <@&{role.id}> removed from the fraction roles list."
+    else:
+        desc = f"Роль <@&{role.id}> удалена из списка фракционных ролей."
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Main Configuration",
+            title="Остальные настройки",
             description=desc,
             color=color,
         ),

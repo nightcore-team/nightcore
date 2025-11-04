@@ -1,4 +1,4 @@
-"""Module for experience calculation formulas."""
+"""Utility for experience calculation formulas."""
 
 import math
 

@@ -81,7 +81,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # === proposals
         "src.nightcore.features.proposals.events.proposal",
         # === global events
-        "src.nightcore.events.reaction",
+        "src.nightcore.events.reaction.add",
         "src.nightcore.events.message.on",
         "src.nightcore.events.message.delete",
         "src.nightcore.events.message.update",

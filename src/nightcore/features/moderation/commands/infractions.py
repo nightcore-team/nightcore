@@ -1,4 +1,4 @@
-"""Infractions command for the Nightcore bot."""
+"""Command to check user infractions."""
 
 import logging
 from typing import cast
@@ -36,9 +36,13 @@ class Infractions(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="infractions", description="Check user infractions"
+        name="infractions",
+        description="Посмотреть список нарушений пользователя",
     )
-    @app_commands.describe(user="The user to check infractions for")
+    @app_commands.describe(
+        user="Пользователь для проверки нарушений",
+        ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
+    )
     async def infractions(
         self,
         interaction: Interaction,
@@ -55,7 +59,7 @@ class Infractions(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
             # get user infractions
             infractions = await get_user_infractions(
@@ -109,8 +113,8 @@ class Infractions(Cog):
             )
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Infractions Error",
-                    "Failed to send infractions view.",
+                    "Ошибка отправки нарушений",
+                    "Не удалось отправить компонент нарушений.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

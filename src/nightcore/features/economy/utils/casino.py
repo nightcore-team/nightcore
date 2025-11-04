@@ -1,4 +1,8 @@
-"""Casino game utilities."""
+"""
+Utilities related to casino games.
+
+Used for handling roulette game logic and results.
+"""
 
 import random
 from typing import Literal
@@ -57,6 +61,10 @@ class RouletteResult:
         elif self.selected_color == "red":
             return "🔴"
         return "⚫"
+
+    def __str__(self) -> str:
+        """String representation."""
+        return f"RouletteResult(number={self.number}, color={self.color}, bet={self.bet}, selected_color={self.selected_color})"  # noqa: E501
 
 
 def spin_roulette() -> tuple[int, RouletteColor]:

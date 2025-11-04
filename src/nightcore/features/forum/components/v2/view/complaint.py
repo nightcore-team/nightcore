@@ -1,4 +1,8 @@
-# component for complaint
+"""
+Complaint view v2 component.
+
+Used for displaying complaint information in forum threads.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
@@ -57,15 +61,15 @@ class ComplaintViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "На форуме создана новая жалоба на модератора сервера.\n"  # noqa: RUF001
-                "Тема успешно была закреплена и ей был установлен префикс."  # noqa: E501)
+                "На форуме создана новая жалоба на модератора сервера.\n"
+                "Тема успешно была закреплена и ей был установлен префикс."
             )
         )
         container.add_item(Separator[Self]())
 
         container.add_item(
             TextDisplay[Self](
-                "### Информация о жалобе\n"  # noqa: RUF001
+                "### Информация о жалобе\n"
                 f"Модератор: <@{moderator_id}>\n"
                 f"ID модератора: {moderator_id}\n"
                 f"Причина: {reason}\n"

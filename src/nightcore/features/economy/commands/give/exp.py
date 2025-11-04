@@ -1,4 +1,4 @@
-"""Give user experience command."""
+"""Command to give experience to a user."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -29,8 +29,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command(name="exp", description="Give experience to user.")
-@app_commands.describe()
+@give_group.command(name="exp", description="Выдать опыт пользователю")
+@app_commands.describe(
+    user="Пользователь, которому выдаётся опыт",
+    amount="Количество опыта для выдачи",
+)
 async def give_exp(
     interaction: Interaction["Nightcore"],
     user: Member,
@@ -94,7 +97,7 @@ async def give_exp(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка выдачи опыта",
-                "Не удалось выдать опыт пользователю.",  # noqa: RUF001
+                "Не удалось выдать опыт пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -126,7 +129,7 @@ async def give_exp(
             "user_items_changed",
             dto=AwardNotificationEventDTO(
                 guild=guild,
-                event_type="give_exp",
+                event_type="give/exp",
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,

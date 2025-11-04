@@ -1,4 +1,6 @@
-import logging  # noqa: D100
+"""Command to notify a user about a rule violation."""
+
+import logging
 from typing import Any, cast
 
 from discord import Guild, Member, app_commands
@@ -39,7 +41,11 @@ class Notify(Cog):
     @app_commands.command(
         name="notify", description="Отправить оповещение пользователю"
     )
-    @app_commands.describe()
+    @app_commands.describe(
+        user="Пользователь для оповещения",
+        duration="Длительность оповещения",
+        reason="Причина оповещения (номер правила или текст)",
+    )
     async def notify(
         self,
         interaction: Interaction["Nightcore"],
@@ -56,7 +62,7 @@ class Notify(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -69,7 +75,7 @@ class Notify(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
             if not (
                 rules_data := cast(
@@ -77,7 +83,7 @@ class Notify(Cog):
                     await get_guild_rules(session, guild_id=guild.id),
                 )
             ):
-                raise FieldNotConfiguredError("rules")
+                raise FieldNotConfiguredError("правила")
 
         has_moder_role = has_any_role_from_sequence(
             cast(Member, interaction.user), moderation_access_roles
@@ -97,7 +103,7 @@ class Notify(Cog):
         if isinstance(rule, Chapter):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Please provide a valid rule number, not a chapter.",
+                    "Пожалуйста, укажите действительный номер правила, а не главы.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -109,7 +115,7 @@ class Notify(Cog):
         if not parsed_duration:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Invalid duration format.",
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

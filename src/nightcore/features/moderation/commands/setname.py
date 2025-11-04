@@ -35,11 +35,13 @@ class Setname(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="setname", description="Set/restore a user's nickname"
+        name="setname",
+        description="Установить никнейм пользователю",
     )
     @app_commands.describe(
-        user="The user to set/restore the nickname for",
-        reason="The reason for changing the nickname",
+        user="Пользователь для изменения никнейма",
+        reason="Причина изменения никнейма",
+        nickname="Новый никнейм пользователя (оставьте пустым, чтобы восстановить оригинальный)",  # noqa: E501
     )
     async def setname(
         self,
@@ -57,7 +59,7 @@ class Setname(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -71,7 +73,7 @@ class Setname(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
         has_moder_role = has_any_role_from_sequence(
             cast(discord.Member, interaction.user), moderation_access_roles
@@ -91,7 +93,7 @@ class Setname(Cog):
         if is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You can't set/restore a moderator's nickname.",
+                    "Вы не можете изменить никнейм модератора.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -103,7 +105,7 @@ class Setname(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to change nicknames.",
+                    "У меня нет прав на изменение никнеймов.",  # noqa: RUF001
                 ),
                 ephemeral=True,
             )
@@ -111,7 +113,7 @@ class Setname(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot change my nickname.",
+                    "Вы не можете изменить мой никнейм.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -123,7 +125,7 @@ class Setname(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I cannot change this user's nickname because he has a higher role than me.",  # noqa: E501
+                    "Я не могу изменить никнейм этого пользователя, потому что у него роль выше моей.",  # noqa: E501, RUF001
                 ),
                 ephemeral=True,
             )
@@ -134,7 +136,7 @@ class Setname(Cog):
             if len(nickname) > 32:
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        "The nickname cannot be longer than 32 characters.",
+                        "Никнейм не может быть длиннее 32 символов.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -172,8 +174,8 @@ class Setname(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "Nickname Changed",
-                f"Successfully changed {member.mention}'s nickname.",
+                "Никнейм изменён",
+                f"Никнейм пользователя {member.mention} успешно изменён.",
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )

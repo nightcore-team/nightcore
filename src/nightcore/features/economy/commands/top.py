@@ -1,7 +1,6 @@
-"""Command to show top clans on the server."""
+"""Command to show top 10 users on the server."""
 
 import logging
-import time
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -25,7 +24,7 @@ class Top(Cog):
     @app_commands.command(
         name="top", description="Показать топ 10 пользователей на сервере"
     )
-    @app_commands.describe()
+    @app_commands.describe(sort_by="Критерий сортировки топа пользователей")
     @app_commands.choices(
         sort_by=[
             app_commands.Choice(name="Голосовая активность", value="voice"),
@@ -43,7 +42,6 @@ class Top(Cog):
 
         guild = cast(Guild, interaction.guild)
 
-        start_time = time.perf_counter()
         async with interaction.client.uow.start() as session:
             users = await get_users_by_spec(
                 session,
@@ -58,35 +56,20 @@ class Top(Cog):
                 field_name="coin_name",
             )
 
-        end_time = time.perf_counter()
-        logger.info(
-            "[users/top] Fetched users for guild %s in %.4f seconds",
-            guild.id,
-            end_time - start_time,
-        )
-
-        start_time = time.perf_counter()
         view = UsersListViewV2(
             interaction.client,
             coin_name=coin_name,
             users=users,
             sort_by=sort_by.value if sort_by else None,
         )
-        end_time = time.perf_counter()
-        logger.info(
-            "[users/top] Created UserListViewV2 for guild %s in %.4f seconds",
-            guild.id,
-            end_time - start_time,
-        )
 
-        start_time = time.perf_counter()
         await interaction.response.send_message(view=view, ephemeral=True)
-        end_time = time.perf_counter()
 
         logger.info(
-            "[users/top] Sent user top message for guild %s in %.4f seconds",
+            "[command] - invoked user=%s guild=%s sort_by=%s",
+            interaction.user.id,
             guild.id,
-            end_time - start_time,
+            sort_by.value if sort_by else "default",
         )
 
 

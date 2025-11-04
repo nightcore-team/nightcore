@@ -1,3 +1,4 @@
+from .autocomplete import fraction_roles_autocomplete
 from .parse_rules import find_rule_by_index
 from .punish_notify import (
     send_moderation_log,
@@ -10,7 +11,6 @@ from .punishments import (
     build_moderators_stats,
     build_moderstats_pages,
 )
-from .role_utils import fraction_roles_autocomplete
 from .time_utils import (
     calculate_end_time,
     compare_date_range,

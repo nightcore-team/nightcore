@@ -1,4 +1,7 @@
-from typing import cast  # noqa: D100
+"""Command to send the rules to a channel."""
+
+import logging
+from typing import cast
 
 from discord import Embed, Guild, Interaction
 
@@ -13,8 +16,12 @@ from src.nightcore.services.config import specified_guild_config
 
 from ._groups import rules as rules_group
 
+logger = logging.getLogger(__name__)
 
-@rules_group.command(name="send", description="Send rules to a channel")
+
+@rules_group.command(
+    name="send", description="Отправить правила в текущий канал"
+)
 async def send_rules(
     interaction: Interaction["Nightcore"],
 ):
@@ -77,4 +84,10 @@ async def send_rules(
             bot.user.avatar.url,  # type: ignore
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s",
+        interaction.user.id,
+        guild.id,
     )

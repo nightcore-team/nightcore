@@ -1,4 +1,8 @@
-"""Balance View V2 component."""
+"""
+Balance view v2 component.
+
+Used for displaying a user's balance information.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
@@ -25,7 +29,7 @@ class BalanceViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:10845currency:1432050187492130836> Информация о балансе"  # noqa: RUF001
+                "## <:10845currency:1432050187492130836> Информация о балансе"
             )
         )
         container.add_item(Separator[Self]())

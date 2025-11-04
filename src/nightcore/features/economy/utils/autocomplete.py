@@ -1,4 +1,8 @@
-"""Autocomplete utils for economy feature."""
+"""
+Autocomplete utilities.
+
+Used for providing autocomplete options for cases and colors.
+"""
 
 import logging
 import time
@@ -44,14 +48,14 @@ async def cases_autocomplete(
                 case "coins_case":
                     result.append(
                         app_commands.Choice(
-                            name=f"Кейс с монетами, количество: {cases[case_name]}",  # noqa: E501, RUF001
+                            name=f"Кейс с монетами, количество: {cases[case_name]}",  # noqa: E501
                             value=case_name,
                         )
                     )
                 case "colors_case":
                     result.append(
                         app_commands.Choice(
-                            name=f"Кейс с цветами, количество: {cases[case_name]}",  # noqa: E501, RUF001
+                            name=f"Кейс с цветами, количество: {cases[case_name]}",  # noqa: E501
                             value=case_name,
                         )
                     )

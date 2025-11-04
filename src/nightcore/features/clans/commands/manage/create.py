@@ -37,8 +37,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command(name="create", description="Create a new clan.")
-@app_commands.describe()
+@manage_clan_group.command(name="create", description="Создать новый клан.")
+@app_commands.describe(
+    name="Название клана.",
+    leader="Пользователь, который станет лидером клана.",
+    color="Цвет роли клана в HEX формате (например, #FF5733).",
+)
 async def create(
     interaction: Interaction["Nightcore"],
     name: str,
@@ -51,7 +55,18 @@ async def create(
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
-    # === Паралельно отримуємо member та конфіг ролей ===
+    try:
+        color_int = int(color.lstrip("#"), 16)
+    except ValueError:
+        return await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка создания клана",
+                "Неверный формат цвета. Пожалуйста, используйте HEX формат, например, #FF5733.",  # noqa: E501
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+        )
+
     member_task = asyncio.create_task(
         ensure_member_exists(guild, user_id=leader.id)
     )
@@ -93,21 +108,19 @@ async def create(
             ),
         )
 
-    # === Перевірка прав ===
     if not guild.me.guild_permissions.manage_roles:
         return await interaction.followup.send(
             embed=MissingPermissionsEmbed(
                 bot.user.name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
-                "У меня нет прав на управление ролями в этом сервере.",  # noqa: RUF001
+                "У меня нет прав на управление ролями в этом сервере.",
             ),
         )
 
-    # creating role
     try:
         clan_role = await guild.create_role(
             name=name,
-            colour=discord.Colour(int(color.lstrip("#"), 16)),
+            colour=discord.Colour(color_int),
             reason=f"Создание роли клана {name}",
         )
     except Exception as e:
@@ -152,7 +165,7 @@ async def create(
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка создания клана",
-                    f"Клан с таким именем ({name}) уже существует.",  # noqa: RUF001
+                    f"Клан с таким именем ({name}) уже существует.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -229,10 +242,12 @@ async def create(
         await asyncio.gather(commit_task, assign_task)
 
     logger.info(
-        "[clans] Clan %s created successfully in guild %s with leader %s",
-        name,
+        "[command] - invoked user=%s guild=%s clan_name=%s leader=%s color=%s",
+        interaction.user.id,
         guild.id,
+        name,
         leader.id,
+        color_int,
     )
 
     return await interaction.followup.send(

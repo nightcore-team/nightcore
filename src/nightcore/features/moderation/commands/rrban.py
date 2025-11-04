@@ -40,10 +40,11 @@ class Rrban(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="rrban", description="Ban a user from requesting roles"
+        name="rrban",
+        description="Заблокировать пользователю возможность запрашивать роли",
     )
     @app_commands.describe(
-        user="The user to ban", reason="The reason for banning the user"
+        user="Пользователь для блокировки", reason="Причина блокировки"
     )
     async def rrban(
         self,
@@ -61,7 +62,7 @@ class Rrban(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -71,7 +72,7 @@ class Rrban(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot ban role requesting for me.",
+                    "Вы не можете заблокировать запрос ролей для меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -83,7 +84,7 @@ class Rrban(Cog):
         if not parsed_duration:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Invalid duration format.",
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -96,7 +97,7 @@ class Rrban(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
 
             has_moder_role = has_any_role_from_sequence(
                 cast(discord.Member, interaction.user), moderation_access_roles
@@ -116,7 +117,7 @@ class Rrban(Cog):
             if is_member_moderator:
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        "You cannot ban role requesting for moderators.",
+                        "Вы не можете заблокировать запрос ролей для модераторов.",  # noqa: E501
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -130,7 +131,7 @@ class Rrban(Cog):
                 if u.role_request_ban:
                     return await interaction.response.send_message(
                         embed=ValidationErrorEmbed(
-                            "This user is already role requesting banned.",
+                            "Этот пользователь уже заблокирован на запрос ролей.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -154,8 +155,8 @@ class Rrban(Cog):
                 )
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Role Request Ban Failed",
-                        "Failed to role request ban the user. ",
+                        "Ошибка блокировки на запрос ролей",
+                        "Не удалось заблокировать пользователю возможность запрашивать роли.",  # noqa: E501
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     )
@@ -187,13 +188,13 @@ class Rrban(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Role Request Banned",
-                f"{member.mention} has been role request banned by moderator {interaction.user.mention}",  # noqa: E501
+                "Блокировка на запрос ролей",
+                f"Модератора {interaction.user.mention} заблокировал запрос ролей пользователю <@{member.id}>",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             )
-            .add_field(name="Reason", value=reason, inline=True)
-            .add_field(name="Duration", value=duration, inline=True)
+            .add_field(name="Причина", value=reason, inline=True)
+            .add_field(name="Длительность", value=duration, inline=True)
         )
 
         logger.info(

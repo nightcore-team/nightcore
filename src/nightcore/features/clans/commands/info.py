@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 @clan_main_group.command(
-    name="info", description="Get information about a clan."
+    name="info", description="Посмотреть актуальную информацию о клане."
 )
-@app_commands.describe()
+@app_commands.describe(clan="Клан, информацию о котором вы хотите посмотреть.")
 @app_commands.autocomplete(clan=clans_autocomplete)
 async def info(interaction: Interaction["Nightcore"], clan: str):
     """Get information about a clan."""
@@ -42,8 +42,8 @@ async def info(interaction: Interaction["Nightcore"], clan: str):
     if not dbclan:
         await interaction.response.send_message(
             embed=ErrorEmbed(
-                "Ошибка получения информации о клане",  # noqa: RUF001
-                "Не удалось найти данный клан в базе данных.",  # noqa: RUF001
+                "Ошибка получения информации о клане",
+                "Не удалось найти данный клан в базе данных.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

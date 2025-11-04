@@ -1,4 +1,4 @@
-"""Clan invitation command."""
+"""Command to kick a member from a clan."""
 
 import asyncio
 import logging
@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 @clan_manage_group.command(
-    name="kick", description="Kick member from your clan."
+    name="kick", description="Кикнуть участника из клана."
 )
-@app_commands.describe(user="The user to kick from your clan.")
+@app_commands.describe(user="Пользователь, которого хотите кикнуть")
 async def kick(
     interaction: Interaction["Nightcore"],
     user: Member,
@@ -138,4 +138,12 @@ async def kick(
     await asyncio.gather(
         interaction.response.send_message(embed=embed, ephemeral=True),
         user.remove_roles(role, reason="Кик из клана."),
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s clan_name=%s kicked_user=%s",
+        interaction.user.id,
+        guild.id,
+        interaction_clan_member.clan.name,
+        user.id,
     )

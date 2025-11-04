@@ -1,4 +1,4 @@
-"""Roulette command for casino."""
+"""Command to play casino roulette game."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@casino_group.command(name="roulette", description="Сыграть в рулетку.")
+@casino_group.command(name="roulette", description="Сыграть в рулетку")
 @app_commands.describe(
     bet="Ваша ставка (минимум 5 коинов)", color="Выберите цвет"
 )
@@ -110,7 +110,7 @@ async def roulette(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка ставки",
-                "У вас недостаточно коинов для ставки.",  # noqa: RUF001
+                "У вас недостаточно коинов для ставки.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -142,3 +142,10 @@ async def roulette(
         return await interaction.response.send_message(
             view=view, ephemeral=True
         )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s result=%s",
+        interaction.user.id,
+        guild.id,
+        str(result),
+    )

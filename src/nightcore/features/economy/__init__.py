@@ -10,10 +10,10 @@ from ._groups import give as give_group
 # SIDE-EFFECT IMPORTS
 from .commands.case import help, open
 from .commands.casino import roulette
-from .commands.give import bp_coins, case, clanexp, clanrep, coins, color, exp
+from .commands.give import bp_exp, case, clanexp, clanrep, coins, color, exp
 
 __all__ = (
-    "bp_coins",
+    "bp_exp",
     "case",
     "clanexp",
     "clanrep",

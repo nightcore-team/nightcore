@@ -1,4 +1,9 @@
-"""Coins shop view v2 component."""
+"""
+V2 view components related to coins shop.
+
+Used for displaying the coins shop, allowing users to select items for purchase.
+Handles item selection and purchase flow, including creating threads for orders.
+"""  # noqa: E501
 
 import asyncio
 import logging
@@ -57,7 +62,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
 
     async def select_item_callback(
         self, interaction: Interaction["Nightcore"]
-    ):
+    ) -> None:
         """Handle item selection from shop."""
 
         selected_item = interaction.data.get("values", [])[0]  # type: ignore
@@ -67,7 +72,6 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
         bot = interaction.client
 
         await interaction.response.defer(ephemeral=True)
-
         outcome = ""
         async with specified_guild_config(
             bot, guild.id, GuildEconomyConfig
@@ -100,7 +104,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка покупки товара",
-                    "У вас недостаточно средств для покупки этого товара.",  # noqa: RUF001
+                    "У вас недостаточно средств для покупки этого товара.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -148,7 +152,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                     embed=MissingPermissionsEmbed(
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
-                        "У меня недостаточно прав для создания ветки с покупкой.",  # noqa: E501, RUF001
+                        "У меня недостаточно прав для создания ветки с покупкой.",  # noqa: E501
                     ),
                     ephemeral=True,
                 )
@@ -165,7 +169,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка покупки",
-                        "Не удалось создать ветку для покупки в магазине экономики.",  # noqa: E501, RUF001
+                        "Не удалось создать ветку для покупки в магазине экономики.",  # noqa: E501
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -193,12 +197,12 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                     session.add(state)
             except Exception as e:
                 logger.exception(
-                    "[clans/shop] Failed to create shop order state: %s", e
+                    "[economy/shop] Failed to create shop order state: %s", e
                 )
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка покупки",
-                        "Не удалось создать состояние заказа в базе данных.",  # noqa: RUF001
+                        "Не удалось создать состояние заказа в базе данных.",
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -215,12 +219,12 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 )
             except Exception as e:
                 logger.exception(
-                    "[clans/shop] Failed to send clan shop message: %s", e
+                    "[economy/shop] Failed to send economy shop message: %s", e
                 )
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка покупки",
-                        "Не удалось отправить сообщение с покупкой в магазине клана.",  # noqa: E501, RUF001
+                        "Не удалось отправить сообщение с покупкой в магазине экономики.",  # noqa: E501
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),

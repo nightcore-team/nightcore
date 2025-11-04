@@ -53,7 +53,11 @@ class CreatePrivateRoomEvent(Cog):
             )
 
         except Exception as e:
-            logger.error(f"Error creating private room for {member}: {e}")
+            logger.error(
+                "[private_rooms/event] Error creating private room for %s: %s",
+                member,
+                e,
+            )
             return
 
         try:
@@ -66,14 +70,20 @@ class CreatePrivateRoomEvent(Cog):
 
         except Exception as e:
             logger.error(
-                f"Error creating private room record for {member}: {e}"
+                "[private_rooms/event] Error creating private room record for %s: %s",  # noqa: E501
+                member,
+                e,
             )
             return
 
         try:
             await member.move_to(channel)
         except Exception as e:
-            logger.error(f"Error moving {member} to private room: {e}")
+            logger.error(
+                "[private_rooms/event] Error moving %s to private room: %s",
+                member,
+                e,
+            )
             return
 
         async with self.bot.uow.start() as session:
@@ -85,7 +95,7 @@ class CreatePrivateRoomEvent(Cog):
             )
             if optional_log_channel_id is None:
                 logger.warning(
-                    f"[logging] Logging channel (private_rooms) not configured for guild {guild.id}"  # noqa: E501
+                    "[logging] Logging channel (private_rooms) not configured for guild %s",  # noqa: E501
                 )
                 return
             log_channel_id = optional_log_channel_id
@@ -96,7 +106,8 @@ class CreatePrivateRoomEvent(Cog):
             )
         ):
             logger.warning(
-                f"[logging] Logging channel (private_rooms) not configured for guild {guild.id}"  # noqa: E501
+                "[logging] Logging channel (private_rooms) not configured for guild %s",  # noqa: E501
+                guild.id,
             )
             return
 
@@ -110,7 +121,9 @@ class CreatePrivateRoomEvent(Cog):
             await log_channel.send(embed=embed)  # type: ignore
         except Exception as e:
             logger.error(
-                f"Error sending log message for private room of {member}: {e}"
+                "[private_rooms/event] Error sending log message for private room of %s: %s",  # noqa: E501
+                member,
+                e,
             )
             return
 

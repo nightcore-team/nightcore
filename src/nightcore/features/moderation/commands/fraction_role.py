@@ -1,4 +1,4 @@
-"""Fraction Role (/fraction_role) command for the Nightcore bot."""
+"""Command to add fraction role to a user."""
 
 import logging
 from datetime import timezone
@@ -9,9 +9,9 @@ from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
+from src.infra.db.models import GuildModerationConfig, MainGuildConfig
 from src.infra.db.operations import (
-    get_fraction_roles_access,
-    get_moderation_access_roles,
+    get_specified_field,
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
@@ -26,6 +26,7 @@ from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
 )
 from src.nightcore.features.moderation.utils import fraction_roles_autocomplete
+from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     ensure_member_exists,
     ensure_role_exists,
@@ -41,17 +42,18 @@ class FractionRole(Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="fraction_role", description="Assigns a fraction role to a user."
+        name="fraction_role",
+        description="Выдать пользователю фракционную роль.",
     )
     @app_commands.describe(
-        user="The user to assign the role to.",
-        role="The role to assign.",
-        option="An optional parameter.",
+        user="Пользователь, которому нужно выдать роль.",
+        role="Роль, которую нужно выдать.",
+        option="Выдать или снять.",
     )
     @app_commands.choices(
         option=[
-            app_commands.Choice(name="Add", value="add"),
-            app_commands.Choice(name="Remove", value="remove"),
+            app_commands.Choice(name="Добавить", value="add"),
+            app_commands.Choice(name="Удалить", value="remove"),
         ]
     )
     @app_commands.autocomplete(role=fraction_roles_autocomplete)
@@ -67,13 +69,22 @@ class FractionRole(Cog):
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
+        if not guild.me.guild_permissions.manage_roles:
+            return await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                    "У меня нет прав для выдачи ролей пользователям.",
+                ),
+            )
+
         # Ensure we have a guild Member object
         member = await ensure_member_exists(guild, user.id)
 
         if member is None:
             return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -85,29 +96,46 @@ class FractionRole(Cog):
         except ValueError:
             return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
-                    "Invalid role ID (not an integer).",
+                    "Некорректный ID роли",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
             )
 
-        async with self.bot.uow.start() as session:
+        async with specified_guild_config(
+            self.bot, guild.id, GuildModerationConfig
+        ) as (guild_config, session):
             if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
+                moderation_access_roles
+                := guild_config.moderation_access_roles_ids
             ):
-                raise FieldNotConfiguredError("moderation access")
+                raise FieldNotConfiguredError("доступ к модерации")
+
+            fraction_roles = await get_specified_field(
+                session,
+                guild_id=guild.id,
+                config_type=MainGuildConfig,
+                field_name="fraction_roles_ids",
+            )
 
             if not (
-                fraction_roles_access_roles := await get_fraction_roles_access(
-                    session, guild_id=guild.id
-                )
+                fraction_roles_access_roles
+                := guild_config.fraction_roles_access_roles_ids
             ):
-                raise FieldNotConfiguredError("fraction roles access")
+                raise FieldNotConfiguredError("доступ к фракционным ролям")
 
             final_access_list = (
                 moderation_access_roles + fraction_roles_access_roles
+            )
+
+        if role_id not in fraction_roles:
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка выдачи роли",
+                    "Роль не найдена в списке фракционных ролей.",
+                    self.bot.user.display_name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                )
             )
 
         has_moder_role = has_any_role_from_sequence(
@@ -125,7 +153,7 @@ class FractionRole(Cog):
         if target_role is None:
             return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
-                    "fraction role",
+                    "фракционная роль",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -142,16 +170,16 @@ class FractionRole(Cog):
                         logger.exception("Failed to add role: %s", e)
                         return await interaction.followup.send(
                             embed=ErrorEmbed(
-                                "Role Assignment Failed",
-                                "Failed to add role.",
+                                "Ошибка выдачи роли",
+                                "Не удалось выдать роль пользователю.",
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
                         )
                     await interaction.followup.send(
                         embed=SuccessMoveEmbed(
-                            "Role Assignment Successful",
-                            f"Added {target_role.mention} to {member.mention}'s fraction roles.",  # noqa: E501
+                            "Выдача роли",
+                            f"Роль {target_role.mention} была выдана пользователю {member.mention}.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -159,8 +187,8 @@ class FractionRole(Cog):
                 else:
                     return await interaction.followup.send(
                         embed=ErrorEmbed(
-                            "Role Assignment Failed",
-                            f"{member.mention} already has {target_role.mention}.",  # noqa: E501
+                            "Ошибка выдачи роли",
+                            f"{member.mention} уже имеет такую роль ({target_role.mention}).",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -173,16 +201,16 @@ class FractionRole(Cog):
                         logger.exception("Failed to remove role: %s", e)
                         return await interaction.followup.send(
                             embed=ErrorEmbed(
-                                "Role Removal Failed",
-                                f"Failed to remove {target_role.mention} from {member.mention}'s fraction roles.",  # noqa: E501
+                                "Ошибка снятия роли",
+                                f"Не удалось снять {target_role.mention} у {member.mention}.",  # noqa: E501
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
                         )
                     await interaction.followup.send(
                         embed=SuccessMoveEmbed(
-                            "Role Removal Successful",
-                            f"Removed {target_role.mention} from {member.mention}'s fraction roles.",  # noqa: E501
+                            "Снятие роли",
+                            f"Роль {target_role.mention} была успешно снята у пользователя {member.mention}.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -190,8 +218,8 @@ class FractionRole(Cog):
                 else:
                     return await interaction.followup.send(
                         embed=ErrorEmbed(
-                            "Role Removal Failed",
-                            f"{member.mention} does not have {target_role.mention}.",  # noqa: E501
+                            "Ошибка снятия роли",
+                            f"{member.mention} не имеет такую роль ({target_role.mention}).",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -199,8 +227,8 @@ class FractionRole(Cog):
             case _:
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
-                        "Invalid Option",
-                        "Option must be 'add' or 'remove'.",
+                        "Недопустимый вариант",
+                        "Вариант должен быть 'Добавить' или 'Удалить'.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),

@@ -1,4 +1,4 @@
-"""Moderstats configuration commands for the Nightcore bot."""
+"""Subgroup to configure tickets system."""
 
 import logging
 from typing import cast
@@ -25,14 +25,14 @@ logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
-    name="tickets", description="Configure tickets settings."
+    name="tickets", description="Настроить систему тикетов"
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    new_tickets_category="The category for new tickets",
-    pinned_tickets_category="The category for pinned tickets",
-    closed_tickets_category="The category for closed tickets",
-    create_ticket_ping_role="The role to ping when a ticket is created",
+    new_tickets_category="Категория для новых тикетов",
+    pinned_tickets_category="Категория для закрепленных тикетов",
+    closed_tickets_category="Категория для закрытых тикетов",
+    create_ticket_ping_role="Роль для упоминания при создании тикета",
 )
 async def tickets(
     interaction: Interaction,
@@ -78,7 +78,7 @@ async def tickets(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Tickets Configuration",
+            title="Настройка системы тикетов",
             description=description,
             color=discord.Color.green(),
         ),

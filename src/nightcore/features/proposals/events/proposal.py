@@ -57,7 +57,7 @@ class CreateProposalEvent(Cog):
             )
         except Exception as e:
             logger.exception(
-                "Failed to send proposal message in guild %s: %s",
+                "[proposal/event] Failed to send proposal message in guild %s: %s",  # noqa: E501
                 guild.id,
                 e,
             )

@@ -1,4 +1,4 @@
-"""Claim battlepass rewards command."""
+"""Command to check battlepass."""
 
 from typing import TYPE_CHECKING, cast
 
@@ -28,7 +28,7 @@ class Battlepass(Cog):
 
     @app_commands.command(
         name="battlepass",
-        description="Взаимодействие с баттлпасом сервера.",  # noqa: RUF001
+        description="Взаимодействие с баттлпасом сервера.",
     )
     async def claim(self, interaction: Interaction["Nightcore"]):
         """Claim your battlepass rewards."""
@@ -82,22 +82,11 @@ class Battlepass(Cog):
                 ephemeral=True,
             )
 
-        if outcome == "level_not_found":
+        if outcome == "level_not_found" or current_level is None:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения уровня баттлпаса",
                     "Ваш текущий уровень баттлпаса не найден в конфигурации.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if current_level is None:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка",
-                    "Произошла непредвиденная ошибка.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),

@@ -1,4 +1,7 @@
-import json  # noqa: D100
+"""Command to create chapters or rules."""
+
+import json
+import logging
 from typing import Any, cast
 
 from discord import Guild, Interaction, app_commands
@@ -15,6 +18,8 @@ from src.nightcore.features.meta.utils import (
 from src.nightcore.services.config import specified_guild_config
 
 from ._groups import rules as rules_group
+
+logger = logging.getLogger(__name__)
 
 
 @rules_group.command(name="create", description="Создать главу или правило")
@@ -173,4 +178,12 @@ async def create_chapter_or_rule(
             bot.user.avatar.url,  # type: ignore
         ),
         ephemeral=True,
+    )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s clause=%s text=%s",
+        interaction.user.id,
+        guild.id,
+        clause,
+        text,
     )

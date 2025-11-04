@@ -1,5 +1,6 @@
-"""Clan invitation command."""
+"""Command to invite user to your clan."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
@@ -14,11 +15,13 @@ from src.nightcore.features.clans.components.v2 import ClanInviteViewV2
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+logger = logging.getLogger(__name__)
+
 
 @clan_manage_group.command(
-    name="invite", description="Invite a member to your clan."
+    name="invite", description="Пригласить участника в ваш клан."
 )
-@app_commands.describe(user="The user to invite to your clan.")
+@app_commands.describe(user="Пользователь, которого хотите пригласить.")
 async def invite(
     interaction: Interaction["Nightcore"],
     user: Member,
@@ -81,3 +84,11 @@ async def invite(
     )
 
     await interaction.response.send_message(view=view)
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s clan_name=%s invited_user=%s",
+        interaction.user.id,
+        guild.id,
+        interaction_clan_member.clan.name,
+        user.id,
+    )

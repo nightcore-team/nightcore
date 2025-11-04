@@ -38,11 +38,11 @@ class UnVMute(Cog):
 
     @app_commands.command(
         name="unvmute",
-        description="Unmute a user in voice chat in the server",
+        description="Снять пользователю блокировку голосовых каналов",
     )
     @app_commands.describe(
-        user="The user to unmute",
-        reason="The reason for unmuting the user",
+        user="Пользователь для размута",
+        reason="Причина размута пользователя",
     )
     async def unvmute(
         self,
@@ -59,7 +59,7 @@ class UnVMute(Cog):
         if member is None:
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
-                    "user",
+                    "пользователь",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -100,7 +100,7 @@ class UnVMute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to unmute members.",
+                    "У меня нет прав для размута участников.",
                 ),
                 ephemeral=True,
             )
@@ -108,7 +108,7 @@ class UnVMute(Cog):
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "You cannot unmute me.",
+                    "Вы не можете размутить меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -120,7 +120,7 @@ class UnVMute(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I cannot unmute this user because he has a higher role than me.",  # noqa: E501
+                    "Я не могу размутить этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
@@ -132,8 +132,8 @@ class UnVMute(Cog):
         if not mute_role_id or mrole is None:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Mute role not found",
-                    f"The mute role with ID {mute_role_id} was not found in this server.",  # noqa: E501
+                    "Роль мута не найдена",
+                    f"Роль мута с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -145,8 +145,8 @@ class UnVMute(Cog):
             if not has_role:
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Mute role not found",
-                        "The mute role was not found in this user.",
+                        "Роль мута не найдена",
+                        "Роль мута не найдена у этого пользователя.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -164,8 +164,8 @@ class UnVMute(Cog):
                     )
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "Role Removal Failed",
-                            "Failed to remove role.",
+                            "Не удалось удалить роль",
+                            "Не удалось удалить роль.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),
@@ -176,11 +176,11 @@ class UnVMute(Cog):
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
-                "User Unmuted",
-                f"{member.mention} has been unmuted by moderator {interaction.user.mention}",  # noqa: E501
+                "Блокировка голосовых каналов снята",
+                f"{member.mention} был размучен модератором {interaction.user.mention}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Reason", value=reason, inline=True)
+            ).add_field(name="Причина", value=reason, inline=True)
         )
 
         try:

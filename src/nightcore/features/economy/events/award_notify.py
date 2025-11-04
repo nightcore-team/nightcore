@@ -1,4 +1,4 @@
-"""Handle user items changed events in the economy feature."""
+"""Handle user items changed events."""
 
 import asyncio
 import logging
@@ -76,6 +76,15 @@ class UserItemsChangedEvent(Cog):
                 dto.guild.id,
                 e,
             )
+
+        logger.info(
+            "[%s/log] - invoked user=%s guild=%s item_name=%s amount=%s",
+            dto.event_type,
+            dto.user_id,
+            dto.guild.id,
+            dto.item_name,
+            dto.amount,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

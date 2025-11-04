@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 @faq_group.command(
     name="send",
-    description="Отправить представление с страницами FAQ",  # noqa: RUF001
+    description="Отправить представление с страницами FAQ",
 )
 @app_commands.checks.has_permissions(administrator=True)
 async def send_faq_pages(
@@ -46,7 +46,7 @@ async def send_faq_pages(
         await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки FAQ",
-                "В FAQ этого сервера нет страниц для отображения.",  # noqa: RUF001
+                "В FAQ этого сервера нет страниц для отображения.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

@@ -1,3 +1,9 @@
+"""
+Award notification view v2 component.
+
+Used for displaying a notification when an item is awarded to a user.
+"""
+
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 
@@ -19,17 +25,17 @@ class AwardNotificationViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:73173rocket:1432056646456049736> Уведомление о выдаче предмета"  # noqa: E501, RUF001
+                "## <:73173rocket:1432056646456049736> Уведомление о выдаче предмета"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
 
         container.add_item(
-            TextDisplay[Self](f"<@{user_id}> вам выдал(а) предмет.")  # noqa: RUF001
+            TextDisplay[Self](f"<@{user_id}> вам выдал(а) предмет.")
         )
         container.add_item(Separator[Self]())
 
-        container.add_item(TextDisplay[Self]("### Информация о предмете: "))  # noqa: RUF001
+        container.add_item(TextDisplay[Self]("### Информация о предмете: "))
         container.add_item(
             TextDisplay[Self](
                 f"> Название: **{item_name}**\n> Количество: **{amount}**"

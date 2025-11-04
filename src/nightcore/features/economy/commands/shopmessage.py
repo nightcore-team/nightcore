@@ -1,4 +1,4 @@
-"""Shop message command."""
+"""Command to send shop view component."""
 
 import logging
 import time
@@ -28,7 +28,7 @@ class ShopMessage(Cog):
 
     @app_commands.command(
         name="shopmessage",
-        description="Send shop view.",
+        description="Отправить компонент магазина.",
     )
     async def shopmessage(self, interaction: Interaction["Nightcore"]):
         """Send shop view."""
@@ -115,6 +115,12 @@ class ShopMessage(Cog):
                 "[shopmessage] Sending info response shop message message took %.4f seconds",  # noqa: E501
                 end_time - start_time,
             )
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s",
+            member.id,
+            guild.id,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

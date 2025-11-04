@@ -1,4 +1,4 @@
-"""Levels configuration commands for the Nightcore bot."""
+"""Subgroup to configure levels settings."""
 
 import logging
 from typing import Literal, cast
@@ -30,20 +30,21 @@ from src.nightcore.utils.field_validators import (
 logger = logging.getLogger(__name__)
 
 
-@levels_group.command(name="setup", description="Configure levels settings.")
+@levels_group.command(name="setup", description="Настроить систему уровней.")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    count_messages_channel="Channel to count messages for levels.",
-    level_notify_channel="Channel for level-up notifications.",
-    exp_multiplier="Experience points multiplier for levels.",
-    coins_multiplier="Coins multiplier for levels.",
-    roles_with_bonus="Roles that receive bonus experience points. (format: role,bonus|role2,bonus2|...)",  # noqa: E501
-    roles_per_level="Roles assigned at each level (format: level1:role1|level2:role2|...).",  # noqa: E501
+    count_messages_channel="Канал для подсчета сообщений для уровней.",
+    count_messages_type="Тип подсчета сообщений для уровней: Все каналы | Только указанный",  # noqa: E501, RUF001
+    level_notify_channel="Канал для уведомлений о повышении уровня.",  # noqa: RUF001
+    exp_multiplier="Множитель опыта для уровней.",
+    coins_multiplier="Множитель монет для уровней.",
+    roles_with_bonus="Роли, которые получают бонусные очки опыта. Формат: role_id, multiplier | ...",  # noqa: E501
+    roles_per_level="Роли, назначаемые на каждом уровне. Формат: level, role_id | level, role_id | ...",  # noqa: E501
 )
 @app_commands.choices(
     count_messages_type=[
-        app_commands.Choice(name="All", value="all"),
-        app_commands.Choice(name="Channel Only", value="channel_only"),
+        app_commands.Choice(name="Все каналы", value="all"),  # noqa: RUF001
+        app_commands.Choice(name="Только указанный", value="channel_only"),
     ]
 )
 async def setup(
@@ -95,7 +96,7 @@ async def setup(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Levels Configuration",
+            title="Настройка системы уровней",
             description=description,
             color=discord.Color.green(),
         ),

@@ -1,5 +1,6 @@
-"""Check user's profile command."""
+"""Command to check user's profile."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
@@ -15,14 +16,18 @@ from src.nightcore.utils import format_voice_time
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+logger = logging.getLogger(__name__)
+
 
 class Profile(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(name="profile", description="Check user's profile.")
+    @app_commands.command(
+        name="profile", description="Посмотреть профиль пользователя."
+    )
     @app_commands.describe(
-        user="The user to check the profile for. Defaults to yourself."
+        user="Пользователь, чей профиль нужно посмотреть. По умолчанию - вы сами."  # noqa: E501
     )
     async def profile(
         self, interaction: Interaction, user: Member | None = None
@@ -68,6 +73,13 @@ class Profile(Cog):
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s target_user=%s",
+            interaction.user.id,
+            guild.id,
+            member.id,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

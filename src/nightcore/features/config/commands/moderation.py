@@ -1,4 +1,4 @@
-"""Moderation configuration commands for the Nightcore bot."""
+"""Subgroup to configure moderation system."""
 
 import logging
 from typing import Literal, cast
@@ -30,21 +30,21 @@ logger = logging.getLogger(__name__)
 
 
 @moderation_group.command(
-    name="setup", description="Configure moderation settings."
+    name="setup", description="Настроить систему модерации."
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    moderation_access_roles="The roles that can access moderation features.",
-    leadership_access_roles="The roles that can access leadership moderation features.",  # noqa: E501
-    ban_access_roles="The roles that can access ban features.",
-    ban_request_ping_role="The role to ping when a ban request is made.",
-    ban_request_channel="The channel where ban requests are made.",
-    mute_type="The type of mute to apply. Timeout | Role",
-    mute_role="The role to assign when a user is muted.",
-    mpmute_role="The role to assign when a user is muted in a specific channel.",  # noqa: E501
-    vmute_role="The role to assign when a user is voice muted.",
-    leaders_access_rr_roles="The roles that can access the leader's report.",
-    fraction_roles_access="The roles that can access the `/fraction_role` command.",  # noqa: E501
+    moderation_access_roles="Роли, которые могут получать доступ к функциям модерации",  # noqa: E501
+    leadership_access_roles="Роли, которые могут получать доступ к функциям модерации для руководства.",  # noqa: E501
+    ban_access_roles="Роли, которые могут получать доступ к бану.",
+    ban_request_ping_role="Роль, которую нужно пинговать, когда создается запрос на бан.",  # noqa: E501
+    ban_request_channel="Канал, в котором создаются запросы на бан.",
+    mute_type="Тип мута, который нужно применить: Timeout | Role",
+    mute_role="Роль, которую нужно назначить, когда пользователь замьючен.",
+    mpmute_role="Роль, которую нужно назначить, когда пользователь замьючен в торговой площадке.",  # noqa: E501
+    vmute_role="Роль, которую нужно назначить, когда пользователь замьючен в голосовом канале.",  # noqa: E501
+    leaders_access_rr_roles="Роли лидеров с доступом к команде /rr.",
+    fraction_roles_access="Роли, которые могут получать доступ к команде `/fraction_role`.",  # noqa: E501
 )
 @app_commands.choices(
     mute_type=[
@@ -110,7 +110,7 @@ async def setup_moderation(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Moderation Configuration",
+            title="Настройка модерации",
             description=description,
             color=discord.Color.green(),
         ),
@@ -130,13 +130,13 @@ async def setup_moderation(
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the moderation access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка ролей с доступом к модерации",
 )
 async def update_moderation_access(
     interaction: Interaction,
@@ -159,21 +159,21 @@ async def update_moderation_access(
             guild_config.moderation_access_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the moderation access list."
+        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к модерации."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the moderation access list."
+        desc = f"Роль <@&{role.id}> не в списке ролей с доступом к модерации."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the moderation access list."
+        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к модерации."  # noqa: E501
         color = discord.Color.blurple()
-    else:  # removed
-        desc = f"Role <@&{role.id}> removed from the moderation access list."
+    else:
+        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к модерации."  # noqa: E501
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Moderation Configuration",
+            title="Настройка модерации",
             description=desc,
             color=color,
         ),
@@ -193,13 +193,13 @@ async def update_moderation_access(
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the ban access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка ролей с доступом к бану",
 )
 async def update_ban_access(
     interaction: Interaction,
@@ -221,21 +221,23 @@ async def update_ban_access(
             guild_config.ban_access_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the ban access list."
+        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к бану."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the ban access list."
+        desc = f"Роль <@&{role.id}> не в списке ролей с доступом к бану."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the ban access list."
+        desc = (
+            f"Роль <@&{role.id}> добавлена в список ролей с доступом к бану."
+        )
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the ban access list."
+        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к бану."
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Moderation Configuration",
+            title="Настройка модерации",
             description=desc,
             color=color,
         ),
@@ -255,13 +257,13 @@ async def update_ban_access(
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the rr access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка ролей с доступом к rr",
 )
 async def update_rr_access(
     interaction: Interaction,
@@ -283,21 +285,21 @@ async def update_rr_access(
             guild_config.fraction_roles_access_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the rr access list."
+        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к rr."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the rr access list."
+        desc = f"Роль <@&{role.id}> не в списке ролей с доступом к rr."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the rr access list."
+        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к rr."
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the rr access list."
+        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к rr."
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Moderation Configuration",
+            title="Настройка модерации",
             description=desc,
             color=color,
         ),
@@ -317,13 +319,13 @@ async def update_rr_access(
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the fraction access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка ролей с доступом к fraction_role",  # noqa: E501
 )
 async def update_fraction_role_access(
     interaction: Interaction,
@@ -345,21 +347,23 @@ async def update_fraction_role_access(
             guild_config.leader_access_rr_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the fraction access list."
+        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к fraction_role."  # noqa: E501
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the fraction access list."
+        desc = (
+            f"Роль <@&{role.id}> не в списке ролей с доступом к fraction_role."
+        )
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the fraction access list."
+        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к fraction_role."  # noqa: E501
         color = discord.Color.blurple()
-    else:  # removed
-        desc = f"Role <@&{role.id}> removed from the fraction access list."
+    else:
+        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к fraction_role."  # noqa: E501
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Moderation Configuration",
+            title="Настройка модерации",
             description=desc,
             color=color,
         ),
@@ -379,13 +383,13 @@ async def update_fraction_role_access(
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the leadership access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка ролей с доступом к модерации для руководства.",  # noqa: E501
 )
 async def update_leadership_access(
     interaction: Interaction,
@@ -407,21 +411,21 @@ async def update_leadership_access(
             guild_config.leadership_access_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the leadership access list."
+        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к модерации для руководства."  # noqa: E501
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the leadership access list."
+        desc = f"Роль <@&{role.id}> не в списке ролей с доступом к модерации для руководства."  # noqa: E501
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the leadership access list."
+        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к модерации для руководства."  # noqa: E501
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the leadership access list."
+        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к модерации для руководства."  # noqa: E501
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Moderation Configuration",
+            title="Настройка модерации",
             description=desc,
             color=color,
         ),

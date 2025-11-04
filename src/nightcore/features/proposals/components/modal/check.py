@@ -1,3 +1,5 @@
+"""Proposal check modal component."""
+
 import logging
 from typing import TYPE_CHECKING, Self, cast
 
@@ -5,6 +7,7 @@ import discord
 from discord.ui import Modal, TextInput
 
 from src.config.config import config
+from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.proposals.utils import (
     strip_discord_markdown_to_plain,
 )
@@ -38,9 +41,9 @@ class CheckProposalModal(Modal, title="Рассмотрение предложе
         self.view = view
         self.message = message
 
-    # TODO: fix it and fix lenght of answer for changing embed
     async def on_submit(self, interaction: discord.Interaction):
-        """Handles the submission of the ban form modal."""
+        """Handles the submission of the proposal check modal."""
+
         try:
             reason = strip_discord_markdown_to_plain(self.reason.value)
 
@@ -61,7 +64,7 @@ class CheckProposalModal(Modal, title="Рассмотрение предложе
                     moderator_id=interaction.user.id,
                     color=self.view.color,
                 )
-                self.view.answer = "Ответ слишком длинный, поэтому он был добавлен в виде отдельного эмбеда."  # noqa: E501
+                self.view.answer = "Ответ слишком длинный, поэтому он был добавлен в виде дополнительного компонента."  # noqa: E501
             else:
                 self.view.answer = reason
 
@@ -73,11 +76,17 @@ class CheckProposalModal(Modal, title="Рассмотрение предложе
 
         except Exception as e:
             logger.exception(
-                "Error handling proposal check modal submission: %s", e
+                "[proposal] Error handling proposal check modal submission: %s",  # noqa: E501
+                e,
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    "Произошла ошибка при обработке вашего запроса.",
+                    embed=ErrorEmbed(
+                        "Ошибка рассмотра предложения",
+                        "Произошла ошибка при обработке вашего ответа.",
+                        self.bot.user.display_name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
                     ephemeral=True,
                 )
 

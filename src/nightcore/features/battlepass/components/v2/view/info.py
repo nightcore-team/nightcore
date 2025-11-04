@@ -1,4 +1,8 @@
-"""Battlepass claim view components."""
+"""
+Battlepass info view v2 component.
+
+Used for displaying a general battlepass information with pagination.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast

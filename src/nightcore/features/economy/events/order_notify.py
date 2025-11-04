@@ -1,4 +1,4 @@
-"""Module for clan shop notification events."""
+"""Handle coins shop order notifications."""
 
 import asyncio
 import logging
@@ -121,6 +121,17 @@ class CoinsShopNotifyEvent(Cog):
                 dto.guild.id,
                 e,
             )
+
+        logger.info(
+            "[%s/log] - invoked user=%s guild=%s item_name=%s item_price=%s balance_before=%s balance_after=%s",  # noqa: E501
+            dto.event_type,
+            dto.user_id,
+            dto.guild.id,
+            dto.item_name,
+            dto.item_price,
+            dto.user_balance_before,
+            dto.user_balance_after,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

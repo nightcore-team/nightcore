@@ -1,4 +1,8 @@
-"""Roulette view v2 component."""
+"""
+Roulette view v2 component.
+
+Used for displaying the results of a casino roulette game.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self

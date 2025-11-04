@@ -1,6 +1,3 @@
-# remove private room with name of username on leave
-# send log message to logging channel
-# delete temp record from database
 """Handle delete private room events."""
 
 import logging
@@ -38,7 +35,11 @@ class DeletePrivateRoomEvent(Cog):
             await channel.delete(reason="Deleting private room on user leave")
 
         except Exception as e:
-            logger.error(f"Error deleting private room for {member}: {e}")
+            logger.error(
+                "[private_rooms/event] Error deleting private room for %s: %s",
+                member,
+                e,
+            )
             return
 
         try:
@@ -61,7 +62,9 @@ class DeletePrivateRoomEvent(Cog):
 
         except Exception as e:
             logger.error(
-                f"Error deleting private room record for {member}: {e}"
+                "[private_rooms/event] Error deleting private room record for %s: %s",  # noqa: E501
+                member,
+                e,
             )
             return
 
@@ -85,7 +88,9 @@ class DeletePrivateRoomEvent(Cog):
             await log_channel.send(embed=embed)  # type: ignore
         except Exception as e:
             logger.error(
-                f"Error sending log message for private room of {member}: {e}"
+                "[private_rooms/event] Error sending log message for private room of %s: %s",  # noqa: E501
+                member,
+                e,
             )
             return
 

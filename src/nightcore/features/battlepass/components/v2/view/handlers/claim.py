@@ -1,4 +1,8 @@
-"""Battlepass claim view components."""
+"""
+Battlepass claim reward button handler.
+
+Handles claiming battlepass reward and updating the view accordingly.
+"""
 
 import asyncio
 import logging
@@ -88,7 +92,7 @@ async def handle_battlepass_claim_reward_button(
                                 )
 
                             attributes.flag_modified(user_record, "inventory")
-                            reward_name = f"{reward_amount} кейсов с коинами"  # noqa: RUF001
+                            reward_name = f"{reward_amount} кейсов с коинами"
 
                         case "exp":
                             user_record.current_exp += reward_amount
@@ -145,7 +149,7 @@ async def handle_battlepass_claim_reward_button(
         await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Недостаточно опыта",
-                "У вас недостаточно опыта для получения награды за этот уровень.",  # noqa: E501, RUF001
+                "У вас недостаточно опыта для получения награды за этот уровень.",  # noqa: E501
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

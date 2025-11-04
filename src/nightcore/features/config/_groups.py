@@ -4,49 +4,50 @@ from discord import app_commands
 
 config = app_commands.Group(
     name="config",
-    description="Configuration commands for the Nightcore bot.",
+    description="Команды конфигурации для бота Nightcore.",
 )
-main = app_commands.Group(
-    name="main",
-    description="Configuration commands for the main settings.",
+other = app_commands.Group(
+    name="other",
+    description="Команды конфигурации для других настроек.",
     parent=config,
 )
 logging = app_commands.Group(
     name="logging",
-    description="Configuration commands for the logging.",
+    description="Команды конфигурации для логирования.",
     parent=config,
 )
 moderation = app_commands.Group(
     name="moderation",
-    description="Configuration commands for the moderation.",
+    description="Команды конфигурации для модерации.",
     parent=config,
 )
+
 economy = app_commands.Group(
     name="economy",
-    description="Configuration commands for the economy.",
+    description="Команды конфигурации для экономики.",
     parent=config,
 )
 
 levels = app_commands.Group(
     name="levels",
-    description="Configuration commands for the levels.",
+    description="Команды конфигурации для уровней.",
     parent=config,
 )
 
 clans = app_commands.Group(
     name="clans",
-    description="Configuration commands for the clans.",
+    description="Команды конфигурации для кланов.",
     parent=config,
 )
 
 infomaker = app_commands.Group(
     name="infomaker",
-    description="Configuration commands for the infomaker.",
+    description="Команды конфигурации для инфомейкеров.",
     parent=config,
 )
 
 battlepass = app_commands.Group(
     name="battlepass",
-    description="Configuration commands for the battlepass.",
+    description="Команды конфигурации для боевого пропуска.",
     parent=config,
 )

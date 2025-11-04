@@ -1,4 +1,4 @@
-"""Action command for the Nightcore bot."""
+"""Command to perform actions with users."""
 
 import logging
 from typing import cast
@@ -27,14 +27,17 @@ class Action(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(name="action", description="Perform an action")
+    @app_commands.command(
+        name="action",
+        description="Сделать действие с пользователем",
+    )
     @app_commands.checks.cooldown(
         1, 5.0, key=lambda i: i.user.id
     )  # 1 use every 5 seconds
     @app_commands.choices(action=[*ACTION_CHOICES])
     @app_commands.describe(
-        action="Choose an action",
-        user="Choose a member for the action",
+        action="Выберите действие",
+        user="Выберите пользователя для действия",
     )
     async def action(
         self,
@@ -76,7 +79,7 @@ class Action(Cog):
             if user.id == interaction.user.id:
                 await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        "Вы не можете выполнить это действие на себе.",  # noqa: RUF001
+                        "Вы не можете выполнить это действие на себе.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),

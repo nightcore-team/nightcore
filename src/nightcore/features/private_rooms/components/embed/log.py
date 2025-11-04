@@ -1,3 +1,5 @@
+"""Private rooms log embed component."""
+
 from datetime import datetime, timezone
 
 import discord

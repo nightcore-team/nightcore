@@ -1,4 +1,4 @@
-"""Autocomplete utils for clans feature."""
+"""Autocomplete utils for faq feature."""
 
 import logging
 import time

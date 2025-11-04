@@ -1,4 +1,4 @@
-"""Private Channels configuration commands for the Nightcore bot."""
+"""Subgroup to configure private channels system."""
 
 import logging
 from typing import cast
@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 
 @main_config_group.command(
     name="private_channels",
-    description="Configure private channels settings.",
+    description="Настроить систему приватных каналов.",
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    create_private_channel="The channel to create for private rooms."
+    create_private_channel="Канал для создания приватных комнат."
 )
 async def private_channels(
     interaction: Interaction,
@@ -69,7 +69,7 @@ async def private_channels(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Private Channels Configuration",
+            title="Настройка системы приватных каналов",
             description=description,
             color=discord.Color.green(),
         ),

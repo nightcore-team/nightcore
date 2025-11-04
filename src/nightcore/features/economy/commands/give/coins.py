@@ -1,4 +1,4 @@
-"""Give clan reputation command."""
+"""Command to give coins to a user."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -29,8 +29,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command(name="coins", description="Give coins to user.")
-@app_commands.describe()
+@give_group.command(name="coins", description="Выдать коины пользователю")
+@app_commands.describe(
+    user="Пользователь, которому выдаются коины",
+    amount="Количество коинов для выдачи",
+)
 async def give_coins(
     interaction: Interaction["Nightcore"],
     user: Member,
@@ -98,7 +101,7 @@ async def give_coins(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка выдачи монет",
-                "Не удалось выдать монеты пользователю.",  # noqa: RUF001
+                "Не удалось выдать монеты пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

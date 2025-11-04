@@ -57,7 +57,7 @@ async def delete_faq_page(
         await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка удаления страницы FAQ",
-                f"Страница с названием '{page}' не найдена в FAQ этого сервера.",  # noqa: E501, RUF001
+                f"Страница с названием '{page}' не найдена в FAQ этого сервера.",  # noqa: E501
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -69,7 +69,7 @@ async def delete_faq_page(
         await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Удаление страницы FAQ",
-                f"Страница FAQ с названием '{page}' успешно удалена.",  # noqa: RUF001
+                f"Страница FAQ с названием '{page}' успешно удалена.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

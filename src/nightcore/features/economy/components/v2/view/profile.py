@@ -1,4 +1,8 @@
-"""User profile view v2 component."""
+"""
+User profile view v2 component.
+
+Used for displaying a user's profile with their stats, cases, and colors.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self

@@ -1,5 +1,6 @@
-"""Pay command."""
+"""Command to pay another user."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
@@ -23,14 +24,17 @@ if TYPE_CHECKING:
 
 from src.nightcore.utils import ensure_member_exists
 
+logger = logging.getLogger(__name__)
+
 
 class Pay(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(name="pay", description="Pay another user.")
+    @app_commands.command(name="pay", description="Отправить перевод коинов")
     @app_commands.describe(
-        user="The user to pay.", amount="The amount of coins to pay."
+        user="Пользователь, которому нужно отправить перевод",
+        amount="Сумма коинов для перевода",
     )
     async def pay(
         self,
@@ -64,7 +68,7 @@ class Pay(Cog):
         if user == interaction.user:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Вы не можете перевести коинов самому себе.",  # noqa: RUF001
+                    "Вы не можете перевести коинов самому себе.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -138,7 +142,7 @@ class Pay(Cog):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка перевода",
-                    "У вас недостаточно коинов для перевода.",  # noqa: RUF001
+                    "У вас недостаточно коинов для перевода.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -167,6 +171,14 @@ class Pay(Cog):
                     amount=amount,
                 ),
             )
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s target_user=%s amount=%s",
+            interaction.user.id,
+            guild.id,
+            member.id,
+            amount,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:

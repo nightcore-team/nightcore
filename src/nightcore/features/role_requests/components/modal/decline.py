@@ -1,5 +1,6 @@
 """Modal for submitting ban requests."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Self, cast
 
@@ -62,34 +63,52 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
 
         await interaction.response.defer()
 
+        outcome = ""
         async with self.bot.uow.start() as session:
             last_rr = await get_latest_user_role_request(
                 session, guild_id=guild.id, user_id=self.user.id
             )
             if not last_rr:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Decline failed",
-                        "Cannot find this role request in database.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
+                outcome = "role_request_not_found"
+                logger.warning(
+                    "No role request found for user %s in guild %s when declining",  # noqa: E501
+                    self.user.id,
+                    guild.id,
                 )
+            else:
+                if last_rr.state == RoleRequestStateEnum.DENIED:
+                    outcome = "role_request_already_declined"
+                    logger.warning(
+                        "Role request for user %s in guild %s is already declined",  # noqa: E501
+                        self.user.id,
+                        guild.id,
+                    )
 
-            if last_rr.state == RoleRequestStateEnum.DENIED:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Decline failed",
-                        "Another moderator declined this request.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+            if not outcome:
+                last_rr.state = RoleRequestStateEnum.DENIED  # type: ignore
+                last_rr.moderator_id = interaction.user.id  # type: ignore
 
-            last_rr.state = RoleRequestStateEnum.DENIED
-            last_rr.moderator_id = interaction.user.id
+        if outcome == "role_request_not_found":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Decline failed",
+                    "Role request not found in database.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if outcome == "role_request_already_declined":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Decline failed",
+                    "Role request has already been declined.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         try:
             await self.message.edit(view=self.view)
@@ -110,14 +129,6 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
                 ephemeral=True,
             )
 
-        await send_role_request_dm(
-            moderator_id=interaction.user.id,
-            reserve_channel=self.nightcore_notifications_channel_id,
-            user=self.user,
-            state=RoleRequestStateEnum.DENIED,
-            reason=reason,
-        )
-
         state_view = self.state_view_type(
             bot=self.bot,
             moderator_id=interaction.user.id,
@@ -126,8 +137,16 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
             state=RoleRequestStateEnum.DENIED,
             reason=reason,
         )
-
-        await interaction.followup.send(view=state_view)
+        await asyncio.gather(
+            interaction.followup.send(view=state_view),
+            send_role_request_dm(
+                moderator_id=interaction.user.id,
+                reserve_channel=self.nightcore_notifications_channel_id,
+                user=self.user,
+                state=RoleRequestStateEnum.DENIED,
+                reason=reason,
+            ),
+        )
 
         logger.info(
             "Moderator %s declined role request from user %s in guild %s",

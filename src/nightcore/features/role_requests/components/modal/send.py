@@ -177,6 +177,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 ephemeral=True,
             )
 
+        outcome = ""
         async with self.bot.uow.start() as session:
             try:
                 new_rr = RoleRequestState(
@@ -187,6 +188,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                     channel_id=self.channel.id,
                     state=RoleRequestStateEnum.PENDING,
                 )
+                session.add(new_rr)
             except Exception as e:
                 logger.exception(
                     "Failed to create RoleRequestState in guild %s for user %s: %s",  # noqa: E501
@@ -194,16 +196,18 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                     user.id,
                     e,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Role Request Failed",
-                        "Failed to create role request.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    )
-                )
+                outcome = "role_request_create_failed"
 
-            session.add(new_rr)
+        if outcome == "role_request_create_failed":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Role Request Failed",
+                    "Failed to create role request in database.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         logger.info(
             "[role_request_submit] - invoked user=%s guild=%s role=%s",

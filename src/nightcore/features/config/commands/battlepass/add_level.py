@@ -1,5 +1,6 @@
-"""Add new battlepass level command."""
+"""Subcommand to add a new battle pass level."""
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -24,8 +25,12 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+logger = logging.getLogger(__name__)
 
-@battlepass_group.command(name="add_level")
+
+@battlepass_group.command(
+    name="add_level", description="Добавить уровень боевого пропуска"
+)
 @app_commands.describe(
     required_exp="Количество EXP для этого уровня",
     reward_type="Тип награды",
@@ -123,7 +128,7 @@ async def add_level(
         )
 
     if outcome == "success":
-        return await interaction.response.send_message(
+        await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Уровень добавлен",
                 f"Уровень {level} успешно добавлен в боевой пропуск.",  # type: ignore
@@ -132,3 +137,13 @@ async def add_level(
             ),
             ephemeral=True,
         )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s add_level=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501
+        interaction.user.id,
+        guild.id,
+        level,  # type: ignore
+        required_exp,
+        reward_type.value,
+        reward_amount,
+    )

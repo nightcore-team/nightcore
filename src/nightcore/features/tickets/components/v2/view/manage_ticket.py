@@ -1,4 +1,4 @@
-"""View for paginating infractions."""
+"""View for managing tickets."""
 
 import logging
 from datetime import datetime, timezone
@@ -51,7 +51,6 @@ class TicketStateViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
         container = Container[Self]()
@@ -59,16 +58,14 @@ class TicketStateViewV2(LayoutView):
         message: str = ""
         match state:
             case TicketStateEnum.OPENED:
-                message = "Ticket was opened by {}"
+                message = "### Тикет был открыт модератором {}"
             case TicketStateEnum.PINNED:
-                message = "Ticket was pinned by {}"
+                message = "### Тикет был закреплен модератором {}"
             case TicketStateEnum.CLOSED:
-                message = "Ticket was closed by {}"
+                message = "### Тикет был закрыт модератором {}"
             case _:
-                message = "Invalid state."
+                message = "Неизвестное состояние."
 
-        container.add_item(TextDisplay[Self](f"### <@{author_id}>"))
-        container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](message.format(f"<@{moderator_id}>"))
         )
@@ -77,7 +74,7 @@ class TicketStateViewV2(LayoutView):
         now = datetime.now(timezone.utc)
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Powered by {bot.user.name} in {discord_ts(now)} | <@{author_id}>"  # type: ignore  # noqa: E501
             )
         )
         self.add_item(container)
@@ -89,7 +86,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
 
     @button(
         style=ButtonStyle.grey,
-        label="Pin",
+        label="Закрепить",
         emoji="📌",
         custom_id="ticket:pin",
     )
@@ -102,6 +99,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         channel = cast(TextChannel, interaction.channel)
         user = cast(Member, interaction.user)
 
+        # Extract interaction_user_id if not set
         if view.interaction_user_id is None:
             for component in interaction.message.components:  # type: ignore
                 for child in component.children:  # type: ignore
@@ -112,14 +110,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                         view.interaction_user_id = extract_id_from_str(
                             child.content
                         )
-                        logger.info(
-                            "Extracted interaction_user_id %s from message in guild %s",  # noqa: E501
-                            view.interaction_user_id,
-                            guild.id,
-                        )
+
                         break
-        else:
-            ...
 
         await interaction.response.defer()
 
@@ -127,150 +119,189 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             guild, cast(int, view.interaction_user_id)
         )
         if ticket_author is None:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Failed to pin ticket",
-                    "Ticket author not found in this guild. You can close the ticket instead.",  # noqa: E501
+                    "Не удалось закрепить тикет",  # noqa: RUF001
+                    "Автор тикета не найден на сервере. Вы можете закрыть тикет.",  # noqa: E501
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+
+        if not guild.me.guild_permissions.manage_channels:
+            return await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    "У меня нет прав на управление каналами.",  # noqa: RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        outcome = ""
+        ticket_number = 0
+        ticket_author_id = 0
+        pinned_tickets_category_id = 0
+        logging_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
             moderation_access_roles = await get_moderation_access_roles(
                 session,
                 guild_id=guild.id,
             )
+
             if not has_any_role_from_sequence(user, moderation_access_roles):
-                return await interaction.followup.send(
-                    embed=MissingPermissionsEmbed(
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
-            ticket = await get_latest_user_ticket(
-                session,
-                guild_id=guild.id,
-                user_id=cast(int, view.interaction_user_id),
-            )
-
-            pinned_tickets_category_id = cast(
-                int,
-                await get_specified_channel(
+                outcome = "missing_permissions"
+            else:
+                ticket = await get_latest_user_ticket(
                     session,
                     guild_id=guild.id,
-                    config_type=GuildTicketsConfig,
-                    channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
-                ),
-            )
-
-            if ticket is None:
-                logger.warning(
-                    "No ticket found for user %s in guild %s",
-                    user.id,
-                    guild.id,
-                )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to pin ticket",
-                        "No ticket found for this user.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
+                    user_id=cast(int, view.interaction_user_id),
                 )
 
-            if ticket.state == TicketStateEnum.CLOSED:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to pin ticket",
-                        "You cannot pin a closed ticket.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                if ticket is None:
+                    outcome = "ticket_not_found"
+                elif ticket.state == TicketStateEnum.CLOSED:
+                    outcome = "ticket_closed"
+                elif ticket.state == TicketStateEnum.PINNED:
+                    outcome = "already_pinned"
+                else:
+                    # Save ticket data
+                    ticket_number = ticket.ticket_number
+                    ticket_author_id = ticket.author_id
 
-            if ticket.state == TicketStateEnum.PINNED:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to pin ticket",
-                        "This ticket is already pinned by another moderator.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_TICKETS,
-            )
+                    # Update ticket state to PINNED
+                    ticket.moderator_id = user.id
+                    ticket.state = TicketStateEnum.PINNED
 
-            ticket.moderator_id = user.id
-            ticket.state = TicketStateEnum.PINNED
+                    # Get pinned tickets category ID
+                    pinned_tickets_category_id = cast(
+                        int,
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildTicketsConfig,
+                            channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
+                        ),
+                    )
 
-        pinned_tickets_category = await ensure_messageable_channel_exists(
-            guild=guild,
-            channel_id=pinned_tickets_category_id,
-        )
-        if pinned_tickets_category is None:
-            logger.error(
-                "Pinned tickets category %s not found in guild %s",
-                pinned_tickets_category_id,
-                guild.id,
-            )
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_TICKETS,
+                    )
+
+                    outcome = "success"
+
+        if outcome == "missing_permissions":
             return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Failed to pin ticket",
-                    "Pinned tickets category is not configured correctly.",
+                embed=MissingPermissionsEmbed(
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
 
-        await channel.edit(
-            category=cast(CategoryChannel, pinned_tickets_category),
-            overwrites=channel.overwrites,
-        )
+        if outcome == "ticket_not_found":
+            logger.warning(
+                "No ticket found for user %s in guild %s",
+                view.interaction_user_id,
+                guild.id,
+            )
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось закрепить тикет",  # noqa: RUF001
+                    "Тикет не найден для этого пользователя.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
-        await interaction.followup.send(
-            view=TicketStateViewV2(
-                bot=view.bot,
-                state=TicketStateEnum.PINNED,
-                moderator_id=interaction.user.id,
-                author_id=ticket.author_id,
-            ),
-        )
+        if outcome == "ticket_closed":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось закрепить тикет",  # noqa: RUF001
+                    "Вы не можете закрепить закрытый тикет.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
-        if logging_channel_id:
-            view.bot.dispatch(
-                "ticket_changed",
-                data=TicketEventData(
-                    guild,
-                    channel.id,
-                    user.id,
-                    None,
-                    TicketStateEnum.PINNED,
-                    logging_channel_id,
+        if outcome == "already_pinned":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось закрепить тикет",  # noqa: RUF001
+                    "Этот тикет уже закреплен другим модератором.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if outcome == "success":
+            pinned_tickets_category = await ensure_messageable_channel_exists(
+                guild=guild,
+                channel_id=pinned_tickets_category_id,
+            )
+
+            if pinned_tickets_category is None:
+                logger.error(
+                    "Pinned tickets category %s not found in guild %s",
+                    pinned_tickets_category_id,
+                    guild.id,
+                )
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Не удалось закрепить тикет",  # noqa: RUF001
+                        "Категория закрепленных тикетов не найдена.",
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
+            await channel.edit(
+                category=cast(CategoryChannel, pinned_tickets_category),
+                overwrites=channel.overwrites,
+            )
+
+            await interaction.followup.send(
+                view=TicketStateViewV2(
+                    bot=view.bot,
+                    state=TicketStateEnum.PINNED,
+                    moderator_id=interaction.user.id,
+                    author_id=ticket_author_id,
                 ),
             )
 
-        logger.info(
-            "Ticket %s pinned by user %s in guild %s",
-            ticket.ticket_number,
-            interaction.user.id,
-            guild.id,
-        )
+            # Dispatch event
+            if logging_channel_id:
+                view.bot.dispatch(
+                    "ticket_changed",
+                    data=TicketEventData(
+                        guild,
+                        channel.id,
+                        cast(int, view.interaction_user_id),
+                        interaction.user.id,
+                        TicketStateEnum.PINNED,
+                        logging_channel_id,
+                    ),
+                )
+
+            logger.info(
+                "Ticket %s pinned by user %s in guild %s",
+                ticket_number,
+                interaction.user.id,
+                guild.id,
+            )
 
     @button(
         style=ButtonStyle.grey,
-        label="Reopen",
+        label="Открыть",
         emoji="📂",
         custom_id="ticket:reopen",
     )
@@ -283,7 +314,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         channel = cast(TextChannel, interaction.channel)
         user = cast(Member, interaction.user)
 
-        # TODO: вынести в отдельную функцию, возможно
+        # Extract interaction_user_id if not set
         if view.interaction_user_id is None:
             for component in interaction.message.components:  # type: ignore
                 for child in component.children:  # type: ignore
@@ -300,8 +331,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                             guild.id,
                         )
                         break
-        else:
-            ...
 
         await interaction.response.defer()
 
@@ -309,159 +338,199 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             guild, cast(int, view.interaction_user_id)
         )
         if ticket_author is None:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Failed to reopen ticket",
-                    "Ticket author not found in this guild.",
+                    "Не удалось открыть тикет",  # noqa: RUF001
+                    "Автор тикета не найден на сервере.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+
+        if not guild.me.guild_permissions.manage_channels:
+            return await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    "У меня нет прав на управление каналами.",  # noqa: RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        outcome = ""
+        ticket_number = 0
+        ticket_author_id = 0
+        pinned_tickets_category_id = 0
+        logging_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
             moderation_access_roles = await get_head_moderation_access_roles(
                 session,
                 guild_id=guild.id,
             )
+
             if not has_any_role_from_sequence(user, moderation_access_roles):
-                return await interaction.followup.send(
-                    embed=MissingPermissionsEmbed(
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
-            ticket = await get_latest_user_ticket(
-                session,
-                guild_id=guild.id,
-                user_id=cast(int, view.interaction_user_id),
-            )
-
-            pinned_tickets_category_id = cast(
-                int,
-                await get_specified_channel(
+                outcome = "missing_permissions"
+            else:
+                ticket = await get_latest_user_ticket(
                     session,
                     guild_id=guild.id,
-                    config_type=GuildTicketsConfig,
-                    channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
-                ),
-            )
-
-            if ticket is None:
-                logger.warning(
-                    "No ticket found for user %s in guild %s",
-                    user.id,
-                    guild.id,
-                )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to reopen ticket",
-                        "No ticket found for this user.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
+                    user_id=cast(int, view.interaction_user_id),
                 )
 
-            if ticket.state == TicketStateEnum.OPENED:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to reopen ticket",
-                        "You cannot reopen an opened ticket. Just pin it.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                if ticket is None:
+                    outcome = "ticket_not_found"
+                elif ticket.state == TicketStateEnum.OPENED:
+                    outcome = "already_opened"
+                elif ticket.state == TicketStateEnum.PINNED:
+                    outcome = "already_pinned"
+                else:
+                    # Save ticket data
+                    ticket_number = ticket.ticket_number
+                    ticket_author_id = ticket.author_id
 
-            if ticket.state == TicketStateEnum.PINNED:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to reopen ticket",
-                        "This ticket is already pinned by another moderator.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                    # Update ticket state to OPENED (not PINNED)
+                    ticket.moderator_id = user.id
+                    ticket.state = TicketStateEnum.OPENED
 
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_TICKETS,
-            )
+                    # Get pinned tickets category ID (ticket will be moved here and reopened)  # noqa: E501
+                    pinned_tickets_category_id = cast(
+                        int,
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildTicketsConfig,
+                            channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
+                        ),
+                    )
 
-            ticket.moderator_id = user.id
-            ticket.state = TicketStateEnum.PINNED
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_TICKETS,
+                    )
 
-        pinned_tickets_category = await ensure_messageable_channel_exists(
-            guild=guild,
-            channel_id=pinned_tickets_category_id,
-        )
-        if pinned_tickets_category is None:
-            logger.error(
-                "Pinned tickets category %s not found in guild %s",
-                pinned_tickets_category_id,
-                guild.id,
-            )
+                    outcome = "success"
+
+        if outcome == "missing_permissions":
             return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Failed to reopen ticket",
-                    "Pinned tickets category is not configured correctly.",
+                embed=MissingPermissionsEmbed(
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
 
-        overwrites = channel.overwrites
-        overwrites[ticket_author] = discord.PermissionOverwrite(
-            read_messages=True,
-            send_messages=True,
-            attach_files=True,
-            read_message_history=True,
-        )
+        if outcome == "ticket_not_found":
+            logger.warning(
+                "No ticket found for user %s in guild %s",
+                view.interaction_user_id,
+                guild.id,
+            )
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось открыть тикет",  # noqa: RUF001
+                    "Тикет не найден для этого пользователя.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
-        await channel.edit(
-            category=cast(CategoryChannel, pinned_tickets_category),
-            overwrites=overwrites,
-        )
+        if outcome == "already_opened":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось открыть тикет",  # noqa: RUF001
+                    "Вы не можете открыть уже открытый тикет. Просто закрепите его.",  # noqa: E501, RUF001
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
-        await interaction.followup.send(
-            view=TicketStateViewV2(
-                bot=view.bot,
-                state=TicketStateEnum.OPENED,
-                moderator_id=interaction.user.id,
-                author_id=ticket.author_id,
-            ),
-        )
+        if outcome == "already_pinned":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось открыть тикет",  # noqa: RUF001
+                    "Этот тикет уже закреплен другим модератором.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
-        if logging_channel_id:
-            view.bot.dispatch(
-                "ticket_changed",
-                data=TicketEventData(
-                    guild,
-                    channel.id,
-                    user.id,
-                    None,
-                    TicketStateEnum.PINNED,
-                    logging_channel_id,
+        if outcome == "success":
+            # Get pinned tickets category
+            pinned_tickets_category = await ensure_messageable_channel_exists(
+                guild=guild,
+                channel_id=pinned_tickets_category_id,
+            )
+
+            if pinned_tickets_category is None:
+                logger.error(
+                    "Pinned tickets category %s not found in guild %s",
+                    pinned_tickets_category_id,
+                    guild.id,
+                )
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Не удалось открыть тикет",  # noqa: RUF001
+                        "Категория закрепленных тикетов настроена неправильно.",  # noqa: E501
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
+            # Update channel permissions to grant ticket author access
+            overwrites = channel.overwrites
+            overwrites[ticket_author] = discord.PermissionOverwrite(
+                read_messages=True,
+                send_messages=True,
+                attach_files=True,
+                read_message_history=True,
+            )
+
+            await channel.edit(
+                category=cast(CategoryChannel, pinned_tickets_category),
+                overwrites=overwrites,
+            )
+
+            await interaction.followup.send(
+                view=TicketStateViewV2(
+                    bot=view.bot,
+                    state=TicketStateEnum.OPENED,
+                    moderator_id=interaction.user.id,
+                    author_id=ticket_author_id,
                 ),
             )
 
-        logger.info(
-            "Ticket %s reopened by user %s in guild %s",
-            ticket.ticket_number,
-            user.id,
-            guild.id,
-        )
+            # Dispatch event with OPENED state
+            if logging_channel_id:
+                view.bot.dispatch(
+                    "ticket_changed",
+                    data=TicketEventData(
+                        guild,
+                        channel.id,
+                        cast(int, view.interaction_user_id),
+                        interaction.user.id,
+                        TicketStateEnum.OPENED,
+                        logging_channel_id,
+                    ),
+                )
+
+            logger.info(
+                "Ticket %s reopened by user %s in guild %s",
+                ticket_number,
+                interaction.user.id,
+                guild.id,
+            )
 
     @button(
         style=ButtonStyle.grey,
-        label="Close",
+        label="Закрыть",
         emoji="🔒",
         custom_id="ticket:close",
     )
@@ -474,6 +543,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         channel = cast(TextChannel, interaction.channel)
         user = cast(Member, interaction.user)
 
+        # Extract interaction_user_id if not set
         if view.interaction_user_id is None:
             for component in interaction.message.components:  # type: ignore
                 for child in component.children:  # type: ignore
@@ -484,14 +554,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                         view.interaction_user_id = extract_id_from_str(
                             child.content
                         )
-                        logger.info(
-                            "Extracted interaction_user_id %s from message in guild %s",  # noqa: E501
-                            view.interaction_user_id,
-                            guild.id,
-                        )
                         break
-        else:
-            ...
 
         await interaction.response.defer()
 
@@ -499,137 +562,173 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             guild, cast(int, view.interaction_user_id)
         )
 
-        async with view.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session,
-                guild_id=guild.id,
-            )
-            if not has_any_role_from_sequence(user, moderation_access_roles):
-                return await interaction.followup.send(
-                    embed=MissingPermissionsEmbed(
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
-            ticket = await get_latest_user_ticket(
-                session,
-                guild_id=guild.id,
-                user_id=cast(int, view.interaction_user_id),
-            )
-
-            closed_tickets_category_id = cast(
-                int,
-                await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildTicketsConfig,
-                    channel_type=ChannelType.CLOSED_TICKETS_CATEGORY,
-                ),
-            )
-
-            if ticket is None:
-                logger.warning(
-                    "No ticket found for user %s in guild %s",
-                    user.id,
-                    guild.id,
-                )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to close ticket",
-                        "No ticket found for this user.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
-            if ticket.state == TicketStateEnum.CLOSED:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Failed to close ticket",
-                        "This ticket is already closed.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_TICKETS,
-            )
-
-            ticket.moderator_id = user.id
-            ticket.state = TicketStateEnum.CLOSED
-
-        closed_tickets_category = await ensure_messageable_channel_exists(
-            guild=guild,
-            channel_id=closed_tickets_category_id,
-        )
-        if closed_tickets_category is None:
-            logger.error(
-                "Closed tickets category %s not found in guild %s",
-                closed_tickets_category_id,
-                guild.id,
-            )
+        if not guild.me.guild_permissions.manage_channels:
             return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Failed to close ticket",
-                    "Pinned tickets category is not configured correctly.",
+                embed=MissingPermissionsEmbed(
+                    "У меня нет прав на управление каналами.",  # noqa: RUF001
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
 
-        overwrites = channel.overwrites
-        if ticket_author is not None:
-            overwrites[ticket_author] = discord.PermissionOverwrite(
+        outcome = ""
+        ticket_number = 0
+        ticket_author_id = 0
+        closed_tickets_category_id = 0
+        logging_channel_id: int | None = None
+
+        async with view.bot.uow.start() as session:
+            moderation_access_roles = await get_moderation_access_roles(
+                session,
+                guild_id=guild.id,
+            )
+
+            if not has_any_role_from_sequence(user, moderation_access_roles):
+                outcome = "missing_permissions"
+            else:
+                ticket = await get_latest_user_ticket(
+                    session,
+                    guild_id=guild.id,
+                    user_id=cast(int, view.interaction_user_id),
+                )
+
+                if ticket is None:
+                    outcome = "ticket_not_found"
+                elif ticket.state == TicketStateEnum.CLOSED:
+                    outcome = "already_closed"
+                else:
+                    # Save ticket data
+                    ticket_number = ticket.ticket_number
+                    ticket_author_id = ticket.author_id
+
+                    # Update ticket state to CLOSED
+                    ticket.moderator_id = user.id
+                    ticket.state = TicketStateEnum.CLOSED
+
+                    # Get closed tickets category ID
+                    closed_tickets_category_id = cast(
+                        int,
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildTicketsConfig,
+                            channel_type=ChannelType.CLOSED_TICKETS_CATEGORY,
+                        ),
+                    )
+
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_TICKETS,
+                    )
+
+                    outcome = "success"
+
+        if outcome == "missing_permissions":
+            return await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if outcome == "ticket_not_found":
+            logger.warning(
+                "No ticket found for user %s in guild %s",
+                view.interaction_user_id,
+                guild.id,
+            )
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось закрыть тикет",  # noqa: RUF001
+                    "Тикет не найден для этого пользователя.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if outcome == "already_closed":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Не удалось закрыть тикет",  # noqa: RUF001
+                    "Этот тикет уже закрыт.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if outcome == "success":
+            closed_tickets_category = await ensure_messageable_channel_exists(
+                guild=guild,
+                channel_id=closed_tickets_category_id,
+            )
+
+            if closed_tickets_category is None:
+                logger.error(
+                    "Closed tickets category %s not found in guild %s",
+                    closed_tickets_category_id,
+                    guild.id,
+                )
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Не удалось закрыть тикет",  # noqa: RUF001
+                        "Категория закрытых тикетов не найдена.",
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
+            overwrites = channel.overwrites
+            if ticket_author is not None:
+                overwrites[ticket_author] = discord.PermissionOverwrite(
+                    read_messages=False,
+                    send_messages=False,
+                )
+            overwrites[guild.default_role] = discord.PermissionOverwrite(
                 read_messages=False,
                 send_messages=False,
             )
-        overwrites[guild.default_role] = discord.PermissionOverwrite(
-            read_messages=False,
-            send_messages=False,
-        )
 
-        await channel.edit(
-            category=cast(CategoryChannel, closed_tickets_category),
-            overwrites=overwrites,
-        )
+            await channel.edit(
+                category=cast(CategoryChannel, closed_tickets_category),
+                overwrites=overwrites,
+            )
 
-        await interaction.followup.send(
-            view=TicketStateViewV2(
-                bot=view.bot,
-                state=TicketStateEnum.CLOSED,
-                moderator_id=interaction.user.id,
-                author_id=ticket.author_id,
-            ),
-        )
-
-        if logging_channel_id:
-            view.bot.dispatch(
-                "ticket_changed",
-                data=TicketEventData(
-                    guild,
-                    channel.id,
-                    user.id,
-                    None,
-                    TicketStateEnum.CLOSED,
-                    logging_channel_id,
+            await interaction.followup.send(
+                view=TicketStateViewV2(
+                    bot=view.bot,
+                    state=TicketStateEnum.CLOSED,
+                    moderator_id=interaction.user.id,
+                    author_id=ticket_author_id,
                 ),
             )
 
-        logger.info(
-            "Ticket %s closed by user %s in guild %s",
-            ticket.ticket_number,
-            user.id,
-            guild.id,
-        )
+            # Dispatch event
+            if logging_channel_id:
+                view.bot.dispatch(
+                    "ticket_changed",
+                    data=TicketEventData(
+                        guild,
+                        channel.id,
+                        cast(int, view.interaction_user_id),
+                        interaction.user.id,
+                        TicketStateEnum.CLOSED,
+                        logging_channel_id,
+                    ),
+                )
+
+            logger.info(
+                "Ticket %s closed by user %s in guild %s",
+                ticket_number,
+                interaction.user.id,
+                guild.id,
+            )
 
 
 class ManageTicketViewV2(LayoutView):
@@ -645,23 +744,18 @@ class ManageTicketViewV2(LayoutView):
         self.ping_role_id = cast(int, ping_role_id)
         self.interaction_user_id = interaction_user_id
 
-        # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
         container = Container[Self]()
 
-        # Header
-        container.add_item(TextDisplay[Self](f"### <@&{ping_role_id}>"))
-        container.add_item(Separator[Self]())
-
-        # main text
+        # Main text
         container.add_item(
             TextDisplay[Self](
-                f"### Dear <@{interaction_user_id}>, \nif you have any complaints regarding moderator service, please contact the [Arz Guard forum](https://forum.arzguard.com)."  # noqa: E501
+                f"### Уважаемый <@{interaction_user_id}>, \nесли у вас есть жалобы на работу модераторов, пожалуйста, обратитесь на [форум Arz Guard](https://forum.arzguard.com)."  # noqa: E501, RUF001
             )
         )
 
-        # action row
+        # Action row
         container.add_item(Separator[Self]())
         container.add_item(ManageTicketButtons())
         container.add_item(Separator[Self]())
@@ -670,12 +764,8 @@ class ManageTicketViewV2(LayoutView):
         now = datetime.now(timezone.utc)
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)} | <@&{ping_role_id}>"  # type: ignore  # noqa: E501
             )
         )
 
         self.add_item(container)
-
-
-# TODO: add task for deleting old closed tickets after X days
-# TODO: fix reopening tickets (moderator who reopened rewrite moderator_id in db)  # noqa: E501

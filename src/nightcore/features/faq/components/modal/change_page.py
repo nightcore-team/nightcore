@@ -1,5 +1,11 @@
-"""Change FAQ Page Modal Component."""
+"""
 
+Change FAQ Page Modal Component.
+
+Used for changing FAQ page details in guilds.
+"""
+
+import logging
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import Guild, TextStyle
@@ -17,6 +23,8 @@ from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+logger = logging.getLogger(__name__)
 
 
 class ChangeFAQPageModal(Modal, title="Настроить страницу"):
@@ -96,10 +104,17 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
             await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Изменение страницы FAQ",
-                    f"Страница FAQ с названием '{self.page['title']}' успешно изменена.",  # noqa: E501, RUF001
+                    f"Страница FAQ с названием '{self.page['title']}' успешно изменена.",  # noqa: E501
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
+
+        logger.info(
+            "[modal] - FAQ page changed user=%s guild=%s title=%s",
+            interaction.user.id,
+            guild.id,
+            title,
+            description,
+        )

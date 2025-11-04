@@ -1,4 +1,8 @@
-"""Battlepass claim view components."""
+"""
+Battlepass info button handler.
+
+Handles displaying battlepass information.
+"""
 
 from typing import TYPE_CHECKING, cast
 

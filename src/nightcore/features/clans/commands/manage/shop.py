@@ -31,9 +31,11 @@ logger = logging.getLogger(__name__)
 
 
 @clan_manage_group.command(
-    name="shop", description="Buy items in shop for your clan."
+    name="shop", description="Купить предмет в магазине клана."
 )
-@app_commands.describe(item="The item to buy for your clan.")
+@app_commands.describe(
+    item="Предмет, который вы хотите купить для своего клана."
+)
 @app_commands.autocomplete(item=clans_shop_autocomplete)
 async def shop(
     interaction: Interaction["Nightcore"],
@@ -161,7 +163,7 @@ async def shop(
                 embed=MissingPermissionsEmbed(
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
-                    "У меня недостаточно прав для создания ветки с покупкой.",  # noqa: RUF001
+                    "У меня недостаточно прав для создания ветки с покупкой.",
                 ),
                 ephemeral=True,
             )
@@ -179,7 +181,7 @@ async def shop(
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка покупки",
-                    "Не удалось создать ветку для покупки в магазине клана.",  # noqa: RUF001
+                    "Не удалось создать ветку для покупки в магазине клана.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -214,7 +216,7 @@ async def shop(
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка покупки",
-                    "Не удалось создать состояние заказа в базе данных.",  # noqa: RUF001
+                    "Не удалось создать состояние заказа в базе данных.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -236,7 +238,7 @@ async def shop(
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка покупки",
-                    "Не удалось отправить сообщение с покупкой в магазине клана.",  # noqa: E501, RUF001
+                    "Не удалось отправить сообщение с покупкой в магазине клана.",  # noqa: E501
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -247,6 +249,16 @@ async def shop(
 
         asyncio.create_task(  # noqa: RUF006
             message.edit(view=view.make_component())
+        )
+
+        logger.info(
+            "[command] - invoked user=%s guild=%s clan_name=%s item=%s clan_balance_before=%s clan_balance_after=%s",  # noqa: E501
+            interaction.user.id,
+            guild.id,
+            clan.name,
+            iname,
+            clan.coins,  # type: ignore
+            clan.coins - icost,  # type: ignore
         )
 
         return

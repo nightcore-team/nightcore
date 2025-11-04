@@ -1,4 +1,4 @@
-"""Give user battlepass points command."""
+"""Command to give battlepass experience to a user."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -30,15 +30,15 @@ logger = logging.getLogger(__name__)
 
 
 @give_group.command(
-    name="bp_coins", description="Give battlepass points to user."
+    name="bp_exp", description="Выдать очки батлпасса пользователю"
 )
 @app_commands.describe()
-async def give_bp_coins(
+async def give_bp_exp(
     interaction: Interaction["Nightcore"],
     user: Member,
     amount: int,
 ):
-    """Give battlepass points to a user."""
+    """Give battlepass experience to a user."""
 
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
@@ -97,7 +97,7 @@ async def give_bp_coins(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка выдачи очков батлпасса",
-                "Не удалось выдать очки батлпасса пользователю.",  # noqa: RUF001
+                "Не удалось выдать очки батлпасса пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -129,7 +129,7 @@ async def give_bp_coins(
             "user_items_changed",
             dto=AwardNotificationEventDTO(
                 guild=guild,
-                event_type="give_bp_coins",
+                event_type="give/bp_exp",
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,

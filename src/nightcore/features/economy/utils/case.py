@@ -1,4 +1,4 @@
-"""Utilities for handling cases in the economy feature."""
+"""Utilities for handling cases opening in the economy feature."""
 
 import random
 from typing import Final
@@ -6,8 +6,8 @@ from typing import Final
 from src.infra.db.models._annot import CoinDropAnnot, ColorDropAnnot
 
 CASES_NAMES: Final[dict[str, str]] = {
-    "coins_case": "Кейс с коинами",  # noqa: RUF001
-    "colors_case": "Кейс с цветами",  # noqa: RUF001
+    "coins_case": "Кейс с коинами",
+    "colors_case": "Кейс с цветами",
 }
 
 

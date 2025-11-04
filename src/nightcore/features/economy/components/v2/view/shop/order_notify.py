@@ -1,4 +1,8 @@
-"""Coins shop view v2 component."""
+"""
+Order notification view v2 component.
+
+Used for displaying notifications about shop order status changes.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
@@ -39,7 +43,7 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:9183shoppingcart:1431625159235731516> Уведомление о покупке товара"  # noqa: E501, RUF001
+                "## <:9183shoppingcart:1431625159235731516> Уведомление о покупке товара"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -47,17 +51,17 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
         description = ""
         if state == ShopOrderStateEnum.APPROVED:
             description = (
-                f"<@{moderator_id}> одобрил(а) вашу покупку в магазине."  # noqa: RUF001
+                f"<@{moderator_id}> одобрил(а) вашу покупку в магазине."
             )
         elif state == ShopOrderStateEnum.DENIED:
             description = (
-                f"<@{moderator_id}> отклонил(а) вашу покупку в магазине."  # noqa: RUF001
+                f"<@{moderator_id}> отклонил(а) вашу покупку в магазине."
             )
 
         container.add_item(TextDisplay[Self](f"{description}"))
         container.add_item(Separator[Self]())
 
-        container.add_item(TextDisplay[Self]("### Информация о покупке:"))  # noqa: RUF001
+        container.add_item(TextDisplay[Self]("### Информация о покупке:"))
 
         container.add_item(
             TextDisplay[Self](

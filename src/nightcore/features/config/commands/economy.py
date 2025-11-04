@@ -1,4 +1,4 @@
-"""Economy configuration command for Nightcore bot."""
+"""Subgroup to configure economy settings."""
 
 import logging
 from typing import Literal, cast
@@ -32,16 +32,18 @@ from src.nightcore.utils.field_validators import (
 logger = logging.getLogger(__name__)
 
 
-@economy_group.command(name="setup", description="Configure economy settings.")
+@economy_group.command(
+    name="setup", description="Настроить систему экономики."
+)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    shop_buy_ping_roles="Roles to ping when buying from the shop.",
-    economy_access_roles="Roles that have access to economy commands.",
-    shop_items="Items available in the shop.",
-    reward_bonus="Bonus rewards for /reward.",
-    coin_name="Name of the local currency.",
-    coins_drop="Configuration for coin drops. coins, chance | coins, chance | ...",  # noqa: E501
-    colors_drop="Configuration for color drops. role_id, chance | role_id, chance | ...",  # noqa: E501
+    shop_buy_ping_roles="Роли для упоминания при покупке в магазине.",
+    economy_access_roles="Роли с доступом к командам экономики.",  # noqa: RUF001
+    shop_items="Предметы, доступные в магазине.",
+    reward_bonus="Бонусные награды для /reward.",
+    coin_name="Название локальной валюты.",
+    coins_drop="Конфигурация выпадения монет с кейса. Формат: коины, шанс (без %) | монеты, шанс | ...",  # noqa: E501, RUF001
+    colors_drop="Конфигурация выпадения цветов с кейса. Формат: role_id, шанс (без %) | role_id, шанс | ...",  # noqa: E501, RUF001
 )
 async def setup(
     interaction: Interaction,
@@ -95,7 +97,7 @@ async def setup(
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Economy Configuration",
+            title="Настройка системы экономики",
             description=description,
             color=discord.Color.green(),
         ),
@@ -115,13 +117,13 @@ async def setup(
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[
-        app_commands.Choice(name="Add", value="add"),
-        app_commands.Choice(name="Remove", value="remove"),
+        app_commands.Choice(name="Добавить", value="add"),
+        app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
 @app_commands.describe(
-    role="The role to update",
-    option="Whether to add or remove the role from the fraction access list",
+    role="Роль для обновления",
+    option="Добавить или удалить роль из списка доступа к экономике",
 )
 async def update_economy_access(
     interaction: Interaction,
@@ -143,21 +145,21 @@ async def update_economy_access(
             guild_config.economy_access_roles_ids = new_list
 
     if state == "exists":
-        desc = f"Role <@&{role.id}> already in the economy access list."
+        desc = f"Роль <@&{role.id}> уже в списке доступа к экономике."
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = f"Role <@&{role.id}> not in the economy access list."
+        desc = f"Роль <@&{role.id}> не в списке доступа к экономике."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Role <@&{role.id}> added to the economy access list."
+        desc = f"Роль <@&{role.id}> добавлена в список доступа к экономике."
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Role <@&{role.id}> removed from the economy access list."
+        desc = f"Роль <@&{role.id}> удалена из списка доступа к экономике."
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
         embed=Embed(
-            title="Economy Configuration",
+            title="Настройка системы экономики",
             description=desc,
             color=color,
         ),

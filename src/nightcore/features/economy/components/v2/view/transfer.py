@@ -1,4 +1,8 @@
-"""Transfer view v2."""
+"""
+Transfer view v2 component.
+
+Used for displaying a notification when an item is transferred to a user.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
@@ -21,7 +25,7 @@ class TransferCoinsViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:10845currency:1432050187492130836> Уведомление о переводе коинов"  # noqa: E501, RUF001
+                "## <:10845currency:1432050187492130836> Уведомление о переводе коинов"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

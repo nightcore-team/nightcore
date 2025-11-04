@@ -117,37 +117,33 @@ class RoleMembersViewV2(LayoutView):
 
         container = Container[Self]()
 
-        self.header_text = TextDisplay[Self](
+        header_section: TextDisplay[Self] | Section[Self] = TextDisplay[Self](
             f"### <:32451information:1430231400208011428> Список участников с ролью\n"  # noqa: E501, RUF001
             f"Роль: {self.role.mention}\n"
             f"ID роли: **`{self.role.id}`**\n"
             f"Количество участников: **{self.members_count}**"
         )
-
-        header_section: Item[Self]
         if self.role.icon:
             header_section = Section[Self](
-                self.header_text,
+                header_section,
                 accessory=Thumbnail(self.role.icon.url),
             )
-        else:
-            header_section = self.header_text
 
         container.add_item(header_section)
         container.add_item(Separator[Self]())
 
         page_content = self.pages[self.current_page]
-        self.main_text = TextDisplay[Self](page_content)
-        container.add_item(self.main_text)
+        container.add_item(TextDisplay[Self](page_content))
         container.add_item(Separator[Self]())
 
         # Footer
         now = datetime.now(timezone.utc)
-        self.footer_text = TextDisplay[Self](
-            f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
-            f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+        container.add_item(
+            TextDisplay[Self](
+                f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+            )
         )
-        container.add_item(self.footer_text)
 
         self.add_item(container)
 
