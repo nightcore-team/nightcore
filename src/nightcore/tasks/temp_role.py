@@ -71,8 +71,9 @@ class DeleteTempRoleTask(Cog):
                     )
                     continue
 
-                asyncio.create_task(  # noqa: RUF006
-                    member.remove_roles(role, reason="Temporary role expired")
+                await asyncio.gather(
+                    member.remove_roles(role, reason="Temporary role expired"),
+                    session.delete(temp_role),
                 )
 
                 logger.info(

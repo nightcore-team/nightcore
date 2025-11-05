@@ -30,6 +30,7 @@ from src.infra.db.models import (
     Punish,
     RoleRequestState,
     ShopOrderState,
+    TempEconomyMultiplier,
     TempPunish,
     TempRole,
     TicketState,
@@ -39,6 +40,7 @@ from src.infra.db.models._annot import OrgRoleWithoutTagAnnot, Rules
 from src.infra.db.models._enums import (
     ChannelType,
     ClanMemberRoleEnum,
+    MultiplierTypeEnum,
     NotifyStateEnum,
     RoleRequestStateEnum,
     TicketStateEnum,
@@ -786,3 +788,56 @@ async def get_mute_type(session: AsyncSession, *, guild_id: int) -> str | None:
     )
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
+
+
+async def get_or_create_temp_multiplier(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    multiplier_type: MultiplierTypeEnum,
+    multiplier: int = 1,
+    duration: int = 3600,  # 1 година в секундах
+) -> tuple[TempEconomyMultiplier, bool]:
+    """Get or create a temporary economy multiplier for a guild."""
+
+    stmt = (
+        insert(TempEconomyMultiplier)
+        .values(
+            guild_id=guild_id,
+            multiplier_type=multiplier_type,
+            multiplier=multiplier,
+            duration=duration,
+            end_time=datetime.now(timezone.utc) + timedelta(seconds=duration),
+        )
+        .on_conflict_do_nothing(constraint="ux_temp_multiplier_guild_type")
+        .returning(TempEconomyMultiplier.id)
+    )
+    res = await session.execute(stmt)
+    created = res.scalar_one_or_none() is not None
+
+    entity = await session.scalar(
+        select(TempEconomyMultiplier).where(
+            TempEconomyMultiplier.guild_id == guild_id,
+            TempEconomyMultiplier.multiplier_type == multiplier_type,
+        )
+    )
+
+    return entity, created  # type: ignore
+
+
+async def get_all_expired_temp_multipliers(
+    session: AsyncSession,
+) -> Sequence[TempEconomyMultiplier]:
+    """Get all expired temporary economy multipliers.
+
+    Returns multipliers where end_time <= current time.
+    """
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc)
+
+    stmt = select(TempEconomyMultiplier).where(
+        TempEconomyMultiplier.end_time <= now
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()

@@ -4,11 +4,11 @@ from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._annot import (
+    BattlepassLevelAnnot,
     CoinDropAnnot,
     ColorDropAnnot,
     FAQPageAnnot,
     Rules,
-    BattlepassLevelAnnot,
 )
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base

@@ -73,3 +73,8 @@ class ShopOrderStateEnum(Enum):
     PENDING = "pending"
     APPROVED = "approved"
     DENIED = "denied"
+
+
+class MultiplierTypeEnum(Enum):
+    EXP = "exp"
+    COINS = "coins"

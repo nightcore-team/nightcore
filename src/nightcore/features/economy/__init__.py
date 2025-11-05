@@ -12,7 +12,7 @@ from ._groups import temp as temp_group
 from .commands.case import help, open
 from .commands.casino import roulette
 from .commands.give import bp_exp, case, clanexp, clanrep, coins, color, exp
-from .commands.temp import role
+from .commands.temp import multiplier, role
 
 __all__ = (
     "bp_exp",
@@ -23,6 +23,7 @@ __all__ = (
     "color",
     "exp",
     "help",
+    "multiplier",
     "open",
     "role",
     "roulette",

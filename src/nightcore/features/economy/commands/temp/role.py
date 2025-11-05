@@ -188,6 +188,15 @@ async def give_role(
             ephemeral=True,
         )
 
+        logger.info(
+            "[command] - invoker user=%s guild=%s selected_user=%s role=%s duration=%s",  # noqa: E501
+            interaction.user.id,
+            guild.id,
+            user.id,
+            role.id,
+            duration,
+        )
+
         bot.dispatch(
             "user_items_changed",
             dto=AwardNotificationEventDTO(
