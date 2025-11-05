@@ -113,6 +113,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # "src.nightcore.tasks.expired_notify",
         # "src.nightcore.tasks.check_forum",
         # "src.nightcore.tasks.clan_reputation",
+        "src.nightcore.tasks.temp_role",
     ]
 
     return Nightcore(

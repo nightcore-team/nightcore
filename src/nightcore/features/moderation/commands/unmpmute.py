@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
@@ -10,7 +10,6 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -29,11 +28,14 @@ from src.nightcore.utils import (
     has_any_role_from_sequence,
 )
 
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 logger = logging.getLogger(__name__)
 
 
 class UnMpMute(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -212,6 +214,6 @@ class UnMpMute(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the UnMpMute cog."""
     await bot.add_cog(UnMpMute(bot))

@@ -2,10 +2,10 @@
 
 import logging
 from datetime import timezone
+from typing import TYPE_CHECKING
 
 import discord
 
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -15,13 +15,16 @@ from src.nightcore.features.moderation.events.dto import (
     RolesChangeEventData,
 )
 
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 logger = logging.getLogger(__name__)
 
 
 class RemoveOrgRoleSelect(discord.ui.View):
     def __init__(
         self,
-        bot: Nightcore,
+        bot: "Nightcore",
         member: discord.Member,
         roles: list[discord.Role],
         moderator: discord.Member,

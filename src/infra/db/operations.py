@@ -31,6 +31,7 @@ from src.infra.db.models import (
     RoleRequestState,
     ShopOrderState,
     TempPunish,
+    TempRole,
     TicketState,
     User,
 )
@@ -695,6 +696,16 @@ async def get_all_closed_tickets(
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def get_all_temp_roles(
+    session: AsyncSession,
+) -> Sequence[TempRole]:
+    """Get all temporary roles."""
+    stmt = select(TempRole)
+    result = await session.scalars(stmt)
+
+    return result.all()
 
 
 async def get_total_users_count(session: AsyncSession) -> int:

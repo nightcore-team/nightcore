@@ -57,11 +57,11 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
             options=[
                 SelectOption(label="Аватар", value="аватар"),
                 SelectOption(label="Описание", value="описание"),
-                SelectOption(label="Обо мне", value="обо мне"),  # noqa: RUF001
+                SelectOption(label="Обо мне", value="обо мне"),
                 SelectOption(label="Статус", value="статус"),
                 SelectOption(label="Баннер", value="баннер"),
                 SelectOption(label="Никнейм", value="никнейм"),
-                SelectOption(label="Тег гильдии", value="тег гильдии"),  # noqa: RUF001
+                SelectOption(label="Тег гильдии", value="тег гильдии"),
                 SelectOption(label="Перс. роль", value="перс. роль"),
             ],
         )
@@ -104,7 +104,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка отправки оповещения",
-                        "Канал с правилами не настроен.",  # noqa: RUF001
+                        "Канал с правилами не настроен.",
                         view.bot.user.display_name,  # type: ignore
                         view.bot.user.display_avatar.url,  # type: ignore
                     )
@@ -164,7 +164,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     title="Ошибка отправки сообщения",
-                    description="Не удалось отправить сообщение в канал оповещений.",  # noqa: E501, RUF001
+                    description="Не удалось отправить сообщение в канал оповещений.",  # noqa: E501
                     footer_text=view.bot.user.display_name,  # type: ignore
                     footer_icon_url=view.bot.user.display_avatar.url,  # type: ignore
                 )
@@ -417,8 +417,8 @@ class NotifyViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"**Модератор** <@{self.moderator_id}> обнаружил нарушение в персонализации вашего профиля Discord.\n"  # noqa: E501
-                f"Пожалуйста, смените **`{self.profile_part}`** в соответствии с правилами сервера.\n"  # noqa: E501, RUF001
-                "\n**В случае отказа или игнорирования требования — будет применено наказание.**"  # noqa: E501, RUF001
+                f"Пожалуйста, смените **`{self.profile_part}`** в соответствии с правилами сервера.\n"  # noqa: E501
+                "\n**В случае отказа или игнорирования требования — будет применено наказание.**"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

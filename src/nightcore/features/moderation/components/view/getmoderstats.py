@@ -1,7 +1,7 @@
 """View for paginating infractions."""
 
 from datetime import datetime
-from typing import Self, cast
+from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, ClientUser
 from discord.colour import Color
@@ -9,7 +9,8 @@ from discord.embeds import Embed
 from discord.interactions import Interaction
 from discord.ui import Button, View, button
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 
 class GetModerationStatsView(View):
@@ -19,7 +20,7 @@ class GetModerationStatsView(View):
         pages: list[list[dict[int, dict[str, str]]]],
         from_date: datetime,
         to_date: datetime,
-        bot: Nightcore,
+        bot: "Nightcore",
         timeout: int = 180,
     ):
         super().__init__(timeout=timeout)

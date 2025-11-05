@@ -1,10 +1,12 @@
 """Embed components for punishment notifications."""
 
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from discord import Embed, Member
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 """
 from *.utils import types
@@ -12,7 +14,7 @@ from *.utils import types
 
 
 def generate_log_punish_embed(
-    bot: Nightcore,
+    bot: "Nightcore",
     punish_type: str,
     moderator_id: int,
     user_id: int,
@@ -55,7 +57,7 @@ def generate_dm_punish_embed(
     moderator: Member,
     reason: str,
     end_time: datetime | None,
-    bot: Nightcore,
+    bot: "Nightcore",
 ) -> Embed:
     """Generate an embed for DM punishment notification."""
     # TODO: add dict for correct embed title with answers
@@ -85,7 +87,7 @@ def generate_dm_punish_embed(
 def generate_dm_un_punish_embed(
     punish_type: str,
     guild_name: str,
-    bot: Nightcore,
+    bot: "Nightcore",
 ) -> Embed:
     """Generate an embed for DM punishment notification."""
     # TODO: add dict for correct embed title with answers

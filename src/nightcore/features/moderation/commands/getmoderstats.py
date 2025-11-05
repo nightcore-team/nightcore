@@ -1,7 +1,7 @@
 """Command to get stats for a moderator."""
 
 import logging
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
@@ -10,7 +10,10 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import get_user_infractions_for_moderators
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -24,7 +27,6 @@ from src.nightcore.features.moderation.components.view import (
 from src.nightcore.features.moderation.utils import (
     build_moderators_stats,
     build_moderstats_pages,
-    compare_date_range,
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
@@ -33,13 +35,14 @@ from src.nightcore.utils import (
     has_any_role,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.time_utils import compare_date_range
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: add field if moderator fullfied the norm
 class GetModerationStats(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -222,6 +225,6 @@ class GetModerationStats(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the GetModerationStats cog."""
     await bot.add_cog(GetModerationStats(bot))

@@ -1,7 +1,7 @@
 """Command to notify a user about a rule violation."""
 
 import logging
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
@@ -12,7 +12,10 @@ from src.infra.db.operations import (
     get_guild_rules,
     get_moderation_access_roles,
 )
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     MissingPermissionsEmbed,
@@ -22,20 +25,19 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.meta.utils import convert_dict_to_rules
 from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
 from src.nightcore.features.moderation.utils import (
-    calculate_end_time,
     find_rule_by_index,
-    parse_duration,
 )
 from src.nightcore.utils import (
     ensure_member_exists,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 
 logger = logging.getLogger(__name__)
 
 
 class Notify(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -137,6 +139,6 @@ class Notify(Cog):
         )
 
 
-async def setup(bot: Nightcore) -> None:
+async def setup(bot: "Nightcore") -> None:
     """Setup the Notify cog."""
     await bot.add_cog(Notify(bot))

@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
@@ -11,7 +11,6 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import set_user_field_upsert
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -23,11 +22,14 @@ from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import has_any_role_from_sequence
 
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 logger = logging.getLogger(__name__)
 
 
 class Unrrban(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -145,6 +147,6 @@ class Unrrban(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Unrrban cog."""
     await bot.add_cog(Unrrban(bot))

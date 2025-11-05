@@ -2,7 +2,7 @@
 
 import logging
 from datetime import timezone
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, Member, app_commands
@@ -10,7 +10,10 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -20,10 +23,6 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UserMutedEventData
-from src.nightcore.features.moderation.utils import (
-    calculate_end_time,
-    parse_duration,
-)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     compare_top_roles,
@@ -32,12 +31,13 @@ from src.nightcore.utils import (
     has_any_role,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 
 logger = logging.getLogger(__name__)
 
 
 class Mute(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -300,6 +300,6 @@ class Mute(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Mute cog."""
     await bot.add_cog(Mute(bot))

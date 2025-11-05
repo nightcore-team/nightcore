@@ -1,6 +1,6 @@
 """View for paginating infractions."""
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from discord import ButtonStyle, ClientUser, User
 from discord.colour import Color
@@ -8,7 +8,8 @@ from discord.embeds import Embed
 from discord.interactions import Interaction
 from discord.ui import Button, View, button
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 
 class InfractionsView(View):
@@ -17,7 +18,7 @@ class InfractionsView(View):
         author_id: int,
         pages: list[str],
         user: User,
-        bot: Nightcore,
+        bot: "Nightcore",
         timeout: int = 180,
     ):
         super().__init__(timeout=timeout)

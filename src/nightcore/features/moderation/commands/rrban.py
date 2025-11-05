@@ -2,7 +2,7 @@
 
 import logging
 from datetime import timezone
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
@@ -14,7 +14,6 @@ from src.infra.db.operations import (
     get_or_create_user,
     set_user_field_upsert,
 )
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -24,19 +23,20 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UserMutedEventData
-from src.nightcore.features.moderation.utils import (
-    parse_duration,
-)
 from src.nightcore.utils import (
     ensure_member_exists,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.time_utils import parse_duration
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
 class Rrban(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -207,6 +207,6 @@ class Rrban(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Rrban cog."""
     await bot.add_cog(Rrban(bot))

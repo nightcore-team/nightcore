@@ -1,7 +1,7 @@
 """Command to check user infractions."""
 
 import logging
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
@@ -16,7 +16,10 @@ from src.infra.db.operations import (
     get_specified_channel,
     get_user_infractions,
 )
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -32,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class Infractions(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -128,6 +131,6 @@ class Infractions(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Infractions cog."""
     await bot.add_cog(Infractions(bot))

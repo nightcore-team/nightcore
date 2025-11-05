@@ -2,7 +2,7 @@
 
 import logging
 from datetime import timezone
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
@@ -10,7 +10,6 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_moderation_access_roles
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     MissingPermissionsEmbed,
@@ -27,11 +26,14 @@ from src.nightcore.utils import (
     has_any_role_from_sequence,
 )
 
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 logger = logging.getLogger(__name__)
 
 
 class Setname(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -105,7 +107,7 @@ class Setname(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "У меня нет прав на изменение никнеймов.",  # noqa: RUF001
+                    "У меня нет прав на изменение никнеймов.",
                 ),
                 ephemeral=True,
             )
@@ -125,7 +127,7 @@ class Setname(Cog):
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "Я не могу изменить никнейм этого пользователя, потому что у него роль выше моей.",  # noqa: E501, RUF001
+                    "Я не могу изменить никнейм этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
@@ -191,6 +193,6 @@ class Setname(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Setname cog."""
     await bot.add_cog(Setname(bot))

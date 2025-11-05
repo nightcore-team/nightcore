@@ -253,7 +253,7 @@ async def safe_delete_role(role: Role, reason: str) -> None:
 
 
 def compare_top_roles(guild: Guild, entity: Member | Role) -> bool:
-    """Compares the top roles of the bot and a member to determine if the bot can kick the member."""  # noqa: E501
+    """Compares the top roles between user and bot or check if bot's role is higher than chosen role."""  # noqa: E501
     if isinstance(entity, Member):
         if guild.owner_id == entity.id:
             return False

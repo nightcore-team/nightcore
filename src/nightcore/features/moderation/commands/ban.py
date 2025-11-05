@@ -2,7 +2,7 @@
 
 import logging
 from datetime import timezone
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import Guild, app_commands
@@ -11,7 +11,6 @@ from discord.interactions import Interaction
 
 from src.config.config import config
 from src.infra.db.models import GuildModerationConfig
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -22,10 +21,6 @@ from src.nightcore.components.embed import (
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.modal import BanFormModal
 from src.nightcore.features.moderation.events import UserBannedEventData
-from src.nightcore.features.moderation.utils import (
-    calculate_end_time,
-    parse_duration,
-)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     compare_top_roles,
@@ -33,12 +28,16 @@ from src.nightcore.utils import (
     ensure_messageable_channel_exists,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
 class Ban(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -292,14 +291,13 @@ class Ban(Cog):
 
 
 async def _ban_request_callback(
-    interaction: Interaction, user: discord.Member
+    interaction: Interaction["Nightcore"], user: discord.Member
 ):
     """Callback for the ban request context menu."""
     guild = cast(Guild, interaction.guild)
-
+    client = interaction.client
     # Ensure we have a guild Member object
     member = await ensure_member_exists(guild, user.id)
-    client = cast(Nightcore, interaction.client)
 
     if member is None:
         return await interaction.response.send_message(
@@ -440,7 +438,7 @@ async def _ban_request_callback(
     )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Ban cog."""
     bot.tree.add_command(
         app_commands.ContextMenu(

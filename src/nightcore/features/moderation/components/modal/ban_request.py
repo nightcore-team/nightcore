@@ -1,19 +1,22 @@
 """Modal for submitting ban requests."""
 
 import logging
+from typing import TYPE_CHECKING
 
 import discord
 from discord.ui import Modal, TextInput
 
 from src.config.config import config
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.components.v2 import BanRequestViewV2
-from src.nightcore.features.moderation.utils import parse_duration
+from src.nightcore.utils.time_utils import parse_duration
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +49,7 @@ class BanFormModal(Modal, title="Send Ban Request"):
         self,
         target: discord.Member | discord.User,
         moderator: discord.Member,
-        bot: Nightcore,
+        bot: "Nightcore",
         channel: discord.TextChannel | discord.Thread,
         ban_access_roles_ids: list[int],
         moderation_access_roles_ids: list[int],

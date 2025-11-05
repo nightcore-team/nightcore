@@ -1,7 +1,7 @@
 """Command to send a vote ban request."""
 
 import logging
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from discord import (
     Guild,
@@ -14,7 +14,6 @@ from discord.interactions import Interaction
 
 from src.config.config import config
 from src.infra.db.models import GuildModerationConfig
-from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -26,9 +25,6 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2 import (
     BanRequestViewV2,
 )
-from src.nightcore.features.moderation.utils import (
-    parse_duration,
-)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     compare_top_roles,
@@ -37,12 +33,16 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.time_utils import parse_duration
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
 class Voteban(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -454,6 +454,6 @@ class Voteban(Cog):
         )
 
 
-async def setup(bot: Nightcore) -> None:
+async def setup(bot: "Nightcore") -> None:
     """Setup the Voteban cog."""
     await bot.add_cog(Voteban(bot))

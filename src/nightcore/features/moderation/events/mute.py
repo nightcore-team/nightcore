@@ -26,12 +26,12 @@ from src.nightcore.features.moderation.events import (
     UserUnmutedEventData,
 )
 from src.nightcore.features.moderation.utils import (
-    calculate_end_time,
     send_moderation_log,
     send_punish_dm_message,
     send_unpunish_dm_message,
 )
 from src.nightcore.utils import discord_ts, ensure_member_exists
+from src.nightcore.utils.time_utils import calculate_end_time
 
 logger = logging.getLogger(__name__)
 
