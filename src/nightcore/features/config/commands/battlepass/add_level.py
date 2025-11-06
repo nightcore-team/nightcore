@@ -96,7 +96,7 @@ async def add_level(
 
     if not outcome:
         async with specified_guild_config(
-            bot, guild.id, GuildEconomyConfig
+            bot, guild.id, GuildEconomyConfig, _create=True
         ) as (
             guild_config,
             _,

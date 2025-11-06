@@ -5,7 +5,12 @@ from collections.abc import Sequence
 from typing import TypedDict
 
 from src.config.config import config
-from src.infra.db.models import Punish, RoleRequestState, TicketState
+from src.infra.db.models import (
+    ChangeStat,
+    Punish,
+    RoleRequestState,
+    TicketState,
+)
 from src.nightcore.utils import discord_ts
 
 logger = logging.getLogger(__name__)
@@ -15,6 +20,7 @@ class ModeratorData(TypedDict):
     punishments: list[Punish]
     tickets: list[TicketState]
     role_requests: list[RoleRequestState]
+    changestats: list[ChangeStat]
     nickname: str
 
 
@@ -83,12 +89,14 @@ def build_moderators_stats(
         _name = data.get("nickname", "")
         tickets = data.get("tickets", [])
         role_requests = data.get("role_requests", [])
+        changestats = data.get("changestats", [])
         mute_count = sum(1 for p in punishes if p.category == "mute")
         ban_count = sum(1 for p in punishes if p.category == "ban")
         kick_count = sum(1 for p in punishes if p.category == "kick")
         vmute_count = sum(1 for p in punishes if p.category == "vmute")
         mpmute_count = sum(1 for p in punishes if p.category == "mpmute")
         ticketban_count = sum(1 for p in punishes if p.category == "ticketban")
+        total_changestat_points = sum(p.amount for p in changestats)
         closed_tickets_count = len(tickets)
         approved_role_requests_count = len(role_requests)
         changed_roles_count = sum(
@@ -101,10 +109,11 @@ def build_moderators_stats(
             + vmute_count * vmute_score
             + mpmute_count * mpmute_score
             + ticketban_count * ticketban_score
-            # + closed_tickets_count * tickets_score
-            # + approved_role_requests_count * approved_role_requests_score
+            + closed_tickets_count * tickets_score
+            + approved_role_requests_count * approved_role_requests_score
             + changed_roles_count * changed_roles_score
             + total_messages * message_score
+            - total_changestat_points
         )
 
         stats[moderator_id] = {}
@@ -117,9 +126,10 @@ def build_moderators_stats(
             f"Ticketban: {ticketban_count}\n"
             f"Closed tickets: {closed_tickets_count}\n"
             f"Approved role requests: {approved_role_requests_count}\n"
-            f"Changed roles: {changed_roles_count}\n"
-            f"Messages: {total_messages}\n\n"
-            f"Total points: {total_points}"
+            f"Removed roles: {changed_roles_count}\n"
+            f"Количество сообщений: {total_messages}\n\n"
+            f"Общее количество балллов: {total_points}\n"
+            f"Количество снятых баллов: {total_changestat_points}"
         )
         stats[moderator_id]["nickname"] = _name
 

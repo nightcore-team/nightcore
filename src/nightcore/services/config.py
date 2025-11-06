@@ -19,7 +19,7 @@ async def specified_guild_config(
     bot: "Nightcore",
     guild_id: int,
     config_type: type[GuildT],
-    _create: bool = True,
+    _create: bool = False,
 ):
     """Open a context manager for the guild configuration."""
     async with bot.uow.start() as session:

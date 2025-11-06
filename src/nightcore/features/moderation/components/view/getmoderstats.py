@@ -37,9 +37,9 @@ class GetModerationStatsView(View):
     def _update_buttons(self):
         for child in self.children:
             if isinstance(child, Button):
-                if child.custom_id == "infractions_prev":
+                if child.custom_id == "getmoderstats:prev":
                     child.disabled = self.current_page == 0
-                elif child.custom_id == "infractions_next":
+                elif child.custom_id == "getmoderstats:next":
                     child.disabled = self.current_page == len(self.pages) - 1
 
     def _make_embed(self) -> Embed:
@@ -58,7 +58,7 @@ class GetModerationStatsView(View):
             return self._embed
 
         self._embed = Embed(
-            title=f"Moderation stats from {self.from_date.date()} to {self.to_date.date()}",  # noqa: E501
+            title=f"Статистика модерации от {self.from_date.date()} до {self.to_date.date()}",  # noqa: E501
             color=Color.blurple(),
         )
         for p in page:
@@ -77,7 +77,7 @@ class GetModerationStatsView(View):
         """Ensure that only the author can interact with the view."""
         if interaction.user.id != self.author_id:
             await interaction.response.send_message(
-                "You can't manage this pagination.", ephemeral=True
+                "Вы не можете управлять этой пагинацией.", ephemeral=True
             )
             return False
         return True
@@ -85,7 +85,7 @@ class GetModerationStatsView(View):
     @button(
         style=ButtonStyle.secondary,
         emoji="<:41036arrowforwardios1:1409851002256887808>",
-        custom_id="infractions_prev",
+        custom_id="getmoderstats:prev",
     )
     async def previous(self, interaction: Interaction, button: Button[Self]):
         """Go to previous page."""
@@ -98,7 +98,7 @@ class GetModerationStatsView(View):
     @button(
         style=ButtonStyle.secondary,
         emoji="<:41036arrowforwardios:1409850992593338460>",
-        custom_id="infractions_next",
+        custom_id="getmoderstats:next",
     )
     async def next(self, interaction: Interaction, button: Button[Self]):
         """Go to next page."""

@@ -1,6 +1,5 @@
 """Modal for submitting ban requests."""
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, Self, cast
 
@@ -91,8 +90,8 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
         if outcome == "role_request_not_found":
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Decline failed",
-                    "Role request not found in database.",
+                    "Ошибка отклонения",
+                    "Запрос на роль не найден в базе данных.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -102,8 +101,8 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
         if outcome == "role_request_already_declined":
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Decline failed",
-                    "Role request has already been declined.",
+                    "Ошибка отклонения",
+                    "Запрос на роль уже был отклонен.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -121,8 +120,8 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
             )
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Decline failed",
-                    "An error occurred while editing the role request message.",  # noqa: E501
+                    "Ошибка отклонения",
+                    "Произошла ошибка при редактировании сообщения о запросе на роль.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -137,15 +136,15 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
             state=RoleRequestStateEnum.DENIED,
             reason=reason,
         )
-        await asyncio.gather(
-            interaction.followup.send(view=state_view),
-            send_role_request_dm(
-                moderator_id=interaction.user.id,
-                reserve_channel=self.nightcore_notifications_channel_id,
-                user=self.user,
-                state=RoleRequestStateEnum.DENIED,
-                reason=reason,
-            ),
+
+        await interaction.followup.send(view=state_view)
+
+        await send_role_request_dm(
+            moderator_id=interaction.user.id,
+            reserve_channel=self.nightcore_notifications_channel_id,
+            user=self.user,
+            state=RoleRequestStateEnum.DENIED,
+            reason=reason,
         )
 
         logger.info(

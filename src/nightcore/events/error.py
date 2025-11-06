@@ -229,7 +229,7 @@ async def setup(bot: "Nightcore") -> None:
             if not interaction.response.is_done():
                 await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Field not configured.",
+                        "Нужный параметр не настроен",
                         f"{original}",
                         interaction.client.user.name,  # type: ignore
                         interaction.client.user.display_avatar.url,  # type: ignore
@@ -239,7 +239,7 @@ async def setup(bot: "Nightcore") -> None:
             else:
                 await interaction.followup.send(
                     embed=ErrorEmbed(
-                        "Field not configured.",
+                        "Нужный параметр не настроен.",
                         f"{original}",
                         interaction.client.user.name,  # type: ignore
                         interaction.client.user.display_avatar.url,  # type: ignore

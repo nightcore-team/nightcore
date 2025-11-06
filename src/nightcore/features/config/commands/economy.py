@@ -38,12 +38,12 @@ logger = logging.getLogger(__name__)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     shop_buy_ping_roles="Роли для упоминания при покупке в магазине.",
-    economy_access_roles="Роли с доступом к командам экономики.",  # noqa: RUF001
+    economy_access_roles="Роли с доступом к командам экономики.",
     shop_items="Предметы, доступные в магазине.",
     reward_bonus="Бонусные награды для /reward.",
     coin_name="Название локальной валюты.",
-    coins_drop="Конфигурация выпадения монет с кейса. Формат: коины, шанс (без %) | монеты, шанс | ...",  # noqa: E501, RUF001
-    colors_drop="Конфигурация выпадения цветов с кейса. Формат: role_id, шанс (без %) | role_id, шанс | ...",  # noqa: E501, RUF001
+    coins_drop="Конфигурация выпадения монет с кейса. Формат: коины, шанс (без %) | монеты, шанс | ...",  # noqa: E501
+    colors_drop="Конфигурация выпадения цветов с кейса. Формат: role_id, шанс (без %) | role_id, шанс | ...",  # noqa: E501
 )
 async def setup(
     interaction: Interaction,
@@ -89,6 +89,7 @@ async def setup(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildEconomyConfig,
+        _create=True,
     ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 

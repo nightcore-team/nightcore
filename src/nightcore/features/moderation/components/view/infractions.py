@@ -33,9 +33,9 @@ class InfractionsView(View):
     def _update_buttons(self):
         for child in self.children:
             if isinstance(child, Button):
-                if child.custom_id == "infractions_prev":
+                if child.custom_id == "infractions:prev":
                     child.disabled = self.current_page == 0
-                elif child.custom_id == "infractions_next":
+                elif child.custom_id == "infractions:next":
                     child.disabled = self.current_page == len(self.pages) - 1
 
     def _make_embed(self) -> Embed:
@@ -44,7 +44,7 @@ class InfractionsView(View):
             color=Color.blurple(),
         )
         embed.set_author(
-            name=f"{self.user} ➤ Infractions",
+            name=f"{self.user} ➤ Список нарушений",
             icon_url=self.user.display_avatar.url,
         )
         embed.set_footer(
@@ -60,7 +60,7 @@ class InfractionsView(View):
         """Ensure that only the author can interact with the view."""
         if interaction.user.id != self.author_id:
             await interaction.response.send_message(
-                "You can't manage this pagination.", ephemeral=True
+                "Вы не можете управлять этой пагинацией.", ephemeral=True
             )
             return False
         return True
@@ -68,7 +68,7 @@ class InfractionsView(View):
     @button(
         style=ButtonStyle.secondary,
         emoji="<:41036arrowforwardios1:1409851002256887808>",
-        custom_id="infractions_prev",
+        custom_id="infractions:prev",
     )
     async def previous(
         self, interaction: Interaction, button: Button["InfractionsView"]
@@ -83,7 +83,7 @@ class InfractionsView(View):
     @button(
         style=ButtonStyle.secondary,
         emoji="<:41036arrowforwardios:1409850992593338460>",
-        custom_id="infractions_next",
+        custom_id="infractions:next",
     )
     async def next(
         self, interaction: Interaction, button: Button["InfractionsView"]

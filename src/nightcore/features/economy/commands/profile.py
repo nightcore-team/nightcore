@@ -37,7 +37,10 @@ class Profile(Cog):
         guild = cast(Guild, interaction.guild)
 
         async with specified_guild_config(
-            self.bot, guild_id=guild.id, config_type=GuildEconomyConfig
+            self.bot,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+            _create=False,
         ) as (
             guild_config,
             session,

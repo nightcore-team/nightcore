@@ -37,6 +37,5 @@ class TicketState(IdIntegerMixin, Base):
             "guild_id",
             "author_id",
             text("updated_at DESC"),
-            postgresql_concurrently=True,
         ),
     )

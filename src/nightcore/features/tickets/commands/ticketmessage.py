@@ -25,7 +25,7 @@ class Ticketmessage(Cog):
 
     @app_commands.command(
         name="ticketmessage",
-        description="Отправить сообщение с созданием тикета.",  # noqa: RUF001
+        description="Отправить сообщение с созданием тикета.",
     )
     async def ticketmessage(
         self,

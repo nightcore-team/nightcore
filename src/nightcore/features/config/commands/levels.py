@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     count_messages_channel="Канал для подсчета сообщений для уровней.",
-    count_messages_type="Тип подсчета сообщений для уровней: Все каналы | Только указанный",  # noqa: E501, RUF001
-    level_notify_channel="Канал для уведомлений о повышении уровня.",  # noqa: RUF001
+    count_messages_type="Тип подсчета сообщений для уровней: Все каналы | Только указанный",  # noqa: E501
+    level_notify_channel="Канал для уведомлений о повышении уровня.",
     exp_multiplier="Множитель опыта для уровней.",
     coins_multiplier="Множитель монет для уровней.",
     roles_with_bonus="Роли, которые получают бонусные очки опыта. Формат: role_id, multiplier | ...",  # noqa: E501
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.choices(
     count_messages_type=[
-        app_commands.Choice(name="Все каналы", value="all"),  # noqa: RUF001
+        app_commands.Choice(name="Все каналы", value="all"),
         app_commands.Choice(name="Только указанный", value="channel_only"),
     ]
 )
@@ -88,6 +88,7 @@ async def setup(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildLevelsConfig,
+        _create=True,
     ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 

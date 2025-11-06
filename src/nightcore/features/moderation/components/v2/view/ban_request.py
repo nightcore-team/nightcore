@@ -56,6 +56,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         has_moder_role = has_any_role_from_sequence(
             user, view.moderation_access_roles_ids
         )
+
         # TODO: get info about ban request from components after bot restarting
         if not has_moder_role:
             await interaction.response.send_message(
@@ -72,7 +73,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         style=ButtonStyle.green,
         emoji="<:52104checkmark:1414732973005340672>",
         label="Approve",
-        custom_id="ban_request_approve",
+        custom_id="ban_request:approve",
     )
     async def approve(
         self, interaction: Interaction, button: Button["BanRequestViewV2"]
@@ -172,7 +173,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         style=ButtonStyle.red,
         emoji="<:9349_nope:1414732960841859182>",
         label="Deny",
-        custom_id="ban_request_deny",
+        custom_id="ban_request:deny",
     )
     async def deny(
         self, interaction: Interaction, button: Button["BanRequestViewV2"]
@@ -289,11 +290,11 @@ class BanRequestViewV2(LayoutView):
             container.add_item(Separator[Self]())
 
         self.header_text = TextDisplay[Self](
-            f"Name | ID: {self.target.mention} | `{self.target.id}`\n"
-            f"Moderator: <@{self.author_id}>\n"
-            f"Reason: **`{self.reason}`**\n"
-            f"Duration: **`{self.original_duration}`**\n"
-            f"Delete messages for last: **`{self.original_delete_seconds if self.original_delete_seconds else 'N/A'}`**\n"  # noqa: E501
+            f"Пользователь: {self.target.mention} (`{self.target.id}`)\n"
+            f"Модератор: <@{self.author_id}>\n"
+            f"Причина: **`{self.reason}`**\n"
+            f"Длительность: **`{self.original_duration}`**\n"
+            f"Удалить сообщения за последние: **`{self.original_delete_seconds if self.original_delete_seconds else 'N/A'}`**\n"  # noqa: E501
         )
         header_section = Section[Self](
             self.header_text,
@@ -302,12 +303,12 @@ class BanRequestViewV2(LayoutView):
         container.add_item(header_section)
         container.add_item(Separator[Self]())
 
-        container.add_item(TextDisplay[Self]("### In Favor:"))
+        container.add_item(TextDisplay[Self]("### За:"))
         if self.in_favor_moderators_text:
             container.add_item(
                 TextDisplay[Self](self.in_favor_moderators_text)
             )
-        container.add_item(TextDisplay[Self]("### Against:"))
+        container.add_item(TextDisplay[Self]("### Против:"))
         if self.against_moderators_text:
             container.add_item(TextDisplay[Self](self.against_moderators_text))
 
@@ -315,7 +316,7 @@ class BanRequestViewV2(LayoutView):
 
         # Main page text
         if self.attachments:
-            attachments_text = TextDisplay[Self]("### Attachments:")
+            attachments_text = TextDisplay[Self]("### Вложения:")
             container.add_item(attachments_text)
             attachments: list[MediaGalleryItem] = []
             for att in self.attachments:

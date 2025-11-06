@@ -1,4 +1,5 @@
-from .clan import Base, Clan, ClanMember
+from .changestat import Base, ChangeStat
+from .clan import Base, Clan, ClanMember  # noqa: F811
 from .guild import (
     Base,  # noqa: F811
     GuildClansConfig,
@@ -25,6 +26,7 @@ from .user import Base, User  # noqa: F811
 
 __all__ = (
     "Base",
+    "ChangeStat",
     "Clan",
     "ClanMember",
     "GuildClansConfig",

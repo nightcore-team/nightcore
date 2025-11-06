@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from src.config.config import config
 from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
+    ChangeStat,
     Clan,
     ClanMember,
     GuildClansConfig,
@@ -621,12 +622,26 @@ async def get_user_infractions_for_moderators(
     )
     role_requests = (await session.scalars(stmt_role_requests)).all()
 
+    # ---- ChangeStats ----
+    stmt_changestats = (
+        select(ChangeStat)
+        .where(
+            ChangeStat.guild_id == guild_id,
+            ChangeStat.moderator_id.in_(moderators.keys()),
+            ChangeStat.time_now >= from_date,
+            ChangeStat.time_now <= to_date,
+        )
+        .order_by(ChangeStat.moderator_id.asc(), ChangeStat.time_now.asc())
+    )
+    changestats = (await session.scalars(stmt_changestats)).all()
+
     # ---- Grouping by moderator ----
     grouped: dict[int, dict[str, Any]] = {
         mid: {
             "punishments": [],
             "tickets": [],
             "role_requests": [],
+            "changestats": [],
             "nickname": nick,
         }
         for mid, nick in moderators.items()
@@ -640,6 +655,9 @@ async def get_user_infractions_for_moderators(
 
     for rr in role_requests:
         grouped[rr.moderator_id]["role_requests"].append(rr)
+
+    for cs in changestats:
+        grouped[cs.moderator_id]["changestats"].append(cs)
 
     return grouped
 

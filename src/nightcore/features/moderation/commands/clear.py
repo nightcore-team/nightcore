@@ -9,7 +9,7 @@ from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.infra.db.operations import get_moderation_access_roles
+from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -18,6 +18,7 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import MessageClearEventData
+from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import has_any_role_from_sequence
 
 if TYPE_CHECKING:
@@ -42,12 +43,14 @@ class Clear(Cog):
         """Clear messages from a channel."""
         guild = cast(Guild, interaction.guild)
 
-        async with self.bot.uow.start() as session:
-            if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
-            ):
+        async with specified_guild_config(
+            self.bot, guild.id, GuildModerationConfig
+        ) as (
+            guild_config,
+            _,
+        ):
+            moderation_access_roles = guild_config.moderation_access_roles_ids
+            if not moderation_access_roles:
                 raise FieldNotConfiguredError("доступ к модерации")
 
         has_moder_role = has_any_role_from_sequence(

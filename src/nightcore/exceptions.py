@@ -16,4 +16,6 @@ class ConfigMissingError(Exception):
 class FieldNotConfiguredError(Exception):
     def __init__(self, field_name: str):
         self.field_name = field_name
-        super().__init__(f"Field not configured: {field_name}")
+        super().__init__(
+            f"Необходимый параметр (`{field_name}`) не настроен в конфигурации сервера."  # noqa: E501
+        )

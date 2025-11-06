@@ -35,6 +35,5 @@ class NotifyState(IdIntegerMixin, Base):
             "guild_id",
             "user_id",
             text("end_time DESC"),
-            postgresql_concurrently=True,
         ),
     )

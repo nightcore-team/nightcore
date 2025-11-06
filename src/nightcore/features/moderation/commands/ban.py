@@ -12,7 +12,6 @@ from discord.interactions import Interaction
 from src.config.config import config
 from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
@@ -62,8 +61,9 @@ class Ban(Cog):
 
         if member is None:
             return await interaction.response.send_message(
-                embed=EntityNotFoundEmbed(
-                    "пользователь",
+                embed=ErrorEmbed(
+                    "Ошибка выдачи блокировки",
+                    "Пользователь не найден на сервере.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -301,8 +301,9 @@ async def _ban_request_callback(
 
     if member is None:
         return await interaction.response.send_message(
-            embed=EntityNotFoundEmbed(
-                "пользователь",
+            embed=ErrorEmbed(
+                "Ошибка отправки запроса на бан",
+                "Пользователь не найден на сервере.",
                 client.user.name,  # type: ignore
                 client.user.display_avatar.url,  # type: ignore
             ),

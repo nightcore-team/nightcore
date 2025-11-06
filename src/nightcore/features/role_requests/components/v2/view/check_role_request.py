@@ -203,22 +203,19 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         """Handle the approve button interaction."""
         guild = cast(Guild, interaction.guild)
         view = cast("CheckRoleRequestView", self.view)
-        view.state = RoleRequestStateEnum.APPROVED
-        view.moderator_id = interaction.user.id
 
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to add roles.",
+                    "У меня нет прав для управления ролями.",
                 ),
                 ephemeral=True,
             )
 
         await interaction.response.defer()
 
-        # connect information from components
         for component in interaction.message.components:  # type: ignore
             for item in component.children:  # type: ignore
                 if isinstance(item, TextDisplayOverride):  # noqa: SIM102
@@ -243,8 +240,8 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         if not member:
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Approve failed",
-                    "Cannot find this user in guild.",
+                    "Ошибка одобрения запроса",
+                    "Пользователь не найден на сервере.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -257,13 +254,16 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         if not role:
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Approve failed",
-                    "Cannot find this requested role in the guild.",
+                    "Ошибка одобрения запроса",
+                    "Не удалось найти запрашиваемую роль на сервере.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+
+        outcome = ""
+        nightcore_notifications_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
             try:
@@ -272,39 +272,25 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                     guild_id=guild.id,
                     user_id=cast(int, view.interaction_user_id),
                 )
+
                 if not last_rr:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "Approve failed",
-                            "Cannot find this role request in database.",
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
+                    outcome = "request_not_found"
+                elif last_rr.state == RoleRequestStateEnum.APPROVED:
+                    outcome = "already_approved"
+                else:
+                    last_rr.state = RoleRequestStateEnum.APPROVED
+                    last_rr.moderator_id = interaction.user.id
+
+                    nightcore_notifications_channel_id = (
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildNotificationsConfig,
+                            channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
+                        )
                     )
 
-                if last_rr.state == RoleRequestStateEnum.APPROVED:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "Approve failed",
-                            "Another moderator approved this request.",
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-
-                last_rr.state = RoleRequestStateEnum.APPROVED
-                last_rr.moderator_id = interaction.user.id
-
-                nightcore_notifications_channel_id = (
-                    await get_specified_channel(
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildNotificationsConfig,
-                        channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
-                    )
-                )
+                    outcome = "success"
 
             except Exception as e:
                 logger.exception(
@@ -313,62 +299,92 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                     guild.id,
                     e,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Approve failed",
-                        "An error occurred while fetching the role request from the database.",  # noqa: E501
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                outcome = "database_error"
 
-        try:
-            await member.add_roles(role, reason="Role request approved")
-        except Exception as e:
-            logger.exception(
-                "Failed to add role %s to user %s in guild %s: %s",
-                role.id,
-                member.id,
-                guild.id,
-                e,
-            )
+        if outcome == "request_not_found":
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Approve failed",
-                    "An error occurred while adding the role to the user.",
+                    "Ошибка одобрения запроса",
+                    "Не удалось найти этот запрос на роль в базе данных.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
 
-        view = view.make_component(disable_all=True)
-        await interaction.message.edit(view=view)  # type: ignore
+        if outcome == "already_approved":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка одобрения запроса",
+                    "Другой модератор одобрил этот запрос.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
-        await interaction.followup.send(
-            view=RoleRequestStateView(
-                bot=view.bot,
+        if outcome == "database_error":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка одобрения запроса",
+                    "Произошла ошибка при получении запроса на роль из базы данных.",  # noqa: E501
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if outcome == "success":
+            try:
+                await member.add_roles(
+                    role, reason="Одобрение запроса на роль"
+                )
+            except Exception as e:
+                logger.exception(
+                    "Failed to add role %s to user %s in guild %s: %s",
+                    role.id,
+                    member.id,
+                    guild.id,
+                    e,
+                )
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Approve failed",
+                        "An error occurred while adding the role to the user.",
+                        view.bot.user.name,  # type: ignore
+                        view.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
+            view.state = RoleRequestStateEnum.APPROVED
+            view.moderator_id = interaction.user.id
+            updated_view = view.make_component(disable_all=True)
+            await interaction.message.edit(view=updated_view)  # type: ignore
+
+            await interaction.followup.send(
+                view=RoleRequestStateView(
+                    bot=view.bot,
+                    moderator_id=interaction.user.id,
+                    user_id=cast(int, view.interaction_user_id),
+                    role_id=cast(int, view.role_requested_id),
+                    state=RoleRequestStateEnum.APPROVED,
+                )
+            )
+
+            await send_role_request_dm(
                 moderator_id=interaction.user.id,
-                user_id=cast(int, view.interaction_user_id),
-                role_id=cast(int, view.role_requested_id),
+                reserve_channel=nightcore_notifications_channel_id,
+                user=member,
                 state=RoleRequestStateEnum.APPROVED,
             )
-        )
 
-        await send_role_request_dm(
-            moderator_id=interaction.user.id,
-            reserve_channel=nightcore_notifications_channel_id,
-            user=member,
-            state=RoleRequestStateEnum.APPROVED,
-        )
-
-        logger.info(
-            "Moderator %s requested stats from user %s in guild %s",
-            interaction.user.id,
-            view.interaction_user_id,
-            guild.id,
-        )
+            logger.info(
+                "Moderator %s approved role request from user %s in guild %s",
+                interaction.user.id,
+                view.interaction_user_id,
+                guild.id,
+            )
 
     @button(
         label="Отклонить запрос",
@@ -384,20 +400,17 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         """Handle the decline button interaction."""
         guild = cast(Guild, interaction.guild)
         view = cast("CheckRoleRequestView", self.view)
-        view.state = RoleRequestStateEnum.DENIED
-        view.moderator_id = interaction.user.id
 
         if not guild.me.guild_permissions.manage_roles:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                    "I do not have permission to add roles.",
+                    "У меня нет прав для управления ролями.",
                 ),
                 ephemeral=True,
             )
 
-        # connect information from components
         for component in interaction.message.components:  # type: ignore
             for item in component.children:  # type: ignore
                 if isinstance(item, TextDisplayOverride):  # noqa: SIM102
@@ -420,15 +433,18 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
             cast(int, view.interaction_user_id),
         )
         if not member:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Decline failed",
-                    "Cannot find this user in guild.",
+                    "Ошибка отклонения запроса",
+                    "Пользователь не найден на сервере.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+
+        outcome = ""
+        nightcore_notifications_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
             try:
@@ -437,25 +453,20 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                     guild_id=guild.id,
                     user_id=cast(int, view.interaction_user_id),
                 )
+
                 if not last_rr:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "Decline failed",
-                            "Cannot find this role request in database.",
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
+                    outcome = "request_not_found"
+                else:
+                    nightcore_notifications_channel_id = (
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildNotificationsConfig,
+                            channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
+                        )
                     )
 
-                nightcore_notifications_channel_id = (
-                    await get_specified_channel(
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildNotificationsConfig,
-                        channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
-                    )
-                )
+                    outcome = "success"
 
             except Exception as e:
                 logger.exception(
@@ -464,31 +475,54 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                     guild.id,
                     e,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Decline failed",
-                        "An error occurred while fetching the role request from the database.",  # noqa: E501
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                outcome = "database_error"
 
-        view = view.make_component(disable_all=True)
-
-        await interaction.response.send_modal(
-            DeclineRoleRequestModal(
-                bot=view.bot,
-                user=member,
-                nightcore_notifications_channel_id=nightcore_notifications_channel_id,
-                view=view,
-                state_view=RoleRequestStateView,
-                message=interaction.message,  # type: ignore
+        if outcome == "request_not_found":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка отклонения запроса",
+                    "Не удалось найти этот запрос на роль в базе данных.",
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
-        )
+
+        if outcome == "database_error":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка отклонения запроса",
+                    "Произошла ошибка при получении запроса на роль из базы данных.",  # noqa: E501
+                    view.bot.user.name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
+        if outcome == "success":
+            view.state = RoleRequestStateEnum.DENIED
+            view.moderator_id = interaction.user.id
+            updated_view = view.make_component(disable_all=True)
+
+            await interaction.response.send_modal(
+                DeclineRoleRequestModal(
+                    bot=view.bot,
+                    user=member,
+                    nightcore_notifications_channel_id=nightcore_notifications_channel_id,
+                    view=updated_view,
+                    state_view=RoleRequestStateView,
+                    message=interaction.message,  # type: ignore
+                )
+            )
+
+            logger.info(
+                "Moderator %s initiated decline for role request from user %s in guild %s",  # noqa: E501
+                interaction.user.id,
+                view.interaction_user_id,
+                guild.id,
+            )
 
 
-# TODO: add attachments
 class CheckRoleRequestView(LayoutView):
     def __init__(
         self,
@@ -551,17 +585,11 @@ class CheckRoleRequestView(LayoutView):
         # main text
         container.add_item(
             TextDisplay[Self](
-                f"**User | ID**: <@{self.interaction_user_id}> | {self.interaction_user_id}\n"  # noqa: E501
-                f"**User nickname**: {self.interaction_user_nick}\n"
-                f"**Role requested**: <@&{self.role_requested_id}>\n"
+                f"**Пользователь**: <@{self.interaction_user_id}> (`{self.interaction_user_id}`)\n"  # noqa: E501
+                f"**Никнейм**: {self.interaction_user_nick}\n"
+                f"**Запрашиваемая роль**: <@&{self.role_requested_id}>\n"
             )
         )
-        # container.add_item(
-        #     TextDisplay[Self](f"User nickname: {self.interaction_user_nick}")
-        # )
-        # container.add_item(
-        #     TextDisplay[Self](f"Role requested: <@&{self.role_requested_id}>")  # noqa: E501
-        # )
         container.add_item(Separator[Self]())
 
         # state

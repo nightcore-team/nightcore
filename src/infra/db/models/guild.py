@@ -51,7 +51,7 @@ class MainGuildConfig(IdIntegerMixin, Base):  #
         JSON,
         nullable=False,
         default=lambda: {"chapters": []},  # type: ignore
-        server_default=text("'{'chapters': []}'::json"),
+        server_default=text("'{\"chapters\": []}'::json"),
     )
 
 

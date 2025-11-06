@@ -21,26 +21,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class BanFormModal(Modal, title="Send Ban Request"):
+class BanFormModal(Modal, title="Отправить запрос на бан"):
     duration = TextInput["BanFormModal"](
-        label="Duration s/m/d/w",
-        placeholder="Example: 30m, 2h, 3d",
+        label="Продолжительность s/m/d/w",
+        placeholder="Пример: 30m, 2h, 3d",
         required=True,
         max_length=50,
     )
 
     reason = TextInput["BanFormModal"](
-        label="Reason for punishment",
+        label="Причина наказания",
         style=discord.TextStyle.paragraph,
-        placeholder="Describe the reason...",
+        placeholder="Опишите причину...",
         required=True,
         max_length=1000,
     )
 
     delete_messages_for_last = TextInput["BanFormModal"](
-        label="Delete messages for the last",
+        label="Удалить сообщения за последние",
         style=discord.TextStyle.short,
-        placeholder="Example: 1m, 1h, 1d, 7d",
+        placeholder="Пример: 1m, 1h, 1d, 7d",
         required=False,
         max_length=20,
     )
@@ -92,7 +92,7 @@ class BanFormModal(Modal, title="Send Ban Request"):
             if delete_seconds is None:
                 return await interaction.followup.send(
                     embed=ValidationErrorEmbed(
-                        "Invalid message deletion duration. Use s/m/h/d up to 7d (e.g., 1h, 1d, 7d).",  # noqa: E501
+                        "Неверная продолжительность. Используйте s/m/h/d до 7d (например, 30m, 2h, 3d).",  # noqa: E501
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -101,7 +101,7 @@ class BanFormModal(Modal, title="Send Ban Request"):
             if delete_seconds > config.bot.DELETE_MESSAGES_SECONDS:
                 return await interaction.followup.send(
                     embed=ValidationErrorEmbed(
-                        f"Message deletion duration cannot exceed {config.bot.DELETE_MESSAGES_SECONDS // 86400} days.",  # noqa: E501
+                        f"Продолжительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -128,8 +128,8 @@ class BanFormModal(Modal, title="Send Ban Request"):
 
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
-                    "Ban Request Submitted",
-                    f"Your {message.jump_url} for {self.target.mention} has sent successfully.",  # noqa: E501
+                    "Запрос на бан отправлен",
+                    f"Ваш {message.jump_url} для {self.target.mention} был успешно отправлен.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 )
@@ -144,8 +144,8 @@ class BanFormModal(Modal, title="Send Ban Request"):
             )
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Ban Request Failed",
-                    "Failed to send ban request message.",
+                    "Запрос на бан не удался",
+                    "Не удалось отправить сообщение с запросом на бан.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 )

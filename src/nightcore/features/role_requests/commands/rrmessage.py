@@ -56,7 +56,7 @@ class Rrmessage(Cog):
                     session, guild_id=guild.id
                 )
             ):
-                raise FieldNotConfiguredError("organization roles")
+                raise FieldNotConfiguredError("организационные роли")
 
         options = [
             SelectOption(

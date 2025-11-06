@@ -78,3 +78,15 @@ class ShopOrderStateEnum(Enum):
 class MultiplierTypeEnum(Enum):
     EXP = "exp"
     COINS = "coins"
+
+
+class ChangeStatTypeEnum(Enum):
+    BAN = "ban"
+    KICK = "kick"
+    MUTE = "mute"
+    VMUTE = "vmute"
+    MPMUTE = "mpmute"
+    TICKETBAN = "ticketban"
+    TICKET_CLOSE = "ticket_close"
+    ROLE_REMOVE = "role_remove"
+    ROLE_ACCEPT = "role_accept"

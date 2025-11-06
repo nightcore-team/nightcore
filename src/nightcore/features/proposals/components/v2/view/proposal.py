@@ -63,8 +63,8 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         if outcome == "moderation_access_not_configured":
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Ошибка конфигурации",
-                    "Роли с доступом к модерации не настроены.",  # noqa: RUF001
+                    "Ошибка одобрения предложения",
+                    "Роли с доступом к модерации не настроены.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -139,8 +139,8 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         if outcome == "moderation_access_not_configured":
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Ошибка конфигурации",
-                    "Роли с доступом к модерации не настроены.",  # noqa: RUF001
+                    "Ошибка одобрения предложения",
+                    "Роли с доступом к модерации не настроены.",
                     view.bot.user.name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -205,7 +205,7 @@ class ProposalViewV2(LayoutView):
         self.proposals_count = proposals_count
         self.description = description
         self.user_id = user_id
-        self.status = status or "На рассмотрении"  # noqa: RUF001
+        self.status = status or "На рассмотрении"
         self.answer = answer
         self.moderator_id = moderator_id
         self.color = color
@@ -235,7 +235,7 @@ class ProposalViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"Автор предложения: <@{self.user_id}>\nСтатус: **{self.status}**"  # noqa: E501, RUF001
+                f"Автор предложения: <@{self.user_id}>\nСтатус: **{self.status}**"  # noqa: E501
             )
         )
         container.add_item(TextDisplay[Self](f"{self.description}"))

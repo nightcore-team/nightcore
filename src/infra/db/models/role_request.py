@@ -37,13 +37,11 @@ class RoleRequestState(IdIntegerMixin, Base):
             "guild_id",
             "author_id",
             text("updated_at DESC"),
-            postgresql_concurrently=True,
         ),
         # Separate index to optimize queries filtering only by author_id
         Index(
             "idx_rr_author_updated_desc",
             "author_id",
             text("updated_at DESC"),
-            postgresql_concurrently=True,
         ),
     )

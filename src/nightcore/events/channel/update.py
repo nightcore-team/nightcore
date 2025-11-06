@@ -14,7 +14,7 @@ from src.infra.db.operations import get_specified_channel  # type: ignore
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import ensure_messageable_channel_exists
 
-from .utils.overwrites import build_permission_changes_field  # type: ignore
+from ._utils.overwrites import build_permission_changes_field  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -120,11 +120,25 @@ class UpdateChannelHandler(Cog):
         new: discord.abc.GuildChannel,
         embed: discord.Embed,
     ):
-        old_topic = old.topic or "пусто"  # type: ignore
-        new_topic = new.topic or "пусто"  # type: ignore
+        value = ""
+        old_topic = getattr(old, "topic", None)  # type: ignore
+        new_topic = getattr(new, "topic", None)  # type: ignore
+
+        if old_topic != new_topic:
+            if old_topic is None and new_topic is None:
+                return
+            elif old_topic is None and new_topic is not None:
+                value = f"— → {new_topic}"
+            elif old_topic is not None and new_topic is None:
+                value = f"{old_topic} → —"
+            else:
+                value = f"{old_topic} → {new_topic}"
+        else:
+            return
+
         embed.add_field(
             name="Описание",
-            value=f"{old_topic} → {new_topic}",
+            value=value,
             inline=True,
         )
 

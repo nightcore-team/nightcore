@@ -30,13 +30,13 @@ logger = logging.getLogger(__name__)
 @clans_group.command(name="setup", description="Настроить систему кланов.")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    shop_threads_channel="Канал, под которым создаются ветки с покупками.",  # noqa: RUF001
+    shop_threads_channel="Канал, под которым создаются ветки с покупками.",
     shop_buy_ping_roles="Роли для упоминания при покупке в магазине. Формат: role_id, role_id, ...",  # noqa: E501
     shop_items="Товары, доступные в магазине. Формат: item_name, price | item_name, price | ...",  # noqa: E501
     reputation_per_payday="Количество репутации, выдаваемой в пейдэй.",
-    payday_channel="Канал для объявлений о дне зарплаты.",  # noqa: RUF001
+    payday_channel="Канал для объявлений о дне зарплаты.",
     base_exp_multiplier="Базовый множитель опыта, выдаваемого за сообщение.",
-    improvements_costs="Стоимость улучшений клана (Всего их 3). Формат: cost,cost,cost",  # noqa: E501, RUF001
+    improvements_costs="Стоимость улучшений клана (Всего их 3). Формат: cost,cost,cost",  # noqa: E501
 )
 async def setup(
     interaction: Interaction,
@@ -106,7 +106,7 @@ async def setup(
 
 @clans_group.command(
     name="update_clans_access",
-    description="Обновить список ролей с доступом к кланам.",  # noqa: RUF001
+    description="Обновить список ролей с доступом к кланам.",
 )
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
@@ -129,6 +129,7 @@ async def update_clans_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildClansConfig,
+        _create=True,
     ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.clans_access_roles_ids,

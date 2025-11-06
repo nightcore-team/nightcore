@@ -26,7 +26,7 @@ class NoConfigFoundEmbed(Embed):
 class NoOptionsSuppliedEmbed(Embed):
     def __init__(self, footer_text: str, footer_icon_url: str):
         super().__init__(
-            title="Не предоставлены параметры",  # noqa: RUF001
+            title="Не предоставлены параметры",
             description="Для этой команды не было предоставлено никаких параметров.",  # noqa: E501
             color=Color.yellow(),
         )
