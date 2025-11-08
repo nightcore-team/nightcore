@@ -360,3 +360,15 @@ def compare_date_range(
         )
 
     return from_dt, to_dt  # type: ignore
+
+
+"""
+parse_date_utc("2025-01-15")
+parse_date_utc("15/01/2025")
+parse_date_utc("15 January 2025")
+parse_date_utc("Jan 15, 2025")
+parse_date_utc("15-01-25")
+parse_date_utc("2025 01 15")
+parse_date_utc("15.01.2025")
+
+"""

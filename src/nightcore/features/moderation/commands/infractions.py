@@ -97,13 +97,17 @@ class Infractions(Cog):
                 ephemeral=True,
             )
 
-        # get user infractions from db
         pages = build_infraction_pages(
             infractions, guild.id, notify_channel_id, is_v2=True
         )
 
         view = InfractionsViewV2(
-            interaction.user.id, pages, user, self.bot, last_7_days_infractions
+            interaction.user.id,
+            pages,
+            user,
+            self.bot,
+            len(infractions),
+            last_7_days_infractions,
         )
 
         await interaction.response.defer(thinking=True, ephemeral=ephemeral)

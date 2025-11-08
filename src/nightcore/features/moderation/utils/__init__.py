@@ -8,14 +8,10 @@ from .punish_notify import (
 )
 from .punishments import (
     build_infraction_pages,
-    build_moderators_stats,
-    build_moderstats_pages,
 )
 
 __all__ = (
     "build_infraction_pages",
-    "build_moderators_stats",
-    "build_moderstats_pages",
     "find_rule_by_index",
     "fraction_roles_autocomplete",
     "send_moderation_log",

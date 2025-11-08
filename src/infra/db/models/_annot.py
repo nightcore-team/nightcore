@@ -1,5 +1,15 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from src.infra.db.models import (
+        ChangeStat,
+        Punish,
+        RoleRequestState,
+        TicketState,
+    )
 
 
 class OrgRoleWithoutTagAnnot(TypedDict):
@@ -8,22 +18,31 @@ class OrgRoleWithoutTagAnnot(TypedDict):
 
 
 @dataclass
+class ModerationInfractionsDataAnnot:
+    nickname: str
+    punishments: list[Punish]
+    tickets: list[TicketState]
+    role_requests: list[RoleRequestState]
+    changestats: list[ChangeStat]
+
+
+@dataclass
 class Rules:
-    chapters: list["Chapter"]
+    chapters: list[Chapter]
 
 
 @dataclass
 class Chapter:
     number: int
     title: str
-    rules: list["Rule"]
+    rules: list[Rule]
 
 
 @dataclass
 class Rule:
     number: str
     text: str
-    subrules: list["Rule"]
+    subrules: list[Rule]
 
 
 class CasesAnnot(TypedDict):

@@ -66,7 +66,7 @@ class ChangeStat(Cog):
         interaction: Interaction,
         moderator: discord.Member,
         type: app_commands.Choice[str],
-        amount: int,
+        amount: float,
         reason: str,
     ):
         """Change moderator's stat."""
@@ -85,7 +85,7 @@ class ChangeStat(Cog):
             )
 
         try:
-            amount = int(amount)
+            amount = float(amount)
         except ValueError as e:
             logger.error("[command] - Invalid amount: %s", e)
             return await interaction.response.send_message(

@@ -37,7 +37,11 @@ from src.infra.db.models import (
     TicketState,
     User,
 )
-from src.infra.db.models._annot import OrgRoleWithoutTagAnnot, Rules
+from src.infra.db.models._annot import (
+    ModerationInfractionsDataAnnot,
+    OrgRoleWithoutTagAnnot,
+    Rules,
+)
 from src.infra.db.models._enums import (
     ChannelType,
     ClanMemberRoleEnum,
@@ -45,6 +49,12 @@ from src.infra.db.models._enums import (
     NotifyStateEnum,
     RoleRequestStateEnum,
     TicketStateEnum,
+)
+from src.infra.db.utils import (
+    build_base_filters as _build_base_moderstats_filters,
+)
+from src.infra.db.utils import (
+    group_infractions_by_moderator,
 )
 
 GuildT = TypeVar(
@@ -566,100 +576,108 @@ async def get_user_infractions(
     return result.all()
 
 
-async def get_user_infractions_for_moderators(
+async def get_moderation_stats(
     session: AsyncSession,
     *,
     guild_id: int,
     moderators: dict[int, str],
     from_date: datetime,
     to_date: datetime,
-) -> dict[int, dict[str, Any]]:
+) -> dict[int, ModerationInfractionsDataAnnot]:
     """Return infractions grouped by moderator_id."""
+
     if not moderators:
         return {}
 
+    moderator_ids = list(moderators.keys())
+
     # ---- Punishments ----
-    stmt_punish = (
+    punishments_result = await session.scalars(
         select(Punish)
         .where(
-            Punish.guild_id == guild_id,
-            Punish.moderator_id.in_(moderators.keys()),
-            Punish.time_now >= from_date,
-            Punish.time_now <= to_date,
+            *_build_base_moderstats_filters(
+                Punish, guild_id, moderator_ids, from_date, to_date
+            )
         )
-        .order_by(Punish.moderator_id.asc(), Punish.time_now.asc())
+        .order_by(Punish.moderator_id.asc())
     )
-    punishments = (await session.scalars(stmt_punish)).all()
+    punishments = punishments_result.all()
 
-    # ---- Closed Tickets ----
-    stmt_tickets = (
+    # ---- Tickets ----
+    tickets_result = await session.scalars(
         select(TicketState)
         .where(
-            TicketState.guild_id == guild_id,
-            TicketState.moderator_id.in_(moderators.keys()),
-            TicketState.updated_at >= from_date,
-            TicketState.updated_at <= to_date,
+            *_build_base_moderstats_filters(
+                TicketState,
+                guild_id,
+                moderator_ids,
+                from_date,
+                to_date,
+                "updated_at",
+            ),
             TicketState.state == TicketStateEnum.CLOSED,
         )
-        .order_by(TicketState.moderator_id.asc(), TicketState.updated_at.asc())
+        .order_by(TicketState.moderator_id.asc())
     )
-    tickets = (await session.scalars(stmt_tickets)).all()
+    tickets = tickets_result.all()
 
-    # ---- Approved Role Requests ----
-    stmt_role_requests = (
+    # ---- Role Requests ----
+    role_requests_result = await session.scalars(
         select(RoleRequestState)
         .where(
-            RoleRequestState.guild_id == guild_id,
-            RoleRequestState.moderator_id.in_(moderators.keys()),
-            RoleRequestState.updated_at >= from_date,
-            RoleRequestState.updated_at <= to_date,
+            *_build_base_moderstats_filters(
+                RoleRequestState,
+                guild_id,
+                moderator_ids,
+                from_date,
+                to_date,
+                "updated_at",
+            ),
             RoleRequestState.state == RoleRequestStateEnum.APPROVED,
         )
-        .order_by(
-            RoleRequestState.moderator_id.asc(),
-            RoleRequestState.updated_at.asc(),
-        )
+        .order_by(RoleRequestState.moderator_id.asc())
     )
-    role_requests = (await session.scalars(stmt_role_requests)).all()
+    role_requests = role_requests_result.all()
 
-    # ---- ChangeStats ----
-    stmt_changestats = (
+    # ---- Change Stats ----
+    changestats_result = await session.scalars(
         select(ChangeStat)
         .where(
-            ChangeStat.guild_id == guild_id,
-            ChangeStat.moderator_id.in_(moderators.keys()),
-            ChangeStat.time_now >= from_date,
-            ChangeStat.time_now <= to_date,
+            *_build_base_moderstats_filters(
+                ChangeStat, guild_id, moderator_ids, from_date, to_date
+            )
         )
-        .order_by(ChangeStat.moderator_id.asc(), ChangeStat.time_now.asc())
+        .order_by(ChangeStat.moderator_id.asc())
     )
-    changestats = (await session.scalars(stmt_changestats)).all()
+    changestats = changestats_result.all()
 
-    # ---- Grouping by moderator ----
-    grouped: dict[int, dict[str, Any]] = {
-        mid: {
-            "punishments": [],
-            "tickets": [],
-            "role_requests": [],
-            "changestats": [],
-            "nickname": nick,
-        }
-        for mid, nick in moderators.items()
-    }
+    return group_infractions_by_moderator(
+        moderators, punishments, tickets, role_requests, changestats
+    )
 
-    for p in punishments:
-        grouped[p.moderator_id]["punishments"].append(p)
 
-    for t in tickets:
-        grouped[t.moderator_id]["tickets"].append(t)
+async def get_moderstats_dict(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+) -> dict[str, float]:
+    """Get a dictionary of moderator stats fields (ending with _score) for a guild."""  # noqa: E501
 
-    for rr in role_requests:
-        grouped[rr.moderator_id]["role_requests"].append(rr)
+    stmt = select(GuildModerationConfig).where(
+        GuildModerationConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+    config = result.scalar_one_or_none()
+    if not config:
+        return {}
 
-    for cs in changestats:
-        grouped[cs.moderator_id]["changestats"].append(cs)
+    score_fields = [
+        column.key
+        for column in GuildModerationConfig.__table__.columns
+        if column.key.endswith("_score")
+    ]
 
-    return grouped
+    return {field: getattr(config, field) for field in score_fields}
 
 
 async def count_user_infractions_last_7_days(

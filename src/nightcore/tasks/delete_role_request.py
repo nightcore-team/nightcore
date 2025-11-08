@@ -1,5 +1,6 @@
 """Task cog for unpunishing users."""
 
+import asyncio
 import logging
 
 from discord.ext import tasks
@@ -110,12 +111,15 @@ class DeleteRoleRequestTask(Cog):
 
                 try:
                     updated_view = await rr_message.edit(view=view)
-                    await updated_view.reply(
-                        view=RoleRequestStateView(
-                            self.bot,
-                            moderator_id=rr.moderator_id,
-                            user_id=rr.author_id,
-                            state=RoleRequestStateEnum.EXPIRED,
+
+                    asyncio.create_task(  # noqa: RUF006
+                        updated_view.reply(
+                            view=RoleRequestStateView(
+                                self.bot,
+                                moderator_id=rr.moderator_id,
+                                user_id=rr.author_id,
+                                state=RoleRequestStateEnum.EXPIRED,
+                            )
                         )
                     )
                 except Exception as e:

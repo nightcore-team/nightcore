@@ -1,5 +1,6 @@
 """Task cog for unpunishing users."""
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 
@@ -139,11 +140,13 @@ class ExpiredNotifyTask(Cog):
                     )
 
                 try:
-                    await moderation_notifications_channel.send(  # type: ignore
-                        view=NotifyTimedOutViewV2(
-                            self.bot,
-                            notify.moderator_id,
-                            notification_message.jump_url,
+                    asyncio.create_task(  # noqa: RUF006
+                        moderation_notifications_channel.send(  # type: ignore
+                            view=NotifyTimedOutViewV2(
+                                self.bot,
+                                notify.moderator_id,
+                                notification_message.jump_url,
+                            )
                         )
                     )
                 except Exception as e:

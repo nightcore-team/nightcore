@@ -9,11 +9,8 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
-from src.infra.db.operations import get_user_infractions_for_moderators
-
-if TYPE_CHECKING:
-    from src.nightcore.bot import Nightcore
-
+from src.infra.db.models._annot import ModerationInfractionsDataAnnot
+from src.infra.db.operations import get_moderation_stats, get_moderstats_dict
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -21,12 +18,14 @@ from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
-from src.nightcore.features.moderation.components.view import (
-    GetModerationStatsView,
+from src.nightcore.features.moderation.components.v2.view.getmoderstats import (  # noqa: E501
+    MultiplyGetModerStatsViewV2,
+    SingleGetModerStatsViewV2,
 )
-from src.nightcore.features.moderation.utils import (
-    build_moderators_stats,
+from src.nightcore.features.moderation.utils.getmoderstats import (
+    ModerationScores,
     build_moderstats_pages,
+    calculate_all_moderators_stats,
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
@@ -36,6 +35,9 @@ from src.nightcore.utils import (
     has_any_role_from_sequence,
 )
 from src.nightcore.utils.time_utils import compare_date_range
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
@@ -64,12 +66,11 @@ class GetModerationStats(Cog):
     ):
         """Get moderation stats for a user."""
         guild = cast(Guild, interaction.guild)
+        author = cast(discord.Member, interaction.user)
 
-        # Ensure we have a guild Member object
         member = None
         if user:
             member = await ensure_member_exists(guild, user.id)
-
             if not member:
                 return await interaction.response.send_message(
                     embed=EntityNotFoundEmbed(
@@ -80,7 +81,6 @@ class GetModerationStats(Cog):
                     ephemeral=True,
                 )
 
-        # Parse dates
         try:
             from_dt, to_dt = compare_date_range(from_date, to_date)
         except ValueError as e:
@@ -93,68 +93,37 @@ class GetModerationStats(Cog):
                 ephemeral=True,
             )
 
+        outcome = ""
+        moderation_access_roles: list[int] = []
+        trackable_moderation_role: int = 0
+        grouped: dict[int, ModerationInfractionsDataAnnot] = {}
+        scores: dict[str, float] = {}
+
         async with specified_guild_config(
             self.bot,
             guild.id,
             GuildModerationConfig,
-            _create=False,
         ) as (guild_config, session):
-            if not (
-                moderation_access_roles
-                := guild_config.moderation_access_roles_ids
-            ):
-                raise FieldNotConfiguredError("доступ к модерации")
+            moderation_access_roles = guild_config.moderation_access_roles_ids  # type: ignore
+            trackable_moderation_role = (
+                guild_config.trackable_moderation_role_id
+            )  # type: ignore
 
-            if not (
-                trackable_moderation_role
-                := guild_config.trackable_moderation_role_id
-            ):
-                raise FieldNotConfiguredError("отслеживаемая роль модерации")
-
-            moderators: list[discord.Member] = []
-            if member:
-                is_member_moderator = has_any_role(
-                    member, trackable_moderation_role
-                )
-                if is_member_moderator:
-                    moderators.append(member)
-                else:
-                    return await interaction.response.send_message(
-                        embed=ValidationErrorEmbed(
-                            "Этот пользователь не является модератором для получения статистики.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
+            if not moderation_access_roles:
+                outcome = "no_moderation_access_roles"
+            elif not trackable_moderation_role:
+                outcome = "no_trackable_moderation_role"
             else:
-                moderators = await get_all_members_with_specified_role(  # type: ignore
-                    guild, trackable_moderation_role
-                )
+                scores = await get_moderstats_dict(session, guild_id=guild.id)
 
-            if not moderators:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка получения статистики.",
-                        "Не удалось найти модераторов с отслеживаемой ролью.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+        if outcome == "no_moderation_access_roles":
+            raise FieldNotConfiguredError("доступ к модерации")
 
-            infractions = await get_user_infractions_for_moderators(
-                session,
-                guild_id=guild.id,
-                moderators={m.id: m.nick for m in moderators},  # type: ignore
-                from_date=from_dt,
-                to_date=to_dt,
-            )
-
-            total_messages = None
+        if outcome == "no_trackable_moderation_role":
+            raise FieldNotConfiguredError("отслеживаемая роль модерации")
 
         has_moder_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), moderation_access_roles
+            author, moderation_access_roles
         )
         if not has_moder_role:
             return await interaction.response.send_message(
@@ -165,64 +134,90 @@ class GetModerationStats(Cog):
                 ephemeral=True,
             )
 
+        moderators: list[discord.Member] = []
+        if member:
+            is_member_moderator = has_any_role(
+                member, trackable_moderation_role
+            )
+            if is_member_moderator:
+                moderators.append(member)
+            else:
+                return await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        "Этот пользователь не является модератором для получения статистики.",  # noqa: E501
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+        else:
+            moderators = await get_all_members_with_specified_role(  # type: ignore
+                guild, trackable_moderation_role
+            )
+
+        if not moderators:
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка получения статистики.",
+                    "Не удалось найти модераторов с отслеживаемой ролью.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
         await interaction.response.defer(ephemeral=ephemeral)
 
-        stats = build_moderators_stats(
-            infractions=infractions,  # type: ignore
-            mute_score=guild_config.mute_score or 0,
-            ban_score=guild_config.ban_score or 0,
-            kick_score=guild_config.kick_score or 0,
-            vmute_score=guild_config.vmute_score or 0,
-            mpmute_score=guild_config.mpmute_score or 0,
-            ticketban_score=guild_config.ticket_ban_score or 0,
-            tickets_score=guild_config.ticket_score or 0,
-            approved_role_requests_score=(
-                guild_config.role_request_score or 0
-            ),
-            changed_roles_score=guild_config.role_remove_score or 0,
-            message_score=guild_config.message_score or 0,
-            total_messages=total_messages or 0,
-        )
+        async with self.bot.uow.start() as session:
+            grouped = await get_moderation_stats(
+                session,
+                guild_id=guild.id,
+                moderators={m.id: m.nick for m in moderators},  # type: ignore
+                from_date=from_dt,
+                to_date=to_dt,
+            )
 
-        pages = build_moderstats_pages(stats)
+        mod_scores = ModerationScores.from_dict(scores)
+        stats = calculate_all_moderators_stats(grouped)
 
-        embed = discord.Embed(
-            title=f"Статистика модерации с {from_dt.date()} по {to_dt.date()}",
-            color=discord.Color.blurple(),
-        )
+        view: SingleGetModerStatsViewV2 | MultiplyGetModerStatsViewV2
 
-        for p in pages[0]:
-            for v in p.values():
-                embed.add_field(
-                    name=v.get("nickname"),
-                    value=v.get("stats"),
-                    inline=True,
+        match len(stats):
+            case 0:
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка получения статистики.",
+                        "Не удалось найти статистику модерации за указанный период.",  # noqa: E501
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            case 1:
+                view = SingleGetModerStatsViewV2(
+                    self.bot,
+                    from_dt=from_dt,
+                    to_dt=to_dt,
+                    moderator=moderators[0],
+                    mod_score=mod_scores,
+                    stats=stats[moderators[0].id],
                 )
 
-        embed.set_footer(
-            text=f"Page 1 / {len(pages)}",
-            icon_url=self.bot.user.display_avatar.url,  # type: ignore
-        )
+            case _:
+                pages = build_moderstats_pages(
+                    stats, mod_scores, moderators_per_page=3
+                )
 
-        if len(pages) == 1:
-            return await interaction.followup.send(embed=embed)
+                view = MultiplyGetModerStatsViewV2(
+                    self.bot,
+                    author_id=interaction.user.id,
+                    pages=pages,
+                    scores=mod_scores,
+                    from_dt=from_dt,
+                    to_dt=to_dt,
+                )
 
-        view = GetModerationStatsView(
-            interaction.user.id,
-            pages=pages,
-            from_date=from_dt,
-            to_date=to_dt,
-            bot=self.bot,
-        )
-
-        await interaction.followup.send(embed=embed, view=view)
-
-        logger.info(
-            "[command] - invoked user=%s guild=%s target=%s",
-            interaction.user.id,
-            guild.id,
-            member.id if member else "all",
-        )
+        await interaction.followup.send(view=view)
 
 
 async def setup(bot: "Nightcore"):

@@ -13,7 +13,7 @@ from src.infra.db.models.base import Base
 class ChangeStat(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    amount: Mapped[int] = mapped_column(nullable=False)
+    amount: Mapped[float] = mapped_column(nullable=False)
     reason: Mapped[str] = mapped_column(String, nullable=False)
     type: Mapped[ChangeStatTypeEnum] = mapped_column(
         Enum(

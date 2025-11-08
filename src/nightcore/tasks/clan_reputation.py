@@ -1,5 +1,6 @@
 """Task cog for unpunishing users."""
 
+import asyncio
 import logging
 
 from discord.ext import tasks
@@ -79,7 +80,7 @@ class ClansPayDayTask(Cog):
                     continue
 
                 try:
-                    await channel.send(view=view)  # type: ignore
+                    asyncio.create_task(channel.send(view=view))  # type: ignore  # noqa: RUF006
                 except Exception as e:
                     logger.error(
                         "[task] - Error sending clan payday message to channel %s in guild %s: %s",  # noqa: E501

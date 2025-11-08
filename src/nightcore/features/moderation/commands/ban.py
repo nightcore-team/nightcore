@@ -314,7 +314,6 @@ async def _ban_request_callback(
         client,
         guild.id,
         GuildModerationConfig,
-        _create=False,
     ) as (guild_config, _):
         if not (
             moderation_access_roles := guild_config.moderation_access_roles_ids

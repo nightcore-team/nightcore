@@ -1,40 +1,42 @@
-"""View for paginating infractions."""
+"""Get single moderator stats view v2 component."""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Color, User
-from discord.interactions import Interaction
+from discord import ButtonStyle, Color, Interaction
 from discord.ui import (
     ActionRow,
     Button,
     Container,
     Item,
     LayoutView,
-    Section,
     Separator,
     TextDisplay,
-    Thumbnail,
     button,
 )
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-
+    from src.nightcore.features.moderation.utils.getmoderstats import (
+        ModerationScores,
+    )
+    from src.nightcore.features.moderation.utils.getmoderstats._types import (
+        ModeratorStats,
+    )
+from src.nightcore.features.moderation.utils.getmoderstats.pages import (
+    format_moderstats_page_components,
+)
 from src.nightcore.utils import discord_ts
 
 
-class PaginationButtons(ActionRow["InfractionsViewV2"]):
+class GetModerStatsPaginationButtons(ActionRow["MultiplyGetModerStatsViewV2"]):
     def __init__(self):
         super().__init__()
 
-    async def interaction_check(
-        self,
-        interaction: Interaction,
-    ) -> bool:
-        """Ensure that only the author can interact with the view."""
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        """Ensure only the author can interact."""
         if interaction.user.id != self.view.author_id:  # type: ignore
             await interaction.response.send_message(
                 "Вы не можете управлять этой пагинацией.", ephemeral=True
@@ -45,57 +47,60 @@ class PaginationButtons(ActionRow["InfractionsViewV2"]):
     @button(
         style=ButtonStyle.secondary,
         emoji="<:41036arrowforwardios1:1409851002256887808>",
-        custom_id="infractions_prev",
+        custom_id="getmoderstats:prev",
     )
     async def previous(
-        self, interaction: Interaction, button: Button[InfractionsViewV2]
+        self,
+        interaction: Interaction,
+        button: Button[MultiplyGetModerStatsViewV2],
     ):
         """Go to the previous page."""
-        view = self.view  # type: ignore
-        if view.current_page > 0:  # type: ignore
-            view.current_page -= 1  # type: ignore
+        view = cast(MultiplyGetModerStatsViewV2, self.view)
+        if view.current_page > 0:
+            view.current_page -= 1
         await interaction.response.edit_message(
-            view=view.make_component(),  # type: ignore
+            view=view.make_component(),
         )
 
     @button(
         style=ButtonStyle.secondary,
         emoji="<:41036arrowforwardios:1409850992593338460>",
-        custom_id="infractions_next",
+        custom_id="getmoderstats:next",
     )
     async def next(
-        self, interaction: Interaction, button: Button[InfractionsViewV2]
+        self,
+        interaction: Interaction,
+        button: Button[MultiplyGetModerStatsViewV2],
     ):
         """Go to the next page."""
-        view = self.view  # type: ignore
-        if view.current_page < len(view.pages) - 1:  # type: ignore
-            view.current_page += 1  # type: ignore
+        view = cast(MultiplyGetModerStatsViewV2, self.view)
+        if view.current_page < len(view.pages) - 1:
+            view.current_page += 1
         await interaction.response.edit_message(
-            view=view.make_component(),  # type: ignore
+            view=view.make_component(),
         )
 
 
-class InfractionsViewV2(LayoutView):
+class MultiplyGetModerStatsViewV2(LayoutView):
     def __init__(
         self,
-        author_id: int,
-        pages: list[str],
-        user: User,
         bot: Nightcore,
-        total_punishments: int,
-        count_last_7_days_infractions: int,
-        timeout: int = 180,
+        author_id: int,
+        pages: list[list[tuple[int, ModeratorStats, float]]],
+        scores: ModerationScores,
+        from_dt: datetime,
+        to_dt: datetime,
     ):
-        super().__init__(timeout=timeout)
+        super().__init__(timeout=180)
         self.author_id = author_id
-        self.pages = pages
-        self.current_page = 0
-        self.user = user
         self.bot = bot
-        self.total_punishments = total_punishments
-        self.count_last_7_days_infractions = count_last_7_days_infractions
+        self.pages = pages
+        self.scores = scores
+        self.from_dt = from_dt
+        self.to_dt = to_dt
+        self.current_page = 0
 
-        self.pagination: PaginationButtons | None = None
+        self.pagination: GetModerStatsPaginationButtons | None = None
         self.header_text: TextDisplay[Self] | None = None
         self.main_text: TextDisplay[Self] | None = None
         self.footer_text: TextDisplay[Self] | None = None
@@ -103,43 +108,46 @@ class InfractionsViewV2(LayoutView):
         self.make_component()
 
     def _update_buttons(self):
+        """Update button states based on current page."""
         if not self.pagination:
             return
+
         for child in self.pagination.children:
             if isinstance(child, Button):
-                if child.custom_id == "infractions_prev":
+                if child.custom_id == "getmoderstats:prev":
                     child.disabled = self.current_page == 0
-                elif child.custom_id == "infractions_next":
+                elif child.custom_id == "getmoderstats:next":
                     child.disabled = self.current_page == len(self.pages) - 1
 
     def make_component(self) -> Self:
         """Create the layout view component."""
 
-        # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.red())
-
-        # Header
+        container = Container[Self](accent_color=Color.from_str("#9300d2"))
 
         container.add_item(
-            Section[Self](
-                TextDisplay[Self](
-                    f"## <:10447banhammer:1436491299673866264> Список нарушений\n"  # noqa: E501
-                    f"**Пользователь:** {self.user.mention} `({self.user.id})`\n"  # noqa: E501
-                    f"**Общее количество нарушений:** `{self.total_punishments}`\n"  # noqa: E501
-                    f"> **Количество нарушений за последние 7 дней:** `{self.count_last_7_days_infractions}`"  # noqa: E501
-                ),
-                accessory=Thumbnail(self.user.display_avatar.url),
+            TextDisplay[Self](
+                f"## <:96965manager:1436470131034427423>  Статистика модерации\n\n"  # noqa: E501
+                f"**Период:** {discord_ts(self.from_dt)} - {discord_ts(self.to_dt)}\n"  # noqa: E501
+                f"> **Всего модераторов:** {sum(len(page) for page in self.pages)}"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
 
-        container.add_item(TextDisplay[Self](self.pages[self.current_page]))
-        container.add_item(Separator[Self]())
+        moderator_components = format_moderstats_page_components(
+            self.pages[self.current_page],
+            self.current_page + 1,
+        )
+
+        for component in moderator_components:
+            container.add_item(component)
 
         if len(self.pages) > 1:
-            self.pagination = PaginationButtons()
+            container.add_item(Separator[Self]())
+
+        if len(self.pages) > 1:
+            self.pagination = GetModerStatsPaginationButtons()
             container.add_item(self.pagination)
             container.add_item(Separator[Self]())
         else:
@@ -150,14 +158,13 @@ class InfractionsViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Powered by {self.bot.user.name} at {discord_ts(now)}"  # type: ignore
             )
         )
 
         self.add_item(container)
-
-        # update buttons after adding items
         self._update_buttons()
+
         return self
 
     async def on_timeout(self):
