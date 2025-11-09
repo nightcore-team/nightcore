@@ -125,13 +125,7 @@ class UpdateChannelHandler(Cog):
         new_topic = getattr(new, "topic", None)  # type: ignore
 
         if old_topic != new_topic:
-            if old_topic is None and new_topic is None:
-                return
-            elif old_topic is None and new_topic is not None:
-                value = f"— → {new_topic}"
-            elif old_topic is not None and new_topic is None:
-                value = f"{old_topic} → —"
-            else:
+            if new_topic or new_topic:
                 value = f"{old_topic} → {new_topic}"
         else:
             return

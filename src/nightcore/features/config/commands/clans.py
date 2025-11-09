@@ -80,6 +80,7 @@ async def setup(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildClansConfig,
+        _create=True,
     ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore
 

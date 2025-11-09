@@ -15,6 +15,7 @@ from src.nightcore.features.proposals.utils import (
     strip_discord_markdown_to_plain,
 )
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils.content import has_url_in_content
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,12 @@ class CreateProposalEvent(Cog):
         await message.delete()
 
         if not message.content and message.attachments:
+            return
+
+        if message.stickers:
+            return
+
+        if has_url_in_content(message.content):
             return
 
         async with specified_guild_config(

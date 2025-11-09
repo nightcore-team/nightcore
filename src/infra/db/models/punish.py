@@ -9,7 +9,6 @@ from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
 
 
-# TODO: add original duration for infractions command
 class Punish(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)

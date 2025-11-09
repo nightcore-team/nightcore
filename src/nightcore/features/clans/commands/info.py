@@ -31,7 +31,19 @@ async def info(interaction: Interaction["Nightcore"], clan: str):
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
-    clan_id = int(clan)
+    try:
+        clan_id = int(clan)
+    except ValueError:
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка получения информации о клане",
+                "Не удалось найти данный клан в базе данных.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
 
     async with bot.uow.start() as session:
         dbclan = await get_clan_by_id(

@@ -1,29 +1,26 @@
-"""Send a view with FAQ pages command."""
+"""Handlers for FAQ global button interactions."""
+
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, app_commands
+from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.models import MainGuildConfig
 from src.nightcore.components.embed import ErrorEmbed
-from src.nightcore.features.faq._groups import faq as faq_group
-from src.nightcore.features.faq.components.v2 import FAQGlobalViewV2
+from src.nightcore.features.faq.utils.pages import build_faq_page_components
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+    from ..faq import FAQViewV2
 
-@faq_group.command(
-    name="send",
-    description="Отправить представление с страницами FAQ",
-)
-@app_commands.checks.has_permissions(administrator=True)
-async def send_faq_pages(
-    interaction: Interaction["Nightcore"],
-    text: str | None = None,
-    image_url: str | None = None,
+
+async def handle_faq_global_button_callback(
+    interaction: Interaction[Nightcore],
+    view_class: type[FAQViewV2],
 ) -> None:
     """Send a view with FAQ pages."""
 
@@ -57,6 +54,12 @@ async def send_faq_pages(
         return
 
     if outcome == "success":
-        view = FAQGlobalViewV2(bot, text, image_url)
+        pages = build_faq_page_components(pages=faq_pages)
 
-        await interaction.response.send_message(view=view)
+        faq_view = view_class(
+            bot=bot,
+            pages=pages,
+            _build=True,
+        )
+
+        await interaction.response.send_message(view=faq_view, ephemeral=True)

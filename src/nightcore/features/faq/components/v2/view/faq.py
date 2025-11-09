@@ -5,49 +5,145 @@ Used for displaying FAQ information in guilds.
 Handles FAQ page button interactions.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Color, Guild, MediaGalleryItem
+from discord import ButtonStyle, Color, MediaGalleryItem
 from discord.interactions import Interaction
 from discord.ui import (
+    ActionRow,
     Button,
     Container,
+    Item,
     LayoutView,
     MediaGallery,
-    Section,
     Separator,
     TextDisplay,
+    button,
 )
 
-from src.infra.db.models import MainGuildConfig
 from src.infra.db.models._annot import FAQPageAnnot
-from src.nightcore.components.embed import ErrorEmbed
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 
+class FAQGlobalViewV2(LayoutView):
+    def __init__(
+        self, bot: Nightcore, text: str | None, image_url: str | None
+    ) -> None:
+        super().__init__(timeout=None)
+
+        container = Container[Self](accent_color=Color.blurple())
+
+        container.add_item(
+            TextDisplay[Self](
+                "## <:heartt:1434173700793434223> Часто задаваемые вопросы (FAQ)"  # noqa: E501
+            )
+        )
+        container.add_item(Separator[Self]())
+
+        if text:
+            container.add_item(TextDisplay[Self](text))
+            container.add_item(Separator[Self]())
+
+        if image_url:
+            container.add_item(MediaGallery[Self](MediaGalleryItem(image_url)))
+            container.add_item(Separator[Self]())
+
+        container.add_item(
+            ActionRow[Self](
+                Button[Self](
+                    label="Перейти к FAQ",
+                    style=ButtonStyle.secondary,
+                    emoji="<:heartt:1434173700793434223>",
+                    custom_id="faq:open_faq",
+                )
+            )
+        )
+        container.add_item(Separator[Self]())
+
+        now = datetime.now(timezone.utc)
+        container.add_item(
+            TextDisplay[Self](
+                f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore
+            )
+        )
+
+        self.add_item(container)
+
+
+class FAQViewPaginationButtons(ActionRow["FAQViewV2"]):
+    def __init__(self):
+        super().__init__()
+
+    @button(
+        style=ButtonStyle.secondary,
+        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        custom_id="faq:prev",
+    )
+    async def previous(
+        self,
+        interaction: Interaction[Nightcore],
+        button: Button[FAQViewV2],
+    ):
+        """Go to the previous page."""
+        view = cast(FAQViewV2, self.view)
+        if view.current_page > 0:
+            view.current_page -= 1
+        await interaction.response.edit_message(
+            view=view.make_component(),
+        )
+
+    @button(
+        style=ButtonStyle.secondary,
+        emoji="<:41036arrowforwardios:1409850992593338460>",
+        custom_id="faq:next",
+    )
+    async def next(
+        self,
+        interaction: Interaction[Nightcore],
+        button: Button[FAQViewV2],
+    ):
+        """Go to the next page."""
+        view = cast(FAQViewV2, self.view)
+        if view.current_page < len(view.pages) - 1:  # type: ignore
+            view.current_page += 1
+        await interaction.response.edit_message(
+            view=view.make_component(),
+        )
+
+
 class FAQViewV2(LayoutView):
     def __init__(
         self,
-        bot: "Nightcore",
-        text: str | None = None,
-        image_url: str | None = None,
-        faq_pages: list[FAQPageAnnot] | None = None,
+        bot: Nightcore,
+        pages: list[list[Item[LayoutView]]] | None = None,
         _build: bool = False,
     ) -> None:
         super().__init__(timeout=None)
 
         self.bot = bot
-        self.faq_pages = faq_pages
-        self.text = text
-        self.image_url = image_url
+        self.pages = pages
+        self.current_page = 0
+
+        self.actions: FAQViewPaginationButtons | None
 
         if _build:
             self.make_component()
+
+    def _update_buttons(self):
+        if not self.actions:
+            return
+        for child in self.actions.children:
+            if isinstance(child, Button):
+                if child.custom_id == "faq:prev":
+                    child.disabled = self.current_page == 0
+                elif child.custom_id == "faq:next":
+                    child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
 
     def make_component(self) -> Self:
         """Build the FAQ view component."""
@@ -62,41 +158,21 @@ class FAQViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        # introductory text
-        if self.text:
-            container.add_item(TextDisplay[Self](f"{self.text}"))
-            container.add_item(Separator())
-
         # sections for each FAQ page
-        if self.faq_pages and len(self.faq_pages) > 0:
-            for page in self.faq_pages:
-                faqbutton = Button[Self](
-                    label="Подробнее",
-                    style=ButtonStyle.secondary,
-                    custom_id=f"faq_page:{page['title']}",
-                    row=2,
-                )
-                faqbutton.callback = self.button_callback
-                container.add_item(
-                    TextDisplay[Self](f"### {page['title']}"),
-                )
-                container.add_item(
-                    Section[Self](
-                        TextDisplay[Self](f"> {page['description']}"),
-                        accessory=faqbutton,
-                    )
-                )
-                container.add_item(Separator[Self]())
+        if self.pages and len(self.pages) > 0:
+            match len(self.pages):
+                case 1:
+                    for item in self.pages[0]:
+                        container.add_item(item)
+                case _:
+                    for item in self.pages[self.current_page]:
+                        container.add_item(item)
+                    self.actions = FAQViewPaginationButtons()
+                    container.add_item(self.actions)
+                    container.add_item(Separator[Self]())
         else:
             container.add_item(
                 TextDisplay[Self]("В FAQ этого сервера нет страниц.")
-            )
-            container.add_item(Separator[Self]())
-
-        # media gallery for image
-        if self.image_url:
-            container.add_item(
-                MediaGallery[Self](MediaGalleryItem(self.image_url))
             )
             container.add_item(Separator[Self]())
 
@@ -108,96 +184,13 @@ class FAQViewV2(LayoutView):
         )
 
         self.add_item(container)
+        self._update_buttons()
 
         return self
 
-    async def button_callback(self, interaction: Interaction["Nightcore"]):
-        """Handle FAQ page button clicks and return page content."""
-
-        page_title = interaction.data["custom_id"].split("faq_page:")[1]  # type: ignore
-        guild = cast(Guild, interaction.guild)
-
-        faq_page: FAQPageAnnot | None = None
-        outcome = ""
-        async with specified_guild_config(
-            self.bot, guild.id, MainGuildConfig
-        ) as (guild_config, _):
-            faq_pages = guild_config.faq or []
-
-            for page in faq_pages:
-                if page["title"] == page_title:
-                    faq_page = page
-                    break
-            else:
-                outcome = "page_not_found"
-
-            if not outcome:
-                outcome = "success"
-
-        if outcome == "page_not_found":
-            await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка получения страницы FAQ",
-                    f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-            return
-
-        if outcome == "success" and faq_page:
-            await interaction.response.send_message(
-                view=FAQPageViewV2(self.bot, faq_page), ephemeral=True
-            )
-
-
-async def handle_faq_button_callback(
-    interaction: Interaction["Nightcore"], page_title: str
-) -> None:
-    """Handle FAQ page button clicks and return page content."""
-
-    bot = interaction.client
-    guild = cast(Guild, interaction.guild)
-
-    faq_page: FAQPageAnnot | None = None
-    outcome = ""
-    async with specified_guild_config(bot, guild.id, MainGuildConfig) as (
-        guild_config,
-        _,
-    ):
-        faq_pages = guild_config.faq or []
-
-        for page in faq_pages:
-            if page["title"] == page_title:
-                faq_page = page
-                break
-        else:
-            outcome = "page_not_found"
-
-        if not outcome:
-            outcome = "success"
-
-    if outcome == "page_not_found":
-        await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка получения страницы FAQ",
-                f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-        return
-
-    if outcome == "success" and faq_page:
-        await interaction.response.send_message(
-            view=FAQPageViewV2(bot, faq_page), ephemeral=True
-        )
-
 
 class FAQPageViewV2(LayoutView):
-    def __init__(self, bot: "Nightcore", page: FAQPageAnnot) -> None:
+    def __init__(self, bot: Nightcore, page: FAQPageAnnot) -> None:
         super().__init__(timeout=10)
 
         container = Container[Self](accent_color=Color.blurple())

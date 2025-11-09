@@ -1,3 +1,3 @@
-from .view import FAQViewV2
+from .view import FAQGlobalViewV2
 
-__all__ = ("FAQViewV2",)
+__all__ = ("FAQGlobalViewV2",)

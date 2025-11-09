@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import discord
 
 from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
     ErrorEmbed,
     SuccessMoveEmbed,
 )
@@ -45,35 +44,29 @@ class RemoveOrgRoleSelect(discord.ui.View):
         self.select = discord.ui.Select["RemoveOrgRoleSelect"](
             placeholder="Choose a role to remove",
             min_values=1,
-            max_values=1,
+            max_values=len(roles),
             options=options,
         )
         self.select.callback = self._select_callback  # type: ignore
         self.add_item(self.select)
 
     async def _select_callback(self, interaction: discord.Interaction):
-        role_id = int(self.select.values[0])
-        role = discord.utils.get(self.roles, id=role_id)
-        if role is None:
-            return await interaction.response.send_message(
-                embed=EntityNotFoundEmbed(
-                    "role",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+        roles = list(map(int, self.select.values))
+
+        roles = [role for role in self.member.roles if role.id in roles]
 
         try:
             await self.member.remove_roles(
-                role, reason="Organization role removal via /rr"
+                *roles,
+                reason="Снятие организационных ролей через /rr",
+                atomic=False,
             )
         except Exception as e:
             logger.exception("[command] - Failed to remove role: %s", e)
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Role Removal Failed",
-                    "Failed to remove role.",
+                    "Ошибка снятия ролей",
+                    "Не удалось снять указанные роли с пользователя.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -87,7 +80,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
                     category="role_remove",
                     moderator=interaction.user,  # type: ignore
                     user=self.member,
-                    role=role,
+                    role=roles[0],
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
@@ -108,7 +101,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         await interaction.response.edit_message(
             embed=SuccessMoveEmbed(
                 "Role Removed",
-                f"Role {role.mention} successfully removed from {self.member.mention}.",  # noqa: E501
+                f"Role {','.join(role.mention for role in roles)} successfully removed from {self.member.mention}.",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             ),

@@ -112,7 +112,11 @@ def parse_duration(text: str) -> int | None:
     Returns:
         Total seconds or None if invalid format
     """
+
     if not text:
+        return None
+
+    if len(text) > 5:
         return None
 
     text = text.strip().lower()

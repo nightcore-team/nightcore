@@ -18,7 +18,12 @@ from src.nightcore.features.battlepass.components.v2.view.info import (
     BattlepassInfoViewV2,
 )
 from src.nightcore.features.faq.components.v2.view.faq import (
+    FAQPageViewV2,
+    FAQViewV2,
+)
+from src.nightcore.features.faq.components.v2.view.handlers import (
     handle_faq_button_callback,
+    handle_faq_global_button_callback,
 )
 
 if TYPE_CHECKING:
@@ -41,7 +46,13 @@ async def setup(bot: "Nightcore") -> None:
                 case str() if custom_id.startswith("faq_page"):
                     await handle_faq_button_callback(
                         interaction=interaction,
+                        view=FAQPageViewV2,
                         page_title=custom_id.split(":")[1],
+                    )
+                case str() if custom_id.startswith("faq:open_faq"):
+                    await handle_faq_global_button_callback(
+                        interaction=interaction,
+                        view_class=FAQViewV2,
                     )
                 case str() if custom_id.startswith("battlepass"):
                     match custom_id:

@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
+import discord
 from discord import ButtonStyle, Guild, MediaGalleryItem
 from discord.components import (
     TextDisplay as TextDisplayOverride,
@@ -31,6 +32,7 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
+from src.nightcore.features.moderation.events.dto import RolesChangeEventData
 from src.nightcore.features.role_requests.components.modal.decline import (
     DeclineRoleRequestModal,
 )
@@ -204,11 +206,13 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         guild = cast(Guild, interaction.guild)
         view = cast("CheckRoleRequestView", self.view)
 
+        bot = interaction.client
+
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    bot.user.name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
                     "У меня нет прав для управления ролями.",
                 ),
                 ephemeral=True,
@@ -242,8 +246,8 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 embed=ErrorEmbed(
                     "Ошибка одобрения запроса",
                     "Пользователь не найден на сервере.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    bot.user.name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -256,8 +260,8 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 embed=ErrorEmbed(
                     "Ошибка одобрения запроса",
                     "Не удалось найти запрашиваемую роль на сервере.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    bot.user.name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -265,7 +269,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         outcome = ""
         nightcore_notifications_channel_id: int | None = None
 
-        async with view.bot.uow.start() as session:
+        async with bot.uow.start() as session:
             try:
                 last_rr = await get_latest_user_role_request(
                     session,
@@ -364,7 +368,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
 
             await interaction.followup.send(
                 view=RoleRequestStateView(
-                    bot=view.bot,
+                    bot=bot,
                     moderator_id=interaction.user.id,
                     user_id=cast(int, view.interaction_user_id),
                     role_id=cast(int, view.role_requested_id),
@@ -378,6 +382,25 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 user=member,
                 state=RoleRequestStateEnum.APPROVED,
             )
+
+            try:
+                bot.dispatch(
+                    "roles_change",
+                    data=RolesChangeEventData(
+                        category="role_approve",
+                        moderator=interaction.user,  # type: ignore
+                        user=member,
+                        role=role,
+                        created_at=discord.utils.utcnow(),
+                    ),
+                    _send_to_rr_channel=False,
+                )
+
+            except Exception as e:
+                logger.exception(
+                    "[event] - Failed to dispatch roles_change event: %s", e
+                )
+                return
 
             logger.info(
                 "Moderator %s approved role request from user %s in guild %s",
