@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, Member, User, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 @app_commands.autocomplete(color=all_colors_autocomplete)
 async def give_color(
     interaction: Interaction["Nightcore"],
-    user: Member,
+    user: User,
     color: str,
 ):
     """Give a color to user."""

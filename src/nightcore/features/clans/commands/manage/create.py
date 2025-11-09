@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 )
 async def create(
     interaction: Interaction["Nightcore"],
-    name: str,
+    name: app_commands.Range[str, 1, 100],
     leader: discord.Member,
     color: str,
 ):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypedDict
 
@@ -24,6 +25,16 @@ class ModerationInfractionsDataAnnot:
     tickets: list[TicketState]
     role_requests: list[RoleRequestState]
     changestats: list[ChangeStat]
+    total_messages: int = 0
+
+
+class ModerationStatsResultAnnot(TypedDict):
+    moderators: dict[int, str]
+    punishments: Sequence[Punish]
+    tickets: Sequence[TicketState]
+    role_requests: Sequence[RoleRequestState]
+    changestats: Sequence[ChangeStat]
+    messages: dict[int, int]
 
 
 @dataclass

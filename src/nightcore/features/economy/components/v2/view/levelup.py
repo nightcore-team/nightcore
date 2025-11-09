@@ -30,7 +30,7 @@ class LevelUpViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"### {user_id}, вы успешно повысили свой уровень до {new_level}!\n"  # noqa: E501
+                f"### <@{user_id}>, вы успешно повысили свой уровень до {new_level}!\n"  # noqa: E501
                 f"> До следующего вам осталось: **`{exp_to_level}`** опыта.\n",
             )
         )

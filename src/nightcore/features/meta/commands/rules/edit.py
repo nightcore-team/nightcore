@@ -15,17 +15,22 @@ from src.nightcore.features.meta.utils import (
     parse_clause,
 )
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 from ._groups import rules as rules_group
 
 logger = logging.getLogger(__name__)
 
 
-@rules_group.command(name="edit", description="Изменить главу или правило")
+@rules_group.command(name="edit", description="Изменить главу или правило")  # type: ignore
 @app_commands.describe(
     clause="Номер пункта (например, '1' для главы, '1.1' для правила, '1.1.1' для подпункта)",  # noqa: E501
     text="Новый текст главы или правила",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def edit_chapter_or_rule(
     interaction: Interaction["Nightcore"],
     clause: str,

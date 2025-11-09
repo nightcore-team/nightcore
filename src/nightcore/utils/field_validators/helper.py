@@ -27,6 +27,10 @@ def apply_field_changes(
         # current value in model
         old_val = getattr(model, spec.field, None)
 
+        if spec.kind in (ValueKind.COINS_SHOP_ITEMS,):  # noqa: SIM102
+            if len(new_val) > 25:
+                raise ValueError("Too many shop items; maximum is 25.")
+
         # normalize for lists: to be type-insensitive (tuple vs list)
         if spec.kind in (ValueKind.LIST_INT, ValueKind.LIST_STR):
             # convert to list

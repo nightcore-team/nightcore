@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -39,7 +39,7 @@ class Pay(Cog):
     async def pay(
         self,
         interaction: Interaction,
-        user: Member,
+        user: User,
         amount: int,
     ):
         """Check user's balance."""

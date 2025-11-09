@@ -57,6 +57,32 @@ async def give_role(
 
     outcome = ""
 
+    async with bot.uow.start() as session:
+        economy_access_roles_ids = await get_specified_field(
+            session,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+            field_name="economy_access_roles_ids",
+        )
+
+        if not economy_access_roles_ids:
+            raise FieldNotConfiguredError("доступ к экономике")
+
+        if not has_any_role_from_sequence(
+            cast(Member, interaction.user), economy_access_roles_ids
+        ):
+            outcome = "missing_permissions"
+
+        logging_channel_id = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildLoggingConfig,
+            channel_type=ChannelType.LOGGING_ECONOMY,
+        )
+
+        if not outcome:
+            outcome = "success"
+
     if user == bot.user:
         return await interaction.response.send_message(
             embed=ErrorEmbed(
@@ -89,32 +115,6 @@ async def give_role(
             ),
             ephemeral=True,
         )
-
-    async with bot.uow.start() as session:
-        economy_access_roles_ids = await get_specified_field(
-            session,
-            guild_id=guild.id,
-            config_type=GuildEconomyConfig,
-            field_name="economy_access_roles_ids",
-        )
-
-        if not economy_access_roles_ids:
-            raise FieldNotConfiguredError("доступ к экономике")
-
-        if not has_any_role_from_sequence(
-            cast(Member, interaction.user), economy_access_roles_ids
-        ):
-            outcome = "missing_permissions"
-
-        logging_channel_id = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildLoggingConfig,
-            channel_type=ChannelType.LOGGING_ECONOMY,
-        )
-
-        if not outcome:
-            outcome = "success"
 
     if outcome == "missing_permissions":
         return await interaction.response.send_message(

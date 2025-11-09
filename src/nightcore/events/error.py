@@ -4,13 +4,15 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, app_commands
+from discord import AppCommandOptionType, Guild, app_commands
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.components.embed.error import (
+    EntityNotFoundEmbed,
     ErrorEmbed,
+    MissingPermissionsEmbed,
     NoConfigFoundButCreatedEmbed,
     NoConfigFoundEmbed,
     ValidationErrorEmbed,
@@ -64,6 +66,62 @@ async def setup(bot: "Nightcore") -> None:
                     embed=NoConfigFoundButCreatedEmbed(
                         interaction.client.user.name,  # type: ignore
                         interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            return
+
+        if isinstance(original, app_commands.TransformerError):
+            logger.info(
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            if original.type == AppCommandOptionType.user:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        embed=EntityNotFoundEmbed(
+                            "пользователь",
+                            interaction.client.user.name,  # type: ignore
+                            interaction.client.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
+                else:
+                    await interaction.followup.send(
+                        embed=EntityNotFoundEmbed(
+                            "пользователь",
+                            interaction.client.user.name,  # type: ignore
+                            interaction.client.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
+                return
+
+        if isinstance(original, app_commands.MissingPermissions):
+            logger.info(
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            missing_perms = ", ".join(original.missing_permissions)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    embed=MissingPermissionsEmbed(
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                        f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                    ),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.followup.send(
+                    embed=MissingPermissionsEmbed(
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                        f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
                     ),
                     ephemeral=True,
                 )

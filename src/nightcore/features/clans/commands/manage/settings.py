@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, Role, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildClansConfig
@@ -48,8 +48,8 @@ logger = logging.getLogger(__name__)
 async def settings(
     interaction: Interaction["Nightcore"],
     clan: str,
-    new_leader: discord.Member | None = None,
-    new_role: discord.Role | None = None,
+    new_leader: Member | None = None,
+    new_role: Role | None = None,
 ):
     """Manage clan settings."""
     bot = interaction.client

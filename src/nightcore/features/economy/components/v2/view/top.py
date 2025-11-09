@@ -4,6 +4,8 @@ User list view v2 component.
 Used for displaying a list of users with their stats by chosen criteria.
 """
 
+from __future__ import annotations
+
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
@@ -15,9 +17,8 @@ from discord.ui import (
     TextDisplay,
 )
 
-from src.infra.db.models import User
-
 if TYPE_CHECKING:
+    from src.infra.db.models import User
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.utils import discord_ts, format_voice_time
@@ -26,8 +27,8 @@ from src.nightcore.utils import discord_ts, format_voice_time
 class UsersListViewV2(LayoutView):
     def __init__(
         self,
-        bot: "Nightcore",
-        coin_name: str,
+        bot: Nightcore,
+        coin_name: str | None,
         users: Sequence[User],
         sort_by: str | None = None,
     ) -> None:
@@ -63,7 +64,7 @@ class UsersListViewV2(LayoutView):
                     container.add_item(
                         TextDisplay[Self](
                             f"{prefix} <@{user.user_id}> — "
-                            f"**{user.coins:,}** {coin_name}"
+                            f"**{user.coins:,}** {coin_name or 'коинов'}"
                         )
                     )
                 case "level":
@@ -85,7 +86,7 @@ class UsersListViewV2(LayoutView):
                         TextDisplay[Self](
                             f"<:42920arrowrightalt:1421170550759489616> <@{user.user_id}>\n"  # noqa: E501
                             f"> **Уровень:** {user.level}\n"
-                            f"> **Баланс:** {user.coins:,} {coin_name}\n"
+                            f"> **Баланс:** {user.coins:,} {coin_name or 'коинов'}\n"  # noqa: E501
                             f"> **Сообщения:** {user.messages_count:,}\n"
                             f"> **Голосовая активность:** {voice_activity_str}"
                         )

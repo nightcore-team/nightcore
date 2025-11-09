@@ -13,6 +13,10 @@ from src.nightcore.features.meta.utils import (
     convert_dict_to_rules,
 )
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 from ._groups import rules as rules_group
 
@@ -21,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 @rules_group.command(
     name="send", description="Отправить правила в текущий канал"
-)
+)  # type: ignore
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def send_rules(
     interaction: Interaction["Nightcore"],
 ):

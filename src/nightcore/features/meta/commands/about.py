@@ -14,8 +14,14 @@ from discord.utils import snowflake_time
 from src.infra.db.operations import get_total_users_count
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import discord_ts
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
+
+# TODO: create a LayoutView for this command
 
 
 class About(Cog):
@@ -25,7 +31,8 @@ class About(Cog):
     @app_commands.command(
         name="about",
         description="Информация о боте",
-    )
+    )  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
     async def about(self, interaction: discord.Interaction):
         """Display information about the bot."""
         try:

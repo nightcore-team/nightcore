@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -29,11 +29,13 @@ class Balance(Cog):
         user="Пользователь, чей баланс нужно проверить. По умолчанию - вы сами"
     )
     async def balance(
-        self, interaction: Interaction, user: Member | None = None
+        self, interaction: Interaction, user: User | None = None
     ):
         """Check user's balance."""
 
         guild = cast(Guild, interaction.guild)
+
+        member = user or interaction.user
 
         async with specified_guild_config(
             self.bot, guild_id=guild.id, config_type=GuildEconomyConfig
@@ -42,8 +44,6 @@ class Balance(Cog):
             session,
         ):
             coin_name = guild_config.coin_name
-            member = user or cast(Member, interaction.user)
-
             user_record, _ = await get_or_create_user(
                 session, guild_id=guild.id, user_id=member.id
             )

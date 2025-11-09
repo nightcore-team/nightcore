@@ -52,6 +52,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.events.ban",
         "src.nightcore.features.moderation.events.ticketban",
         "src.nightcore.features.moderation.events.rrban",
+        "src.nightcore.features.moderation.events.count_message",
         # === clans
         "src.nightcore.features.clans",
         # === clans events
@@ -108,14 +109,14 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.private_rooms.events.create",
         "src.nightcore.features.private_rooms.events.delete",
         # === tasks
-        "src.nightcore.tasks.unpunish",
-        "src.nightcore.tasks.delete_ticket",
-        "src.nightcore.tasks.delete_role_request",
-        "src.nightcore.tasks.expired_notify",
-        "src.nightcore.tasks.check_forum",
-        "src.nightcore.tasks.clan_reputation",
-        "src.nightcore.tasks.temp_role",
-        "src.nightcore.tasks.temp_multiplier",
+        # "src.nightcore.tasks.unpunish",
+        # "src.nightcore.tasks.delete_ticket",
+        # "src.nightcore.tasks.delete_role_request",
+        # "src.nightcore.tasks.expired_notify",
+        # "src.nightcore.tasks.check_forum",
+        # "src.nightcore.tasks.clan_reputation",
+        # "src.nightcore.tasks.temp_role",
+        # "src.nightcore.tasks.temp_multiplier",
     ]
 
     return Nightcore(

@@ -7,12 +7,8 @@ from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.config.config import config
 from src.infra.db.models import GuildTicketsConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import (
-    MissingPermissionsEmbed,
-)
 from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
 from src.nightcore.services.config import specified_guild_config
 
@@ -27,6 +23,7 @@ class Ticketmessage(Cog):
         name="ticketmessage",
         description="Отправить сообщение с созданием тикета.",
     )
+    @app_commands.checks.has_permissions(administrator=True)
     async def ticketmessage(
         self,
         interaction: Interaction,
@@ -34,19 +31,6 @@ class Ticketmessage(Cog):
         """Mute a user in the server."""
         guild = cast(Guild, interaction.guild)
         channel = interaction.channel
-
-        bot_access_ids = config.bot.BOT_ACCESS_IDS
-
-        has_access = interaction.user.id in bot_access_ids
-
-        if not has_access:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         async with specified_guild_config(
             self.bot,

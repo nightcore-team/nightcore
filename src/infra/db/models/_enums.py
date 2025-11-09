@@ -38,6 +38,8 @@ class ChannelType(Enum):
 
     COUNT_MESSAGES = "count_messages_channel_id"
 
+    COUNT_MODERATION_MESSAGES = "count_moderator_messages_channel_id"
+
 
 class FieldTypeEnum(Enum):
     CLANS_ACCESS = "clans_access_roles_ids"

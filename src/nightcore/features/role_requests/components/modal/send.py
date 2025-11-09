@@ -123,15 +123,16 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 ),
                 ephemeral=True,
             )
+
         with contextlib.suppress(Exception):
-            member = await user.edit(
+            user = await user.edit(
                 nick=f"[{self.selected_role_tag}][{rank}] {nickname}",
             )
 
         view = self.view(
             bot=self.bot,
-            interaction_user_id=user.id,
-            interaction_user_nick=cast(discord.Member, member).display_name,  # type: ignore
+            interaction_user_id=user.id,  # type: ignore
+            interaction_user_nick=user.display_name,  # type: ignore
             role_requested_id=self.requested_role.id,
             attachments=[MediaGalleryItem(attachment.url)],  # type: ignore
         )
@@ -171,7 +172,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
             try:
                 new_rr = RoleRequestState(
                     guild_id=guild.id,
-                    author_id=user.id,
+                    author_id=user.id,  # type: ignore
                     role_id=self.requested_role.id,
                     message_id=cast(discord.Message, message).id,
                     channel_id=self.channel.id,
@@ -182,7 +183,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 logger.exception(
                     "Failed to create RoleRequestState in guild %s for user %s: %s",  # noqa: E501
                     guild.id,
-                    user.id,
+                    user.id,  # type: ignore
                     e,
                 )
                 outcome = "role_request_create_failed"
@@ -200,7 +201,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
 
         logger.info(
             "[role_request_submit] - invoked user=%s guild=%s role=%s",
-            user.id,
+            user.id,  # type: ignore
             guild.id,
             self.requested_role.id,
         )

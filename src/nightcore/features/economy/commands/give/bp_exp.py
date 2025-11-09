@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, Member, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 @app_commands.describe()
 async def give_bp_exp(
     interaction: Interaction["Nightcore"],
-    user: Member,
-    amount: int,
+    user: User,
+    amount: app_commands.Range[int, -50000, 50000],
 ):
     """Give battlepass experience to a user."""
 

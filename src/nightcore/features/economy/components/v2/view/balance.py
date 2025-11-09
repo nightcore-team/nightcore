@@ -34,11 +34,7 @@ class BalanceViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        description = (
-            f"> **Пользователь:** <@{user_id}>\n> **Баланс:** {balance}"
-        )
-        if coin_name:
-            description += f" {coin_name}"
+        description = f"> **Пользователь:** <@{user_id}>\n> **Баланс:** {balance} {coin_name or 'коинов'}"  # noqa: E501
 
         container.add_item(TextDisplay[Self](description))
         container.add_item(Separator[Self]())

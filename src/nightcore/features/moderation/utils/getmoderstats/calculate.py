@@ -23,6 +23,8 @@ def calculate_moderator_stats(
 
     deducted_points = sum(cs.amount for cs in data.changestats)
 
+    total_messages = data.total_messages
+
     return ModeratorStats(
         moderator_id=moderator_id,
         nickname=data.nickname,
@@ -33,6 +35,7 @@ def calculate_moderator_stats(
         mpmute_count=punishment_counts.get("mpmute", 0),
         ticketban_count=punishment_counts.get("ticketban", 0),
         removed_roles_count=punishment_counts.get("role_remove", 0),
+        total_messages=total_messages,
         closed_tickets_count=len(data.tickets),
         approved_role_requests_count=len(data.role_requests),
         deducted_points=deducted_points,

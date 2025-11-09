@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 async def give_clanrep(
     interaction: Interaction["Nightcore"],
     clan: str,
-    amount: int,
+    amount: app_commands.Range[int, -50000, 50000],
 ):
     """Give reputation to a clan."""
 

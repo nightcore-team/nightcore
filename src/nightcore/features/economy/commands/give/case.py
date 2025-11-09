@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, Member, User, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 )
 async def give_case(
     interaction: Interaction["Nightcore"],
-    user: Member,
+    user: User,
     case: app_commands.Choice[str],
     amount: int,
 ):

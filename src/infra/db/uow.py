@@ -25,8 +25,8 @@ class UnitOfWork:
                 commit_start = time.perf_counter()
                 await session.commit()
                 logger.info(
-                    f"[UoW] Commit finished in {time.perf_counter() - commit_start:.3f}s "  # noqa: E501
-                    f"(total {time.perf_counter() - start_time:.3f}s)"
+                    f"[UoW] Commit finished in {time.perf_counter() - commit_start:.10f}s "  # noqa: E501
+                    f"(total {time.perf_counter() - start_time:.10f}s)"
                 )
             except Exception as e:
                 logger.warning(
@@ -35,11 +35,11 @@ class UnitOfWork:
                 rollback_start = time.perf_counter()
                 await session.rollback()
                 logger.info(
-                    f"[UoW] Rollback finished in {time.perf_counter() - rollback_start:.3f}s "  # noqa: E501
-                    f"(total {time.perf_counter() - start_time:.3f}s)"
+                    f"[UoW] Rollback finished in {time.perf_counter() - rollback_start:.10f}s "  # noqa: E501
+                    f"(total {time.perf_counter() - start_time:.10f}s)"
                 )
                 raise
             finally:
                 logger.info(
-                    f"[UoW] Session closed (total time {time.perf_counter() - start_time:.3f}s)"  # noqa: E501
+                    f"[UoW] Session closed (total time {time.perf_counter() - start_time:.10f}s)"  # noqa: E501
                 )

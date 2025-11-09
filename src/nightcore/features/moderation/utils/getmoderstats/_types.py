@@ -20,6 +20,7 @@ class ModerationScores:
     closed_tickets: float
     approved_role_requests: float
     removed_roles: float
+    message: float
 
     @classmethod
     def from_dict(cls, data: dict[str, float]) -> Self:
@@ -47,6 +48,7 @@ class ModerationScores:
                 "approved_role_requests_score", 1.5
             ),
             removed_roles=data.get("changed_roles_score", 1.0),
+            message=data.get("message_score", 0.01),
         )
 
 
@@ -67,6 +69,7 @@ class ModeratorStats:
 
     closed_tickets_count: int = 0
     approved_role_requests_count: int = 0
+    total_messages: int = 0
 
     deducted_points: float = 0.0
 
@@ -91,6 +94,7 @@ class ModeratorStats:
             + self.ticketban_count * scores.ticketban
             + self.removed_roles_count * scores.removed_roles
             + self.closed_tickets_count * scores.closed_tickets
+            + self.total_messages * scores.message
             + self.approved_role_requests_count * scores.approved_role_requests
             + self.deducted_points
         )
@@ -115,6 +119,7 @@ class ModeratorStats:
             f"> **Снятые роли:** {self.removed_roles_count}\n"
             f"> **Закрытые тикеты:** {self.closed_tickets_count}\n"
             f"> **Одобренные запросы ролей:** {self.approved_role_requests_count}\n"  # noqa: E501
+            f"> **Всего сообщений:** {self.total_messages}\n"
         )
 
     def format_changestat_history(self) -> str:

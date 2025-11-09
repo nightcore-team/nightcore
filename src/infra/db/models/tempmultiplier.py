@@ -37,6 +37,9 @@ class TempEconomyMultiplier(IdIntegerMixin, Base):
             "ix_temp_economy_multipliers_guild_type_end_time",
             "guild_id",
             "multiplier_type",
+        ),
+        Index(
+            "ix_temp_economy_multipliers_end_time",
             "end_time",
         ),
     )

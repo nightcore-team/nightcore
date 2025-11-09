@@ -83,6 +83,17 @@ class ShopMessage(Cog):
             )
 
         if outcome == "success":
+            if not shop_items:
+                return await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Ошибка отправки сообщения магазина",
+                        "В магазине нет доступных товаров.",
+                        self.bot.user.display_name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
             options: list[SelectOption] = [
                 SelectOption(
                     label=item,

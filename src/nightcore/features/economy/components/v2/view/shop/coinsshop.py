@@ -39,7 +39,7 @@ from .order import CoinsShopOrderViewV2
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
+from src.nightcore.utils import discord_ts
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,29 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
 
         self.add_item(select)
 
+    async def _update_main_view(
+        self,
+        interaction: Interaction["Nightcore"],
+        guild: Guild,
+        coin_name: str | None,
+        shop_items: dict[str, float],
+    ) -> None:
+        """Update the main shop view after an item selection."""
+        bot = interaction.client
+
+        options = [
+            SelectOption(
+                label=item,
+                description=f"Цена: {price:.0f} {coin_name}",
+                value=f"{item},{price}",
+            )
+            for item, price in shop_items.items()
+        ]
+
+        view = CoinsShopViewV2(bot, guild.name, coin_name, shop_items, options)
+
+        asyncio.create_task(interaction.message.edit(view=view))  # type: ignore  # noqa: RUF006
+
     async def select_item_callback(
         self, interaction: Interaction["Nightcore"]
     ) -> None:
@@ -68,7 +91,6 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
         selected_item = interaction.data.get("values", [])[0]  # type: ignore
         item, price = selected_item.split(",")
         guild = cast(Guild, interaction.guild)
-        view = cast("CoinsShopViewV2", self.view)
         bot = interaction.client
 
         await interaction.response.defer(ephemeral=True)
@@ -101,6 +123,11 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         outcome = "success"
 
         if outcome == "insufficient_funds":
+            asyncio.create_task(  # noqa: RUF006
+                self._update_main_view(
+                    interaction, guild, coin_name, shop_items
+                )
+            )
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка покупки товара",
@@ -112,32 +139,6 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
             )
 
         if outcome == "success":
-            economy_shop_channel_id = guild_config.economy_shop_channel_id
-            if not economy_shop_channel_id:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Ошибка покупки",
-                        "Канал для покупок в магазине экономики не настроен.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
-            channel = await ensure_messageable_channel_exists(
-                guild, economy_shop_channel_id
-            )
-            if channel is None:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Ошибка покупки",
-                        "Канал для покупок в магазине экономики не найден.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
             perms = guild.me.guild_permissions
 
             if not all(
@@ -148,6 +149,11 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                     perms.manage_roles,
                 ]
             ):
+                asyncio.create_task(  # noqa: RUF006
+                    self._update_main_view(
+                        interaction, guild, coin_name, shop_items
+                    )
+                )
                 return await interaction.followup.send(
                     embed=MissingPermissionsEmbed(
                         bot.user.display_name,  # type: ignore
@@ -158,13 +164,20 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 )
 
             try:
-                thread = await cast(TextChannel, channel).create_thread(
+                thread = await cast(
+                    TextChannel, interaction.channel
+                ).create_thread(
                     name=f"{item} | {interaction.user.id}",
                 )
             except Exception as e:
                 logger.exception(
                     "[economy/shop] Failed to create economy shop thread: %s",
                     e,
+                )
+                asyncio.create_task(  # noqa: RUF006
+                    self._update_main_view(
+                        interaction, guild, coin_name, shop_items
+                    )
                 )
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
@@ -199,6 +212,11 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 logger.exception(
                     "[economy/shop] Failed to create shop order state: %s", e
                 )
+                asyncio.create_task(  # noqa: RUF006
+                    self._update_main_view(
+                        interaction, guild, coin_name, shop_items
+                    )
+                )
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка покупки",
@@ -221,6 +239,11 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 logger.exception(
                     "[economy/shop] Failed to send economy shop message: %s", e
                 )
+                asyncio.create_task(  # noqa: RUF006
+                    self._update_main_view(
+                        interaction, guild, coin_name, shop_items
+                    )
+                )
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка покупки",
@@ -236,19 +259,6 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
             asyncio.create_task(  # noqa: RUF006
                 message.edit(view=oview.make_component())
             )
-
-        options = [
-            SelectOption(
-                label=item,
-                description=f"Цена: {price:.0f} {coin_name}",
-                value=f"{item},{price}",
-            )
-            for item, price in shop_items.items()
-        ]
-
-        view = CoinsShopViewV2(bot, guild.name, coin_name, shop_items, options)
-
-        asyncio.create_task(interaction.message.edit(view=view))  # type: ignore  # noqa: RUF006
 
 
 class CoinsShopViewV2(LayoutView):

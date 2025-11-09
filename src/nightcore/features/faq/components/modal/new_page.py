@@ -28,7 +28,7 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
         style=TextStyle.short,
         placeholder="Введите заголовок страницы",
         required=True,
-        max_length=100,
+        max_length=80,
     )
 
     little_description = TextInput[Self](

@@ -26,6 +26,7 @@ from src.infra.db.models import (
     GuildPrivateChannelsConfig,
     GuildTicketsConfig,
     MainGuildConfig,
+    ModerationMessage,
     NotifyState,
     PrivateRoomState,
     Punish,
@@ -38,7 +39,7 @@ from src.infra.db.models import (
     User,
 )
 from src.infra.db.models._annot import (
-    ModerationInfractionsDataAnnot,
+    ModerationStatsResultAnnot,
     OrgRoleWithoutTagAnnot,
     Rules,
 )
@@ -52,9 +53,6 @@ from src.infra.db.models._enums import (
 )
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
-)
-from src.infra.db.utils import (
-    group_infractions_by_moderator,
 )
 
 GuildT = TypeVar(
@@ -583,11 +581,12 @@ async def get_moderation_stats(
     moderators: dict[int, str],
     from_date: datetime,
     to_date: datetime,
-) -> dict[int, ModerationInfractionsDataAnnot]:
+    with_messages: bool = False,
+) -> ModerationStatsResultAnnot:
     """Return infractions grouped by moderator_id."""
 
     if not moderators:
-        return {}
+        return ModerationStatsResultAnnot()  # type: ignore
 
     moderator_ids = list(moderators.keys())
 
@@ -651,9 +650,36 @@ async def get_moderation_stats(
     )
     changestats = changestats_result.all()
 
-    return group_infractions_by_moderator(
-        moderators, punishments, tickets, role_requests, changestats
-    )
+    messages_data: dict[int, int] = {}
+    if with_messages:
+        stmt = (
+            select(
+                ModerationMessage.moderator_id,
+                func.count(ModerationMessage.id).label("messages_count"),
+            )
+            .where(
+                *_build_base_moderstats_filters(
+                    ModerationMessage,
+                    guild_id,
+                    moderator_ids,
+                    from_date,
+                    to_date,
+                )
+            )
+            .group_by(ModerationMessage.moderator_id)
+        )
+
+        result = await session.execute(stmt)
+        messages_data = dict(result.all())  # type: ignore
+
+    return {
+        "moderators": moderators,
+        "punishments": punishments,
+        "tickets": tickets,
+        "role_requests": role_requests,
+        "changestats": changestats,
+        "messages": messages_data,
+    }
 
 
 async def get_moderstats_dict(

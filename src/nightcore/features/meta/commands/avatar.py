@@ -3,7 +3,7 @@
 import logging
 
 import discord
-from discord import Embed, app_commands
+from discord import Embed, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -23,7 +23,7 @@ class Avatar(Cog):
     async def avatar(
         self,
         interaction: Interaction,
-        user: discord.Member | discord.User | None = None,
+        user: User | None = None,
         ephemeral: bool = True,
     ):
         """Send a message displaying the user's avatar."""

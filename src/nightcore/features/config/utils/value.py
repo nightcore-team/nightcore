@@ -141,16 +141,19 @@ def _to_shop_items(s: str | None):
     parts = parse_str_parts(s)
     result: dict[str, int] = {}
 
+    if len(parts) > 25:
+        raise ValueError("Maximum of 25 shop items allowed")
+
     for part in parts:
         if len(part) != 2:
-            continue  # skip invalid parts
+            raise ValueError("Expected 2 parts: item_name, item_price")
         item_name, item_price_raw = part
         if not item_name:
-            continue  # skip if item name is empty
+            raise ValueError("Expected 2 parts: item_name, item_price")
         try:
             item_price = int(item_price_raw)
-        except ValueError:
-            continue  # skip if price is not a valid integer
+        except ValueError as e:
+            raise ValueError("Invalid item price") from e
 
         result[item_name] = item_price
 

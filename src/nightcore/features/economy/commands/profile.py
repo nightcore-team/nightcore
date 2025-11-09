@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -30,11 +30,12 @@ class Profile(Cog):
         user="Пользователь, чей профиль нужно посмотреть. По умолчанию - вы сами."  # noqa: E501
     )
     async def profile(
-        self, interaction: Interaction, user: Member | None = None
+        self, interaction: Interaction, user: User | None = None
     ):
         """Check user's profile."""
 
         guild = cast(Guild, interaction.guild)
+        member = user or interaction.user
 
         async with specified_guild_config(
             self.bot,
@@ -46,7 +47,6 @@ class Profile(Cog):
             session,
         ):
             coin_name = guild_config.coin_name
-            member = user or cast(Member, interaction.user)
 
             user_record, _ = await get_or_create_user(
                 session, guild_id=guild.id, user_id=member.id
@@ -69,7 +69,6 @@ class Profile(Cog):
             coin_name=coin_name,
             voice_activity=format_voice_time(user_record.voice_activity),
             messages_count=user_record.messages_count,
-            joined_at=member.joined_at,
             avatar_url=member.display_avatar.url,
             cases=user_record.inventory.get("cases", {}),
             colors=users_colors,

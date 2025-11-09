@@ -53,12 +53,26 @@ class Reward(Cog):
 
             if not outcome:
                 reward_coins = guild_config.reward_bonus
-                coin_name = guild_config.coin_name
+                if not reward_coins or reward_coins <= 0:
+                    outcome = "no_reward_configured"
+                else:
+                    coin_name = guild_config.coin_name
 
-                user.coins += reward_coins
-                user.reward_time = now
+                    user.coins += reward_coins
+                    user.reward_time = now
 
-                outcome = "success"
+                    outcome = "success"
+
+        if outcome == "no_reward_configured":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка получения ежедневной награды",
+                    "Ежедневная награда не настроена на этом сервере.",
+                    self.bot.user.display_name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         if outcome == "reward_too_early":
             return await interaction.response.send_message(
@@ -75,7 +89,7 @@ class Reward(Cog):
             return await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Успешно получена ежедневная награда",
-                    f"Вы получили свою ежедневную награду: {reward_coins} {coin_name}",  # type: ignore  # noqa: E501
+                    f"Вы получили свою ежедневную награду: {reward_coins} {coin_name or 'коинов'}",  # type: ignore  # noqa: E501
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

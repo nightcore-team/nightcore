@@ -32,16 +32,14 @@ from src.nightcore.utils.field_validators import (
 logger = logging.getLogger(__name__)
 
 
-@economy_group.command(
-    name="setup", description="Настроить систему экономики."
-)
+@economy_group.command(name="setup", description="Настроить систему экономики")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
-    shop_buy_ping_roles="Роли для упоминания при покупке в магазине.",
-    economy_access_roles="Роли с доступом к командам экономики.",
-    shop_items="Предметы, доступные в магазине.",
-    reward_bonus="Бонусные награды для /reward.",
-    coin_name="Название локальной валюты.",
+    shop_buy_ping_roles="Роли для упоминания при покупке в магазине",
+    economy_access_roles="Роли с доступом к командам экономики",
+    shop_items="Конфигурация предметов в магазине. Формат: название, цена | название, цена | ...",  # noqa: E501
+    reward_bonus="Коины выдаваемые в /reward",
+    coin_name="Название локальной валюты",
     coins_drop="Конфигурация выпадения монет с кейса. Формат: коины, шанс (без %) | монеты, шанс | ...",  # noqa: E501
     colors_drop="Конфигурация выпадения цветов с кейса. Формат: role_id, шанс (без %) | role_id, шанс | ...",  # noqa: E501
 )
@@ -49,10 +47,9 @@ async def setup(
     interaction: Interaction,
     shop_buy_ping_roles: str | None = None,
     economy_access_roles: str | None = None,
-    economy_shop: discord.TextChannel | None = None,
     shop_items: str | None = None,
     reward_bonus: int | None = None,
-    coin_name: str | None = None,
+    coin_name: app_commands.Range[str, 1, 100] | None = None,
     coins_drop: str | None = None,
     colors_drop: str | None = None,
 ):
@@ -62,7 +59,6 @@ async def setup(
         list_csv("economy_shop_buy_ping_roles_ids", shop_buy_ping_roles),
         list_csv("economy_access_roles_ids", economy_access_roles),
         shop_items_dict_value("economy_shop_items", shop_items),
-        int_id_value("economy_shop_channel_id", economy_shop),
         int_id_value("reward_bonus", reward_bonus),
         str_value("coin_name", coin_name),
         coins_drop_dict_value("drop_from_coins_case", coins_drop),
@@ -91,7 +87,20 @@ async def setup(
         config_type=GuildEconomyConfig,
         _create=True,
     ) as (guild_config, _):
-        changes = apply_field_changes(guild_config, specs)  # type: ignore
+        try:
+            changes = apply_field_changes(guild_config, specs)  # type: ignore
+        except Exception as e:
+            logger.exception(
+                "[command/economy/setup] Failed to apply field changes: %s", e
+            )
+            return await interaction.response.send_message(
+                embed=Embed(
+                    title="Ошибка настройки системы экономики",
+                    description=f"{e}",
+                    color=discord.Color.red(),
+                ),
+                ephemeral=True,
+            )
 
     changed, skipped = split_changes(changes)
     description = format_changes(changed, skipped)
@@ -114,7 +123,10 @@ async def setup(
     )
 
 
-@economy_group.command(name="update_economy_access")
+@economy_group.command(
+    name="update_economy_access",
+    description="Обновить список ролей с доступом к экономике",
+)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.choices(
     option=[

@@ -71,7 +71,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 embed=MissingPermissionsEmbed(
                     view.bot.user.display_name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
-                    "У меня недостаточно прав для управления каналами.",  # noqa: RUF001
+                    "У меня недостаточно прав для управления каналами.",
                 ),
             )
 

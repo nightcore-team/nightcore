@@ -11,6 +11,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildModerationConfig
 from src.infra.db.models._annot import ModerationInfractionsDataAnnot
 from src.infra.db.operations import get_moderation_stats, get_moderstats_dict
+from src.infra.db.utils import group_infractions_by_moderator
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -168,14 +169,35 @@ class GetModerationStats(Cog):
 
         await interaction.response.defer(ephemeral=ephemeral)
 
+        data_range_diff = (to_dt - from_dt).days
+
         async with self.bot.uow.start() as session:
-            grouped = await get_moderation_stats(
-                session,
-                guild_id=guild.id,
-                moderators={m.id: m.nick for m in moderators},  # type: ignore
-                from_date=from_dt,
-                to_date=to_dt,
-            )
+            if data_range_diff > 60:
+                clear_stats = await get_moderation_stats(
+                    session,
+                    guild_id=guild.id,
+                    moderators={m.id: m.nick for m in moderators},  # type: ignore
+                    from_date=from_dt,
+                    to_date=to_dt,
+                )
+            else:
+                clear_stats = await get_moderation_stats(
+                    session,
+                    guild_id=guild.id,
+                    moderators={m.id: m.nick for m in moderators},  # type: ignore
+                    from_date=from_dt,
+                    to_date=to_dt,
+                    with_messages=True,
+                )
+
+        grouped = group_infractions_by_moderator(
+            moderators=clear_stats["moderators"],
+            punishments=clear_stats["punishments"],
+            tickets=clear_stats["tickets"],
+            role_requests=clear_stats["role_requests"],
+            changestats=clear_stats["changestats"],
+            messages=clear_stats["messages"],
+        )
 
         mod_scores = ModerationScores.from_dict(scores)
         stats = calculate_all_moderators_stats(grouped)

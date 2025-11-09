@@ -18,7 +18,7 @@ from src.nightcore.utils import (
     ensure_messageable_channel_exists,
 )
 
-from .utils.overwrites import build_channel_overwrites_file  # type: ignore
+from ._utils.overwrites import build_channel_overwrites_file  # type: ignore
 
 logger = logging.getLogger(__name__)
 

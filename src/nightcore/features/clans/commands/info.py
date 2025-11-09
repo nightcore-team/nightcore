@@ -34,7 +34,6 @@ async def info(interaction: Interaction["Nightcore"], clan: str):
     clan_id = int(clan)
 
     async with bot.uow.start() as session:
-        # get clan
         dbclan = await get_clan_by_id(
             session, guild_id=guild.id, clan_id=clan_id
         )

@@ -35,6 +35,13 @@ async def faq_autocomplete(
             app_commands.Choice(name=page["title"], value=page["title"])
         )
 
+    if not result:
+        result.append(
+            app_commands.Choice(
+                name="Нет доступных страниц FAQ", value="no_faq_pages"
+            )
+        )
+
     end_autocomplete = time.perf_counter()
     logger.info(
         "[faq/autocomplete] Autocomplete for guild %s took %.4f seconds ",

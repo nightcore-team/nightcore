@@ -1,54 +1,40 @@
 """Ticketmessage command for the Nightcore bot."""
 
 import logging
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from discord import Guild, SelectOption, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.config.config import config
 from src.infra.db.operations import get_organization_roles_full_json
-from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import (
-    MissingPermissionsEmbed,
-)
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.v2 import (
     SendRoleRequestView,
 )
 
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 logger = logging.getLogger(__name__)
 
 
 class Rrmessage(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(
         name="rrmessage",
-        description="Send a message for creating role requests.",
+        description="Отправить сообщение для создания заявок на роли.",
     )
+    @app_commands.checks.has_permissions(administrator=True)
     async def rrmessage(
         self,
-        interaction: Interaction,
+        interaction: Interaction["Nightcore"],
     ):
         """Send a message for creating role requests."""
         guild = cast(Guild, interaction.guild)
         channel = interaction.channel
-
-        bot_access_ids = config.bot.BOT_ACCESS_IDS
-
-        has_access = interaction.user.id in bot_access_ids
-
-        if not has_access:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         async with self.bot.uow.start() as session:
             if not (
@@ -65,8 +51,13 @@ class Rrmessage(Cog):
             for k, v in org_roles.items()
         ]
 
-        await interaction.response.send_message(
+        await interaction.channel.send(  # type: ignore
             view=SendRoleRequestView(self.bot, options=options)
+        )
+
+        await interaction.response.send_message(
+            "Сообщение для создания заявок на роли отправлено ниже.",
+            ephemeral=True,
         )
 
         logger.info(
@@ -77,7 +68,7 @@ class Rrmessage(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Rrmessage cog."""
 
     await bot.add_cog(Rrmessage(bot))

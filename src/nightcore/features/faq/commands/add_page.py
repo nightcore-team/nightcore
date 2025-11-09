@@ -1,13 +1,15 @@
 """Add a new FAQ page command."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from discord import app_commands
+from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.models.guild import MainGuildConfig
 from src.nightcore.features.faq._groups import faq as faq_group
 from src.nightcore.features.faq.components.modal import NewFAQPageModal
+from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -24,6 +26,15 @@ async def add_faq_page(
     interaction: Interaction["Nightcore"],
 ) -> None:
     """Add a new FAQ page to the guild's FAQ configuration."""
+
+    guild = cast(Guild, interaction.guild)
+
+    async with specified_guild_config(
+        interaction.client,
+        guild_id=guild.id,
+        config_type=MainGuildConfig,
+    ) as (_, _):
+        pass
 
     modal = NewFAQPageModal(bot=interaction.client)
     await interaction.response.send_modal(modal)

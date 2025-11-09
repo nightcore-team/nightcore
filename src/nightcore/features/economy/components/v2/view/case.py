@@ -85,26 +85,42 @@ class CaseHelpViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self]("### Кейс с коинами"),
         )
-        container.add_item(
-            TextDisplay[Self](
-                "\n".join(
-                    f"> {drop['amount']} {coin_name or 'коинов'} "
-                    f"- шанс **`{drop['chance']}%`**"
-                    for drop in coins_drops
+        if not coins_drops:
+            container.add_item(
+                TextDisplay[Self](
+                    "> В данный момент кейс с монетами не настроен."
                 )
-            ),
-        )
+            )
+        else:
+            container.add_item(
+                TextDisplay[Self](
+                    "\n".join(
+                        f"> {drop['amount']} {coin_name or 'коинов'} "
+                        f"- шанс **`{drop['chance']}%`**"
+                        for drop in coins_drops
+                    )
+                ),
+            )
+
         container.add_item(Separator[Self]())
         container.add_item(TextDisplay[Self]("### Кейс с цветами"))
-        container.add_item(
-            TextDisplay[Self](
-                "\n".join(
-                    f"> цвет: **<@&{drop['role_id']}>** "
-                    f"- шанс **`{drop['chance']}%`**"
-                    for drop in colors_drops.values()
+        if not colors_drops:
+            container.add_item(
+                TextDisplay[Self](
+                    "> В данный момент кейс с цветами не настроен."
                 )
-            ),
-        )
+            )
+        else:
+            container.add_item(
+                TextDisplay[Self](
+                    "\n".join(
+                        f"> цвет: **<@&{drop['role_id']}>** "
+                        f"- шанс **`{drop['chance']}%`**"
+                        for drop in colors_drops.values()
+                    )
+                ),
+            )
+
         container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)

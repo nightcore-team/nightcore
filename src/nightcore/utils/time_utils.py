@@ -25,15 +25,6 @@ def format_voice_time(seconds: int) -> str:
         return f"{remaining_seconds}с"
 
 
-_TIME_UNITS = {
-    "s": 1,
-    "m": 60,
-    "h": 60 * 60,
-    "d": 24 * 60 * 60,
-    "w": 7 * 24 * 60 * 60,
-}
-
-
 _NUMERIC_FORMATS: tuple[str, ...] = (
     # Day-Month-Year
     "%d-%m-%Y",
@@ -95,8 +86,32 @@ _MONTHS = {
 _SEP_PATTERN = re.compile(r"[.\-/\s]+")
 
 
+_TIME_UNITS = {
+    "s": 1,
+    "m": 60,
+    "h": 60 * 60,
+    "d": 24 * 60 * 60,
+    "w": 7 * 24 * 60 * 60,
+}
+
+
 def parse_duration(text: str) -> int | None:
-    """Parse a duration string into total seconds."""
+    """Parse a duration string into total seconds.
+
+    Valid formats:
+        - "30s" → 30 seconds
+        - "5m" → 300 seconds
+        - "2h30m" → 9000 seconds
+        - "1d" → 86400 seconds
+
+    Invalid formats:
+        - "123" → None (no unit)
+        - "abc" → None (no numbers)
+        - "" → None (empty)
+
+    Returns:
+        Total seconds or None if invalid format
+    """
     if not text:
         return None
 
@@ -106,21 +121,29 @@ def parse_duration(text: str) -> int | None:
         return None
 
     if text.isdigit():
-        return int(text)
+        return None
 
     total = 0
     number_buf = ""
+    has_valid_unit = False  # To ensure at least one valid unit is found
+
     for ch in text:
         if ch.isdigit():
             number_buf += ch
             continue
+
         if ch in _TIME_UNITS and number_buf:
             total += int(number_buf) * _TIME_UNITS[ch]
             number_buf = ""
+            has_valid_unit = True
         else:
             return None
+
     if number_buf:
-        total += int(number_buf)
+        return None
+
+    if not has_valid_unit:
+        return None
 
     return total if total > 0 else None
 

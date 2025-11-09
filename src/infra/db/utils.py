@@ -16,6 +16,7 @@ from src.infra.db.models._annot import ModerationInfractionsDataAnnot
 if TYPE_CHECKING:
     from src.infra.db.models import (
         ChangeStat,
+        ModerationMessage,
         Punish,
         RoleRequestState,
         TicketState,
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 T = TypeVar(
     "T",
     "ChangeStat",
+    "ModerationMessage",
     "Punish",
     "RoleRequestState",
     "TicketState",
@@ -55,6 +57,7 @@ def group_infractions_by_moderator(
     tickets: Sequence[TicketState],
     role_requests: Sequence[RoleRequestState],
     changestats: Sequence[ChangeStat],
+    messages: dict[int, int] | None,
 ) -> dict[int, ModerationInfractionsDataAnnot]:
     """Group infractions by moderator_id."""
 
@@ -84,5 +87,10 @@ def group_infractions_by_moderator(
     for cs in changestats:
         if cs.moderator_id in grouped:
             grouped[cs.moderator_id].changestats.append(cs)
+
+    if messages:
+        for mod_id, msg_count in messages.items():
+            if mod_id in grouped:
+                grouped[mod_id].total_messages = msg_count
 
     return grouped

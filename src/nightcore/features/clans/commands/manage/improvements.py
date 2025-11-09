@@ -54,48 +54,49 @@ async def improvements(
         ]:
             outcome = "missing_permissions"
 
-        icost = 0
-        iindex = 0
-        try:
-            iindex = int(improvement)
-            icost = guild_config.clan_improvements[iindex]
-        except (IndexError, ValueError, KeyError):
-            outcome = "invalid_improvement"
+        else:
+            icost = 0
+            iindex = 0
+            try:
+                iindex = int(improvement)
+                icost = guild_config.clan_improvements[iindex]
+            except (IndexError, ValueError, KeyError):
+                outcome = "invalid_improvement"
 
-        if not outcome:
-            # get clan
-            clan = cast(Clan, clan_member.clan)  # type: ignore
+            if not outcome:
+                # get clan
+                clan = cast(Clan, clan_member.clan)  # type: ignore
 
-            if not (clan.coins > icost):
-                outcome = "insufficient_funds"
-            else:
-                match iindex:
-                    case 0:
-                        if clan.max_deputies + 1 <= 3:
-                            clan.max_deputies += 1
-                            clan.coins -= icost
-                            await session.flush()
-                            outcome = "success"
-                        else:
-                            outcome = "max_deputies_reached"
-                    case 1:
-                        if clan.max_members + 10 <= 30:
-                            clan.max_members += 10
-                            clan.coins -= icost
-                            await session.flush()
-                            outcome = "success"
-                        else:
-                            outcome = "max_members_reached"
-                    case 2:
-                        if clan.payday_multipler != 2:
-                            clan.payday_multipler = 2
-                            clan.coins -= icost
-                            await session.flush()
-                            outcome = "success"
-                        else:
-                            outcome = "x2_payday_already_active"
-                    case _:
-                        outcome = "invalid_improvement"
+                if not (clan.coins > icost):
+                    outcome = "insufficient_funds"
+                else:
+                    match iindex:
+                        case 0:
+                            if clan.max_deputies + 1 <= 3:
+                                clan.max_deputies += 1
+                                clan.coins -= icost
+                                await session.flush()
+                                outcome = "success"
+                            else:
+                                outcome = "max_deputies_reached"
+                        case 1:
+                            if clan.max_members + 10 <= 30:
+                                clan.max_members += 10
+                                clan.coins -= icost
+                                await session.flush()
+                                outcome = "success"
+                            else:
+                                outcome = "max_members_reached"
+                        case 2:
+                            if clan.payday_multipler != 2:
+                                clan.payday_multipler = 2
+                                clan.coins -= icost
+                                await session.flush()
+                                outcome = "success"
+                            else:
+                                outcome = "x2_payday_already_active"
+                        case _:
+                            outcome = "invalid_improvement"
 
     if outcome == "invalid_improvement":
         return await interaction.response.send_message(

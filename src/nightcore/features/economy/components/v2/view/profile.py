@@ -37,7 +37,6 @@ class UserProfileViewV2(LayoutView):
         coin_name: str | None,
         voice_activity: str,
         messages_count: int,
-        joined_at: datetime | None,
         avatar_url: str,
         cases: CasesAnnot,
         colors: list[int],
@@ -97,11 +96,10 @@ class UserProfileViewV2(LayoutView):
             container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)
-        joined_ts = discord_ts(joined_at, "R") if joined_at else "N/A"
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Joined at: {joined_ts}\n-# Powered by {bot.user.name} in {discord_ts(now)}"  # noqa: E501 # type: ignore
+                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
             )
         )
 
