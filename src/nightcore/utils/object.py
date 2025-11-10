@@ -181,7 +181,9 @@ async def ensure_guild_exists(bot: "Nightcore", guild_id: int) -> Guild | None:
 
 
 def has_any_role_from_sequence(
-    user: Member, roles_sequence: Sequence[int] | None, with_roles: bool = False
+    user: Member,
+    roles_sequence: Sequence[int] | None,
+    with_roles: bool = False,
 ) -> bool | list[Role | None]:
     """Check if a member has any of the specified roles."""
     if roles_sequence is None or not roles_sequence:

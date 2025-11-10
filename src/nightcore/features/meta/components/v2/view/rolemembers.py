@@ -118,7 +118,7 @@ class RoleMembersViewV2(LayoutView):
         container = Container[Self]()
 
         header_section: TextDisplay[Self] | Section[Self] = TextDisplay[Self](
-            f"### <:32451information:1430231400208011428> Список участников с ролью\n"  # noqa: E501, RUF001
+            f"### <:32451information:1430231400208011428> Список участников с ролью\n"  # noqa: E501
             f"Роль: {self.role.mention}\n"
             f"ID роли: **`{self.role.id}`**\n"
             f"Количество участников: **{self.members_count}**"

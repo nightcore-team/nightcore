@@ -27,15 +27,17 @@ from src.nightcore.utils.field_validators import (
     split_changes,
     update_id_list,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @other_group.command(
     name="setup", description="Настроить остальные настройки."
-) # type: ignore
+)  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     rules_channel="Канал для правил",

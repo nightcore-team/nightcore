@@ -15,8 +15,10 @@ from src.nightcore.features.meta.utils import (
     DUO_ACTIONS,
     build_action_embed,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ class Action(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="action",
         description="Сделать действие с пользователем",
     )

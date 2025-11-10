@@ -81,7 +81,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
 
         view = CoinsShopViewV2(bot, guild.name, coin_name, shop_items, options)
 
-        asyncio.create_task(interaction.message.edit(view=view))  # type: ignore  # noqa: RUF006
+        asyncio.create_task(interaction.message.edit(view=view))  # type: ignore
 
     async def select_item_callback(
         self, interaction: Interaction["Nightcore"]
@@ -123,7 +123,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         outcome = "success"
 
         if outcome == "insufficient_funds":
-            asyncio.create_task(  # noqa: RUF006
+            asyncio.create_task(
                 self._update_main_view(
                     interaction, guild, coin_name, shop_items
                 )
@@ -149,7 +149,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                     perms.manage_roles,
                 ]
             ):
-                asyncio.create_task(  # noqa: RUF006
+                asyncio.create_task(
                     self._update_main_view(
                         interaction, guild, coin_name, shop_items
                     )
@@ -174,7 +174,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                     "[economy/shop] Failed to create economy shop thread: %s",
                     e,
                 )
-                asyncio.create_task(  # noqa: RUF006
+                asyncio.create_task(
                     self._update_main_view(
                         interaction, guild, coin_name, shop_items
                     )
@@ -212,7 +212,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 logger.exception(
                     "[economy/shop] Failed to create shop order state: %s", e
                 )
-                asyncio.create_task(  # noqa: RUF006
+                asyncio.create_task(
                     self._update_main_view(
                         interaction, guild, coin_name, shop_items
                     )
@@ -239,7 +239,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 logger.exception(
                     "[economy/shop] Failed to send economy shop message: %s", e
                 )
-                asyncio.create_task(  # noqa: RUF006
+                asyncio.create_task(
                     self._update_main_view(
                         interaction, guild, coin_name, shop_items
                     )
@@ -256,7 +256,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
 
             oview.custom_id = state.custom_id
 
-            asyncio.create_task(  # noqa: RUF006
+            asyncio.create_task(
                 message.edit(view=oview.make_component())
             )
 

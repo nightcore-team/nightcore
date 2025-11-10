@@ -19,8 +19,10 @@ from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command(name="case", description="Выдать пользователю кейс") # type: ignore
+@give_group.command(name="case", description="Выдать пользователю кейс")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается кейс.",
     case="Кейс для выдачи.",
@@ -53,7 +55,6 @@ async def give_case(
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
 
-
     if user == bot.user:
         return await interaction.response.send_message(
             embed=ErrorEmbed(
@@ -69,7 +70,6 @@ async def give_case(
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
     ) as (_, session):
-
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,

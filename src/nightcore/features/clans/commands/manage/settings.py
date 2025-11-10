@@ -22,8 +22,10 @@ from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
     compare_top_roles,
 )
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -32,7 +34,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command( # type: ignore
+@manage_clan_group.command(  # type: ignore
     name="settings", description="Управление настройками клана."
 )
 @app_commands.describe(
@@ -67,7 +69,6 @@ async def settings(
     changed_role_to: int | None = None
 
     async with bot.uow.start() as session:
-
         if outcome is None:
             clan_entity = await get_clan_by_id(
                 session, guild_id=guild.id, clan_id=int(clan)

@@ -22,8 +22,10 @@ from src.nightcore.utils import (
     compare_top_roles,
     has_any_role_from_sequence,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -35,7 +37,7 @@ class Setname(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="setname",
         description="Установить никнейм пользователю",
     )

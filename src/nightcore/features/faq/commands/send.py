@@ -14,9 +14,13 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
-@faq_group.command( # type: ignore
+
+@faq_group.command(  # type: ignore
     name="send",
     description="Отправить представление с страницами FAQ",
 )

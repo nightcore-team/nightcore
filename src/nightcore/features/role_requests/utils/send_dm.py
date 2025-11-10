@@ -1,3 +1,5 @@
+"""Utilities for sending DMs related to role requests."""
+
 import logging
 
 from discord import Member

@@ -26,8 +26,10 @@ from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
 from src.nightcore.features.moderation.utils import build_infraction_pages
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ class Infractions(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="infractions",
         description="Посмотреть список нарушений пользователя",
     )

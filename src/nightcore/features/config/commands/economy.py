@@ -28,13 +28,15 @@ from src.nightcore.utils.field_validators import (
     str_value,
     update_id_list,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@economy_group.command(name="setup", description="Настроить систему экономики") # type: ignore
+@economy_group.command(name="setup", description="Настроить систему экономики")  # type: ignore
 @app_commands.describe(
     shop_buy_ping_roles="Роли для упоминания при покупке в магазине",
     economy_access_roles="Роли с доступом к командам экономики",
@@ -128,7 +130,7 @@ async def setup(
 @economy_group.command(
     name="update_economy_access",
     description="Обновить список ролей с доступом к экономике",
-) # type: ignore
+)  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),

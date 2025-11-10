@@ -23,8 +23,10 @@ from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.utils import (
     safe_delete_role,
 )
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -33,7 +35,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command(name="create", description="Создать новый клан.") # type: ignore
+@manage_clan_group.command(name="create", description="Создать новый клан.")  # type: ignore
 @app_commands.describe(
     name="Название клана.",
     leader="Пользователь, который станет лидером клана.",
@@ -105,7 +107,7 @@ async def create(
         except IntegrityError:
             await session.rollback()
             try:
-                asyncio.create_task(  # noqa: RUF006
+                asyncio.create_task(
                     safe_delete_role(
                         clan_role,
                         reason="Откат создания роли клана из-за ошибки в базе данных.",  # noqa: E501
@@ -139,7 +141,7 @@ async def create(
         except IntegrityError:
             await session.rollback()
             try:
-                asyncio.create_task(  # noqa: RUF006
+                asyncio.create_task(
                     safe_delete_role(
                         clan_role,
                         reason="Откат создания роли клана из-за ошибки в базе данных.",  # noqa: E501
@@ -168,7 +170,7 @@ async def create(
                 e,
             )
             try:
-                asyncio.create_task(  # noqa: RUF006
+                asyncio.create_task(
                     safe_delete_role(
                         clan_role,
                         reason="Откат создания роли клана из-за ошибки в базе данных.",  # noqa: E501

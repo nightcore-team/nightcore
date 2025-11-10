@@ -12,8 +12,10 @@ from src.infra.db.models import GuildEconomyConfig
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -26,11 +28,11 @@ class ShopMessage(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="shopmessage",
         description="Отправить компонент магазина.",
     )
-    @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)  # type: ignore
     async def shopmessage(self, interaction: Interaction["Nightcore"]):
         """Send shop view."""
 
@@ -43,12 +45,10 @@ class ShopMessage(Cog):
         async with specified_guild_config(
             self.bot, guild.id, config_type=GuildEconomyConfig
         ) as (guild_config, _):
-
             coin_name = guild_config.coin_name
             if not coin_name:
                 outcome = "coin_name_not_configured"
             else:
-
                 if not outcome:
                     outcome = "success"
                     shop_items: dict[str, float] = (

@@ -28,9 +28,11 @@ from src.nightcore.utils import (
     has_any_role,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,7 @@ class Mute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="mute", description="Заблокировать чат пользователю"
     )
     @app_commands.describe(

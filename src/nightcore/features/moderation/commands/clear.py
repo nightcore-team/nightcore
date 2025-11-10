@@ -19,7 +19,10 @@ from src.nightcore.features.moderation.events import MessageClearEventData
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +31,11 @@ class Clear(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="clear", description="Очистить сообщения в канале"
     )
     @app_commands.describe(number="Количество сообщений для очистки (1-20)")
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def clear(
         self,
         interaction: Interaction,

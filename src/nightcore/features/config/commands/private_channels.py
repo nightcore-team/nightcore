@@ -20,8 +20,10 @@ from src.nightcore.utils.field_validators import (
     int_id_value,
     split_changes,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ logger = logging.getLogger(__name__)
 @main_config_group.command(
     name="private_channels",
     description="Настроить систему приватных каналов.",
-) # type: ignore
+)  # type: ignore
 @app_commands.describe(
     create_private_channel="Канал для создания приватных комнат."
 )

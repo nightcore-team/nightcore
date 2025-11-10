@@ -16,8 +16,10 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command( # type: ignore
+@manage_clan_group.command(  # type: ignore
     name="change_deputy", description="Изменить заместителя клана."
 )
 @app_commands.choices(

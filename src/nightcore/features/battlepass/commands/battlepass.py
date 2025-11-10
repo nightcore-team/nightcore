@@ -15,8 +15,10 @@ from src.nightcore.features.battlepass.components.v2 import (
 )
 from src.nightcore.features.battlepass.utils.types import BATTLEPASS_REWARDS
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -28,11 +30,11 @@ class Battlepass(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="battlepass",
         description="Взаимодействие с баттлпасом сервера.",
     )
-    @check_required_permissions(PermissionsFlagEnum.NONE) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def claim(self, interaction: Interaction["Nightcore"]):
         """Claim your battlepass rewards."""
 

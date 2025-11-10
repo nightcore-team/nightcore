@@ -24,15 +24,17 @@ from src.nightcore.utils.field_validators import (
     split_changes,
     update_id_list,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @infomaker_group.command(
     name="setup", description="Настроить логирование для инфомейкера."
-) # type: ignore
+)  # type: ignore
 @app_commands.describe(
     admins_roles="Роли администраторов, которые будут логироваться. Формат: role_id,role_id,role_id,...",  # noqa: E501
     leaders_roles="Роли лидеров, которые будут логироваться. Формат: role_id,role_id,role_id,...",  # noqa: E501
@@ -108,7 +110,7 @@ async def setup_infomaker(
 @infomaker_group.command(
     name="update_admins_roles",
     description="Обновить логируемые роли администраторов.",
-) # type: ignore
+)  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),

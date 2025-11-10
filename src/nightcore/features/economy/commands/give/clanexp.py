@@ -18,14 +18,16 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 
-@give_group.command(name="clanexp", description="Выдать опыт клану") # type: ignore
+@give_group.command(name="clanexp", description="Выдать опыт клану")  # type: ignore
 @app_commands.describe(
     clan="Клан, которому выдаётся опыт",
     amount="Количество опыта для выдачи",

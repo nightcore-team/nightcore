@@ -11,8 +11,10 @@ from src.infra.db.operations import get_clan_member
 from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.components.v2 import ClanInviteViewV2
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@clan_manage_group.command( # type: ignore
+@clan_manage_group.command(  # type: ignore
     name="invite", description="Пригласить участника в ваш клан."
 )
 @app_commands.describe(user="Пользователь, которого хотите пригласить.")

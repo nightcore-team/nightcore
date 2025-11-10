@@ -140,7 +140,7 @@ class ExpiredNotifyTask(Cog):
                     )
 
                 try:
-                    asyncio.create_task(  # noqa: RUF006
+                    asyncio.create_task(
                         moderation_notifications_channel.send(  # type: ignore
                             view=NotifyTimedOutViewV2(
                                 self.bot,

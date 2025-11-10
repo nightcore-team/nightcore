@@ -31,9 +31,11 @@ from src.nightcore.utils import (
     get_all_members_with_specified_role,
     has_any_role,
 )
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import compare_date_range
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -45,7 +47,7 @@ class GetModerationStats(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="getmoderstats", description="Получить статистику модерации"
     )
     @app_commands.describe(
@@ -54,7 +56,7 @@ class GetModerationStats(Cog):
         to_date="Дата окончания.",
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def getmoderstats(
         self,
         interaction: Interaction,

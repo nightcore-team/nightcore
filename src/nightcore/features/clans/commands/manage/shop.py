@@ -23,8 +23,10 @@ from src.nightcore.features.clans.components.v2 import ClanShopViewV2
 from src.nightcore.features.clans.utils import clans_shop_autocomplete
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_messageable_channel_exists
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -32,7 +34,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@clan_manage_group.command( # type: ignore
+@clan_manage_group.command(  # type: ignore
     name="shop", description="Купить предмет в магазине клана."
 )
 @app_commands.describe(
@@ -250,7 +252,7 @@ async def shop(
 
         view.custom_id = state.custom_id
 
-        asyncio.create_task(  # noqa: RUF006
+        asyncio.create_task(
             message.edit(view=view.make_component())
         )
 

@@ -10,8 +10,10 @@ from discord.interactions import Interaction
 from src.infra.db.operations import get_clans_by_spec
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.features.clans.components.v2 import ClanListViewV2
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -20,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @clan_main_group.command(
-    name="top", description="Показать топ 10 кланов на сервере" # type: ignore
+    name="top",
+    description="Показать топ 10 кланов на сервере",  # type: ignore
 )
 @app_commands.describe()
 @app_commands.choices(

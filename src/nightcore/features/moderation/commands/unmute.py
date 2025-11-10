@@ -22,8 +22,10 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -35,13 +37,13 @@ class UnMute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="unmute", description="Разблокировать чат пользователю"
     )
     @app_commands.describe(
         user="Пользователь для разблокировки", reason="Причина разблокировки"
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def unmute(
         self,
         interaction: Interaction,

@@ -31,9 +31,11 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import parse_duration
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -45,7 +47,7 @@ class Voteban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="voteban",
         description="Отправить запрос на голосование по бану пользователя",
     )
@@ -56,7 +58,7 @@ class Voteban(Cog):
         delete_messages_per="Удалять сообщения за последний период времени (например, 1h, 1d, 7d)",  # noqa: E501
         # proofs="Собрать доказательства для запроса на бан",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def voteban(
         self,
         interaction: Interaction,
@@ -350,7 +352,9 @@ class Voteban(Cog):
             original_delete_seconds=delete_messages_per,
             delete_seconds=parsed_delete_messages_per_seconds,
             ban_access_roles_ids=ban_access_roles,
-            moderation_access_roles_ids=cast(list[int], moderation_access_roles),
+            moderation_access_roles_ids=cast(
+                list[int], moderation_access_roles
+            ),
         )
 
         try:

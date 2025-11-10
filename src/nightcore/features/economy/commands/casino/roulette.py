@@ -18,8 +18,10 @@ from src.nightcore.features.economy.utils.casino import (
     spin_roulette,
 )
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -28,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@casino_group.command(name="roulette", description="Сыграть в рулетку") # type: ignore
+@casino_group.command(name="roulette", description="Сыграть в рулетку")  # type: ignore
 @app_commands.describe(
     bet="Ваша ставка (минимум 5 коинов)", color="Выберите цвет"
 )

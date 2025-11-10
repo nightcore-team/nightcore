@@ -21,9 +21,11 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.economy._groups import temp as temp_group
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import parse_duration
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -32,7 +34,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@temp_group.command( # type: ignore
+@temp_group.command(  # type: ignore
     name="multiplier", description="Поставить временный множитель"
 )
 @app_commands.describe(

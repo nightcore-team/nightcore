@@ -22,8 +22,10 @@ from src.nightcore.features.economy.utils.case import (
     open_colors_case,
 )
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -32,7 +34,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@case_group.command(name="open", description="Открыть кейс") # type: ignore
+@case_group.command(name="open", description="Открыть кейс")  # type: ignore
 @app_commands.describe(case="Кейс для открытия.")
 @app_commands.autocomplete(case=cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)

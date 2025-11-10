@@ -24,14 +24,17 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @battlepass_group.command(
     name="change_level", description="Изменить уровень боевого пропуска"
-) # type: ignore
+)  # type: ignore
 @app_commands.describe(
     new_required_exp="Новое количество EXP для этого уровня",
     new_reward_type="Новый тип награды",

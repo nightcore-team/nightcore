@@ -18,8 +18,10 @@ from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -28,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command( # type: ignore
+@give_group.command(  # type: ignore
     name="bp_exp", description="Выдать очки батлпасса пользователю"
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
@@ -59,7 +61,6 @@ async def give_bp_exp(
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
     ) as (_, session):
-
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,

@@ -31,6 +31,6 @@ def build_rolemembers_pages(
         pages.append(current)
 
     if not pages:
-        pages = ["Нет участников с этой ролью."]  # noqa: RUF001
+        pages = ["Нет участников с этой ролью."]
 
     return pages

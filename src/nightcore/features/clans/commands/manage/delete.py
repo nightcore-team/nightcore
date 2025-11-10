@@ -22,13 +22,15 @@ from src.nightcore.utils import (
     ensure_role_exists,
     safe_delete_role,
 )
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command( # type: ignore
+@manage_clan_group.command(  # type: ignore
     name="delete", description="Удалить существующий клан."
 )
 @app_commands.describe(
@@ -96,7 +98,7 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
     if outcome == "success":
         role = await ensure_role_exists(guild, clan_role_id)
         if role:
-            asyncio.create_task(safe_delete_role(role, "Удаление роли клана"))  # noqa: RUF006
+            asyncio.create_task(safe_delete_role(role, "Удаление роли клана"))
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

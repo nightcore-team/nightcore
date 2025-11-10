@@ -20,7 +20,10 @@ from src.nightcore.features.moderation.events import UnPunishEventData
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +32,13 @@ class UnBan(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="unban", description="Разбанить пользователя на сервере"
     )
     @app_commands.describe(
         user="Пользователь для разбана", reason="Причина разбана пользователя"
     )
-    @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS)  # type: ignore
     async def unban(
         self,
         interaction: Interaction,

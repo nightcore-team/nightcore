@@ -26,9 +26,11 @@ from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.utils import compare_top_roles
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import parse_duration
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -37,7 +39,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@temp_group.command(name="role", description="Выдать пользователю роль") # type: ignore
+@temp_group.command(name="role", description="Выдать пользователю роль")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается роль.",
     role="Роль для выдачи.",
@@ -58,7 +60,6 @@ async def give_role(
     outcome = ""
 
     async with bot.uow.start() as session:
-
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,

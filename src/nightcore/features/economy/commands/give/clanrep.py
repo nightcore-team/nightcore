@@ -20,14 +20,16 @@ from src.nightcore.features.clans.events.dto import (
 )
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.features.economy._groups import give as give_group
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 
-@give_group.command(name="clanrep", description="Выдать репутацию клану") # type: ignore
+@give_group.command(name="clanrep", description="Выдать репутацию клану")  # type: ignore
 @app_commands.describe(
     clan="Клан, которому выдаётся репутация",
     amount="Количество репутации для выдачи",

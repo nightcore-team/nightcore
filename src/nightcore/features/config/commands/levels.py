@@ -26,13 +26,15 @@ from src.nightcore.utils.field_validators import (
     split_changes,
     str_value,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@levels_group.command(name="setup", description="Настроить систему уровней.") # type: ignore
+@levels_group.command(name="setup", description="Настроить систему уровней.")  # type: ignore
 @app_commands.describe(
     count_messages_channel="Канал для подсчета сообщений для уровней.",
     count_messages_type="Тип подсчета сообщений для уровней: Все каналы | Только указанный",  # noqa: E501

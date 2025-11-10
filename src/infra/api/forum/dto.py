@@ -1,3 +1,5 @@
+"""Data transfer objects for the forum API."""
+
 from dataclasses import dataclass
 from typing import Any
 

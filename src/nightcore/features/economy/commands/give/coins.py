@@ -18,8 +18,10 @@ from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -28,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command(name="coins", description="Выдать коины пользователю") # type: ignore
+@give_group.command(name="coins", description="Выдать коины пользователю")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдаются коины",
     amount="Количество коинов для выдачи",

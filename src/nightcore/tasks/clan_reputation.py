@@ -80,7 +80,7 @@ class ClansPayDayTask(Cog):
                     continue
 
                 try:
-                    asyncio.create_task(channel.send(view=view))  # type: ignore  # noqa: RUF006
+                    asyncio.create_task(channel.send(view=view))  # type: ignore
                 except Exception as e:
                     logger.error(
                         "[task] - Error sending clan payday message to channel %s in guild %s: %s",  # noqa: E501

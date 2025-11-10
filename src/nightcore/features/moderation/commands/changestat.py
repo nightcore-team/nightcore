@@ -25,8 +25,10 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     has_any_role,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -38,7 +40,7 @@ class ChangeStat(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="changestat", description="Изменить статистику модератора"
     )
     @app_commands.describe(
@@ -60,7 +62,7 @@ class ChangeStat(Cog):
             app_commands.Choice(name="Role Accept", value="role_accept"),
         ]
     )
-    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
     async def changestat(
         self,
         interaction: Interaction,
@@ -88,7 +90,6 @@ class ChangeStat(Cog):
         async with specified_guild_config(
             self.bot, guild.id, GuildModerationConfig
         ) as (guild_config, _):
-
             moderation_access_roles_ids = (
                 guild_config.moderation_access_roles_ids
             )
@@ -101,7 +102,9 @@ class ChangeStat(Cog):
             if not trackable_moderation_role:
                 raise FieldNotConfiguredError("отслеживаемая роль модерации")
 
-        is_member_moderator = has_any_role(moderator, trackable_moderation_role)
+        is_member_moderator = has_any_role(
+            moderator, trackable_moderation_role
+        )
         if not is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(

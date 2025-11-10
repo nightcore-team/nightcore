@@ -29,7 +29,10 @@ from src.nightcore.features.moderation.events import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +41,14 @@ class Rr(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="rr",
         description="Удалить организационную роль у пользователя",
     )
     @app_commands.describe(
         user="Пользователь, у которого нужно удалить роль",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def rr(
         self,
         interaction: Interaction,

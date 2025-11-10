@@ -21,7 +21,10 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +33,14 @@ class Unticketban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="unticketban",
         description="Снять бан на создание тикетов с пользователя",
     )
     @app_commands.describe(
         user="Пользователь для снятия бана", reason="Причина снятия бана"
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def unticketban(
         self,
         interaction: Interaction,
@@ -87,10 +90,10 @@ class Unticketban(Cog):
                     "Ошибка снятия тикет бана",
                     "Не удалось снять тикет бан с пользователя.",
                     self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         await interaction.response.defer(thinking=True)
 

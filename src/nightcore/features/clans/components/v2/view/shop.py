@@ -152,7 +152,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка одобрения покупки",
-                    "Канал с правилами не настроен.",  # noqa: RUF001
+                    "Канал с правилами не настроен.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 )
@@ -325,7 +325,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка отклонения покупки",
-                    "Роли с доступом к кланам не настроены.",  # noqa: RUF001
+                    "Роли с доступом к кланам не настроены.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 )
@@ -509,7 +509,7 @@ class ClanShopViewV2(LayoutView):
         container.add_item(Separator[Self]())  # 5
 
         # 6
-        container.add_item(TextDisplay[Self]("### Информация о покупке:"))  # noqa: RUF001
+        container.add_item(TextDisplay[Self]("### Информация о покупке:"))
         # 7
         container.add_item(
             TextDisplay[Self](
@@ -577,7 +577,7 @@ class ShopNotifyViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:9183shoppingcart:1431625159235731516> Уведомление о покупке товара"  # noqa: E501, RUF001
+                "## <:9183shoppingcart:1431625159235731516> Уведомление о покупке товара"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -585,17 +585,17 @@ class ShopNotifyViewV2(LayoutView):
         description = ""
         if state == ShopOrderStateEnum.APPROVED:
             description = (
-                f"<@{moderator_id}> одобрил(а) вашу покупку в магазине."  # noqa: RUF001
+                f"<@{moderator_id}> одобрил(а) вашу покупку в магазине."
             )
         elif state == ShopOrderStateEnum.DENIED:
             description = (
-                f"<@{moderator_id}> отклонил(а) вашу покупку в магазине."  # noqa: RUF001
+                f"<@{moderator_id}> отклонил(а) вашу покупку в магазине."
             )
 
         container.add_item(TextDisplay[Self](f"{description}"))
         container.add_item(Separator[Self]())
 
-        container.add_item(TextDisplay[Self]("### Информация о покупке:"))  # noqa: RUF001
+        container.add_item(TextDisplay[Self]("### Информация о покупке:"))
 
         container.add_item(
             TextDisplay[Self](

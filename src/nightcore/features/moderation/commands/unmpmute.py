@@ -22,8 +22,10 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -35,7 +37,7 @@ class UnMpMute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="unmpmute",
         description="Разблокировать пользователя на торговой площадке сервера",
     )
@@ -43,7 +45,7 @@ class UnMpMute(Cog):
         user="Пользователь для разблокировки",
         reason="Причина разблокировки пользователя",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def unmpmute(
         self,
         interaction: Interaction,
@@ -62,7 +64,6 @@ class UnMpMute(Cog):
             GuildModerationConfig,
             _create=False,
         ) as (guild_config, _):
-
             mute_role_id = guild_config.mpmute_role_id
 
         if (

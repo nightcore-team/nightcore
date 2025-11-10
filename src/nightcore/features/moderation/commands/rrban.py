@@ -23,9 +23,11 @@ from src.nightcore.features.moderation.events import UserMutedEventData
 from src.nightcore.utils import (
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import parse_duration
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -37,14 +39,14 @@ class Rrban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="rrban",
         description="Заблокировать пользователю возможность запрашивать роли",
     )
     @app_commands.describe(
         user="Пользователь для блокировки", reason="Причина блокировки"
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def rrban(
         self,
         interaction: Interaction,
@@ -94,7 +96,7 @@ class Rrban(Cog):
         if is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
-                    "Вы не можете заблокировать запрос ролей для модераторов.",  # noqa: E501
+                    "Вы не можете заблокировать запрос ролей для модераторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -105,7 +107,7 @@ class Rrban(Cog):
             if u.role_request_ban:
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        "Этот пользователь уже заблокирован на запрос ролей.",  # noqa: E501
+                        "Этот пользователь уже заблокирован на запрос ролей.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),

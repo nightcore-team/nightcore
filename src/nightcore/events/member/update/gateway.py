@@ -1,3 +1,5 @@
+"""Gateway event handler for member updates."""
+
 import logging
 
 import discord

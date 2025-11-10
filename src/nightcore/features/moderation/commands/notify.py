@@ -24,8 +24,11 @@ from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
 from src.nightcore.features.moderation.utils import (
     find_rule_by_index,
 )
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,7 @@ class Notify(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="notify", description="Отправить оповещение пользователю"
     )
     @app_commands.describe(
@@ -42,7 +45,7 @@ class Notify(Cog):
         duration="Длительность оповещения",
         reason="Причина оповещения (номер правила или текст)",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def notify(
         self,
         interaction: Interaction["Nightcore"],

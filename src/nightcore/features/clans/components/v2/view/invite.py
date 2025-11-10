@@ -172,7 +172,7 @@ class ClanInviteViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"<:241508crown:1430227486545018961> **Лидер/заместитель** <@{inviter.user_id}>"  # noqa: E501
-                f" приглашает Вас в свой клан **{inviter.clan.name}**\n"  # noqa: RUF001
+                f" приглашает Вас в свой клан **{inviter.clan.name}**\n"
             )
         )
 

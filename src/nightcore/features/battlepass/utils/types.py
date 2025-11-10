@@ -5,8 +5,8 @@ from typing import Final
 from discord import app_commands
 
 BATTLEPASS_REWARDS: Final[dict[str, str]] = {
-    "coins_case": "Кейс с коинами",  # noqa: RUF001
-    "colors_case": "Кейс с цветами",  # noqa: RUF001
+    "coins_case": "Кейс с коинами",
+    "colors_case": "Кейс с цветами",
     "coins": "коины",
     "exp": "опыт",
 }

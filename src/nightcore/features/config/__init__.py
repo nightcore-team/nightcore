@@ -29,10 +29,10 @@ __all__ = (
     "infomaker",
     "levels",
     "logging",
-    "other",
     "moderation",
     "moderstats",
     "notifications",
+    "other",
     "private_channels",
     "tickets",
 )

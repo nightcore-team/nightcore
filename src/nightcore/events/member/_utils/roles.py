@@ -1,6 +1,11 @@
+"""Utilities related to roles in member events."""
+
+
 def roles_difference(
     old_roles: list[int], new_roles: list[int]
 ) -> tuple[list[int], list[int]]:
+    """Calculate the difference between two lists of role IDs."""
+
     old_set = set(old_roles)
     new_set = set(new_roles)
 

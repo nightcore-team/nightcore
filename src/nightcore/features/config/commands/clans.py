@@ -23,13 +23,15 @@ from src.nightcore.utils.field_validators import (
     split_changes,
     update_id_list,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@clans_group.command(name="setup", description="Настроить систему кланов.") # type: ignore
+@clans_group.command(name="setup", description="Настроить систему кланов.")  # type: ignore
 @app_commands.describe(
     shop_threads_channel="Канал, под которым создаются ветки с покупками.",
     shop_buy_ping_roles="Роли для упоминания при покупке в магазине. Формат: role_id, role_id, ...",  # noqa: E501
@@ -110,7 +112,7 @@ async def setup(
 @clans_group.command(
     name="update_clans_access",
     description="Обновить список ролей с доступом к кланам.",
-) # type: ignore
+)  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),

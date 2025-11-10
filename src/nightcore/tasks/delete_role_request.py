@@ -112,7 +112,7 @@ class DeleteRoleRequestTask(Cog):
                 try:
                     updated_view = await rr_message.edit(view=view)
 
-                    asyncio.create_task(  # noqa: RUF006
+                    asyncio.create_task(
                         updated_view.reply(
                             view=RoleRequestStateView(
                                 self.bot,

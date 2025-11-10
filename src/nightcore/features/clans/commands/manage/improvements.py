@@ -16,14 +16,16 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.utils import clans_improvements_autocomplete
 from src.nightcore.services.config import specified_guild_config
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 
-@clan_manage_group.command( # type: ignore
+@clan_manage_group.command(  # type: ignore
     name="improvements", description="Управление клановыми улучшениями."
 )
 @app_commands.describe(improvement="Улучшение, которое нужно применить.")

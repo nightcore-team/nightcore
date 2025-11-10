@@ -17,12 +17,15 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@faq_group.command( # type: ignore
+@faq_group.command(  # type: ignore
     name="change_page",
     description="Изменить существующую страницу в FAQ",
 )

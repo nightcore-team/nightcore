@@ -13,8 +13,10 @@ if TYPE_CHECKING:
 
 from src.nightcore.features.meta.components.v2 import RoleMembersViewV2
 from src.nightcore.features.meta.utils import build_rolemembers_pages
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ class RoleMembers(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="rolemembers",
         description="Получить список участников с определённой ролью",
     )

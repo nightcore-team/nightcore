@@ -23,8 +23,10 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     ensure_member_exists,
 )
-
-from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -33,7 +35,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@give_group.command(name="color", description="Выдать пользователю цвет") # type: ignore
+@give_group.command(name="color", description="Выдать пользователю цвет")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается цвет",
     color="Цвет для выдачи",
@@ -94,7 +96,6 @@ async def give_color(
         guild_config,
         session,
     ):
-
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,

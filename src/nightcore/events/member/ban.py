@@ -67,7 +67,7 @@ class BanMemberEvent(Cog):
                 )
                 embed.add_field(
                     name="Причина блокировки",
-                    value=entry.reason or "Не указана",  # noqa: RUF001
+                    value=entry.reason or "Не указана",
                     inline=False,
                 )
                 break

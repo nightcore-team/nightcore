@@ -186,8 +186,8 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
         if outcome == "user_has_open_ticket":
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "У вас уже есть открытый тикет",  # noqa: RUF001
-                    "У вас уже есть открытый тикет. Пожалуйста, закройте его перед созданием нового.",  # noqa: E501, RUF001
+                    "У вас уже есть открытый тикет",
+                    "У вас уже есть открытый тикет. Пожалуйста, закройте его перед созданием нового.",  # noqa: E501
                     view.bot.user.display_name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -197,7 +197,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка создания тикета",
-                    "Не удалось создать тикет. Пожалуйста, попробуйте позже.",  # noqa: RUF001
+                    "Не удалось создать тикет. Пожалуйста, попробуйте позже.",
                     view.bot.user.display_name,  # type: ignore
                     view.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -263,7 +263,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка создания канала",
-                        "Не удалось создать канал тикета.",  # noqa: RUF001
+                        "Не удалось создать канал тикета.",
                         view.bot.user.display_name,  # type: ignore
                         view.bot.user.display_avatar.url,  # type: ignore
                     ),

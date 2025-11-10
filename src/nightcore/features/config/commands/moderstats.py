@@ -21,15 +21,17 @@ from src.nightcore.utils.field_validators import (
     int_id_value,
     split_changes,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
     name="moderstats", description="Настроить систему статистики модерации"
-) # type: ignore
+)  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     mute="Mute score",  #

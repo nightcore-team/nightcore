@@ -25,9 +25,11 @@ from src.nightcore.utils import (
     has_any_role,
     has_any_role_from_sequence,
 )
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -39,7 +41,7 @@ class MpMute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command( # type: ignore
+    @app_commands.command(  # type: ignore
         name="mpmute",
         description="Заблокировать пользователя на торговой площадке сервера",
     )
@@ -48,7 +50,7 @@ class MpMute(Cog):
         duration="Длительность блокировки",
         reason="Причина блокировки",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def mute(
         self,
         interaction: Interaction,
@@ -72,7 +74,6 @@ class MpMute(Cog):
 
             if not (mute_role_id := guild_config.mpmute_role_id):
                 raise FieldNotConfiguredError("mpmute role")
-
 
         is_member_moderator = has_any_role_from_sequence(
             member, moderation_access_roles

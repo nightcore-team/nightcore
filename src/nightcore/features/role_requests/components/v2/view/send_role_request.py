@@ -231,7 +231,7 @@ class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
                 guild.id,
             )
 
-        asyncio.create_task(  # noqa: RUF006
+        asyncio.create_task(
             interaction.message.edit(  # type: ignore
                 view=SendRoleRequestView(view.bot, options=options)
             )
