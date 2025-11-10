@@ -21,19 +21,21 @@ from src.nightcore.utils.field_validators import (
     split_changes,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
     name="tickets", description="Настроить систему тикетов"
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.describe(
     new_tickets_category="Категория для новых тикетов",
     pinned_tickets_category="Категория для закрепленных тикетов",
     closed_tickets_category="Категория для закрытых тикетов",
     create_ticket_ping_role="Роль для упоминания при создании тикета",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def tickets(
     interaction: Interaction,
     new_tickets_category: discord.CategoryChannel | None = None,

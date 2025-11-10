@@ -13,13 +13,16 @@ from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.utils import ensure_role_exists
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
-@clan_main_group.command(name="leave", description="Покинуть клан")
+@clan_main_group.command(name="leave", description="Покинуть клан") # type: ignore
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def leave(interaction: Interaction["Nightcore"]):
     """Leave from clan."""
 

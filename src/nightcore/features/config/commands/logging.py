@@ -23,13 +23,14 @@ from src.nightcore.utils.field_validators import (
     update_id_list,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @logging_group.command(
     name="setup", description="Настроить систему логирования."
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.describe(
     bans="Канал для логирования банов.",
     voices="Канал для логирования изменений голосового состояния.",
@@ -45,6 +46,7 @@ logger = logging.getLogger(__name__)
     clans="Канал для логирования обновлений кланов.",
     ignoring_channels="Каналы для игнорирования при логировании. Формат: id,id,id,...",  # noqa: E501
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def setup(
     interaction: Interaction,
     bans: discord.TextChannel | None = None,
@@ -123,8 +125,7 @@ async def setup(
     )
 
 
-@logging_group.command(name="update_ignoring_channels")
-@app_commands.checks.has_permissions(administrator=True)
+@logging_group.command(name="update_ignoring_channels") # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -135,6 +136,7 @@ async def setup(
     channel="Канал для обновления",
     option="Добавить или удалить канал из списка игнорируемых",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_ignoring_channels(
     interaction: Interaction,
     channel: discord.TextChannel,

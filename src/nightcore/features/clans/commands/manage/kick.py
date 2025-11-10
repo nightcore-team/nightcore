@@ -17,16 +17,19 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.utils import ensure_role_exists
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
-@clan_manage_group.command(
+@clan_manage_group.command( # type: ignore
     name="kick", description="Кикнуть участника из клана."
 )
 @app_commands.describe(user="Пользователь, которого хотите кикнуть")
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def kick(
     interaction: Interaction["Nightcore"],
     user: Member,

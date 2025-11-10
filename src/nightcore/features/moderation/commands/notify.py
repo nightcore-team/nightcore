@@ -10,15 +10,12 @@ from discord.interactions import Interaction
 from src.infra.db.models._annot import Chapter
 from src.infra.db.operations import (
     get_guild_rules,
-    get_moderation_access_roles,
 )
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
-    MissingPermissionsEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
@@ -27,11 +24,8 @@ from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
 from src.nightcore.features.moderation.utils import (
     find_rule_by_index,
 )
-from src.nightcore.utils import (
-    ensure_member_exists,
-    has_any_role_from_sequence,
-)
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +34,7 @@ class Notify(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="notify", description="Отправить оповещение пользователю"
     )
     @app_commands.describe(
@@ -48,6 +42,7 @@ class Notify(Cog):
         duration="Длительность оповещения",
         reason="Причина оповещения (номер правила или текст)",
     )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
     async def notify(
         self,
         interaction: Interaction["Nightcore"],
@@ -59,26 +54,9 @@ class Notify(Cog):
 
         guild = cast(Guild, interaction.guild)
 
-        member = await ensure_member_exists(guild, user.id)
-
-        if member is None:
-            return await interaction.response.send_message(
-                embed=EntityNotFoundEmbed(
-                    "пользователь",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+        member = user
 
         async with self.bot.uow.start() as session:
-            if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
-            ):
-                raise FieldNotConfiguredError("доступ к модерации")
-
             if not (
                 rules_data := cast(
                     dict[str, Any],
@@ -86,18 +64,6 @@ class Notify(Cog):
                 )
             ):
                 raise FieldNotConfiguredError("правила")
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(Member, interaction.user), moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         rules = convert_dict_to_rules(rules_data)
 

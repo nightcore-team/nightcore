@@ -26,13 +26,14 @@ from src.nightcore.utils.field_validators import (
     update_id_list,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @moderation_group.command(
     name="setup", description="Настроить систему модерации."
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.describe(
     moderation_access_roles="Роли, которые могут получать доступ к функциям модерации",  # noqa: E501
     leadership_access_roles="Роли, которые могут получать доступ к функциям модерации для руководства.",  # noqa: E501
@@ -52,6 +53,7 @@ logger = logging.getLogger(__name__)
         app_commands.Choice(name="Role", value="role"),
     ]
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def setup_moderation(
     interaction: Interaction,
     moderation_access_roles: str | None = None,  #
@@ -127,8 +129,7 @@ async def setup_moderation(
     )
 
 
-@moderation_group.command(name="update_moderation_access")
-@app_commands.checks.has_permissions(administrator=True)
+@moderation_group.command(name="update_moderation_access") # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -139,6 +140,7 @@ async def setup_moderation(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к модерации",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_moderation_access(
     interaction: Interaction,
     role: discord.Role,
@@ -190,8 +192,7 @@ async def update_moderation_access(
     )
 
 
-@moderation_group.command(name="update_ban_access")
-@app_commands.checks.has_permissions(administrator=True)
+@moderation_group.command(name="update_ban_access") # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -202,6 +203,7 @@ async def update_moderation_access(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к бану",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_ban_access(
     interaction: Interaction,
     role: discord.Role,
@@ -254,14 +256,14 @@ async def update_ban_access(
     )
 
 
-@moderation_group.command(name="update_rr_access")
-@app_commands.checks.has_permissions(administrator=True)
+@moderation_group.command(name="update_rr_access") # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
         app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к rr",
@@ -316,14 +318,14 @@ async def update_rr_access(
     )
 
 
-@moderation_group.command(name="update_fraction_role_access")
-@app_commands.checks.has_permissions(administrator=True)
+@moderation_group.command(name="update_fraction_role_access") # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
         app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к fraction_role",  # noqa: E501
@@ -380,8 +382,7 @@ async def update_fraction_role_access(
     )
 
 
-@moderation_group.command(name="update_leardership_access")
-@app_commands.checks.has_permissions(administrator=True)
+@moderation_group.command(name="update_leardership_access") # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -392,6 +393,7 @@ async def update_fraction_role_access(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к модерации для руководства.",  # noqa: E501
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_leadership_access(
     interaction: Interaction,
     role: discord.Role,

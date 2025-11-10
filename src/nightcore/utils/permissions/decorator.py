@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
@@ -10,15 +10,24 @@ from typing import (
     Concatenate,
     ParamSpec,
     TypeVar,
+    cast,
     overload,
 )
 
-from discord import Interaction, app_commands
+from discord import Interaction, app_commands, Member, Guild
+
+from src.infra.db.models import GuildClansConfig, GuildModerationConfig, GuildEconomyConfig
+from src.infra.db.operations import get_specified_field
+from src.nightcore.utils import has_any_role_from_sequence
+
+from src.nightcore.exceptions import FieldNotConfiguredError
 
 if TYPE_CHECKING:
     from discord.ext.commands import Cog  # type: ignore
-
+    from sqlalchemy.ext.asyncio import AsyncSession
     from src.nightcore.bot import Nightcore
+
+    from src.infra.db.operations import GuildT
 
 from ._enums import PermissionsFlagEnum
 
@@ -106,6 +115,42 @@ def check_required_permissions(
 
     return decorator
 
+async def has_specified_permission(
+    user: Member,
+    *,
+    session: AsyncSession,
+    guild_id: int,
+    config_type: type[GuildT],
+    field_name: str,
+    access_name: str,
+) -> bool:
+    """Check if specified permission exists in guild config.
+
+    Args:
+        session: Database session
+        guild_id: Guild ID
+        config_type: Guild config type
+
+    Returns:
+        True if permission exists, False otherwise
+    """
+
+    roles_access_ids: Sequence[int] | None = await get_specified_field(
+        session,
+        guild_id=guild_id,
+        config_type=config_type,
+        field_name=field_name,
+    )
+    if not roles_access_ids:
+        raise FieldNotConfiguredError(
+            access_name
+        )
+
+    return bool(has_any_role_from_sequence(
+        user, roles_access_ids
+    ))
+
+
 
 async def _check_user_permission(
     interaction: Interaction[Nightcore],
@@ -121,12 +166,64 @@ async def _check_user_permission(
         True if user has permission, False otherwise
     """
 
-    member = interaction.user
+    member = cast(Member, interaction.user)
+    bot = interaction.client
+    guild = cast(Guild, interaction.guild)
 
     if not hasattr(member, "guild_permissions"):
         return False
 
     if permissions == PermissionsFlagEnum.ADMINISTRATOR:
-        return member.guild_permissions.administrator  # type: ignore
+        return member.guild_permissions.administrator
+
+    if permissions == PermissionsFlagEnum.NONE:
+        return True
+
+    async with bot.uow.start() as session:
+        if permissions == PermissionsFlagEnum.CLANS_ACCESS:
+            return await has_specified_permission(
+                member,
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildClansConfig,
+                field_name="clans_access_roles_ids",
+                access_name="доступ к кланам",
+            )
+        if permissions == PermissionsFlagEnum.MODERATION_ACCESS:
+            return await has_specified_permission(
+                member,
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildModerationConfig,
+                field_name="moderation_access_roles_ids",
+                access_name="доступ к модерации",
+            )
+        if permissions == PermissionsFlagEnum.BAN_ACCESS:
+            return await has_specified_permission(
+                member,
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildModerationConfig,
+                field_name="ban_access_roles_ids",
+                access_name="доступ к бану",
+            )
+        if permissions == PermissionsFlagEnum.HEAD_MODERATION_ACCESS:
+            return await has_specified_permission(
+                member,
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildModerationConfig,
+                field_name="leadership_access_roles_ids",
+                access_name="доступ к главной модерации",
+            )
+        if permissions == PermissionsFlagEnum.ECONOMY_ACCESS:
+            return await has_specified_permission(
+                member,
+                session=session,
+                guild_id=guild.id,
+                config_type=GuildEconomyConfig,
+                field_name="economy_access_roles_ids",
+                access_name="доступ к экономике",
+            )
 
     return False

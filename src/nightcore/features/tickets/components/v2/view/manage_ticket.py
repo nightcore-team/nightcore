@@ -89,7 +89,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         label="Закрепить",
         emoji="📌",
         custom_id="ticket:pin",
-    )
+    ) # type: ignore
     async def pin_ticket(
         self, interaction: Interaction, button: Button["ManageTicketViewV2"]
     ):

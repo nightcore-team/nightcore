@@ -13,17 +13,20 @@ from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.features.clans.components.v2 import ClanInfoViewV2
 from src.nightcore.features.clans.utils import clans_autocomplete
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
-@clan_main_group.command(
+@clan_main_group.command( # type: ignore
     name="info", description="Посмотреть актуальную информацию о клане."
 )
 @app_commands.describe(clan="Клан, информацию о котором вы хотите посмотреть.")
 @app_commands.autocomplete(clan=clans_autocomplete)
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def info(interaction: Interaction["Nightcore"], clan: str):
     """Get information about a clan."""
 

@@ -29,11 +29,12 @@ from src.nightcore.utils.field_validators import (
     update_id_list,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
-@economy_group.command(name="setup", description="Настроить систему экономики")
-@app_commands.checks.has_permissions(administrator=True)
+@economy_group.command(name="setup", description="Настроить систему экономики") # type: ignore
 @app_commands.describe(
     shop_buy_ping_roles="Роли для упоминания при покупке в магазине",
     economy_access_roles="Роли с доступом к командам экономики",
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
     coins_drop="Конфигурация выпадения монет с кейса. Формат: коины, шанс (без %) | монеты, шанс | ...",  # noqa: E501
     colors_drop="Конфигурация выпадения цветов с кейса. Формат: role_id, шанс (без %) | role_id, шанс | ...",  # noqa: E501
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def setup(
     interaction: Interaction,
     shop_buy_ping_roles: str | None = None,
@@ -126,8 +128,7 @@ async def setup(
 @economy_group.command(
     name="update_economy_access",
     description="Обновить список ролей с доступом к экономике",
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -138,6 +139,7 @@ async def setup(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка доступа к экономике",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_economy_access(
     interaction: Interaction,
     role: discord.Role,

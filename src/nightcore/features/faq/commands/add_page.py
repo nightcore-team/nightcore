@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, app_commands
+from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.models.guild import MainGuildConfig
@@ -14,14 +14,16 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
-@faq_group.command(
+@faq_group.command( # type: ignore
     name="add_page",
     description="Добавить новую страницу в FAQ",
 )
-@app_commands.checks.has_permissions(administrator=True)
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def add_faq_page(
     interaction: Interaction["Nightcore"],
 ) -> None:

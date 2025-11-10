@@ -4,29 +4,26 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import (
-    GuildEconomyConfig,
     GuildLevelsConfig,
 )
 from src.infra.db.models._enums import MultiplierTypeEnum
 from src.infra.db.operations import (
     get_or_create_temp_multiplier,
-    get_specified_field,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.economy._groups import temp as temp_group
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.utils.time_utils import parse_duration
+
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -35,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@temp_group.command(
+@temp_group.command( # type: ignore
     name="multiplier", description="Поставить временный множитель"
 )
 @app_commands.describe(
@@ -49,6 +46,7 @@ logger = logging.getLogger(__name__)
         app_commands.Choice(name="Коины", value="coins"),
     ]
 )
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def set_multiplier(
     interaction: Interaction["Nightcore"],
     multiplier_type: app_commands.Choice[str],
@@ -81,65 +79,41 @@ async def set_multiplier(
         guild_config,
         session,
     ):
-        economy_access_roles_ids = await get_specified_field(
-            session,
-            guild_id=guild.id,
-            config_type=GuildEconomyConfig,
-            field_name="economy_access_roles_ids",
-        )
+        # Get or create multiplier
+        try:
+            temp_multiplier, created = await get_or_create_temp_multiplier(
+                session,
+                guild_id=guild.id,
+                multiplier_type=multiplier_type_enum,
+                multiplier=multiplier,
+                duration=parsed_duration,
+            )
 
-        if not economy_access_roles_ids:
-            raise FieldNotConfiguredError("доступ к экономике")
-
-        if not has_any_role_from_sequence(
-            cast(Member, interaction.user), economy_access_roles_ids
-        ):
-            outcome = "missing_permissions"
-        else:
-            # Get or create multiplier
-            try:
-                temp_multiplier, created = await get_or_create_temp_multiplier(
-                    session,
-                    guild_id=guild.id,
-                    multiplier_type=multiplier_type_enum,
-                    multiplier=multiplier,
-                    duration=parsed_duration,
+            if not created:
+                end_time = datetime.now(timezone.utc) + timedelta(
+                    seconds=parsed_duration
                 )
 
-                if not created:
-                    end_time = datetime.now(timezone.utc) + timedelta(
-                        seconds=parsed_duration
-                    )
+                temp_multiplier.multiplier = multiplier
+                temp_multiplier.duration = parsed_duration
+                temp_multiplier.end_time = end_time
 
-                    temp_multiplier.multiplier = multiplier
-                    temp_multiplier.duration = parsed_duration
-                    temp_multiplier.end_time = end_time
+            match multiplier_type_enum:
+                case MultiplierTypeEnum.EXP:
+                    guild_config.temp_exp_multiplier = multiplier
+                case MultiplierTypeEnum.COINS:
+                    guild_config.temp_coins_multiplier = multiplier
 
-                match multiplier_type_enum:
-                    case MultiplierTypeEnum.EXP:
-                        guild_config.temp_exp_multiplier = multiplier
-                    case MultiplierTypeEnum.COINS:
-                        guild_config.temp_coins_multiplier = multiplier
-
-                outcome = "success"
-            except Exception as e:
-                logger.exception(
-                    "[temp/multiplier] Failed to set temporary %s multiplier to %s for guild %s: %s",  # noqa: E501
-                    multiplier_type_enum.value,
-                    multiplier,
-                    guild.id,
-                    e,
-                )
-                outcome = "error"
-
-    if outcome == "missing_permissions":
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
+            outcome = "success"
+        except Exception as e:
+            logger.exception(
+                "[temp/multiplier] Failed to set temporary %s multiplier to %s for guild %s: %s",  # noqa: E501
+                multiplier_type_enum.value,
+                multiplier,
+                guild.id,
+                e,
+            )
+            outcome = "error"
 
     if outcome == "error":
         return await interaction.response.send_message(

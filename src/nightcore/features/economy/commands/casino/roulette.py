@@ -19,6 +19,8 @@ from src.nightcore.features.economy.utils.casino import (
 )
 from src.nightcore.services.config import specified_guild_config
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@casino_group.command(name="roulette", description="Сыграть в рулетку")
+@casino_group.command(name="roulette", description="Сыграть в рулетку") # type: ignore
 @app_commands.describe(
     bet="Ваша ставка (минимум 5 коинов)", color="Выберите цвет"
 )
@@ -38,6 +40,7 @@ logger = logging.getLogger(__name__)
     ]
 )
 @app_commands.checks.cooldown(1, 15.0, key=lambda i: i.user.id)
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def roulette(
     interaction: Interaction["Nightcore"],
     bet: app_commands.Range[int, 5, 1000000],

@@ -5,28 +5,27 @@ from datetime import timezone
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UserKickEventData
 from src.nightcore.utils import (
     compare_top_roles,
-    ensure_member_exists,
     has_any_role_from_sequence,
 )
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -35,51 +34,27 @@ class Kick(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="kick",
         description="Кикнуть пользователя с сервера",
     )
     @app_commands.describe(user="Пользователь для кика", reason="Причина кика")
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def kick(
         self,
         interaction: Interaction,
-        user: discord.User,
+        user: Member,
         reason: str,
     ):
         """Kick a user from the server."""
         guild = cast(Guild, interaction.guild)
 
         # Ensure we have a guild Member object
-        member = await ensure_member_exists(guild, user.id)
-
-        if member is None:
-            return await interaction.response.send_message(
-                embed=EntityNotFoundEmbed(
-                    "пользователь",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+        member = user
 
         async with self.bot.uow.start() as session:
-            if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
-            ):
-                raise FieldNotConfiguredError("доступ к модерации")
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
+            moderation_access_roles = await get_moderation_access_roles(
+                session, guild_id=guild.id
             )
 
         is_member_moderator = has_any_role_from_sequence(

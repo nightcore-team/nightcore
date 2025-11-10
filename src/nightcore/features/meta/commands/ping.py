@@ -1,17 +1,22 @@
 """Command to check bot latency."""
 
+from typing import TYPE_CHECKING
+
 from discord import app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 class Ping(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(name="ping", description="Посмотреть задержку бота")
+    @app_commands.command(name="ping", description="Посмотреть задержку бота") # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def ping(self, interaction: Interaction):
         """Send a message displaying the bot's current latency."""
 
@@ -20,6 +25,6 @@ class Ping(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the Ping cog."""
     await bot.add_cog(Ping(bot))

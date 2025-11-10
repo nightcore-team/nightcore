@@ -17,17 +17,16 @@ from src.infra.db.models import (
 from src.infra.db.models._enums import ChangeStatTypeEnum
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
-    ensure_member_exists,
     has_any_role,
-    has_any_role_from_sequence,
 )
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -39,7 +38,7 @@ class ChangeStat(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="changestat", description="Изменить статистику модератора"
     )
     @app_commands.describe(
@@ -61,6 +60,7 @@ class ChangeStat(Cog):
             app_commands.Choice(name="Role Accept", value="role_accept"),
         ]
     )
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS) # type: ignore
     async def changestat(
         self,
         interaction: Interaction,
@@ -71,18 +71,6 @@ class ChangeStat(Cog):
     ):
         """Change moderator's stat."""
         guild = cast(Guild, interaction.guild)
-
-        member = await ensure_member_exists(guild, moderator.id)
-        if member is None:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка поиска пользователя",
-                    "Не удалось найти указанного модератора на сервере.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         try:
             amount = float(amount)
@@ -100,11 +88,6 @@ class ChangeStat(Cog):
         async with specified_guild_config(
             self.bot, guild.id, GuildModerationConfig
         ) as (guild_config, _):
-            leadership_access_roles_ids = (
-                guild_config.leadership_access_roles_ids
-            )
-            if not leadership_access_roles_ids:
-                raise FieldNotConfiguredError("доступ к главной модерации")
 
             moderation_access_roles_ids = (
                 guild_config.moderation_access_roles_ids
@@ -118,20 +101,7 @@ class ChangeStat(Cog):
             if not trackable_moderation_role:
                 raise FieldNotConfiguredError("отслеживаемая роль модерации")
 
-        has_moder_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user),
-            leadership_access_roles_ids,
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        is_member_moderator = has_any_role(member, trackable_moderation_role)
+        is_member_moderator = has_any_role(moderator, trackable_moderation_role)
         if not is_member_moderator:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(

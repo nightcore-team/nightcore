@@ -16,14 +16,15 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
-@faq_group.command(
+@faq_group.command( # type: ignore
     name="delete_page",
     description="Удалить существующую страницу в FAQ",
 )
-@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(page="Страница FAQ для удаления")
 @app_commands.autocomplete(page=faq_autocomplete)
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def delete_faq_page(
     interaction: Interaction["Nightcore"],
     page: str,

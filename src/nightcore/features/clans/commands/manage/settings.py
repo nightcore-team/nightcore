@@ -3,31 +3,27 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-import discord
 from discord import Guild, Member, Role, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildClansConfig
 from src.infra.db.models._enums import ClanMemberRoleEnum
 from src.infra.db.operations import (
     get_clan_by_id,
     get_clan_member,
-    get_specified_field,
 )
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
-    MissingPermissionsEmbed,
     NoOptionsSuppliedEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
     compare_top_roles,
-    has_any_role_from_sequence,
 )
+
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -36,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command(
+@manage_clan_group.command( # type: ignore
     name="settings", description="Управление настройками клана."
 )
 @app_commands.describe(
@@ -45,6 +41,7 @@ logger = logging.getLogger(__name__)
     new_role="Новая роль, связанная с кланом.",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
+@check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
 async def settings(
     interaction: Interaction["Nightcore"],
     clan: str,
@@ -70,20 +67,6 @@ async def settings(
     changed_role_to: int | None = None
 
     async with bot.uow.start() as session:
-        clans_access_roles_ids = await get_specified_field(
-            session,
-            guild_id=guild.id,
-            config_type=GuildClansConfig,
-            field_name="clans_access_roles_ids",
-        )
-
-        if not clans_access_roles_ids:
-            outcome = "config_missing"
-        else:
-            if not has_any_role_from_sequence(
-                cast(discord.Member, interaction.user), clans_access_roles_ids
-            ):
-                outcome = "no_permissions"
 
         if outcome is None:
             clan_entity = await get_clan_by_id(
@@ -141,18 +124,6 @@ async def settings(
                                     e,
                                 )
                                 outcome = "role_change_internal_error"
-
-    if outcome == "config_missing":
-        raise FieldNotConfiguredError("clans access")
-
-    if outcome == "no_permissions":
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
 
     if outcome == "clan_not_found":
         return await interaction.response.send_message(

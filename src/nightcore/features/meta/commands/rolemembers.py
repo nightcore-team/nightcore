@@ -1,28 +1,34 @@
 """Command to get members of a role."""
 
 import logging
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.features.meta.components.v2 import RoleMembersViewV2
 from src.nightcore.features.meta.utils import build_rolemembers_pages
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
 
 class RoleMembers(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="rolemembers",
         description="Получить список участников с определённой ролью",
     )
     @app_commands.describe(role="Роль, участников которой нужно получить")
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def role_members(
         self,
         interaction: Interaction,
@@ -54,6 +60,6 @@ class RoleMembers(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the RoleMembers cog."""
     await bot.add_cog(RoleMembers(bot))

@@ -9,20 +9,18 @@ from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UnPunishEventData
-from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import has_any_role_from_sequence
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +29,13 @@ class UnBan(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="unban", description="Разбанить пользователя на сервере"
     )
     @app_commands.describe(
         user="Пользователь для разбана", reason="Причина разбана пользователя"
     )
+    @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS) # type: ignore
     async def unban(
         self,
         interaction: Interaction,
@@ -45,44 +44,6 @@ class UnBan(Cog):
     ):
         """Unban a user in the server."""
         guild = cast(Guild, interaction.guild)
-
-        async with specified_guild_config(
-            self.bot,
-            guild.id,
-            GuildModerationConfig,
-            _create=False,
-        ) as (guild_config, _):
-            if not (
-                moderation_access_roles
-                := guild_config.moderation_access_roles_ids
-            ):
-                raise FieldNotConfiguredError("moderation access")
-
-            if not (ban_access_roles := guild_config.ban_access_roles_ids):
-                raise FieldNotConfiguredError("ban access")
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), moderation_access_roles
-        )
-        has_ban_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), ban_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-        if not has_ban_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         if not guild.me.guild_permissions.ban_members:
             return await interaction.response.send_message(

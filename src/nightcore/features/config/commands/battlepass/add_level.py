@@ -25,12 +25,14 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @battlepass_group.command(
     name="add_level", description="Добавить уровень боевого пропуска"
-)
+) # type: ignore
 @app_commands.describe(
     required_exp="Количество EXP для этого уровня",
     reward_type="Тип награды",
@@ -39,6 +41,7 @@ logger = logging.getLogger(__name__)
 @app_commands.choices(
     reward_type=BATTLEPASS_REWARDS_CHOICES,
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def add_level(
     interaction: Interaction["Nightcore"],
     required_exp: app_commands.Range[int, 1, 1000000],

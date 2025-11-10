@@ -9,20 +9,17 @@ from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
-    ValidationErrorEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import MessageClearEventData
-from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import has_any_role_from_sequence
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -31,39 +28,18 @@ class Clear(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="clear", description="Очистить сообщения в канале"
     )
     @app_commands.describe(number="Количество сообщений для очистки (1-20)")
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
     async def clear(
         self,
         interaction: Interaction,
-        number: int,
+        number: app_commands.Range[int, 1, 20],
     ):
         """Clear messages from a channel."""
         guild = cast(Guild, interaction.guild)
-
-        async with specified_guild_config(
-            self.bot, guild.id, GuildModerationConfig
-        ) as (
-            guild_config,
-            _,
-        ):
-            moderation_access_roles = guild_config.moderation_access_roles_ids
-            if not moderation_access_roles:
-                raise FieldNotConfiguredError("доступ к модерации")
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         if not guild.me.guild_permissions.manage_messages:
             return await interaction.response.send_message(
@@ -76,16 +52,6 @@ class Clear(Cog):
             )
 
         await interaction.response.defer(thinking=True, ephemeral=True)
-
-        if number < 1 or number > 20:
-            return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
-                    "Пожалуйста, укажите число от 1 до 20.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         channel = interaction.channel
 

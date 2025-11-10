@@ -22,13 +22,15 @@ from src.nightcore.utils.field_validators import (
     split_changes,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
     name="moderstats", description="Настроить систему статистики модерации"
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     mute="Mute score",  #
     ban="Ban score",  #

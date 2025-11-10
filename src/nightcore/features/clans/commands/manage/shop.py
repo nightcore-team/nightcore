@@ -24,19 +24,22 @@ from src.nightcore.features.clans.utils import clans_shop_autocomplete
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_messageable_channel_exists
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
-@clan_manage_group.command(
+@clan_manage_group.command( # type: ignore
     name="shop", description="Купить предмет в магазине клана."
 )
 @app_commands.describe(
     item="Предмет, который вы хотите купить для своего клана."
 )
 @app_commands.autocomplete(item=clans_shop_autocomplete)
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def shop(
     interaction: Interaction["Nightcore"],
     item: str,

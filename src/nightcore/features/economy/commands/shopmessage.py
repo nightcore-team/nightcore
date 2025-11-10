@@ -9,11 +9,11 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
-from src.nightcore.exceptions import FieldNotConfiguredError
+from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import has_any_role_from_sequence
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -26,10 +26,11 @@ class ShopMessage(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="shopmessage",
         description="Отправить компонент магазина.",
     )
+    @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS) # type: ignore
     async def shopmessage(self, interaction: Interaction["Nightcore"]):
         """Send shop view."""
 
@@ -42,18 +43,11 @@ class ShopMessage(Cog):
         async with specified_guild_config(
             self.bot, guild.id, config_type=GuildEconomyConfig
         ) as (guild_config, _):
-            economy_access_roles_ids = guild_config.economy_access_roles_ids
-            if not economy_access_roles_ids:
-                raise FieldNotConfiguredError("economy access")
 
             coin_name = guild_config.coin_name
             if not coin_name:
                 outcome = "coin_name_not_configured"
             else:
-                if not has_any_role_from_sequence(
-                    member, economy_access_roles_ids
-                ):
-                    outcome = "missing_permissions"
 
                 if not outcome:
                     outcome = "success"
@@ -62,14 +56,6 @@ class ShopMessage(Cog):
                     )
 
         answer_time = time.perf_counter()
-        if outcome == "missing_permissions":
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         if outcome == "coin_name_not_configured":
             return await interaction.response.send_message(

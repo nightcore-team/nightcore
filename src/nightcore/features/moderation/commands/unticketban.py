@@ -4,8 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, cast
 
-import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -13,17 +12,16 @@ from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import set_user_field_upsert
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import has_any_role_from_sequence
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +30,18 @@ class Unticketban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="unticketban",
         description="Снять бан на создание тикетов с пользователя",
     )
     @app_commands.describe(
         user="Пользователь для снятия бана", reason="Причина снятия бана"
     )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
     async def unticketban(
         self,
         interaction: Interaction,
-        user: discord.User,
+        user: Member,
         reason: str,
     ):
         """Unban a user in the server."""
@@ -58,31 +57,13 @@ class Unticketban(Cog):
                 ephemeral=True,
             )
 
+        outcome = ""
+
         async with specified_guild_config(
             self.bot,
             guild.id,
             GuildModerationConfig,
-            _create=False,
-        ) as (guild_config, session):
-            if not (
-                moderation_access_roles
-                := guild_config.moderation_access_roles_ids
-            ):
-                raise FieldNotConfiguredError("доступ к модерации")
-
-            has_moder_role = has_any_role_from_sequence(
-                cast(discord.Member, interaction.user), moderation_access_roles
-            )
-
-            if not has_moder_role:
-                return await interaction.response.send_message(
-                    embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
+        ) as (_, session):
             try:
                 await set_user_field_upsert(
                     session,
@@ -98,15 +79,19 @@ class Unticketban(Cog):
                     guild.id,
                     e,
                 )
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка снятия тикет бана",
-                        "Не удалось снять тикет бан с пользователя.",
-                        self.bot.user.name,  # type: ignore
+                outcome = "error"
+
+        if outcome == "error":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка снятия тикет бана",
+                    "Не удалось снять тикет бан с пользователя.",
+                    self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+
         await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(

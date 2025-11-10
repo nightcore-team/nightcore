@@ -28,13 +28,15 @@ from src.nightcore.utils.field_validators import (
     update_id_list,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @other_group.command(
     name="setup", description="Настроить остальные настройки."
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     rules_channel="Канал для правил",
     proposal_channel="Канал для предложений",

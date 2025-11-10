@@ -13,3 +13,4 @@ class PermissionsFlagEnum(str, Enum):
     MODERATION_ACCESS = "moderation_access"
     ECONOMY_ACCESS = "economy_access"
     CLANS_ACCESS = "clans_access"
+    BAN_ACCESS = "ban_access"

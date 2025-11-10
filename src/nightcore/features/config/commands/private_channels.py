@@ -21,17 +21,19 @@ from src.nightcore.utils.field_validators import (
     split_changes,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
     name="private_channels",
     description="Настроить систему приватных каналов.",
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.describe(
     create_private_channel="Канал для создания приватных комнат."
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def private_channels(
     interaction: Interaction,
     create_private_channel: discord.VoiceChannel | None = None,

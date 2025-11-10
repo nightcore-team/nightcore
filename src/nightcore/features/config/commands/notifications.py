@@ -21,13 +21,15 @@ from src.nightcore.utils.field_validators import (
     split_changes,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @main_config_group.command(
     name="notifications", description="Настроить систему уведомлений"
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     notifications="Канал для отправки уведомлений (/notify)",
     moderation_notifications="Канал для отправки уведомлений для модерации",

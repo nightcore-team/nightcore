@@ -12,6 +12,8 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
 from src.nightcore.services.config import specified_guild_config
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,11 +21,11 @@ class Ticketmessage(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command(   # type: ignore
         name="ticketmessage",
         description="Отправить сообщение с созданием тикета.",
     )
-    @app_commands.checks.has_permissions(administrator=True)
+    @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR) # type: ignore
     async def ticketmessage(
         self,
         interaction: Interaction,

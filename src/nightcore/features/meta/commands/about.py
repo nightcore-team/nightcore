@@ -28,10 +28,10 @@ class About(Cog):
     def __init__(self, bot: Nightcore):
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command(   # type: ignore
         name="about",
         description="Информация о боте",
-    )  # type: ignore
+    )
     @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
     async def about(self, interaction: discord.Interaction):
         """Display information about the bot."""

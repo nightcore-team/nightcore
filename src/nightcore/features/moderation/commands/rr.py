@@ -10,11 +10,9 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.operations import (
-    get_moderation_access_roles,
     get_organization_roles_ids,
 )
 from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
@@ -27,76 +25,44 @@ from src.nightcore.features.moderation.components.view import (
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
 )
-from src.nightcore.utils import (
-    ensure_member_exists,
-    has_any_role_from_sequence,
-)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
-# TODO: check for ref *has_any_role and other
 class Rr(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="rr",
         description="Удалить организационную роль у пользователя",
     )
     @app_commands.describe(
         user="Пользователь, у которого нужно удалить роль",
     )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
     async def rr(
         self,
         interaction: Interaction,
-        user: discord.User,
+        user: Member,
     ):
         """Remove organization role from a user."""
         guild = cast(Guild, interaction.guild)
 
-        # Ensure we have a guild Member object
-        member = await ensure_member_exists(guild, user.id)
-
-        if member is None:
-            return await interaction.response.send_message(
-                embed=EntityNotFoundEmbed(
-                    "пользователь",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+        member = user
 
         async with self.bot.uow.start() as session:
-            if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
-            ):
-                raise FieldNotConfiguredError("moderation access")
-
             if not (
                 org_roles_ids := await get_organization_roles_ids(
                     session, guild_id=guild.id
                 )
             ):
                 raise FieldNotConfiguredError("organization roles")
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(Member, interaction.user), moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(

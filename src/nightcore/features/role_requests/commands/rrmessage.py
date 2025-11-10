@@ -16,6 +16,8 @@ from src.nightcore.features.role_requests.components.v2 import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,11 +25,11 @@ class Rrmessage(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command(  # type: ignore
         name="rrmessage",
         description="Отправить сообщение для создания заявок на роли.",
     )
-    @app_commands.checks.has_permissions(administrator=True)
+    @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR) # type: ignore
     async def rrmessage(
         self,
         interaction: Interaction["Nightcore"],

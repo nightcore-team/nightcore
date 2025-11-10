@@ -5,7 +5,7 @@ from datetime import timezone
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -32,6 +32,8 @@ from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,16 +41,17 @@ class Ban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="ban", description="Забанить пользователя на сервере"
     )
     @app_commands.describe(
         user="Пользователь для бана", reason="Причина бана пользователя"
     )
+    @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS) # type: ignore
     async def ban(
         self,
         interaction: Interaction,
-        user: discord.User,
+        user: Member,
         duration: str,
         reason: str,
         delete_messages_per: str | None = None,
@@ -56,19 +59,7 @@ class Ban(Cog):
         """Mute a user in the server."""
         guild = cast(Guild, interaction.guild)
 
-        # Ensure we have a guild Member object
-        member = await ensure_member_exists(guild, user.id)
-
-        if member is None:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка выдачи блокировки",
-                    "Пользователь не найден на сервере.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+        member = user
 
         async with specified_guild_config(
             self.bot,
@@ -76,37 +67,7 @@ class Ban(Cog):
             GuildModerationConfig,
             _create=False,
         ) as (guild_config, _):
-            if not (
-                moderation_access_roles
-                := guild_config.moderation_access_roles_ids
-            ):
-                raise FieldNotConfiguredError("доступ к модерации")
-
-            if not (ban_access_roles := guild_config.ban_access_roles_ids):
-                raise FieldNotConfiguredError("доступ к бану")
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), moderation_access_roles
-        )
-        has_ban_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), ban_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-        if not has_ban_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+            moderation_access_roles = guild_config.moderation_access_roles_ids
 
         is_member_moderator = has_any_role_from_sequence(
             member, moderation_access_roles

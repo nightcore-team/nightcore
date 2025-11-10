@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -13,9 +13,7 @@ from src.infra.db.models._annot import ModerationInfractionsDataAnnot
 from src.infra.db.operations import get_moderation_stats, get_moderstats_dict
 from src.infra.db.utils import group_infractions_by_moderator
 from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
     ErrorEmbed,
-    MissingPermissionsEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
@@ -30,12 +28,12 @@ from src.nightcore.features.moderation.utils.getmoderstats import (
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
-    ensure_member_exists,
     get_all_members_with_specified_role,
     has_any_role,
-    has_any_role_from_sequence,
 )
 from src.nightcore.utils.time_utils import compare_date_range
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -43,12 +41,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-# TODO: add field if moderator fullfied the norm
 class GetModerationStats(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="getmoderstats", description="Получить статистику модерации"
     )
     @app_commands.describe(
@@ -57,30 +54,21 @@ class GetModerationStats(Cog):
         to_date="Дата окончания.",
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
     async def getmoderstats(
         self,
         interaction: Interaction,
-        user: discord.User | None = None,
+        user: Member | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         ephemeral: bool = True,
     ):
         """Get moderation stats for a user."""
         guild = cast(Guild, interaction.guild)
-        author = cast(discord.Member, interaction.user)
 
         member = None
         if user:
-            member = await ensure_member_exists(guild, user.id)
-            if not member:
-                return await interaction.response.send_message(
-                    embed=EntityNotFoundEmbed(
-                        "пользователь",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+            member = user
 
         try:
             from_dt, to_dt = compare_date_range(from_date, to_date)
@@ -95,7 +83,6 @@ class GetModerationStats(Cog):
             )
 
         outcome = ""
-        moderation_access_roles: list[int] = []
         trackable_moderation_role: int = 0
         grouped: dict[int, ModerationInfractionsDataAnnot] = {}
         scores: dict[str, float] = {}
@@ -105,35 +92,17 @@ class GetModerationStats(Cog):
             guild.id,
             GuildModerationConfig,
         ) as (guild_config, session):
-            moderation_access_roles = guild_config.moderation_access_roles_ids  # type: ignore
             trackable_moderation_role = (
                 guild_config.trackable_moderation_role_id
             )  # type: ignore
 
-            if not moderation_access_roles:
-                outcome = "no_moderation_access_roles"
-            elif not trackable_moderation_role:
+            if not trackable_moderation_role:
                 outcome = "no_trackable_moderation_role"
             else:
                 scores = await get_moderstats_dict(session, guild_id=guild.id)
 
-        if outcome == "no_moderation_access_roles":
-            raise FieldNotConfiguredError("доступ к модерации")
-
         if outcome == "no_trackable_moderation_role":
             raise FieldNotConfiguredError("отслеживаемая роль модерации")
-
-        has_moder_role = has_any_role_from_sequence(
-            author, moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         moderators: list[discord.Member] = []
         if member:

@@ -11,6 +11,8 @@ from src.infra.db.operations import get_clans_by_spec
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.features.clans.components.v2 import ClanListViewV2
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @clan_main_group.command(
-    name="top", description="Показать топ 10 кланов на сервере"
+    name="top", description="Показать топ 10 кланов на сервере" # type: ignore
 )
 @app_commands.describe()
 @app_commands.choices(
@@ -28,6 +30,7 @@ logger = logging.getLogger(__name__)
         app_commands.Choice(name="Дата создания", value="created_at"),
     ]
 )
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def clan_top(
     interaction: Interaction["Nightcore"],
     sort_by: app_commands.Choice[str] | None = None,

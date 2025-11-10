@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, cast
 from discord import (
     Guild,
     Member,
-    User,
     app_commands,
 )
 from discord.ext.commands import Cog  # type: ignore
@@ -28,12 +27,13 @@ from src.nightcore.features.moderation.components.v2 import (
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     compare_top_roles,
-    ensure_member_exists,
     ensure_messageable_channel_exists,
     ensure_role_exists,
     has_any_role_from_sequence,
 )
 from src.nightcore.utils.time_utils import parse_duration
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -45,7 +45,7 @@ class Voteban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="voteban",
         description="Отправить запрос на голосование по бану пользователя",
     )
@@ -56,10 +56,11 @@ class Voteban(Cog):
         delete_messages_per="Удалять сообщения за последний период времени (например, 1h, 1d, 7d)",  # noqa: E501
         # proofs="Собрать доказательства для запроса на бан",
     )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS) # type: ignore
     async def voteban(
         self,
         interaction: Interaction,
-        user: User,
+        user: Member,
         duration: str,
         reason: str,
         delete_messages_per: str | None = None,
@@ -70,17 +71,7 @@ class Voteban(Cog):
         # proofs = False
 
         # Ensure we have a guild Member object
-        member = await ensure_member_exists(guild, user.id)
-
-        if member is None:
-            return await interaction.response.send_message(
-                embed=EntityNotFoundEmbed(
-                    "пользователь",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+        member = user
 
         ping_role = None
 
@@ -88,13 +79,8 @@ class Voteban(Cog):
             self.bot,
             guild.id,
             GuildModerationConfig,
-            _create=False,
         ) as (guild_config, _):
-            if not (
-                moderation_access_roles
-                := guild_config.moderation_access_roles_ids
-            ):
-                raise FieldNotConfiguredError("доступ к модерации")
+            moderation_access_roles = guild_config.moderation_access_roles_ids
 
             if not (ban_access_roles := guild_config.ban_access_roles_ids):
                 raise FieldNotConfiguredError("доступ к банам")
@@ -109,19 +95,6 @@ class Voteban(Cog):
 
         if ping_role_id:
             ping_role = await ensure_role_exists(guild, ping_role_id)
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(Member, interaction.user), moderation_access_roles
-        )
-
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         is_member_moderator = has_any_role_from_sequence(
             member, moderation_access_roles
@@ -377,7 +350,7 @@ class Voteban(Cog):
             original_delete_seconds=delete_messages_per,
             delete_seconds=parsed_delete_messages_per_seconds,
             ban_access_roles_ids=ban_access_roles,
-            moderation_access_roles_ids=moderation_access_roles,
+            moderation_access_roles_ids=cast(list[int], moderation_access_roles),
         )
 
         try:

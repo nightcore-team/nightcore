@@ -25,19 +25,21 @@ from src.nightcore.utils.field_validators import (
     update_id_list,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
 @infomaker_group.command(
     name="setup", description="Настроить логирование для инфомейкера."
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.describe(
     admins_roles="Роли администраторов, которые будут логироваться. Формат: role_id,role_id,role_id,...",  # noqa: E501
     leaders_roles="Роли лидеров, которые будут логироваться. Формат: role_id,role_id,role_id,...",  # noqa: E501
     admins_logging_channel="Канал, в который будут отправляться логи административных ролей.",  # noqa: E501
     leaders_logging_channel="Канал, в который будут отправляться логи лидерских ролей.",  # noqa: E501
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def setup_infomaker(
     interaction: Interaction,
     admins_roles: str | None = None,
@@ -106,8 +108,7 @@ async def setup_infomaker(
 @infomaker_group.command(
     name="update_admins_roles",
     description="Обновить логируемые роли администраторов.",
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -118,6 +119,7 @@ async def setup_infomaker(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка логируемых ролей",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_admins_roles(
     interaction: Interaction,
     role: discord.Role,

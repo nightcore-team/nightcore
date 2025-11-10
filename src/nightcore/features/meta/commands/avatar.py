@@ -9,6 +9,8 @@ from discord.interactions import Interaction
 
 from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,10 +18,11 @@ class Avatar(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="avatar", description="Получить аватар пользователя"
     )
     @app_commands.describe(user="Пользователь, чей аватар нужно получить")
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def avatar(
         self,
         interaction: Interaction,

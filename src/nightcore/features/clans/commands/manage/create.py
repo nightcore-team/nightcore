@@ -5,30 +5,26 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.exc import IntegrityError
 
-from src.infra.db.models import GuildClansConfig
 from src.infra.db.models._enums import ClanMemberRoleEnum
 from src.infra.db.operations import (
     create_clan,
     create_clan_member,
-    get_specified_field,
 )
 from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.utils import (
-    ensure_member_exists,
-    has_any_role_from_sequence,
     safe_delete_role,
 )
+
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -37,16 +33,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command(name="create", description="Создать новый клан.")
+@manage_clan_group.command(name="create", description="Создать новый клан.") # type: ignore
 @app_commands.describe(
     name="Название клана.",
     leader="Пользователь, который станет лидером клана.",
     color="Цвет роли клана в HEX формате (например, #FF5733).",
 )
+@check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
 async def create(
     interaction: Interaction["Nightcore"],
     name: app_commands.Range[str, 1, 100],
-    leader: discord.Member,
+    leader: Member,
     color: str,
 ):
     """Create a new clan."""
@@ -63,47 +60,6 @@ async def create(
                 "Ошибка создания клана",
                 "Неверный формат цвета. Пожалуйста, используйте HEX формат, например, #FF5733.",  # noqa: E501
                 bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-        )
-
-    member_task = asyncio.create_task(
-        ensure_member_exists(guild, user_id=leader.id)
-    )
-    async with bot.uow.start() as session:
-        clans_access_roles_task = asyncio.create_task(
-            get_specified_field(
-                session,
-                guild_id=guild.id,
-                config_type=GuildClansConfig,
-                field_name="clans_access_roles_ids",
-            )
-        )
-
-        member, clans_access_roles_ids = await asyncio.gather(
-            member_task, clans_access_roles_task
-        )
-
-    if not member:
-        return await interaction.followup.send(
-            embed=EntityNotFoundEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-                "user",
-            ),
-        )
-
-    if not clans_access_roles_ids:
-        raise FieldNotConfiguredError("clans access")
-
-    # === Перевірка ролей ===
-    has_access_role = has_any_role_from_sequence(
-        cast(discord.Member, interaction.user), clans_access_roles_ids
-    )
-    if not has_access_role:
-        return await interaction.followup.send(
-            embed=MissingPermissionsEmbed(
-                bot.user.name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
         )
@@ -136,7 +92,6 @@ async def create(
             ),
         )
 
-    # db transaction
     async with bot.uow.start() as session:
         try:
             clan = await create_clan(
@@ -234,12 +189,9 @@ async def create(
                 ),
             )
 
-        # waiting for role assignment and db commit
-        commit_task = asyncio.create_task(session.commit())
-        assign_task = asyncio.create_task(
-            member.add_roles(clan_role, reason="Назначение роли лидера клана.")
-        )
-        await asyncio.gather(commit_task, assign_task)
+    asyncio.create_task(
+        leader.add_roles(clan_role, reason="Назначение роли лидера клана.")
+    )
 
     logger.info(
         "[command] - invoked user=%s guild=%s clan_name=%s leader=%s color=%s",

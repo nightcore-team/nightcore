@@ -17,6 +17,8 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -24,7 +26,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@manage_clan_group.command(
+@manage_clan_group.command( # type: ignore
     name="change_deputy", description="Изменить заместителя клана."
 )
 @app_commands.choices(
@@ -37,6 +39,7 @@ logger = logging.getLogger(__name__)
     member="Участник, которого вы хотите назначить/снять с должности заместителя.",  # noqa: E501
     option="Выберите, хотите ли вы назначить или снять заместителя.",
 )
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def change_deputy(
     interaction: Interaction["Nightcore"],
     member: Member,

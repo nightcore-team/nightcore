@@ -12,7 +12,6 @@ from src.infra.db.models import GuildNotificationsConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     count_user_infractions_last_7_days,
-    get_moderation_access_roles,
     get_specified_channel,
     get_user_infractions,
 )
@@ -22,14 +21,13 @@ if TYPE_CHECKING:
 
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    MissingPermissionsEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
 from src.nightcore.features.moderation.utils import build_infraction_pages
-from src.nightcore.utils import has_any_role_from_sequence
+
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +36,7 @@ class Infractions(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.command( # type: ignore
         name="infractions",
         description="Посмотреть список нарушений пользователя",
     )
@@ -46,6 +44,7 @@ class Infractions(Cog):
         user="Пользователь для проверки нарушений",
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def infractions(
         self,
         interaction: Interaction,
@@ -56,14 +55,6 @@ class Infractions(Cog):
         guild = cast(Guild, interaction.guild)
 
         async with self.bot.uow.start() as session:
-            # check moderation access
-            if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
-            ):
-                raise FieldNotConfiguredError("доступ к модерации")
-
             # get user infractions
             infractions = await get_user_infractions(
                 session,
@@ -83,18 +74,6 @@ class Infractions(Cog):
                 guild_id=guild.id,
                 config_type=GuildNotificationsConfig,
                 channel_type=ChannelType.NOTIFICATIONS,
-            )
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(discord.Member, interaction.user), moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
             )
 
         pages = build_infraction_pages(

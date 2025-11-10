@@ -24,11 +24,12 @@ from src.nightcore.utils.field_validators import (
     update_id_list,
 )
 
+from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+
 logger = logging.getLogger(__name__)
 
 
-@clans_group.command(name="setup", description="Настроить систему кланов.")
-@app_commands.checks.has_permissions(administrator=True)
+@clans_group.command(name="setup", description="Настроить систему кланов.") # type: ignore
 @app_commands.describe(
     shop_threads_channel="Канал, под которым создаются ветки с покупками.",
     shop_buy_ping_roles="Роли для упоминания при покупке в магазине. Формат: role_id, role_id, ...",  # noqa: E501
@@ -38,6 +39,7 @@ logger = logging.getLogger(__name__)
     base_exp_multiplier="Базовый множитель опыта, выдаваемого за сообщение.",
     improvements_costs="Стоимость улучшений клана (Всего их 3). Формат: cost,cost,cost",  # noqa: E501
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def setup(
     interaction: Interaction,
     shop_threads_channel: discord.TextChannel | None = None,
@@ -108,8 +110,7 @@ async def setup(
 @clans_group.command(
     name="update_clans_access",
     description="Обновить список ролей с доступом к кланам.",
-)
-@app_commands.checks.has_permissions(administrator=True)
+) # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -120,6 +121,7 @@ async def setup(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка доступа к кланам.",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_clans_access(
     interaction: Interaction,
     role: discord.Role,

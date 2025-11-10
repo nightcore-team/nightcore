@@ -8,14 +8,12 @@ from discord import Guild, Member, Role, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import (
-    GuildEconomyConfig,
     GuildLoggingConfig,
     TempRole,
 )
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     get_specified_channel,
-    get_specified_field,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -23,13 +21,14 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.economy._groups import temp as temp_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
-from src.nightcore.utils import compare_top_roles, has_any_role_from_sequence
+from src.nightcore.utils import compare_top_roles
 from src.nightcore.utils.time_utils import parse_duration
+
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -38,12 +37,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@temp_group.command(name="role", description="Выдать пользователю роль")
+@temp_group.command(name="role", description="Выдать пользователю роль") # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается роль.",
     role="Роль для выдачи.",
     duration="Срок действия роли.",
 )
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_role(
     interaction: Interaction["Nightcore"],
     user: Member,
@@ -58,20 +58,6 @@ async def give_role(
     outcome = ""
 
     async with bot.uow.start() as session:
-        economy_access_roles_ids = await get_specified_field(
-            session,
-            guild_id=guild.id,
-            config_type=GuildEconomyConfig,
-            field_name="economy_access_roles_ids",
-        )
-
-        if not economy_access_roles_ids:
-            raise FieldNotConfiguredError("доступ к экономике")
-
-        if not has_any_role_from_sequence(
-            cast(Member, interaction.user), economy_access_roles_ids
-        ):
-            outcome = "missing_permissions"
 
         logging_channel_id = await get_specified_channel(
             session,
@@ -111,15 +97,6 @@ async def give_role(
             embed=ValidationErrorEmbed(
                 "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                 bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
-    if outcome == "missing_permissions":
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,

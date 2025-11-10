@@ -14,6 +14,8 @@ from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseHelpViewV2
 from src.nightcore.services.config import specified_guild_config
 
+from src.nightcore.utils.permissions import PermissionsFlagEnum, check_required_permissions
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -21,7 +23,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@case_group.command(name="help", description="Узнать информацию о кейсах")
+@case_group.command(name="help", description="Узнать информацию о кейсах") # type: ignore
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def open_case(
     interaction: Interaction["Nightcore"],
 ):
