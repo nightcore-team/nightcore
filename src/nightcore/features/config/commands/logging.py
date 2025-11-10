@@ -22,15 +22,17 @@ from src.nightcore.utils.field_validators import (
     split_changes,
     update_id_list,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @logging_group.command(
     name="setup", description="Настроить систему логирования."
-) # type: ignore
+)  # type: ignore
 @app_commands.describe(
     bans="Канал для логирования банов.",
     voices="Канал для логирования изменений голосового состояния.",
@@ -125,7 +127,7 @@ async def setup(
     )
 
 
-@logging_group.command(name="update_ignoring_channels") # type: ignore
+@logging_group.command(name="update_ignoring_channels")  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),

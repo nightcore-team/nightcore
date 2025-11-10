@@ -2,6 +2,7 @@ from .helper import (
     apply_field_changes,
     format_changes,
     split_changes,
+    update_id_dict,
     update_id_list,
 )
 from .value import (
@@ -10,6 +11,7 @@ from .value import (
     float_value,
     int_id_value,
     list_csv,
+    parse_csv_ints,
     parse_str_parts,
     str_value,
 )
@@ -22,8 +24,10 @@ __all__ = (
     "format_changes",
     "int_id_value",
     "list_csv",
+    "parse_csv_ints",
     "parse_str_parts",
     "split_changes",
     "str_value",
+    "update_id_dict",
     "update_id_list",
 )

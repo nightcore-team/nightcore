@@ -7,6 +7,7 @@ import discord
 from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
+from sqlalchemy.orm import attributes
 
 from src.infra.db.models.guild import GuildModerationConfig
 from src.nightcore.bot import Nightcore
@@ -14,6 +15,7 @@ from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import (
     moderation as moderation_group,
 )
+from src.nightcore.features.config.utils import fraction_roles_dict_value
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
@@ -23,17 +25,20 @@ from src.nightcore.utils.field_validators import (
     list_csv,
     split_changes,
     str_value,
+    update_id_dict,
     update_id_list,
 )
-
-from src.nightcore.utils.permissions import check_required_permissions, PermissionsFlagEnum
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @moderation_group.command(
     name="setup", description="Настроить систему модерации."
-) # type: ignore
+)  # type: ignore
 @app_commands.describe(
     moderation_access_roles="Роли, которые могут получать доступ к функциям модерации",  # noqa: E501
     leadership_access_roles="Роли, которые могут получать доступ к функциям модерации для руководства.",  # noqa: E501
@@ -45,7 +50,7 @@ logger = logging.getLogger(__name__)
     mpmute_role="Роль, которую нужно назначить, когда пользователь замьючен в торговой площадке.",  # noqa: E501
     vmute_role="Роль, которую нужно назначить, когда пользователь замьючен в голосовом канале.",  # noqa: E501
     leaders_access_rr_roles="Роли лидеров с доступом к команде /rr.",
-    fraction_roles_access="Роли, которые могут получать доступ к команде `/fraction_role`.",  # noqa: E501
+    fraction_roles_access="Роли, с доступом к команде `/fraction_role`, формат: role_id, roleaccessid_roleaccessids_... | ...",  # noqa: E501
 )
 @app_commands.choices(
     mute_type=[
@@ -80,7 +85,9 @@ async def setup_moderation(
         list_csv("leadership_access_roles_ids", leadership_access_roles),
         list_csv("ban_access_roles_ids", ban_access_roles),
         list_csv("leader_access_rr_roles_ids", leaders_access_rr_roles),
-        list_csv("fraction_roles_access_roles_ids", fraction_roles_access),
+        fraction_roles_dict_value(
+            "fraction_roles_access_roles_ids", fraction_roles_access
+        ),
         str_value("mute_type", mute_type),
     ]
 
@@ -129,7 +136,7 @@ async def setup_moderation(
     )
 
 
-@moderation_group.command(name="update_moderation_access") # type: ignore
+@moderation_group.command(name="update_moderation_access")  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -192,7 +199,7 @@ async def update_moderation_access(
     )
 
 
-@moderation_group.command(name="update_ban_access") # type: ignore
+@moderation_group.command(name="update_ban_access")  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -256,7 +263,7 @@ async def update_ban_access(
     )
 
 
-@moderation_group.command(name="update_rr_access") # type: ignore
+@moderation_group.command(name="update_rr_access")  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -278,14 +285,16 @@ async def update_rr_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
+        _create=True,
     ) as (guild_config, _):
         new_list, changed, state = update_id_list(
-            guild_config.fraction_roles_access_roles_ids,
+            guild_config.leader_access_rr_roles_ids,
             role.id,
             option,
         )
+
         if changed:
-            guild_config.fraction_roles_access_roles_ids = new_list
+            guild_config.leader_access_rr_roles_ids = new_list
 
     if state == "exists":
         desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к rr."
@@ -318,7 +327,7 @@ async def update_rr_access(
     )
 
 
-@moderation_group.command(name="update_fraction_role_access") # type: ignore
+@moderation_group.command(name="update_fraction_role_access")  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -327,41 +336,52 @@ async def update_rr_access(
 )
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
-    role="Роль для обновления",
-    option="Добавить или удалить роль из списка ролей с доступом к fraction_role",  # noqa: E501
+    access_role="Роль которой выдается доступ к fraction_role",
+    fraction_role="Роль для которой выдается доступ. Пример: role=лидер фбр, fraction_role=инспектор фбр",  # noqa: E501
+    option="Добавить или удалить роль из списка ролей с доступом",
 )
 async def update_fraction_role_access(
     interaction: Interaction,
-    role: discord.Role,
+    access_role: discord.Role,
+    fraction_role: discord.Role,
     option: Literal["add", "remove"],
 ):
     """Update the list of roles with `fraction_role` access."""
+
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
+        _create=True,
     ) as (guild_config, _):
-        new_list, changed, state = update_id_list(
-            guild_config.leader_access_rr_roles_ids,
-            role.id,
+        new_dict, changed, state = update_id_dict(
+            guild_config.fraction_roles_access_roles_ids,
+            str(fraction_role.id),
+            access_role.id,
             option,
         )
+
+        logger.info("New dict of rr access roles: %s", new_dict)
+        logger.info("Changes made to rr access roles: %s", changed)
+        logger.info("State of rr access roles update: %s", state)
+
         if changed:
-            guild_config.leader_access_rr_roles_ids = new_list
+            guild_config.fraction_roles_access_roles_ids = new_dict
+            attributes.flag_modified(
+                guild_config, "fraction_roles_access_roles_ids"
+            )
 
     if state == "exists":
-        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к fraction_role."  # noqa: E501
+        desc = f"Роль <@&{access_role.id}> уже в списке ролей с доступом к {fraction_role.mention}."  # noqa: E501
         color = discord.Color.yellow()
     elif state == "absent":
-        desc = (
-            f"Роль <@&{role.id}> не в списке ролей с доступом к fraction_role."
-        )
+        desc = f"Роль <@&{access_role.id}> не в списке ролей с доступом к {fraction_role.mention}."  # noqa: E501
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к fraction_role."  # noqa: E501
+        desc = f"Роль <@&{access_role.id}> добавлена в список ролей с доступом к {fraction_role.mention}."  # noqa: E501
         color = discord.Color.blurple()
     else:
-        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к fraction_role."  # noqa: E501
+        desc = f"Роль <@&{access_role.id}> удалена из списка ролей с доступом к {fraction_role.mention}."  # noqa: E501
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
@@ -374,15 +394,16 @@ async def update_fraction_role_access(
     )
 
     logger.info(
-        "[command] - update_fraction_role_access user=%s guild=%s option=%s role=%s",  # noqa: E501
+        "[command] - update_fraction_role_access user=%s guild=%s option=%s access_role=%s fraction_role=%s",  # noqa: E501
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,
-        role.id,
+        access_role.id,
+        fraction_role.id,
     )
 
 
-@moderation_group.command(name="update_leardership_access") # type: ignore
+@moderation_group.command(name="update_leardership_access")  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -404,6 +425,7 @@ async def update_leadership_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
+        _create=True,
     ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.leadership_access_roles_ids,

@@ -534,28 +534,17 @@ async def get_latest_user_role_request(
 
 async def get_fraction_roles(
     session: AsyncSession, *, guild_id: int
-) -> list[int]:
+) -> list[str]:
     """Get the list of fraction roles for a guild."""
-
-    stmt = select(MainGuildConfig.fraction_roles).where(
-        MainGuildConfig.guild_id == guild_id
-    )
-    roles = await session.execute(stmt)
-
-    return roles.scalar_one() or []
-
-
-async def get_fraction_roles_access(
-    session: AsyncSession, *, guild_id: int
-) -> list[int]:
-    """Get the list of fraction roles access for a guild."""
 
     stmt = select(GuildModerationConfig.fraction_roles_access_roles_ids).where(
         GuildModerationConfig.guild_id == guild_id
     )
     roles = await session.execute(stmt)
 
-    return roles.scalar_one() or []
+    result = roles.scalar_one_or_none()
+
+    return list(result.keys()) if result else []
 
 
 @alru_cache()

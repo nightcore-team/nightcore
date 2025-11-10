@@ -44,20 +44,20 @@ def _to_id(obj: Any) -> int:
     return obj.id
 
 
-def _parse_csv_ints(s: str | None) -> list[int] | None:
+def parse_csv_ints(s: str | None, sep: str = ",") -> list[int] | None:
     """Parses a comma-separated string of integers into a list of integers."""
     if not s:
         return None
-    out: list[int] = []
-    for part in s.split(","):
+    out: set[int] = set()
+    for part in s.split(sep):
         part = part.strip()
         if not part:
             continue
         try:
-            out.append(int(part))
+            out.add(int(part))
         except ValueError:
             continue
-    return out or None
+    return list(out) or None
 
 
 def parse_str_parts(s: str | None) -> list[list[str]]:
@@ -116,7 +116,7 @@ def list_csv(
     field: str, csv: str | None, _len: int | None = None
 ) -> FieldSpec | None:
     """Creates a FieldSpec for a list of integers from a comma-separated string."""  # noqa: E501
-    parsed = _parse_csv_ints(csv)
+    parsed = parse_csv_ints(csv)
     if _len is not None and parsed is not None and len(parsed) != _len:
         return None
     if parsed is None:

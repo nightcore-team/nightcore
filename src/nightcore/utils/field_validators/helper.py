@@ -1,9 +1,12 @@
 """Utilities for managing configuration updates in Nightcore."""
 
+import logging
 from collections.abc import Sequence
 from typing import Any, Literal
 
 from .value import Change, FieldSpec, ValueKind
+
+logger = logging.getLogger(__name__)
 
 
 def apply_field_changes(
@@ -150,3 +153,27 @@ def update_id_list(
             return ids, False, "absent"
         ids = [x for x in ids if x != value]
         return ids, True, "removed"
+
+
+def update_id_dict(
+    current: dict[str, list[int]] | None,
+    key: str,
+    value: int,
+    action: Literal["add", "remove"],
+) -> tuple[dict[str, list[int]], bool, str]:
+    """Updates a dictionary of ID lists by adding or removing a value."""
+
+    id_dict = dict(current or {})
+
+    if action == "add":
+        if key not in id_dict:
+            return id_dict, False, "absent"
+        if value in id_dict[key]:
+            return id_dict, False, "exists"
+        id_dict[key].append(value)
+        return id_dict, True, "added"
+    else:  # remove
+        if key not in id_dict or value not in id_dict[key]:
+            return id_dict, False, "absent"
+        id_dict[key] = [x for x in id_dict[key] if x != value]
+        return id_dict, True, "removed"

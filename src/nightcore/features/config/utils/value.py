@@ -1,5 +1,8 @@
 """Utility functions for parsing configuration values related to roles in Nightcore."""  # noqa
 
+import logging
+from typing import cast
+
 from src.nightcore.features.config.exceptions import (
     LevelRolesParsingError,
     OrgRolesParsingError,
@@ -8,8 +11,11 @@ from src.nightcore.features.config.exceptions import (
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     ValueKind,
+    parse_csv_ints,
     parse_str_parts,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: add exceptions
@@ -160,6 +166,46 @@ def _to_shop_items(s: str | None):
     return result
 
 
+def _to_fraction_roles(s: str | None):
+    parts = parse_str_parts(s)
+    logger.info("PARTS FOR FRACTION ROLES: %s", parts)
+
+    result: dict[str, list[int]] = {}
+
+    for part in parts:
+        if len(part) != 2:
+            raise TempVoiceRolesParsingError(
+                "Expected 2 parts: role_id, access_roles_ids"
+            )
+        fraction_id_raw, access_roles_ids_raw = part
+        logger.info("FRACTION ID RAW: %s", fraction_id_raw)
+        logger.info("ACCESS ROLES IDS RAW: %s", access_roles_ids_raw)
+        if not any((fraction_id_raw, access_roles_ids_raw)):
+            raise TempVoiceRolesParsingError(
+                "Fraction ID and access roles IDs cannot be empty"
+            )
+        try:
+            fraction_id = int(fraction_id_raw)
+        except ValueError as e:
+            raise TempVoiceRolesParsingError(
+                f"Invalid fraction ID: {fraction_id_raw}"
+            ) from e
+        try:
+            access_roles_ids = cast(
+                list[int], parse_csv_ints(access_roles_ids_raw, sep="_")
+            )
+            logger.info("ACCESS ROLES IDS: %s", access_roles_ids)
+        except ValueError as e:
+            raise TempVoiceRolesParsingError(
+                f"Invalid access roles IDs: {access_roles_ids_raw}"
+            ) from e
+
+        result[str(fraction_id)] = access_roles_ids
+    logger.info("FINAL FRACTION ROLES RESULT: %s", result)
+
+    return result
+
+
 def _to_temp_voice_roles(s: str | None):
     parts = parse_str_parts(s)
     result: dict[int, int] = {}
@@ -282,4 +328,19 @@ def temp_voice_roles_dict_value(
         value=value,
         kind=ValueKind.DICT,
         transform=_to_temp_voice_roles,
+    )
+
+
+def fraction_roles_dict_value(
+    field: str, value: str | None
+) -> FieldSpec | None:
+    """Creates a FieldSpec for a roles dictionary from a string representation."""  # noqa: E501
+    if value is None:
+        return None
+
+    return FieldSpec(
+        field=field,
+        value=value,
+        kind=ValueKind.DICT,
+        transform=_to_fraction_roles,
     )

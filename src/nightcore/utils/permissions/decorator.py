@@ -14,22 +14,20 @@ from typing import (
     overload,
 )
 
-from discord import Interaction, app_commands, Member, Guild
+from discord import Guild, Interaction, Member, app_commands
 
-from src.infra.db.models import GuildClansConfig, GuildModerationConfig, GuildEconomyConfig
 from src.infra.db.operations import get_specified_field
-from src.nightcore.utils import has_any_role_from_sequence
-
 from src.nightcore.exceptions import FieldNotConfiguredError
+from src.nightcore.utils import has_any_role_from_sequence
 
 if TYPE_CHECKING:
     from discord.ext.commands import Cog  # type: ignore
     from sqlalchemy.ext.asyncio import AsyncSession
-    from src.nightcore.bot import Nightcore
 
     from src.infra.db.operations import GuildT
+    from src.nightcore.bot import Nightcore
 
-from ._enums import PermissionsFlagEnum
+from .types import PERMISSION_CONFIG_MAP, PermissionsFlagEnum
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -115,6 +113,7 @@ def check_required_permissions(
 
     return decorator
 
+
 async def has_specified_permission(
     user: Member,
     *,
@@ -127,9 +126,12 @@ async def has_specified_permission(
     """Check if specified permission exists in guild config.
 
     Args:
+        user: Discord member
         session: Database session
         guild_id: Guild ID
         config_type: Guild config type
+        field_name: Field name in guild config
+        access_name: Access name for error message
 
     Returns:
         True if permission exists, False otherwise
@@ -142,14 +144,9 @@ async def has_specified_permission(
         field_name=field_name,
     )
     if not roles_access_ids:
-        raise FieldNotConfiguredError(
-            access_name
-        )
+        raise FieldNotConfiguredError(access_name)
 
-    return bool(has_any_role_from_sequence(
-        user, roles_access_ids
-    ))
-
+    return bool(has_any_role_from_sequence(user, roles_access_ids))
 
 
 async def _check_user_permission(
@@ -176,54 +173,32 @@ async def _check_user_permission(
     if permissions == PermissionsFlagEnum.ADMINISTRATOR:
         return member.guild_permissions.administrator
 
+    if permissions == PermissionsFlagEnum.UNSAFE:
+        """
+            >>> UNSAFE permission bypasses all checks and always returns True.
+            So, if a command is marked with UNSAFE, it means that you have
+            to check manually user's permissions inside the command implementation.
+        """  # noqa: E501
+
+        return True
+
     if permissions == PermissionsFlagEnum.NONE:
         return True
 
     async with bot.uow.start() as session:
-        if permissions == PermissionsFlagEnum.CLANS_ACCESS:
-            return await has_specified_permission(
-                member,
-                session=session,
-                guild_id=guild.id,
-                config_type=GuildClansConfig,
-                field_name="clans_access_roles_ids",
-                access_name="доступ к кланам",
-            )
-        if permissions == PermissionsFlagEnum.MODERATION_ACCESS:
-            return await has_specified_permission(
-                member,
-                session=session,
-                guild_id=guild.id,
-                config_type=GuildModerationConfig,
-                field_name="moderation_access_roles_ids",
-                access_name="доступ к модерации",
-            )
-        if permissions == PermissionsFlagEnum.BAN_ACCESS:
-            return await has_specified_permission(
-                member,
-                session=session,
-                guild_id=guild.id,
-                config_type=GuildModerationConfig,
-                field_name="ban_access_roles_ids",
-                access_name="доступ к бану",
-            )
-        if permissions == PermissionsFlagEnum.HEAD_MODERATION_ACCESS:
-            return await has_specified_permission(
-                member,
-                session=session,
-                guild_id=guild.id,
-                config_type=GuildModerationConfig,
-                field_name="leadership_access_roles_ids",
-                access_name="доступ к главной модерации",
-            )
-        if permissions == PermissionsFlagEnum.ECONOMY_ACCESS:
-            return await has_specified_permission(
-                member,
-                session=session,
-                guild_id=guild.id,
-                config_type=GuildEconomyConfig,
-                field_name="economy_access_roles_ids",
-                access_name="доступ к экономике",
-            )
+        if permissions in PERMISSION_CONFIG_MAP:
+            config_type, field_name, access_name = PERMISSION_CONFIG_MAP[
+                permissions
+            ]
+
+            async with bot.uow.start() as session:
+                return await has_specified_permission(
+                    member,
+                    session=session,
+                    guild_id=guild.id,
+                    config_type=config_type,
+                    field_name=field_name,
+                    access_name=access_name,
+                )
 
     return False

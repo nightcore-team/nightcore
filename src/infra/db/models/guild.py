@@ -32,9 +32,6 @@ class MainGuildConfig(IdIntegerMixin, Base):  #
     organizational_roles: Mapped[dict[str, dict[str, int]]] = mapped_column(
         JSON, nullable=False, default=dict
     )  #
-    fraction_roles: Mapped[list[int]] = mapped_column(
-        ARRAY(BigInteger), nullable=False, default=list
-    )  #
     voice_temp_roles: Mapped[dict[int, int]] = mapped_column(
         JSON, nullable=False, default=dict
     )  #
@@ -285,8 +282,8 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
     mute_type: Mapped[str] = mapped_column(
         String, nullable=False, default="role"
     )  #
-    fraction_roles_access_roles_ids: Mapped[list[int]] = mapped_column(
-        ARRAY(BigInteger), nullable=False, default=list
+    fraction_roles_access_roles_ids: Mapped[dict[str, list[int]]] = (
+        mapped_column(JSON, nullable=False, default=dict)
     )  #
     leader_access_rr_roles_ids: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger), nullable=False, default=list
