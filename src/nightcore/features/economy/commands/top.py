@@ -14,6 +14,11 @@ from src.nightcore.features.economy.components.v2 import UsersListViewV2
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +28,7 @@ class Top(Cog):
 
     @app_commands.command(
         name="top", description="Показать топ 10 пользователей на сервере"
-    )
+    )  # type: ignore
     @app_commands.describe(sort_by="Критерий сортировки топа пользователей")
     @app_commands.choices(
         sort_by=[
@@ -33,6 +38,7 @@ class Top(Cog):
             app_commands.Choice(name="Сообщения", value="messages"),
         ]
     )
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def top(
         self,
         interaction: Interaction["Nightcore"],

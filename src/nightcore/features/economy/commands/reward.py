@@ -17,6 +17,11 @@ from src.nightcore.utils import discord_ts
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,7 +31,8 @@ class Reward(Cog):
 
     @app_commands.command(
         name="reward", description="Забрать ежедневную награду."
-    )
+    )  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def reward(self, interaction: Interaction["Nightcore"]) -> None:
         """Claim your daily reward."""
 

@@ -6,6 +6,7 @@ import logging
 import time
 from collections.abc import Awaitable
 from datetime import datetime, timezone
+from typing import Any
 
 import discord
 from aiohttp import TCPConnector
@@ -17,6 +18,7 @@ from src.infra.api.base_client import IAPIClient
 from src.infra.api.forum.client import ForumAPIClient
 from src.infra.api.httpx_client import HttpxAPIClient
 from src.infra.db.uow import UnitOfWork
+from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
 from src.nightcore.features.economy.components.v2 import (
     CoinsShopOrderViewV2,
@@ -83,11 +85,11 @@ class Nightcore(Bot):
 
         # custom tcp connector
         connector = TCPConnector(
-            limit=100,  # Максимум 100 одночасних з'єднань
-            ttl_dns_cache=300,  # Кешувати DNS на 5 хвилин
+            limit=100,  # max 100 connections
+            ttl_dns_cache=300,  # Cache DNS for 5 minutes
             enable_cleanup_closed=True,
-            force_close=False,  # Не закривати з'єднання після кожного запиту  # noqa: E501, RUF003
-            keepalive_timeout=60,  # Тримати з'єднання 60 секунд
+            force_close=False,  # Don't close connection after each request  # noqa: E501
+            keepalive_timeout=60,  # Keep connection alive for 60 seconds
         )
 
         super().__init__(
@@ -142,6 +144,62 @@ class Nightcore(Bot):
             logger.info("Loading persistent view: %s", view.__class__.__name__)
             self.add_view(view)
 
+    def _validate_commands_permissions(
+        self,
+        commands: list[
+            app_commands.Command[Any, ..., Any]
+            | app_commands.Group
+            | app_commands.ContextMenu
+        ],
+    ) -> None:
+        """Validate that all commands have __permissions_flag__ attribute.
+
+        Args:
+            commands: List of commands to validate
+
+        Raises:
+            CommandDontHavePermissionsFlagError: If command doesn't have permission flag
+        """  # noqa: E501
+
+        def _check_command(
+            cmd: app_commands.Command[Any, ..., Any], path: str = ""
+        ) -> None:
+            """Recursively check command for permission flag."""
+
+            if not hasattr(cmd.callback, "__permissions_flag__"):
+                raise CommandDontHavePermissionsFlagError(
+                    f"Command '{path}' is missing __permissions_flag__ attribute"  # noqa: E501
+                )
+            else:
+                logger.info(
+                    f"Command {path} has __permissions_flag__: {cmd.callback.__permissions_flag__}"  # noqa: E501 # type: ignore
+                )
+
+        def _check_group(group: app_commands.Group, path: str = "") -> None:
+            """Recursively check group and its subcommands."""
+            current_path = f"{path} {group.name}".strip()
+
+            for sub_cmd in group.commands:
+                if isinstance(sub_cmd, app_commands.Group):
+                    _check_group(sub_cmd, current_path)
+                else:
+                    _check_command(sub_cmd, f"{current_path} {sub_cmd.name}")
+
+        for cmd in commands:
+            if isinstance(cmd, app_commands.Group):
+                _check_group(cmd)
+            elif isinstance(cmd, app_commands.Command):
+                _check_command(cmd, cmd.name)
+            else:
+                logger.warning(
+                    "Ignore app_commands.ContextMenu in permission validation: %s",  # noqa: E501
+                    cmd.name,
+                )
+
+            logger.info(
+                "Validating permissions flag for command: %s", cmd.name
+            )
+
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""
         logger.info("Starting to load extensions...")
@@ -169,6 +227,10 @@ class Nightcore(Bot):
         logger.info(
             f"[gateway] Fetched bot gateway in {(end - start) * 1000:.2f}ms"
         )
+
+        commands = self.tree.get_commands()
+
+        self._validate_commands_permissions(commands)
 
         try:
             logger.info("Starting command sync...")

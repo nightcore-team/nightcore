@@ -15,6 +15,11 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,10 +29,11 @@ class Balance(Cog):
 
     @app_commands.command(
         name="balance", description="Посмотреть баланс пользователя"
-    )
+    )  # type: ignore
     @app_commands.describe(
         user="Пользователь, чей баланс нужно проверить. По умолчанию - вы сами"
     )
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def balance(
         self, interaction: Interaction, user: User | None = None
     ):

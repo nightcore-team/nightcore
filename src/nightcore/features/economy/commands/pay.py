@@ -23,6 +23,10 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +35,12 @@ class Pay(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(name="pay", description="Отправить перевод коинов")
+    @app_commands.command(name="pay", description="Отправить перевод коинов")  # type: ignore
     @app_commands.describe(
         user="Пользователь, которому нужно отправить перевод",
         amount="Сумма коинов для перевода",
     )
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def pay(
         self,
         interaction: Interaction,

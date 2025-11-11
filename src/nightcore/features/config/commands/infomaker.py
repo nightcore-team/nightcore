@@ -177,8 +177,7 @@ async def update_admins_roles(
 @infomaker_group.command(
     name="update_leaders_roles",
     description="Обновить логируемые роли лидеров.",
-)
-@app_commands.checks.has_permissions(administrator=True)
+)  # type: ignore
 @app_commands.choices(
     option=[
         app_commands.Choice(name="Добавить", value="add"),
@@ -189,6 +188,7 @@ async def update_admins_roles(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка логируемых ролей",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_leaders_roles(
     interaction: Interaction,
     role: discord.Role,

@@ -17,6 +17,11 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,9 +29,10 @@ class Paint(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(name="paint", description="Применить на себя цвет")
+    @app_commands.command(name="paint", description="Применить на себя цвет")  # type: ignore
     @app_commands.autocomplete(color=own_colors_autocomplete)
     @app_commands.describe(color="Цвет, который вы хотите применить")
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def paint(
         self,
         interaction: Interaction["Nightcore"],

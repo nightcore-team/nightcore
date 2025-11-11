@@ -19,3 +19,9 @@ class FieldNotConfiguredError(Exception):
         super().__init__(
             f"Необходимый параметр (`{field_name}`) не настроен в конфигурации сервера."  # noqa: E501
         )
+
+
+class CommandDontHavePermissionsFlagError(Exception):
+    def __init__(self, command_name: str):
+        self.command_name = command_name
+        super().__init__(f"{command_name}")

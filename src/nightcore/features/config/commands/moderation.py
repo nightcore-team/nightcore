@@ -334,12 +334,12 @@ async def update_rr_access(
         app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 @app_commands.describe(
     access_role="Роль которой выдается доступ к fraction_role",
     fraction_role="Роль для которой выдается доступ. Пример: role=лидер фбр, fraction_role=инспектор фбр",  # noqa: E501
     option="Добавить или удалить роль из списка ролей с доступом",
 )
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_fraction_role_access(
     interaction: Interaction,
     access_role: discord.Role,

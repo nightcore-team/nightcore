@@ -95,7 +95,6 @@ def check_required_permissions(
                     f"Interaction not found in {func.__name__} arguments"
                 )
 
-            # Перевіряємо права
             has_permission = await _check_user_permission(
                 interaction, permissions_flag
             )
@@ -104,6 +103,8 @@ def check_required_permissions(
                 raise app_commands.MissingPermissions(
                     missing_permissions=[permissions_flag.value]
                 )
+
+            func.__permissions_flag__ = permissions_flag  # type: ignore
 
             return await func(*args, **kwargs)
 

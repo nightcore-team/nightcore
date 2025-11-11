@@ -16,6 +16,11 @@ from src.nightcore.utils import format_voice_time
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,10 +30,11 @@ class Profile(Cog):
 
     @app_commands.command(
         name="profile", description="Посмотреть профиль пользователя."
-    )
+    )  # type: ignore
     @app_commands.describe(
         user="Пользователь, чей профиль нужно посмотреть. По умолчанию - вы сами."  # noqa: E501
     )
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def profile(
         self, interaction: Interaction, user: User | None = None
     ):
