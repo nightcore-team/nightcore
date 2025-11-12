@@ -7,7 +7,7 @@ Used for displaying complaint information in forum threads.
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 
-from discord import ButtonStyle
+from discord import ButtonStyle, Color
 from discord.ui import (
     ActionRow,
     Button,
@@ -50,11 +50,11 @@ class ComplaintViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#9300d2"))
 
         container.add_item(
             TextDisplay[Self](
-                f"### <:91897shield:1428790354781405304> | Жалоба <:42920arrowrightalt:1421170550759489616> <@&{ping_role_id}>"  # noqa: E501
+                "### <:96965manager:1436470131034427423> Поступила новая жалоба на модератора"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -62,7 +62,7 @@ class ComplaintViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 "На форуме создана новая жалоба на модератора сервера.\n"
-                "Тема успешно была закреплена и ей был установлен префикс."
+                "> Тема успешно была закреплена и ей был установлен префикс."
             )
         )
         container.add_item(Separator[Self]())
@@ -84,7 +84,7 @@ class ComplaintViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore
+                f"-# Powered by {bot.user.name} in {discord_ts(now)} | <@&{ping_role_id}>"  # type: ignore  # noqa: E501
             )
         )
 
