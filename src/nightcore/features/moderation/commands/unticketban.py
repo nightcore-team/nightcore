@@ -12,9 +12,9 @@ from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import set_user_field_upsert
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.services.config import specified_guild_config
 
@@ -98,18 +98,21 @@ class Unticketban(Cog):
         await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Снятие бана на тикеты",
-                f"С <@{user.id}> снят бан на тикеты модератором {interaction.user.mention}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Причина", value=reason, inline=True)
+            view=PunishViewV2(
+                bot=self.bot,
+                user=user,
+                punish_type="unticketban",
+                moderator_id=interaction.user.id,  # type: ignore
+                reason=reason,
+                mode="server",
+            )
         )
 
         try:
             self.bot.dispatch(
                 "user_unticketbanned",
                 data=UnPunishEventData(
+                    mode="dm",
                     category="ticketban",
                     guild_id=guild.id,
                     moderator_id=interaction.user.id,

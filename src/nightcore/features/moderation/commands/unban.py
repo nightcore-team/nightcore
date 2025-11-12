@@ -12,9 +12,9 @@ from discord.interactions import Interaction
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
 
 if TYPE_CHECKING:
@@ -98,18 +98,21 @@ class UnBan(Cog):
         await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Пользователь разбанен",
-                f"<@{user.id}> был разбанен модератором {interaction.user.mention}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Причина", value=reason, inline=True)
+            view=PunishViewV2(
+                bot=self.bot,
+                user=user,
+                punish_type="unban",
+                moderator_id=interaction.user.id,  # type: ignore
+                reason=reason,
+                mode="server",
+            )
         )
 
         try:
             self.bot.dispatch(
                 "user_unbanned",
                 data=UnPunishEventData(
+                    mode="dm",
                     category="ban",
                     guild_id=guild.id,
                     moderator_id=interaction.user.id,

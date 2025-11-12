@@ -21,7 +21,7 @@ from src.nightcore.features.moderation.events import (
     UnPunishEventData,
     UserBannedEventData,
 )
-from src.nightcore.features.moderation.utils import (
+from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
     send_punish_dm_message,
     send_unpunish_dm_message,
@@ -115,7 +115,11 @@ class UserBanEvent(Cog):
         gather_list: list[Awaitable[None]] = []
 
         # send dm message to user
-        gather_list.append(send_punish_dm_message(self.bot, event_data=data))
+        gather_list.append(
+            send_punish_dm_message(
+                self.bot, guild_name=data.guild_name, event_data=data
+            )
+        )
 
         # sending log message
         if logging_channel_id:
@@ -130,7 +134,6 @@ class UserBanEvent(Cog):
                 data.moderator.guild.id,
                 punish_info.category,
             )
-            return
 
         try:
             await asyncio.gather(*gather_list, return_exceptions=True)
@@ -260,8 +263,11 @@ class UserBanEvent(Cog):
             send_unpunish_dm_message(
                 self.bot,
                 user=user,
-                category=data.category,
+                mode=data.mode,
+                category=f"un{data.category}",
                 guild_name=guild.name,
+                moderator_id=data.moderator_id,
+                reason=data.reason,
             )
         )
 

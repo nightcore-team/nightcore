@@ -17,9 +17,9 @@ from src.infra.db.operations import (
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
 from src.nightcore.utils import (
     has_any_role_from_sequence,
@@ -166,6 +166,7 @@ class Ticketban(Cog):
             self.bot.dispatch(
                 "user_ticketbanned",
                 data=UserMutedEventData(
+                    mode="dm",
                     category=self.__class__.__name__.lower(),
                     moderator=interaction.user,  # type: ignore
                     user=member,
@@ -173,6 +174,7 @@ class Ticketban(Cog):
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
+                    guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,
                 ),
@@ -184,14 +186,15 @@ class Ticketban(Cog):
             return
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Блокировка на создание тикетов",
-                f"<@{member.id}> заблокирован модератором {interaction.user.mention}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
+            view=PunishViewV2(
+                bot=self.bot,
+                user=member,
+                punish_type="ticketban",
+                moderator_id=interaction.user.id,  # type: ignore
+                reason=reason,
+                duration=duration,
+                mode="server",
             )
-            .add_field(name="Причина", value=reason, inline=True)
-            .add_field(name="Длительность", value=duration, inline=True)
         )
 
         logger.info(

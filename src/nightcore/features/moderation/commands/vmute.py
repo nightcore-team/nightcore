@@ -13,10 +13,10 @@ from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
@@ -203,20 +203,22 @@ class VMute(Cog):
         await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Блокировка голосовых каналов выдана",
-                f"{member.mention} был заблокирован в голосовых каналах модератором {interaction.user.mention}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
+            view=PunishViewV2(
+                bot=self.bot,
+                user=member,
+                punish_type="vmute",
+                moderator_id=interaction.user.id,
+                reason=reason,
+                duration=duration,
+                mode="server",
             )
-            .add_field(name="Причина", value=reason, inline=True)
-            .add_field(name="Длительность", value=duration, inline=True)
         )
 
         try:
             self.bot.dispatch(
                 "user_muted",
                 data=UserMutedEventData(
+                    mode="dm",
                     category=self.__class__.__name__.lower(),
                     moderator=interaction.user,  # type: ignore
                     user=member,
@@ -224,6 +226,7 @@ class VMute(Cog):
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
+                    guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,
                     end_time=end_time,  # type: ignore

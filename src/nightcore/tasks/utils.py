@@ -18,6 +18,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
     match active_punish.category.lower():
         case "mute":
             m = UserUnmutedEventData(
+                mode="expired",
                 category=active_punish.category,
                 mute_type="default",
                 guild_id=active_punish.guild_id,
@@ -30,6 +31,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
 
         case "mpmute":
             mpm = UserUnmutedEventData(
+                mode="expired",
                 category=active_punish.category,
                 mute_type="mpmute",
                 guild_id=active_punish.guild_id,
@@ -42,6 +44,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
 
         case "vmute":
             vm = UserUnmutedEventData(
+                mode="expired",
                 category=active_punish.category,
                 mute_type="vmute",
                 guild_id=active_punish.guild_id,
@@ -54,6 +57,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
 
         case "ticketban":
             t = UnPunishEventData(
+                mode="expired",
                 category=active_punish.category,
                 guild_id=active_punish.guild_id,
                 moderator_id=cast(ClientUser, bot.user).id,
@@ -65,6 +69,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
 
         case "ban":
             b = UnPunishEventData(
+                mode="expired",
                 category=active_punish.category,
                 guild_id=active_punish.guild_id,
                 moderator_id=cast(ClientUser, bot.user).id,
@@ -76,6 +81,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
 
         case "rrban":
             rr = UnPunishEventData(
+                mode="expired",
                 category=active_punish.category,
                 guild_id=active_punish.guild_id,
                 moderator_id=cast(ClientUser, bot.user).id,

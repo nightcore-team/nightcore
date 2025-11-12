@@ -16,6 +16,7 @@ from src.nightcore.features.moderation.events.dto.base import (
 
 @dataclass(slots=True)
 class UnPunishEventData(ModerationBaseEventData):
+    mode: str
     category: str
     guild_id: int
     moderator_id: int

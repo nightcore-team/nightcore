@@ -16,7 +16,9 @@ from src.nightcore.features.moderation.events.dto.base import (
 
 @dataclass(slots=True)
 class UserKickEventData(ModerationBaseEventData):
+    mode: str
     category: str
+    guild_name: str
     moderator: discord.Member
     user: discord.Member | discord.User  # type: ignore
     created_at: datetime

@@ -12,9 +12,9 @@ from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import set_user_field_upsert
 from src.nightcore.components.embed import (
     ErrorEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
@@ -95,18 +95,21 @@ class Unrrban(Cog):
         await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Блокировка на запрос роли снята",
-                f"Блокировка на запрос роли с <@{user.id}> была снята модератором {interaction.user.mention}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Причина", value=reason, inline=True)
+            view=PunishViewV2(
+                bot=self.bot,
+                user=user,
+                punish_type="unrrban",
+                moderator_id=interaction.user.id,  # type: ignore
+                reason=reason,
+                mode="server",
+            )
         )
 
         try:
             self.bot.dispatch(
                 "user_unrole_request_banned",
                 data=UnPunishEventData(
+                    mode="dm",
                     category="rrban",
                     guild_id=guild.id,
                     moderator_id=interaction.user.id,

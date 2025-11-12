@@ -16,7 +16,7 @@ from src.infra.db.operations import (
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.events import UserKickEventData
-from src.nightcore.features.moderation.utils import (
+from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
     send_punish_dm_message,
 )
@@ -58,7 +58,7 @@ class UserKickEvent(Cog):
         # db insert and getting logging channel
         async with self.bot.uow.start() as session:
             try:
-                punish_info = await create_punish(
+                await create_punish(
                     session,
                     guild_id=data.moderator.guild.id,
                     user_id=data.user.id,
@@ -86,7 +86,11 @@ class UserKickEvent(Cog):
         gather_list: list[Awaitable[None]] = []
 
         # send dm message to user
-        gather_list.append(send_punish_dm_message(self.bot, event_data=data))
+        gather_list.append(
+            send_punish_dm_message(
+                self.bot, guild_name=data.guild_name, event_data=data
+            ),
+        )
 
         # sending log message
         if logging_channel_id:
@@ -98,10 +102,9 @@ class UserKickEvent(Cog):
         else:
             logger.warning(
                 "[event] on_user_kicked - %s: Guild: %s, logging channel is not set",  # noqa: E501
+                data.category,
                 data.moderator.guild.id,
-                punish_info.category,
             )
-            return
 
         try:
             await asyncio.gather(*gather_list, return_exceptions=True)

@@ -3,14 +3,10 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from discord import Embed, Member
+from discord import Embed
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-
-"""
-from *.utils import types
-"""
 
 
 def generate_log_punish_embed(
@@ -47,59 +43,5 @@ def generate_log_punish_embed(
         icon_url=bot.user.avatar.url,  # type: ignore
     )
     embed.timestamp = datetime.now(timezone.utc)
-
-    return embed
-
-
-def generate_dm_punish_embed(
-    punish_type: str,
-    guild_name: str,
-    moderator: Member,
-    reason: str,
-    end_time: datetime | None,
-    bot: "Nightcore",
-) -> Embed:
-    """Generate an embed for DM punishment notification."""
-    # TODO: add dict for correct embed title with answers
-    embed = Embed(
-        title=f"{punish_type.capitalize()} Notification",
-        description=f"You have been {punish_type} from **{guild_name}**",
-        color=0xFF0000,
-    )
-    embed.add_field(
-        name="Moderator",
-        value=f"{moderator.name} | {moderator.id}",
-        inline=False,
-    )
-    embed.add_field(name="Reason", value=reason, inline=False)
-
-    if end_time:
-        embed.add_field(name="End Time", value=end_time, inline=False)
-
-    embed.set_footer(
-        text=f"Powered by {bot.user.name}",  # type: ignore
-        icon_url=bot.user.avatar.url,  # type: ignore
-    )
-
-    return embed
-
-
-def generate_dm_un_punish_embed(
-    punish_type: str,
-    guild_name: str,
-    bot: "Nightcore",
-) -> Embed:
-    """Generate an embed for DM punishment notification."""
-    # TODO: add dict for correct embed title with answers
-    embed = Embed(
-        title=f"{punish_type.capitalize()} Notification",
-        description=f"Your {punish_type} has been lifted from **{guild_name}**",  # noqa: E501
-        color=0x00FF00,
-    )
-
-    embed.set_footer(
-        text=f"Powered by {bot.user.name}",  # type: ignore
-        icon_url=bot.user.avatar.url,  # type: ignore
-    )
 
     return embed

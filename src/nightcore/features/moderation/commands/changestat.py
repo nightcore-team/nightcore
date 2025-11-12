@@ -153,7 +153,7 @@ class ChangeStat(Cog):
             return await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Статистика модератора успешно изменена",
-                    f"Статистика модератора {moderator.mention} была изменена: {type.name}, {amount} балл.",  # noqa: E501
+                    f"Статистика модератора {moderator.mention} была изменена: {type.name}, {amount}.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

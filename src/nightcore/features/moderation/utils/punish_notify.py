@@ -1,15 +1,17 @@
 """Utilities for sending punishment notifications."""
 
+from __future__ import annotations
+
 import logging
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import discord
 
-from src.nightcore.bot import Nightcore
-from src.nightcore.features.moderation.components.embed import (
-    generate_dm_punish_embed,
-    generate_dm_un_punish_embed,
-)
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
 )
@@ -23,19 +25,23 @@ logger = logging.getLogger(__name__)
 async def send_punish_dm_message(
     bot: Nightcore,
     *,
+    guild_name: str,
     event_data: ModerationBaseEventData,
 ) -> None:
     """Send a DM to the user about their punishment."""
-    embed = generate_dm_punish_embed(
-        punish_type=event_data.category,  # type: ignore
-        guild_name=event_data.moderator.guild.name,  # type: ignore
-        moderator=event_data.moderator,  # type: ignore
-        reason=event_data.reason,  # type: ignore
-        end_time=event_data.end_time,  # type: ignore
+
+    view = PunishViewV2(
         bot=bot,
+        user=event_data.user,  # type: ignore
+        punish_type=event_data.category,  # type: ignore
+        moderator_id=event_data.moderator.id,  # type: ignore
+        reason=event_data.reason,  # type: ignore
+        duration=getattr(event_data, "original_duration", None),  # type: ignore
+        mode="dm",
+        guild_name=guild_name,
     )
-    try:
-        await event_data.user.send(embed=embed)  # type: ignore
+    try:  # type: ignore
+        await event_data.user.send(view=view)  # type: ignore
         logger.info(
             "[event] - on_user_punish - %s: DM sent to %s",
             event_data.category,  # type: ignore
@@ -53,18 +59,27 @@ async def send_punish_dm_message(
 async def send_unpunish_dm_message(
     bot: Nightcore,
     *,
+    mode: str,
+    reason: str,
+    moderator_id: int,
     user: discord.Member | discord.User,
     category: str,
     guild_name: str,
 ) -> None:
     """Send a DM to the user about their unpunishment."""
-    embed = generate_dm_un_punish_embed(
-        punish_type=category,
-        guild_name=guild_name,
+
+    view = PunishViewV2(
         bot=bot,
+        user=user,
+        punish_type=category,
+        mode=mode,
+        guild_name=guild_name,
+        moderator_id=moderator_id,
+        reason=reason,
+        duration=None,
     )
     try:
-        await user.send(embed=embed)  # type: ignore
+        await user.send(view=view)  # type: ignore
         logger.info(
             "[event] - on_user_unpunish - %s: DM sent to %s",
             category,

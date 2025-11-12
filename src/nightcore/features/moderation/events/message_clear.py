@@ -13,7 +13,7 @@ from src.infra.db.operations import (
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.events import MessageClearEventData
-from src.nightcore.features.moderation.utils import (
+from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
 )
 

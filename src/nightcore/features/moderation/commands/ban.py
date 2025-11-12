@@ -14,11 +14,11 @@ from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.modal import BanFormModal
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserBannedEventData
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
@@ -196,21 +196,15 @@ class Ban(Cog):
                     await interaction.response.defer(thinking=True)
 
                 await interaction.followup.send(
-                    embed=SuccessMoveEmbed(
-                        "Пользователь забанен",
-                        f"{member.mention} был забанен модератором {interaction.user.mention}",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                    view=PunishViewV2(
+                        bot=self.bot,
+                        user=member,
+                        punish_type="ban",
+                        moderator_id=interaction.user.id,  # type: ignore
+                        duration=duration,
+                        reason=reason,
+                        mode="server",
                     )
-                    .add_field(name="Причина", value=reason, inline=True)
-                    .add_field(
-                        name="Длительность", value=duration, inline=True
-                    )
-                    .add_field(
-                        name="Удалено сообщений",
-                        value=delete_messages_per or "Нет",
-                        inline=True,
-                    ),
                 )
         else:
             return await interaction.response.send_message(
@@ -226,6 +220,7 @@ class Ban(Cog):
             self.bot.dispatch(
                 "user_banned",
                 data=UserBannedEventData(
+                    mode="dm",
                     category=self.__class__.__name__.lower(),
                     moderator=interaction.user,  # type: ignore
                     user=member,
@@ -233,6 +228,7 @@ class Ban(Cog):
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
+                    guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,
                     end_time=end_time,  # type: ignore

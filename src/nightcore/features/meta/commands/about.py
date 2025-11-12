@@ -13,15 +13,13 @@ from discord.utils import snowflake_time
 
 from src.infra.db.operations import get_total_users_count
 from src.nightcore.bot import Nightcore
-from src.nightcore.utils import discord_ts
+from src.nightcore.features.meta.components.v2.view.about import AboutViewV2
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
 
 logger = logging.getLogger(__name__)
-
-# TODO: create a LayoutView for this command
 
 
 class About(Cog):
@@ -32,9 +30,12 @@ class About(Cog):
         name="about",
         description="Информация о боте",
     )
-    @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
-    async def about(self, interaction: discord.Interaction):
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    async def about(
+        self, interaction: discord.Interaction, ephemeral: bool = True
+    ):
         """Display information about the bot."""
+
         try:
             p = psutil.Process(os.getpid())
             mem_bytes = p.memory_info().rss  # resident set size in bytes
@@ -53,57 +54,15 @@ class About(Cog):
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
 
-        # TODO: create LayoutView for this
-        try:
-            create_time = snowflake_time(self.bot.user.id)  # type: ignore
-        except Exception:
-            create_time = datetime.now(timezone.utc)
-
-        embed = discord.Embed(
-            title="Информация о боте",
-            color=discord.Color.blurple(),
+        view = AboutViewV2(
+            bot=self.bot,
+            total_members=total_members,
+            created_at=snowflake_time(self.bot.user.id),  # type: ignore
+            memory_usage=f"{mem_bytes / (1024 * 1024):.2f} MB",
+            uptime=f"{hours}h {minutes}m",
         )
 
-        embed.add_field(
-            name="Memory Usage",
-            value=f"`{mem_bytes // 1048576} MB`",
-            inline=True,
-        )
-        embed.add_field(
-            name="Bot ID",
-            value=f"`{self.bot.user.id}`",  # type: ignore
-            inline=True,
-        )
-        embed.add_field(
-            name="Version of discord.py",
-            value=f"`{getattr(discord, '__version__', 'unknown')}`",
-            inline=True,
-        )
-        embed.add_field(
-            name="Ping",
-            value=f"`{self.bot.latency * 1000:.2f} ms`",
-            inline=True,
-        )
-        embed.add_field(
-            name="Number of Servers",
-            value=f"`{len(self.bot.guilds)}`",
-            inline=True,
-        )
-        embed.add_field(
-            name="Total Users", value=f"`{total_members}`", inline=True
-        )
-        embed.add_field(
-            name="Uptime",
-            value=f"`{hours}h {minutes:02d}m`",
-            inline=True,
-        )
-        embed.add_field(
-            name="Creation Date",
-            value=discord_ts(create_time),
-            inline=True,
-        )
-
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(view=view, ephemeral=ephemeral)
 
         logger.info(
             "[command] - invoked user=%s guild=%s",

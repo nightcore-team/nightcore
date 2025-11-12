@@ -4,6 +4,7 @@ from .view import (
     InfractionsViewV2,
     NotifyViewV2,
     PrepareNotifyViewV2,
+    PunishViewV2,
 )
 
 __all__ = (
@@ -12,4 +13,5 @@ __all__ = (
     "InfractionsViewV2",
     "NotifyViewV2",
     "PrepareNotifyViewV2",
+    "PunishViewV2",
 )

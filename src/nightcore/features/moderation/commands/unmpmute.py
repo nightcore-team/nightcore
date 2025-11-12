@@ -12,9 +12,9 @@ from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserUnmutedEventData
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
@@ -149,18 +149,21 @@ class UnMpMute(Cog):
         await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Блокировка торговой площадки снята",
-                f"С {member.mention} снята блокировка торговой площадки модератором {interaction.user.mention}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
-            ).add_field(name="Причина", value=reason, inline=True)
+            view=PunishViewV2(
+                bot=self.bot,
+                user=member,
+                punish_type="unmpmute",
+                moderator_id=interaction.user.id,  # type: ignore
+                reason=reason,
+                mode="server",
+            )
         )
 
         try:
             self.bot.dispatch(
                 "user_unmute",
                 data=UserUnmutedEventData(
+                    mode="dm",
                     category="mpmute",
                     mute_type="mpmute",
                     guild_id=guild.id,

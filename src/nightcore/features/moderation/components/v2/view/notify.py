@@ -62,7 +62,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 SelectOption(label="Баннер", value="баннер"),
                 SelectOption(label="Никнейм", value="никнейм"),
                 SelectOption(label="Тег гильдии", value="тег гильдии"),
-                SelectOption(label="Перс. роль", value="перс. роль"),
+                SelectOption(label="Персональная роль", value="перс. роль"),
             ],
         )
 

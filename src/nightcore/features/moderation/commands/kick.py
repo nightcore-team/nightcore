@@ -13,9 +13,9 @@ from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserKickEventData
 from src.nightcore.utils import (
     compare_top_roles,
@@ -117,6 +117,7 @@ class Kick(Cog):
             self.bot.dispatch(
                 "user_kicked",
                 data=UserKickEventData(
+                    mode="dm",
                     moderator=interaction.user,  # type: ignore
                     user=member,
                     category=self.__class__.__name__.lower(),
@@ -124,6 +125,7 @@ class Kick(Cog):
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
+                    guild_name=guild.name,
                 ),
             )
         except Exception as e:
@@ -149,11 +151,13 @@ class Kick(Cog):
         await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Пользователь кикнут",  # type: ignore
-                f"Пользователь <@{member.id}> был кикнут модератором {interaction.user.mention}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
+            view=PunishViewV2(
+                bot=self.bot,
+                user=member,
+                punish_type="kick",
+                moderator_id=interaction.user.id,  # type: ignore
+                reason=reason,
+                mode="server",
             )
         )
         logger.info(

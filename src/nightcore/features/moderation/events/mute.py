@@ -25,7 +25,7 @@ from src.nightcore.features.moderation.events import (
     UserMutedEventData,
     UserUnmutedEventData,
 )
-from src.nightcore.features.moderation.utils import (
+from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
     send_punish_dm_message,
     send_unpunish_dm_message,
@@ -120,7 +120,9 @@ class UserMutedEvent(Cog):
         gather_list: list[Awaitable[None]] = []
 
         gather_list.append(
-            send_punish_dm_message(self.bot, event_data=data),
+            send_punish_dm_message(
+                self.bot, guild_name=data.guild_name, event_data=data
+            ),
         )
 
         # sending log message
@@ -378,16 +380,24 @@ class UserMutedEvent(Cog):
                     self.bot, channel_id=logging_channel_id, event_data=data
                 )
             )
+        else:
+            logger.warning(
+                "[event] on_user_unmute - %s: Guild: %s, logging channel is not set",  # noqa: E501
+                data.category,
+                guild.id,
+            )
 
         gather_list.append(
             send_unpunish_dm_message(
                 self.bot,
                 user=member,
-                category=data.category,
+                mode=data.mode,
+                moderator_id=data.moderator_id,
+                category=f"un{data.category}",
                 guild_name=guild.name,
+                reason=data.reason,
             )
         )
-
         try:
             await asyncio.gather(*gather_list, return_exceptions=True)
         except Exception as e:
