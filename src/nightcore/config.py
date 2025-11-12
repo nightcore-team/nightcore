@@ -5,7 +5,6 @@ from src.config.env import BaseEnvConfig
 
 class Config(BaseEnvConfig):
     BOT_TOKEN: str
-    BOT_ACCESS_IDS: list[int]
     EMBED_DESCRIPTION_LIMIT: int = 4096
     VIEW_V2_DESCRIPTION_LIMIT: int = 3000
     DELETE_MESSAGES_SECONDS: int = 604800

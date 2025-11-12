@@ -10,6 +10,7 @@ dependencies = [
     "async-lru>=2.0.5",
     "asyncpg>=0.30.0",
     "chat-exporter>=2.8.4",
+    "colorlog>=6.10.1",
     "discord-py",
     "httpx>=0.28.1",
     "psutil>=7.0.0",

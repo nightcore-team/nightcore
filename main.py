@@ -1,35 +1,28 @@
 """Main entry point for the Nightcore bot."""
 
-from logging import Logger
+# import asyncio
 
 from src.config.config import config
 from src.infra.db.session import get_async_sessionmaker
 from src.infra.db.uow import UnitOfWork
-from src.nightcore.bot import Nightcore
 from src.nightcore.setup import create_bot
 from src.utils.logging.setup import setup_logging
 
 
-async def main() -> None:
+def main() -> None:
     """Main function to start the Nightcore bot."""
-    logger: Logger = setup_logging()
+    logger, discord_logger = setup_logging()
     uow = UnitOfWork(get_async_sessionmaker(config.db.ENGINE))  # type: ignore
-    bot: Nightcore = create_bot(uow=uow)
+    bot = create_bot(uow=uow)
 
     logger.info("Starting Nightcore bot...")
-
     try:
-        async with bot:
-            await bot.start(token=config.bot.BOT_TOKEN)
+        bot.run(config.bot.BOT_TOKEN, log_handler=discord_logger.handlers[0])
     except Exception as e:
-        logger.error(f"Error occurred: {e}")
+        logger.error("Error occurred: %s", e)
     finally:
-        await bot.close()
-        if not bot.is_closed():
-            logger.info("Nightcore bot has been stopped.")
+        logger.info("Nightcore bot has been stopped.")
 
 
 if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
+    main()

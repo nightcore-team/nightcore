@@ -83,25 +83,25 @@ class Nightcore(Bot):
         )
         self.apis = CustomAPICollection(self.outside_http_client)
 
-        # custom tcp connector
-        connector = TCPConnector(
+        super().__init__(
+            command_prefix=".",
+            intents=discord.Intents.all(),
+            help_command=None,
+            tree_cls=GuildOnlyTree,
+            chunk_guilds_at_startup=True,
+        )
+        self.chunked_guilds: int = 0
+        self.startup_time: datetime = datetime.now(timezone.utc)
+
+    @property
+    def _http_connector(self) -> TCPConnector:
+        return TCPConnector(
             limit=100,  # max 100 connections
             ttl_dns_cache=300,  # Cache DNS for 5 minutes
             enable_cleanup_closed=True,
             force_close=False,  # Don't close connection after each request  # noqa: E501
             keepalive_timeout=60,  # Keep connection alive for 60 seconds
         )
-
-        super().__init__(
-            command_prefix=".",
-            intents=discord.Intents.all(),
-            help_command=None,
-            tree_cls=GuildOnlyTree,
-            connector=connector,
-            chunk_guilds_at_startup=True,
-        )
-        self.chunked_guilds: int = 0
-        self.startup_time: datetime = datetime.now(timezone.utc)
 
     async def _warmup_discord(self) -> None:
         try:
@@ -222,6 +222,7 @@ class Nightcore(Bot):
         await self.load_extensions()
 
         start = time.perf_counter()
+        self.http.connector = self._http_connector
         await self.http.get_bot_gateway()
         end = time.perf_counter()
         logger.info(
