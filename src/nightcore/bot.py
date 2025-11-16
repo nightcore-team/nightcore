@@ -252,9 +252,9 @@ class Nightcore(Bot):
 
     async def on_ready(self):
         """Event called when the bot is ready."""
-        logger.info("🚀 Nightcore bot started successfully!")
+        logger.info(f"Loaded cogs: {list(self.cogs.keys())}")
         logger.info(f"Connected to {len(self.guilds)} guilds")
         logger.info(f"Chunked guilds: {self.chunked_guilds}")
-        logger.info(f"Loaded cogs: {list(self.cogs.keys())}")
+        logger.info("🚀 Nightcore bot started successfully!")
 
         await self._warmup_discord()
