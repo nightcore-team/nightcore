@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "aiohttp>=3.12.15",
-    "alembic>=1.16.4",
+    "alembic>=1.17.2",
     "async-lru>=2.0.5",
     "asyncpg>=0.30.0",
     "chat-exporter>=2.8.4",

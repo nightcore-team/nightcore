@@ -1,8 +1,8 @@
-""" initial_migration
+""" initial structure
 
-Revision ID: dca95826d845
-Revises:
-Create Date: 2025-11-06 20:49:21.006951
+Revision ID: f8da190e4574
+Revises: 
+Create Date: 2025-11-16 15:09:36.434214
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'dca95826d845'
+revision: str = 'f8da190e4574'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('changestat',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('moderator_id', sa.BigInteger(), nullable=False),
-    sa.Column('amount', sa.Integer(), nullable=False),
+    sa.Column('amount', sa.Float(), nullable=False),
     sa.Column('reason', sa.String(), nullable=False),
     sa.Column('type', sa.Enum('ban', 'kick', 'mute', 'vmute', 'mpmute', 'ticketban', 'ticket_close', 'role_remove', 'role_accept', name='changestattypeenum', native_enum=False), nullable=False),
     sa.Column('time_now', sa.DateTime(timezone=True), nullable=False),
@@ -56,7 +56,6 @@ def upgrade() -> None:
     sa.Column('clan_shop_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('clan_shop_items', sa.JSON(), nullable=False),
     sa.Column('clans_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('create_clan_role_id', sa.BigInteger(), nullable=True),
     sa.Column('clan_buy_ping_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('clan_reputation_per_payday', sa.Integer(), server_default=sa.text('1'), nullable=False),
     sa.Column('base_exp_multiplier', sa.Integer(), server_default=sa.text('1'), nullable=False),
@@ -71,7 +70,6 @@ def upgrade() -> None:
     sa.Column('economy_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('reward_bonus', sa.Integer(), server_default=sa.text('0'), nullable=False),
     sa.Column('economy_shop_buy_ping_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('economy_shop_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('economy_shop_items', sa.JSON(), server_default=sa.text("'{}'::json"), nullable=False),
     sa.Column('colors', sa.JSON(), server_default=sa.text("'{}'::json"), nullable=False),
     sa.Column('drop_from_coins_case', sa.JSON(), server_default=sa.text("'{}'::json"), nullable=False),
@@ -149,7 +147,7 @@ def upgrade() -> None:
     sa.Column('vmute_role_id', sa.BigInteger(), nullable=True),
     sa.Column('mute_role_id', sa.BigInteger(), nullable=True),
     sa.Column('mute_type', sa.String(), nullable=False),
-    sa.Column('fraction_roles_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
+    sa.Column('fraction_roles_access_roles_ids', sa.JSON(), nullable=False),
     sa.Column('leader_access_rr_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id'),
@@ -189,15 +187,22 @@ def upgrade() -> None:
     sa.Column('create_proposal_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('proposals_count', sa.Integer(), nullable=False),
     sa.Column('organizational_roles', sa.JSON(), nullable=False),
-    sa.Column('fraction_roles', sa.ARRAY(sa.BigInteger()), nullable=False),
     sa.Column('voice_temp_roles', sa.JSON(), nullable=False),
     sa.Column('faq', sa.JSON(), server_default=sa.text("'[]'::json"), nullable=False),
     sa.Column('check_role_requests_channel_id', sa.BigInteger(), nullable=True),
-    sa.Column('guild_rules', sa.JSON(), server_default=sa.text("'{\"chapters\": []}'::json"), nullable=False),
+    sa.Column('guild_rules', sa.JSON(), server_default=sa.text('\'{"chapters": []}\'::json'), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('guild_id')
     )
+    op.create_table('moderationmessage',
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
+    sa.Column('moderator_id', sa.BigInteger(), nullable=False),
+    sa.Column('time_now', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('ix_moderationmessages_guild_id_moderator_id_time_now', 'moderationmessage', ['guild_id', 'moderator_id', 'time_now'], unique=False)
     op.create_table('notifystate',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('user_id', sa.BigInteger(), nullable=False),
@@ -265,7 +270,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('guild_id', 'multiplier_type', name='ux_temp_multiplier_guild_type')
     )
-    op.create_index('ix_temp_economy_multipliers_guild_type_end_time', 'tempeconomymultiplier', ['guild_id', 'multiplier_type', 'end_time'], unique=False)
+    op.create_index('ix_temp_economy_multipliers_end_time', 'tempeconomymultiplier', ['end_time'], unique=False)
+    op.create_index('ix_temp_economy_multipliers_guild_type_end_time', 'tempeconomymultiplier', ['guild_id', 'multiplier_type'], unique=False)
     op.create_table('temppunish',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('user_id', sa.BigInteger(), nullable=False),
@@ -354,6 +360,7 @@ def downgrade() -> None:
     op.drop_index('ix_temp_punish_guild_user_time_now', table_name='temppunish')
     op.drop_table('temppunish')
     op.drop_index('ix_temp_economy_multipliers_guild_type_end_time', table_name='tempeconomymultiplier')
+    op.drop_index('ix_temp_economy_multipliers_end_time', table_name='tempeconomymultiplier')
     op.drop_table('tempeconomymultiplier')
     op.drop_table('shoporderstate')
     op.drop_index('idx_rr_guild_author_updated_desc', table_name='rolerequeststate')
@@ -364,6 +371,8 @@ def downgrade() -> None:
     op.drop_table('privateroomstate')
     op.drop_index('idx_notify_guild_user_end_time_desc', table_name='notifystate')
     op.drop_table('notifystate')
+    op.drop_index('ix_moderationmessages_guild_id_moderator_id_time_now', table_name='moderationmessage')
+    op.drop_table('moderationmessage')
     op.drop_table('mainguildconfig')
     op.drop_table('guildticketsconfig')
     op.drop_table('guildprivatechannelsconfig')

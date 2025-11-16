@@ -116,7 +116,7 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     economy_shop_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
-    economy_shop_items: Mapped[dict[str, float]] = mapped_column(
+    economy_shop_items: Mapped[dict[str, int]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
     colors: Mapped[dict[str, str]] = mapped_column(
@@ -198,9 +198,6 @@ class GuildClansConfig(IdIntegerMixin, Base):  # ---
     )
     clans_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
-    )
-    create_clan_role_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
     )
     clan_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
