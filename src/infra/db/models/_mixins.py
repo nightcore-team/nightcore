@@ -2,12 +2,13 @@
 
 from datetime import datetime
 
+from sqlalchemy import DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 
 class CreatedAtMixin:
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=datetime.now
+        DateTime(timezone=True), nullable=False, default=datetime.now
     )
 
 

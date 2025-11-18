@@ -1,8 +1,8 @@
 """ initial structure
 
-Revision ID: f8da190e4574
+Revision ID: 8d30629f8caa
 Revises: 
-Create Date: 2025-11-16 15:09:36.434214
+Create Date: 2025-11-18 17:34:32.854927
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f8da190e4574'
+revision: str = '8d30629f8caa'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -45,7 +45,7 @@ def upgrade() -> None:
     sa.Column('payday_multipler', sa.Integer(), nullable=False),
     sa.Column('invite_message', sa.String(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('guild_id', 'name', name='uq_clan_guild_name')
     )
