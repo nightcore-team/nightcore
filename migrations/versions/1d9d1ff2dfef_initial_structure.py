@@ -1,8 +1,8 @@
 """ initial structure
 
-Revision ID: 8d30629f8caa
+Revision ID: 1d9d1ff2dfef
 Revises: 
-Create Date: 2025-11-18 17:34:32.854927
+Create Date: 2025-11-18 23:32:56.634564
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8d30629f8caa'
+revision: str = '1d9d1ff2dfef'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,7 +26,7 @@ def upgrade() -> None:
     sa.Column('moderator_id', sa.BigInteger(), nullable=False),
     sa.Column('amount', sa.Float(), nullable=False),
     sa.Column('reason', sa.String(), nullable=False),
-    sa.Column('type', sa.Enum('ban', 'kick', 'mute', 'vmute', 'mpmute', 'ticketban', 'ticket_close', 'role_remove', 'role_accept', name='changestattypeenum', native_enum=False), nullable=False),
+    sa.Column('type', sa.Enum('ban', 'kick', 'mute', 'vmute', 'mpmute', 'ticketban', 'ticket', 'role_remove', 'role_accept', name='changestattypeenum', native_enum=False), nullable=False),
     sa.Column('time_now', sa.DateTime(timezone=True), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -218,7 +218,6 @@ def upgrade() -> None:
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('channel_id', sa.BigInteger(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
@@ -239,11 +238,11 @@ def upgrade() -> None:
     op.create_index('ix_punish_guild_user_time_now', 'punish', ['guild_id', 'user_id', 'time_now'], unique=False)
     op.create_table('rolerequeststate',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
-    sa.Column('author_id', sa.BigInteger(), nullable=False),
-    sa.Column('role_id', sa.BigInteger(), nullable=False),
+    sa.Column('author_id', sa.BigInteger(), nullable=True),
+    sa.Column('role_id', sa.BigInteger(), nullable=True),
     sa.Column('channel_id', sa.BigInteger(), nullable=True),
     sa.Column('moderator_id', sa.BigInteger(), nullable=True),
-    sa.Column('message_id', sa.BigInteger(), nullable=False),
+    sa.Column('message_id', sa.BigInteger(), nullable=True),
     sa.Column('state', sa.Enum('pending', 'approved', 'denied', 'canceled', 'expired', name='rolerequeststateenum', native_enum=False), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -286,14 +285,12 @@ def upgrade() -> None:
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('role_id', sa.BigInteger(), nullable=False),
-    sa.Column('duration', sa.Integer(), nullable=False),
     sa.Column('end_time', sa.DateTime(timezone=True), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('ix_temp_role_guild_user_time_now', 'temprole', ['guild_id', 'user_id', 'role_id', 'end_time'], unique=False)
     op.create_table('ticketstate',
-    sa.Column('ticket_number', sa.Integer(), nullable=False),
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('author_id', sa.BigInteger(), nullable=False),
     sa.Column('moderator_id', sa.BigInteger(), nullable=True),

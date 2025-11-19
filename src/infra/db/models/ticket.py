@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Enum, Index, Integer, func, text
+from sqlalchemy import BigInteger, DateTime, Enum, Index, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._enums import TicketStateEnum
@@ -11,7 +11,6 @@ from src.infra.db.models.base import Base
 
 
 class TicketState(IdIntegerMixin, Base):
-    ticket_number: Mapped[int] = mapped_column(Integer, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     author_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=True)

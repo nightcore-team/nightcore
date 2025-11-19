@@ -12,11 +12,11 @@ from src.infra.db.models.base import Base
 
 class RoleRequestState(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    author_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    author_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    role_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     channel_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
-    message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    message_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
 
     state: Mapped[RoleRequestStateEnum] = mapped_column(
         Enum(

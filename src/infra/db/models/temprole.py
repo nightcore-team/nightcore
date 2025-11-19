@@ -13,7 +13,6 @@ class TempRole(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    duration: Mapped[int] = mapped_column(nullable=False)
     end_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )

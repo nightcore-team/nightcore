@@ -89,6 +89,6 @@ class ChangeStatTypeEnum(Enum):
     VMUTE = "vmute"
     MPMUTE = "mpmute"
     TICKETBAN = "ticketban"
-    TICKET_CLOSE = "ticket_close"
+    TICKET = "ticket"
     ROLE_REMOVE = "role_remove"
     ROLE_ACCEPT = "role_accept"
