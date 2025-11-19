@@ -110,7 +110,6 @@ async def give_role(
                     guild_id=guild.id,
                     user_id=user.id,
                     role_id=role.id,
-                    duration=parsed_duration,
                     end_time=datetime.now(timezone.utc)
                     + timedelta(seconds=parsed_duration),
                 )
