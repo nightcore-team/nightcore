@@ -140,7 +140,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             )
 
         outcome = ""
-        ticket_number = 0
         ticket_author_id = 0
         pinned_tickets_category_id = 0
         logging_channel_id: int | None = None
@@ -168,7 +167,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     outcome = "already_pinned"
                 else:
                     # Save ticket data
-                    ticket_number = ticket.ticket_number
                     ticket_author_id = ticket.author_id
 
                     # Update ticket state to PINNED
@@ -293,8 +291,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 )
 
             logger.info(
-                "Ticket %s pinned by user %s in guild %s",
-                ticket_number,
+                "Ticket pinned by user %s in guild %s",
                 interaction.user.id,
                 guild.id,
             )
@@ -359,7 +356,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             )
 
         outcome = ""
-        ticket_number = 0
         ticket_author_id = 0
         pinned_tickets_category_id = 0
         logging_channel_id: int | None = None
@@ -387,7 +383,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     outcome = "already_pinned"
                 else:
                     # Save ticket data
-                    ticket_number = ticket.ticket_number
                     ticket_author_id = ticket.author_id
 
                     # Update ticket state to OPENED (not PINNED)
@@ -522,8 +517,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 )
 
             logger.info(
-                "Ticket %s reopened by user %s in guild %s",
-                ticket_number,
+                "Ticket reopened by user %s in guild %s",
                 interaction.user.id,
                 guild.id,
             )
@@ -573,7 +567,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             )
 
         outcome = ""
-        ticket_number = 0
         ticket_author_id = 0
         closed_tickets_category_id = 0
         logging_channel_id: int | None = None
@@ -599,7 +592,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     outcome = "already_closed"
                 else:
                     # Save ticket data
-                    ticket_number = ticket.ticket_number
                     ticket_author_id = ticket.author_id
 
                     # Update ticket state to CLOSED
@@ -724,8 +716,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 )
 
             logger.info(
-                "Ticket %s closed by user %s in guild %s",
-                ticket_number,
+                "Ticket closed by user %s in guild %s",
                 interaction.user.id,
                 guild.id,
             )

@@ -272,7 +272,6 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
             async with view.bot.uow.start() as session:
                 try:
                     ticket_state = TicketState(
-                        ticket_number=current_tickets_count,
                         guild_id=guild.id,
                         author_id=user.id,
                         channel_id=new_channel_id,

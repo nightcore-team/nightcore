@@ -77,8 +77,7 @@ class DeleteTicketTask(Cog):
                 ticket.is_deleted = True
 
                 logger.info(
-                    "[task] - Deleted ticket %s in guild %s",
-                    ticket.ticket_number,
+                    "[task] - Deleted ticket in guild %s",
                     ticket.guild_id,
                 )
 
