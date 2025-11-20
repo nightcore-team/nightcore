@@ -256,9 +256,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
 
             oview.custom_id = state.custom_id
 
-            asyncio.create_task(
-                message.edit(view=oview.make_component())
-            )
+            asyncio.create_task(message.edit(view=oview.make_component()))
 
 
 class CoinsShopViewV2(LayoutView):

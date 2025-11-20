@@ -1,7 +1,5 @@
 """Main entry point for the Nightcore bot."""
 
-# import asyncio
-
 from src.config.config import config
 from src.infra.db.session import get_async_sessionmaker
 from src.infra.db.uow import UnitOfWork

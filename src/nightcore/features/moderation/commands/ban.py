@@ -209,7 +209,8 @@ class Ban(Cog):
         else:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Пользователь уже забанен.",
+                    "Ошибка бана пользователя",
+                    f"{user.mention} уже забанен на этом сервере.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

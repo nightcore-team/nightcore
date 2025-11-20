@@ -37,14 +37,7 @@ class OnMessageEvent(Cog):
         guild = message.guild
 
         if not guild:
-            if not message.attachments:
-                return
-            if len(message.attachments) > 1:
-                return
-            try:
-                self.bot.dispatch("stats_provided", message)
-            except Exception as e:
-                logger.error("Failed to dispatch stats_provided event: %s", e)
+            return
 
         else:
             async with self.bot.uow.start() as session:

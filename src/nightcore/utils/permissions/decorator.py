@@ -92,7 +92,7 @@ def check_required_permissions(
 
             if not interaction:
                 raise ValueError(
-                    f"Interaction not found in {func.__name__} arguments"
+                    f"Interaction not found in {func.__class__.__qualname__} arguments"  # noqa: E501
                 )
 
             has_permission = await _check_user_permission(

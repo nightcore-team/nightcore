@@ -5,7 +5,7 @@ import contextlib
 import logging
 import time
 from collections.abc import Awaitable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import discord
@@ -91,7 +91,7 @@ class Nightcore(Bot):
             chunk_guilds_at_startup=True,
         )
         self.chunked_guilds: int = 0
-        self.startup_time: datetime = datetime.now(timezone.utc)
+        self.startup_time: datetime = datetime.now(UTC)
 
     @property
     def _http_connector(self) -> TCPConnector:
