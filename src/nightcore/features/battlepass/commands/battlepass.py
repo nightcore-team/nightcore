@@ -46,6 +46,7 @@ class Battlepass(Cog):
         coin_name: str = "коинов"
         user_level: int = 0
         user_points: int = 0
+        disable_button = False
 
         async with specified_guild_config(
             bot, guild.id, GuildEconomyConfig
@@ -64,17 +65,24 @@ class Battlepass(Cog):
             user_level = user_record.battle_pass_level
             user_points = user_record.battle_pass_points
 
-            battlepass_rewards = guild_config.battlepass_rewards or []
+        battlepass_rewards = guild_config.battlepass_rewards or []
 
-            if not battlepass_rewards:
-                outcome = "battlepass_not_configured"
+        if not battlepass_rewards:
+            outcome = "battlepass_not_configured"
+        else:
+            for bp_level in battlepass_rewards:
+                if bp_level["level"] == user_level:
+                    current_level = bp_level
+                    break
             else:
-                for bp_level in battlepass_rewards:
-                    if bp_level["level"] == user_level:
-                        current_level = bp_level
-                        break
-                else:
-                    outcome = "level_not_found"
+                previous_levels = [
+                    bp for bp in battlepass_rewards if bp["level"] < user_level
+                ]
+                if previous_levels:
+                    current_level = max(
+                        previous_levels, key=lambda x: x["level"]
+                    )
+                    disable_button = True
 
         if outcome == "battlepass_not_configured":
             return await interaction.response.send_message(
@@ -87,11 +95,13 @@ class Battlepass(Cog):
                 ephemeral=True,
             )
 
-        if outcome == "level_not_found" or current_level is None:
+        # If level not found and no previous levels available
+        if current_level is None:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения уровня баттлпаса",
-                    "Ваш текущий уровень баттлпаса не найден в конфигурации.",
+                    "Ваш уровень превышает все настроенные уровни баттлпаса, "
+                    "или у вас еще нет доступных уровней.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -113,6 +123,7 @@ class Battlepass(Cog):
             reward_type=reward_type,
             reward_amount=reward_amount,
             avatar_url=interaction.user.display_avatar.url,
+            disable_button=disable_button,
         )
 
         await interaction.response.send_message(

@@ -15,6 +15,7 @@ from sqlalchemy.orm import attributes
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.features.battlepass.utils.types import BATTLEPASS_REWARDS
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -40,6 +41,8 @@ async def handle_battlepass_claim_reward_button(
     reward_name = ""
     reward_amount = 0
     coin_name = "коинов"
+    disable_button = False
+    claimed_level = 0
 
     await interaction.response.defer(ephemeral=True)
 
@@ -83,7 +86,7 @@ async def handle_battlepass_claim_reward_button(
 
                         case "coins_case" | "colors_case":
                             if reward_type in user_record.inventory["cases"]:
-                                user_record.inventory["cases"][
+                                user_record.inventory["cases"][  # type: ignore
                                     reward_type  # type: ignore
                                 ] += reward_amount
                             else:
@@ -105,24 +108,48 @@ async def handle_battlepass_claim_reward_button(
                         overflow_points = (
                             user_record.battle_pass_points - required_points
                         )
+                        claimed_level = user_record.battle_pass_level
                         user_record.battle_pass_level += 1
                         user_record.battle_pass_points = overflow_points
 
                         new_level = user_record.battle_pass_level
                         new_points = overflow_points
 
-                        outcome = "success"
+                        # Check if new level exists in config
+                        new_level_data = None
+                        for bp_level in battlepass_rewards:
+                            if bp_level["level"] == new_level:
+                                new_level_data = bp_level
+                                break
+
+                        if new_level_data is None:
+                            # New level not found, show previous level
+                            # with disabled button
+                            outcome = "success_no_next_level"
+                            previous_levels = [
+                                bp
+                                for bp in battlepass_rewards
+                                if bp["level"] < new_level
+                            ]
+                            if previous_levels:
+                                new_level_data = max(
+                                    previous_levels,
+                                    key=lambda x: x["level"],
+                                )
+                                disable_button = True
+                        else:
+                            outcome = "success"
 
                         logger.info(
                             "[battlepass] User %s claimed level %s reward (%s) in guild %s",  # noqa: E501
                             interaction.user.id,
-                            current_level_data["level"],
+                            claimed_level,
                             reward_name,
                             guild.id,
                         )
 
     if outcome == "battlepass_not_configured":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка получения награды",
                 "Баттлпас не настроен на этом сервере.",
@@ -134,7 +161,7 @@ async def handle_battlepass_claim_reward_button(
         return
 
     if outcome == "level_not_found":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка получения награды",
                 "Ваш текущий уровень не найден в конфигурации баттлпаса.",
@@ -146,7 +173,7 @@ async def handle_battlepass_claim_reward_button(
         return
 
     if outcome == "not_enough_points":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=ErrorEmbed(
                 "Недостаточно опыта",
                 "У вас недостаточно опыта для получения награды за этот уровень.",  # noqa: E501
@@ -158,7 +185,7 @@ async def handle_battlepass_claim_reward_button(
         return
 
     if outcome == "unknown_reward_type":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка получения награды",
                 "Неизвестный тип награды. Обратитесь к администрации.",
@@ -169,19 +196,27 @@ async def handle_battlepass_claim_reward_button(
         )
         return
 
-    if outcome == "success":
+    if outcome == "success" or outcome == "success_no_next_level":
+        # new_level_data is guaranteed to exist here
         updated_view = view_to_update(
             bot=bot,
             level=new_level,
             total_levels=len(battlepass_rewards),
             current_points=new_points,
-            required_points=battlepass_rewards[new_level - 1][  # type: ignore
-                "exp_required"
-            ],
-            reward_type=reward_type,  # type: ignore
-            reward_amount=reward_amount,
+            required_points=new_level_data["exp_required"],  # type: ignore
+            reward_type=BATTLEPASS_REWARDS[new_level_data["reward"]["name"]],  # type: ignore
+            reward_amount=new_level_data["reward"]["amount"],  # type: ignore
             avatar_url=interaction.user.display_avatar.url,
+            disable_button=disable_button,
         )
+
+        success_message = (
+            f"Вы получили награду за уровень {claimed_level}: {reward_name}."
+        )
+        if outcome == "success_no_next_level":
+            success_message += (
+                "\n\nВы достигли максимального уровня баттлпаса."
+            )
 
         await asyncio.gather(
             interaction.followup.edit_message(
@@ -191,7 +226,7 @@ async def handle_battlepass_claim_reward_button(
             interaction.followup.send(
                 embed=SuccessMoveEmbed(
                     "Награда получена",
-                    f"Вы получили награду за уровень {new_level - 1}: {reward_name}.",  # noqa: E501
+                    success_message,
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),

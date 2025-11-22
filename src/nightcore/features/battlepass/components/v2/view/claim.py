@@ -35,6 +35,7 @@ class BattlepassClaimViewV2(LayoutView):
         reward_type: str,
         reward_amount: int,
         avatar_url: str,
+        disable_button: bool = False,
     ) -> None:
         super().__init__(timeout=180)
 
@@ -74,6 +75,7 @@ class BattlepassClaimViewV2(LayoutView):
             style=ButtonStyle.secondary,
             # emoji="<:5730galaxy:1434301441119621191>",
             custom_id="battlepass:claim_reward",
+            disabled=disable_button,
         )
         container.add_item(
             Section[Self](
