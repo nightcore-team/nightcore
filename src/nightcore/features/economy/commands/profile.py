@@ -28,15 +28,16 @@ class Profile(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(
-        name="profile", description="Посмотреть профиль пользователя."
-    )  # type: ignore
+    @app_commands.command(  # type: ignore
+        name="profile",
+        description="Посмотреть профиль пользователя.",
+    )
     @app_commands.describe(
         user="Пользователь, чей профиль нужно посмотреть. По умолчанию - вы сами."  # noqa: E501
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def profile(
-        self, interaction: Interaction, user: User | None = None
+        self, interaction: Interaction["Nightcore"], user: User | None = None
     ):
         """Check user's profile."""
 
@@ -67,11 +68,13 @@ class Profile(Cog):
 
         view = UserProfileViewV2(
             bot=self.bot,
+            guild_id=guild.id,
             user_id=member.id,
             lvl=user_record.level,
             current_exp=user_record.current_exp,
             exp_to_lvl=user_record.exp_to_level,
             balance=user_record.coins,
+            battlepass_level=user_record.battle_pass_level,
             coin_name=coin_name,
             voice_activity=format_voice_time(user_record.voice_activity),
             messages_count=user_record.messages_count,

@@ -24,16 +24,20 @@ from src.infra.db.models._annot import CasesAnnot
 from src.nightcore.features.economy.utils.case import CASES_NAMES
 from src.nightcore.utils import discord_ts
 
+from .transfer import TransferHistoryActionRow
+
 
 class UserProfileViewV2(LayoutView):
     def __init__(
         self,
         bot: "Nightcore",
+        guild_id: int,
         user_id: int,
         lvl: int,
         current_exp: int,
         exp_to_lvl: int,
         balance: int,
+        battlepass_level: int,
         coin_name: str | None,
         voice_activity: str,
         messages_count: int,
@@ -43,11 +47,11 @@ class UserProfileViewV2(LayoutView):
     ):
         super().__init__(timeout=10)
 
-        container = Container[Self](accent_color=Color.from_str("#9e5bcb"))
+        container = Container[Self](accent_color=Color.from_str("#515cff"))
 
         container.add_item(
             TextDisplay[Self](
-                f"### <:6213astralbutterfly:1432749438778085427> Профиль пользователя <@{user_id}>",  # noqa: E501
+                f"## <:butterflies:1441872280358748182> Профиль пользователя <@{user_id}>",  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -60,23 +64,30 @@ class UserProfileViewV2(LayoutView):
                     f"**Баланс:** {balance} {coin_name if coin_name else ''}\n"
                     f"**Количество сообщений на сервере:** {messages_count}\n"
                     f"**Голосовая активность:** {voice_activity}"
+                    f"\n**Уровень баттлпаса:** {battlepass_level}",
                 ),
                 accessory=Thumbnail[Self](avatar_url),
             )
         )
         container.add_item(Separator[Self]())
 
-        if cases:
+        cases_with_items = {
+            case_name: count
+            for case_name, count in cases.items()
+            if isinstance(count, int) and count > 0
+        }
+
+        if cases_with_items:
             container.add_item(
                 TextDisplay[Self](
-                    "### <:1559astralbubbles:1433833240002560225> Кейсы: "
+                    "### <a:68842universebox:1433433538581106768> Кейсы: "
                 )
             )
             container.add_item(
                 TextDisplay[Self](
                     "\n".join(
                         f"> {CASES_NAMES.get(case_name, case_name)}, количество: {count}"  # noqa: E501
-                        for case_name, count in cases.items()
+                        for case_name, count in cases_with_items.items()
                     )
                 )
             )
@@ -84,9 +95,7 @@ class UserProfileViewV2(LayoutView):
 
         if colors:
             container.add_item(
-                TextDisplay[Self](
-                    "### <:1559astralbubbles:1433833240002560225> Цвета: "
-                )
+                TextDisplay[Self]("###<:palette:1441872299845353613> Цвета: ")
             )
             container.add_item(
                 TextDisplay[Self](
@@ -94,6 +103,9 @@ class UserProfileViewV2(LayoutView):
                 )
             )
             container.add_item(Separator[Self]())
+
+        container.add_item(TransferHistoryActionRow(guild_id, user_id))
+        container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)
 

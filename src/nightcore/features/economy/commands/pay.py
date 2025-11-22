@@ -39,6 +39,7 @@ class Pay(Cog):
     @app_commands.describe(
         user="Пользователь, которому нужно отправить перевод",
         amount="Сумма коинов для перевода",
+        comment="Комментарий к переводу",
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def pay(
@@ -46,6 +47,7 @@ class Pay(Cog):
         interaction: Interaction,
         user: User,
         amount: int,
+        comment: app_commands.Range[str, 0, 200] | None = None,
     ):
         """Check user's balance."""
 
@@ -158,7 +160,7 @@ class Pay(Cog):
             await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Успешный перевод",
-                    f"Вы успешно перевели пользователю {member.display_name} {amount} {coin_name}.",  # noqa: E501
+                    f"Вы успешно перевели пользователю {member.mention} {amount} {coin_name}.",  # noqa: E501
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -174,6 +176,7 @@ class Pay(Cog):
                     receiver=member,
                     item_name=cast(str, coin_name),
                     amount=amount,
+                    comment=comment,
                 ),
             )
 

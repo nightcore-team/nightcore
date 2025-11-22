@@ -23,6 +23,7 @@ class TransferCoinsEventDTO(BaseEventDTO):
     receiver: Member
     item_name: str
     amount: int
+    comment: str | None = None
 
     def build_log_embed(self, bot: "Nightcore") -> Embed:
         """Build and return the log embed for the event."""
@@ -49,6 +50,11 @@ class TransferCoinsEventDTO(BaseEventDTO):
             .add_field(
                 name="Количество",
                 value=f"**{self.amount}**",
+                inline=False,
+            )
+            .add_field(
+                name="Комментарий",
+                value=self.comment if self.comment else "Отсутствует",
                 inline=False,
             )
             .set_footer(

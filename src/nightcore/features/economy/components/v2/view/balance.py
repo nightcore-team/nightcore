@@ -7,7 +7,15 @@ Used for displaying a user's balance information.
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 
-from discord.ui import Container, LayoutView, Separator, TextDisplay
+from discord import Color
+from discord.ui import (
+    Container,
+    LayoutView,
+    Separator,
+    TextDisplay,
+)
+
+from .transfer import TransferHistoryActionRow
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -19,24 +27,30 @@ class BalanceViewV2(LayoutView):
     def __init__(
         self,
         bot: "Nightcore",
+        guild_id: int,
         user_id: int,
         coin_name: str | None,
         balance: float,
     ):
         super().__init__(timeout=60)
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#515cff"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:10845currency:1432050187492130836> Информация о балансе"
+                "## <:wallet:1441857506744729841> Информация о балансе\n\n"
             )
+        )
+
+        container.add_item(
+            TextDisplay[Self](
+                f"\n**Пользователь:** <@{user_id}>\n"
+                f"**Баланс:** {balance} {coin_name or 'коинов'}"
+            ),
         )
         container.add_item(Separator[Self]())
 
-        description = f"> **Пользователь:** <@{user_id}>\n> **Баланс:** {balance} {coin_name or 'коинов'}"  # noqa: E501
-
-        container.add_item(TextDisplay[Self](description))
+        container.add_item(TransferHistoryActionRow(guild_id, user_id))
         container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)

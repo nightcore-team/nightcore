@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from discord.ext.commands import Cog  # type: ignore
 
+from src.infra.db.operations import create_transfer_money_record
 from src.nightcore.features.economy.components.v2 import (
     TransferCoinsViewV2,
 )
@@ -26,6 +27,30 @@ class TransferCoinsEvent(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
+    async def _create_transfer_record(
+        self,
+        dto: "TransferCoinsEventDTO",
+    ):
+        """Create a transfer money record in the database."""
+
+        async with self.bot.uow.start() as session:
+            try:
+                await create_transfer_money_record(
+                    session,
+                    guild_id=dto.guild.id,
+                    sender_id=dto.sender_id,
+                    receiver_id=dto.receiver.id,
+                    amount=dto.amount,
+                )
+            except Exception as e:
+                logger.exception(
+                    "[%s/log] Failed to create transfer record for user %s in guild %s: %s",  # noqa: E501
+                    dto.event_type,
+                    dto.sender_id,
+                    dto.guild.id,
+                    e,
+                )
+
     @Cog.listener()
     async def on_transfer_coins(
         self,
@@ -38,6 +63,7 @@ class TransferCoinsEvent(Cog):
             user_id=dto.sender_id,
             item_name=dto.item_name,
             amount=dto.amount,
+            comment=dto.comment,
         )
 
         gather_list: list[Awaitable[Any]] = []
@@ -52,6 +78,7 @@ class TransferCoinsEvent(Cog):
             )
 
         gather_list.append(dto.receiver.send(view=view))
+        gather_list.append(self._create_transfer_record(dto))
 
         try:
             await asyncio.gather(*gather_list)

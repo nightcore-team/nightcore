@@ -27,24 +27,27 @@ class Balance(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(
-        name="balance", description="Посмотреть баланс пользователя"
-    )  # type: ignore
+    @app_commands.command(  # type: ignore
+        name="balance",
+        description="Проверить баланс пользователя.",
+    )
     @app_commands.describe(
         user="Пользователь, чей баланс нужно проверить. По умолчанию - вы сами"
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def balance(
-        self, interaction: Interaction, user: User | None = None
+        self, interaction: Interaction["Nightcore"], user: User | None = None
     ):
         """Check user's balance."""
 
         guild = cast(Guild, interaction.guild)
-
         member = user or interaction.user
 
         async with specified_guild_config(
-            self.bot, guild_id=guild.id, config_type=GuildEconomyConfig
+            self.bot,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+            _create=False,
         ) as (
             guild_config,
             session,
@@ -54,7 +57,13 @@ class Balance(Cog):
                 session, guild_id=guild.id, user_id=member.id
             )
 
-        view = BalanceViewV2(self.bot, member.id, coin_name, user_record.coins)
+        view = BalanceViewV2(
+            self.bot,
+            guild.id,
+            member.id,
+            coin_name,
+            user_record.coins,
+        )
 
         await interaction.response.send_message(view=view, ephemeral=True)
 
