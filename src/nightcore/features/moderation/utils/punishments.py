@@ -73,10 +73,8 @@ def build_infraction_pages(
             line += f"| {p.original_duration} "
 
         if p.reason:
-            if p.category == "notify" and notify_channel_id:
-                line += f"| [notify](https://discord.com/channels/{guild_id}/{notify_channel_id})"
-            else:
-                line += f"| {p.reason} "
+            line += f"| {p.reason} "
+
         line += f"||**<@{p.moderator_id}>\n"
 
         if len(current) + len(line) >= limit:

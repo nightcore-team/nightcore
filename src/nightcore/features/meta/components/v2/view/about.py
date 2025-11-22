@@ -6,17 +6,14 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Self
 
 import discord
-from discord import ButtonStyle, Color, MediaGalleryItem
+from discord import ButtonStyle, Color
 from discord.ui import (
     ActionRow,
     Button,
     Container,
     LayoutView,
-    MediaGallery,
-    Section,
     Separator,
     TextDisplay,
-    Thumbnail,
 )
 
 from src.nightcore.utils import discord_ts

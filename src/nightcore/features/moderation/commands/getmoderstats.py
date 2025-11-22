@@ -48,7 +48,7 @@ class GetModerationStats(Cog):
         self.bot = bot
 
     @app_commands.command(  # type: ignore
-        name="getmoderstats", description="Получить статистику модерации"
+        name="getmoderstat", description="Получить статистику модерации"
     )
     @app_commands.describe(
         user="Пользователь для получения статистики",
@@ -140,26 +140,14 @@ class GetModerationStats(Cog):
 
         await interaction.response.defer(ephemeral=ephemeral)
 
-        data_range_diff = (to_dt - from_dt).days
-
         async with self.bot.uow.start() as session:
-            if data_range_diff > 60:
-                clear_stats = await get_moderation_stats(
-                    session,
-                    guild_id=guild.id,
-                    moderators={m.id: m.nick for m in moderators},  # type: ignore
-                    from_date=from_dt,
-                    to_date=to_dt,
-                )
-            else:
-                clear_stats = await get_moderation_stats(
-                    session,
-                    guild_id=guild.id,
-                    moderators={m.id: m.nick for m in moderators},  # type: ignore
-                    from_date=from_dt,
-                    to_date=to_dt,
-                    with_messages=True,
-                )
+            clear_stats = await get_moderation_stats(
+                session,
+                guild_id=guild.id,
+                moderators={m.id: m.nick for m in moderators},  # type: ignore
+                from_date=from_dt,
+                to_date=to_dt,
+            )
 
         grouped = group_infractions_by_moderator(
             moderators=clear_stats["moderators"],
