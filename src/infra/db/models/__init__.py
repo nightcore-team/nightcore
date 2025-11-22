@@ -23,6 +23,7 @@ from .temp import Base, TempPunish  # noqa: F811
 from .tempmultiplier import Base, TempEconomyMultiplier  # noqa: F811
 from .temprole import Base, TempRole  # noqa: F811
 from .ticket import Base, TicketState  # noqa: F811
+from .transfer_history import Base, TransferHistory  # noqa: F811
 from .user import Base, User  # noqa: F811
 
 __all__ = (
@@ -50,5 +51,6 @@ __all__ = (
     "TempPunish",
     "TempRole",
     "TicketState",
+    "TransferHistory",
     "User",
 )

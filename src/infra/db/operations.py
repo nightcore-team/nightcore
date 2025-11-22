@@ -36,6 +36,7 @@ from src.infra.db.models import (
     TempPunish,
     TempRole,
     TicketState,
+    TransferHistory,
     User,
 )
 from src.infra.db.models._annot import (
@@ -693,6 +694,45 @@ async def get_moderstats_dict(
     ]
 
     return {field: getattr(config, field) for field in score_fields}
+
+
+async def create_transfer_money_record(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    sender_id: int,
+    receiver_id: int,
+    amount: int,
+) -> None:
+    """Create a transfer money record in the database."""
+
+    record = TransferHistory(
+        guild_id=guild_id,
+        user_id=sender_id,
+        receiver_id=receiver_id,
+        amount=amount,
+    )
+    session.add(record)
+
+
+async def get_user_transfer_history(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> Sequence[TransferHistory]:
+    """Get the transfer history for a user in a guild."""
+    stmt = (
+        select(TransferHistory)
+        .where(
+            TransferHistory.guild_id == guild_id,
+            TransferHistory.user_id == user_id,
+        )
+        .order_by(TransferHistory.created_at.desc())
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
 
 
 async def count_user_infractions_last_7_days(
