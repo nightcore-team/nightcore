@@ -5,7 +5,14 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
-from discord import ButtonStyle, CategoryChannel, Guild, Member, TextChannel
+from discord import (
+    ButtonStyle,
+    CategoryChannel,
+    Color,
+    Guild,
+    Member,
+    TextChannel,
+)
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -87,7 +94,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Закрепить",
-        emoji="📌",
+        emoji="<:paperclip1:1442217626393776242>",
         custom_id="ticket:pin",
     )  # type: ignore
     async def pin_ticket(
@@ -105,7 +112,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 for child in component.children:  # type: ignore
                     if (
                         isinstance(child, discord.components.TextDisplay)
-                        and child.id == 4
+                        and child.id == 2
                     ):
                         view.interaction_user_id = extract_id_from_str(
                             child.content
@@ -299,7 +306,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Открыть",
-        emoji="📂",
+        emoji="<:unlock:1442212446440783992>",
         custom_id="ticket:reopen",
     )
     async def reopen_ticket(
@@ -317,7 +324,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 for child in component.children:  # type: ignore
                     if (
                         isinstance(child, discord.components.TextDisplay)
-                        and child.id == 4
+                        and child.id == 2
                     ):
                         view.interaction_user_id = extract_id_from_str(
                             child.content
@@ -525,7 +532,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Закрыть",
-        emoji="🔒",
+        emoji="<:lock4:1442214472004534332>",
         custom_id="ticket:close",
     )
     async def close_ticket(
@@ -543,7 +550,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 for child in component.children:  # type: ignore
                     if (
                         isinstance(child, discord.components.TextDisplay)
-                        and child.id == 4
+                        and child.id == 2
                     ):
                         view.interaction_user_id = extract_id_from_str(
                             child.content
@@ -737,7 +744,7 @@ class ManageTicketViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#515cff"))
 
         # Main text
         container.add_item(
