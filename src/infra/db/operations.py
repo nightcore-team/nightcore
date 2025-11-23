@@ -833,6 +833,19 @@ async def get_organization_roles_full_json(
     )
 
 
+async def get_illegal_roles_full_json(
+    session: AsyncSession, *, guild_id: int
+) -> dict[str, OrgRoleWithoutTagAnnot] | None:
+    """Get the list of organization roles for a guild."""
+    stmt = select(MainGuildConfig.illegal_roles).where(
+        MainGuildConfig.guild_id == guild_id
+    )
+    result = await session.execute(stmt)
+    return cast(
+        dict[str, OrgRoleWithoutTagAnnot] | None, result.scalar_one_or_none()
+    )
+
+
 async def get_organization_roles_ids(
     session: AsyncSession, *, guild_id: int
 ) -> list[int]:

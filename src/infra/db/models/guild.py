@@ -29,6 +29,9 @@ class MainGuildConfig(IdIntegerMixin, Base):  #
     proposals_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )
+    illegal_roles: Mapped[dict[str, dict[str, int]]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
+    )  #
     organizational_roles: Mapped[dict[str, dict[str, int]]] = mapped_column(
         JSON, nullable=False, default=dict
     )  #
