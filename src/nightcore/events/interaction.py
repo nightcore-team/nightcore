@@ -25,6 +25,12 @@ from src.nightcore.features.faq.components.v2.view.handlers import (
     handle_faq_button_callback,
     handle_faq_global_button_callback,
 )
+from src.nightcore.features.role_requests.components.v2 import (
+    SendRoleRequestView,
+)
+from src.nightcore.features.role_requests.components.v2.view.handlers import (
+    handle_role_select_button_callback,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -68,6 +74,11 @@ async def setup(bot: "Nightcore") -> None:
                             )
                         case _:
                             ...
+                case str() if custom_id.startswith("role_request:select_"):
+                    await handle_role_select_button_callback(
+                        interaction=interaction,
+                        view=SendRoleRequestView,
+                    )
                 case _:  # type: ignore
                     logger.error(
                         "[interaction] Could not found custom id in interaction, possible slash command used: %s",  # noqa: E501

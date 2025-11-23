@@ -7,7 +7,10 @@ from discord import Guild, SelectOption, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.infra.db.operations import get_organization_roles_full_json
+from src.infra.db.operations import (
+    get_illegal_roles_full_json,
+    get_organization_roles_full_json,
+)
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.v2 import (
     SendRoleRequestView,
@@ -41,6 +44,8 @@ class Rrmessage(Cog):
         guild = cast(Guild, interaction.guild)
         channel = interaction.channel
 
+        ill_options = None
+
         async with self.bot.uow.start() as session:
             if not (
                 org_roles := await get_organization_roles_full_json(
@@ -49,15 +54,28 @@ class Rrmessage(Cog):
             ):
                 raise FieldNotConfiguredError("организационные роли")
 
-        options = [
+            ill_roles = await get_illegal_roles_full_json(
+                session, guild_id=guild.id
+            )
+
+        org_options = [
             SelectOption(
                 label=v["name"], value=str(v["role_id"]) + "," + str(k)
             )
             for k, v in org_roles.items()
         ]
+        if ill_roles:
+            ill_options = [
+                SelectOption(
+                    label=v["name"], value=str(v["role_id"]) + "," + str(k)
+                )
+                for k, v in ill_roles.items()
+            ]
 
         await interaction.channel.send(  # type: ignore
-            view=SendRoleRequestView(self.bot, options=options)
+            view=SendRoleRequestView(
+                self.bot, org_options=org_options, ill_options=ill_options
+            )
         )
 
         await interaction.response.send_message(

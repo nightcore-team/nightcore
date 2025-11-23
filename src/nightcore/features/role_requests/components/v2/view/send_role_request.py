@@ -1,6 +1,5 @@
 """View for sending role requests."""
 
-import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
@@ -21,21 +20,14 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models import MainGuildConfig
-from src.infra.db.models._enums import ChannelType, RoleRequestStateEnum
+from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.operations import (
     get_latest_user_role_request,
-    get_or_create_user,
-    get_organization_roles_full_json,
     get_organization_roles_ids,
-    get_specified_channel,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
-)
-from src.nightcore.features.role_requests.components.modal import (
-    SendRoleRequestModal,
 )
 from src.nightcore.features.role_requests.components.v2.view.check_role_request import (  # noqa: E501
     CheckRoleRequestView,
@@ -54,188 +46,32 @@ from src.nightcore.utils import (
 logger = logging.getLogger(__name__)
 
 
-# SelectOption: label, value
-class SelectRoleActionRow(ActionRow["SendRoleRequestView"]):
-    def __init__(self, options: list[SelectOption]) -> None:
+class SelectOrgRoleActionRow(ActionRow["SendRoleRequestView"]):
+    def __init__(self, org_options: list[SelectOption]) -> None:
         super().__init__()
 
-        select = Select["SendRoleRequestView"](
-            placeholder="Select your organization.",
+        org_select = Select["SendRoleRequestView"](
+            placeholder="Выберите вашу организацию.",
             min_values=1,
             max_values=1,
-            custom_id="role_request:select_role",
-            options=options,
+            custom_id="role_request:select_org_role",
+            options=org_options,
         )
+        self.add_item(org_select)
 
-        select.callback = self.select_role
 
-        self.add_item(select)
+class SelectIllRoleActionRow(ActionRow["SendRoleRequestView"]):
+    def __init__(self, ill_options: list[SelectOption]) -> None:
+        super().__init__()
 
-    async def select_role(self, interaction: Interaction["Nightcore"]) -> None:
-        """Handle the select role interaction."""
-        guild = cast(Guild, interaction.guild)
-        view = cast(SendRoleRequestView, self.view)
-        user = cast(Member, interaction.user)
-
-        option_parts: list[int, str] = interaction.data.get("values")[0].split(  # type: ignore
-            ","
+        ill_select = Select["SendRoleRequestView"](
+            placeholder="Выберите вашу нелегальную организацию.",
+            min_values=1,
+            max_values=1,
+            custom_id="role_request:select_ill_role",
+            options=ill_options,
         )
-        selected_role_id = int(option_parts[0])
-        selected_role_tag = option_parts[1]
-
-        outcome = ""
-        options: list[SelectOption] = []
-        check_role_request_channel_id = 0
-
-        async with view.bot.uow.start() as session:
-            org_roles = await get_organization_roles_full_json(
-                session, guild_id=guild.id
-            )
-
-            if not org_roles:
-                outcome = "no_org_roles"
-            else:
-                options = [
-                    SelectOption(label=v["name"], value=f"{v['role_id']},{k}")
-                    for k, v in org_roles.items()
-                ]
-
-                dbuser, _ = await get_or_create_user(
-                    session, guild_id=guild.id, user_id=user.id
-                )
-
-                if dbuser.role_request_ban:
-                    outcome = "user_banned"
-                else:
-                    last_rr = await get_latest_user_role_request(
-                        session, guild_id=guild.id, user_id=user.id
-                    )
-
-                    if (
-                        last_rr
-                        and last_rr.state == RoleRequestStateEnum.PENDING
-                    ):
-                        outcome = "pending_request_exists"
-                    else:
-                        check_role_request_channel_id = (
-                            await get_specified_channel(
-                                session,
-                                guild_id=guild.id,
-                                config_type=MainGuildConfig,
-                                channel_type=ChannelType.ROLE_REQUESTS,
-                            )
-                        )
-
-                        if not check_role_request_channel_id:
-                            outcome = "channel_not_configured"
-                        else:
-                            outcome = "success"
-
-        if outcome == "no_org_roles":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Не удалось отправить запрос роли",
-                    "Организационные роли не настроены на этом сервере.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if outcome == "user_banned":
-            await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Не удалось отправить запрос роли",
-                    "У вас имеется блокировки на подачу запросов для получение роли.",  # noqa: E501
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if outcome == "pending_request_exists":
-            await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Не удалось отправить запрос роли",
-                    "У вас уже есть активный запрос на роль.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if outcome == "channel_not_configured":
-            await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Не удалось отправить запрос роли",
-                    "Канал для проверки запросов на роли не настроен.",
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if outcome == "success":
-            requested_role = await ensure_role_exists(guild, selected_role_id)
-            if not requested_role:
-                await asyncio.gather(
-                    interaction.response.send_message(
-                        embed=ErrorEmbed(
-                            "Не удалось отправить запрос роли",
-                            "Выбранная роль не существует на этом сервере.",
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    ),
-                    interaction.message.edit(  # type: ignore
-                        view=SendRoleRequestView(view.bot, options=options)
-                    ),
-                )
-                return
-
-            channel = await ensure_messageable_channel_exists(
-                guild, cast(int, check_role_request_channel_id)
-            )
-            if not channel:
-                await asyncio.gather(
-                    interaction.response.send_message(
-                        embed=ErrorEmbed(
-                            "Не удалось отправить запрос роли",
-                            "Канал для проверки запросов на роли не существует или недоступен.",  # noqa: E501
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    ),
-                    interaction.message.edit(  # type: ignore
-                        view=SendRoleRequestView(view.bot, options=options)
-                    ),
-                )
-                return
-
-            await interaction.response.send_modal(
-                SendRoleRequestModal(
-                    channel=channel,
-                    role=requested_role,
-                    bot=view.bot,
-                    selected_role_tag=cast(str, selected_role_tag),
-                    view=CheckRoleRequestView,
-                )
-            )
-
-            logger.info(
-                "User %s selected role %s in guild %s",
-                user.id,
-                selected_role_id,
-                guild.id,
-            )
-
-        asyncio.create_task(
-            interaction.message.edit(  # type: ignore
-                view=SendRoleRequestView(view.bot, options=options)
-            )
-        )
+        self.add_item(ill_select)
 
 
 class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
@@ -491,7 +327,10 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
 
 class SendRoleRequestView(LayoutView):
     def __init__(
-        self, bot: "Nightcore", options: list[SelectOption] | None = None
+        self,
+        bot: "Nightcore",
+        org_options: list[SelectOption] | None = None,
+        ill_options: list[SelectOption] | None = None,
     ) -> None:
         super().__init__(timeout=None)
         self.bot = bot
@@ -515,9 +354,18 @@ class SendRoleRequestView(LayoutView):
         )
 
         # select
-        container.add_item(
-            SelectRoleActionRow(options=cast(list[SelectOption], options))
-        )
+        if org_options:
+            container.add_item(
+                SelectOrgRoleActionRow(
+                    org_options=org_options,
+                )
+            )
+        if ill_options:
+            container.add_item(
+                SelectIllRoleActionRow(
+                    ill_options=ill_options,
+                )
+            )
         container.add_item(Separator[Self]())
 
         # other buttons
