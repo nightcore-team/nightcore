@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 
-from discord import ButtonStyle
+from discord import ButtonStyle, Color
 from discord.ui import (
     ActionRow,
     Button,
@@ -56,46 +56,45 @@ class RoleRequestStateView(LayoutView):
         self.reason = reason
 
         header_text = ""
-        container = Container[Self]()
-
-        _is_stats: bool = False
         text = ""
+        accent_color: Color | None = None
+
         match state:
             case RoleRequestStateEnum.APPROVED:
-                header_text = f"### <:52104checkmark:1414732973005340672> | APPROVED <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
-                text = f"Вы успешно одобрили пользователю <@{user_id}> роль <@&{role_id}>."  # noqa: E501
+                accent_color = Color.from_str("#32F113")
+                header_text = (
+                    "### <:check:1442198763694329959> Запрос на роль одобрен"
+                )
+                text = f"Модератор <@{moderator_id}> одобрил запрос пользователя <@{user_id}> на роль <@&{role_id}>."  # noqa: E501
             case RoleRequestStateEnum.DENIED:
-                header_text = f"### <:9349_nope:1414732960841859182> | DENIED <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
-                text = f"Вы отклонили запрос пользователя <@{user_id}> по причине:\n\n{self.reason}."  # noqa: E501
+                accent_color = Color.from_str("#F11313")
+                header_text = (
+                    "### <:failed:1442197027822768270> Запрос на роль отклонен"
+                )
+                text = f"Модератор <@{moderator_id}> отклонил запрос пользователя <@{user_id}> на роль <@&{role_id}> по причине:\n> {self.reason}."  # noqa: E501
             case RoleRequestStateEnum.CANCELED:
-                header_text = "### <:9349_nope:1414732960841859182> | CANCELED"
-                if moderator_id:
-                    header_text += f"<:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
+                accent_color = Color.from_str("#F11313")
+                header_text = (
+                    "### <:failed:1442197027822768270> Запрос на роль отменен"
+                )
                 text = (
-                    f"Пользователь <@{user_id}> отклонил свой запрос на роль."
+                    f"Пользователь <@{user_id}> отменил свой запрос на роль."
                 )
             case RoleRequestStateEnum.EXPIRED:
-                header_text = "### <:9349_nope:1414732960841859182> | EXPIRED"
-                if moderator_id:
-                    header_text += f"<:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
-                text = f"Запрос пользователя <@{user_id}> истек и был удален."
+                accent_color = Color.from_str("#F1F113")
+                header_text = (
+                    "### <:sandclock:1442203739736768632> Запрос на роль истек"
+                )
+                text = f"Запрос на роль пользователя <@{user_id}> истек."
             case _:
                 ...
+
+        container = Container[Self](accent_color=accent_color)
 
         container.add_item(TextDisplay(header_text))
         container.add_item(Separator())
         container.add_item(TextDisplay(text))
         container.add_item(Separator())
-
-        if _is_stats and message_url and image_url and image_proxy_url:
-            container.add_item(
-                LinksActionRow(
-                    message_url=message_url,
-                    image_url=image_url,
-                    image_proxy_url=image_proxy_url,
-                )
-            )
-            container.add_item(Separator())
 
         now = datetime.now(timezone.utc)
 

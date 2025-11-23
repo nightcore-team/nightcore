@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Guild, Member, Role, SelectOption
+from discord import ButtonStyle, Color, Guild, Member, Role, SelectOption
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -79,7 +79,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         label="Отменить текущий запрос",
         custom_id="role_request:cancel",
         style=ButtonStyle.grey,
-        emoji="<:9349_nope:1414732960841859182>",
+        emoji="<:failed:1442197027822768270>",
     )
     async def cancel_role_request(
         self,
@@ -231,7 +231,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         label="Снять организационные роли",
         custom_id="role_request:remove_roles",
         style=ButtonStyle.grey,
-        emoji="<:42276rank:1420074588104294440>",
+        emoji="<:idcard:1442195533358960660>",
     )
     async def remove_organization_roles(
         self,
@@ -335,12 +335,12 @@ class SendRoleRequestView(LayoutView):
         super().__init__(timeout=None)
         self.bot = bot
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#515cff"))
 
         # header
         container.add_item(
             TextDisplay[Self](
-                "## <:72151staff:1421169506230866050> Отправить запрос на роль"
+                "## <:fingerprint:1442196665716047942> Отправить запрос на роль"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

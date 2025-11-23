@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class DeclineRoleRequestModal(Modal, title="Отклонить запрос роли"):
-    reason = TextInput[Self](
+    reason = TextInput[Self](  # type: ignore
         label="Введите причину отклонения",
         style=discord.TextStyle.paragraph,
         required=True,
