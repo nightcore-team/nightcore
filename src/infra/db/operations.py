@@ -721,18 +721,30 @@ async def get_user_transfer_history(
     guild_id: int,
     user_id: int,
 ) -> Sequence[TransferHistory]:
-    """Get the transfer history for a user in a guild."""
-    stmt = (
-        select(TransferHistory)
-        .where(
-            TransferHistory.guild_id == guild_id,
-            TransferHistory.user_id == user_id,
-        )
-        .order_by(TransferHistory.created_at.desc())
-    )
-    result = await session.scalars(stmt)
+    """Get the transfer history for a user in a guild (both sent and received)."""  # noqa: E501
 
-    return result.all()
+    # Transfers sent by the user
+    stmt_sent = select(TransferHistory).where(
+        TransferHistory.guild_id == guild_id,
+        TransferHistory.user_id == user_id,
+    )
+
+    # Transfers received by the user
+    stmt_received = select(TransferHistory).where(
+        TransferHistory.guild_id == guild_id,
+        TransferHistory.receiver_id == user_id,
+    )
+
+    # Combine both queries using union
+    stmt = stmt_sent.union_all(stmt_received).order_by(
+        TransferHistory.created_at.desc()
+    )
+
+    result = await session.execute(
+        select(TransferHistory).from_statement(stmt)
+    )
+
+    return result.scalars().all()
 
 
 async def count_user_infractions_last_7_days(

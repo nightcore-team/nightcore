@@ -4,6 +4,7 @@ Transfer view v2 component.
 Used for displaying a notification when an item is transferred to a user.
 """
 
+import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
@@ -19,7 +20,11 @@ from discord.ui import (
     button,
 )
 
-from src.infra.db.operations import get_user_transfer_history
+from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.operations import (
+    get_specified_field,
+    get_user_transfer_history,
+)
 from src.nightcore.features.economy.utils.pages import (
     build_transfer_history_pages,
 )
@@ -28,6 +33,8 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.utils import discord_ts
+
+logger = logging.getLogger(__name__)
 
 
 class TransferHistoryActionRow(ActionRow[LayoutView]):
@@ -53,11 +60,18 @@ class TransferHistoryActionRow(ActionRow[LayoutView]):
         bot = interaction.client
 
         async with bot.uow.start() as session:
+            coin_name: str | None = await get_specified_field(
+                session,
+                guild_id=self.guild_id,
+                config_type=GuildEconomyConfig,
+                field_name="coin_name",
+            )
             transfers = await get_user_transfer_history(
                 session, guild_id=self.guild_id, user_id=self.user_id
             )
+            logger.info("TRASNFERS: %s", transfers)
 
-        pages = build_transfer_history_pages(transfers)
+        pages = build_transfer_history_pages(transfers, coin_name)
 
         view = TransferHistoryViewV2(
             bot=bot,
