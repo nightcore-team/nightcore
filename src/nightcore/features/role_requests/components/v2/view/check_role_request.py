@@ -14,7 +14,6 @@ from discord.ui import (
     ActionRow,
     Button,
     Container,
-    Item,
     LayoutView,
     MediaGallery,
     Separator,
@@ -223,11 +222,11 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         for component in interaction.message.components:  # type: ignore
             for item in component.children:  # type: ignore
                 if isinstance(item, TextDisplayOverride):  # noqa: SIM102
-                    if "User | ID" in item.content:
+                    if "Пользователь" in item.content:
                         content = item.content
                         content_parts = content.split("\n")
                         view.interaction_user_id = extract_id_from_str(
-                            content_parts[0].split("|")[1].strip()
+                            content_parts[0].split()[1].strip()
                         )
                         view.interaction_user_nick = (
                             content_parts[1].split(":")[1].strip()
@@ -437,11 +436,11 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         for component in interaction.message.components:  # type: ignore
             for item in component.children:  # type: ignore
                 if isinstance(item, TextDisplayOverride):  # noqa: SIM102
-                    if "User | ID" in item.content:
+                    if "Пользователь" in item.content:
                         content = item.content
                         content_parts = content.split("\n")
                         view.interaction_user_id = extract_id_from_str(
-                            content_parts[0].split("|")[1].strip()
+                            content_parts[0].split()[1].strip()
                         )
                         view.interaction_user_nick = (
                             content_parts[1].split(":")[1].strip()
@@ -571,29 +570,12 @@ class CheckRoleRequestView(LayoutView):
 
         self.make_component(all_disabled)
 
-    def get_component(self, custom_id: str) -> Item[Self] | None:
-        """Get component by custom_id."""
-        for item in self.children:
-            if isinstance(item, Container):
-                for sub_item in item.children:
-                    if isinstance(sub_item, ActionRow):
-                        for sub_sub_item in sub_item.children:
-                            if sub_sub_item.custom_id == custom_id:  # type: ignore
-                                return sub_sub_item
-                    if isinstance(sub_item, Button):  # noqa: SIM102
-                        if sub_item.custom_id == custom_id:
-                            return sub_item
-            if isinstance(item, Button):  # noqa: SIM102
-                if item.custom_id == custom_id:
-                    return item
-        return None
-
     def disable_buttons(self):
         """Disable all buttons in the view."""
         if self.actions:
             for item in self.actions.children:
                 if isinstance(item, Button):
-                    item.disabled = True
+                    item.disabled = True  # type: ignore
 
     def make_component(self, disable_all: bool = False) -> Self:
         """Create view."""
