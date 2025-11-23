@@ -41,18 +41,18 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     rules_channel="Канал для правил",
     proposal_channel="Канал для предложений",
+    illegal_roles="Роли нелегалов. Формат: org name, tag, role_id | org name, tag, role_id | ...",  # noqa: E501
     organizational_roles="Организационные роли. Формат: org name, tag, role_id | org name, tag, role_id | ...",  # noqa: E501
-    fraction_roles="Фракционные роли. Формат: role_id, role_id, ...",
     role_request_channel="Канал для проверки запросов на роли",
 )
 async def setup(
     interaction: Interaction,
-    rules_channel: discord.TextChannel | None = None,  #
-    proposal_channel: discord.TextChannel | None = None,  #
-    # voice_temp_roles: str | None = None,  #
-    organizational_roles: str | None = None,  #
-    fraction_roles: str | None = None,  #
-    role_request_channel: discord.TextChannel | None = None,  #
+    rules_channel: discord.TextChannel | None = None,
+    proposal_channel: discord.TextChannel | None = None,
+    # voice_temp_roles: str | None = None,
+    illegal_roles: str | None = None,
+    organizational_roles: str | None = None,
+    role_request_channel: discord.TextChannel | None = None,
 ):
     """Configure moderation settings."""
 
@@ -60,9 +60,9 @@ async def setup(
         int_id_value("rules_channel_id", rules_channel),
         int_id_value("create_proposal_channel_id", proposal_channel),
         int_id_value("check_role_requests_channel_id", role_request_channel),
+        org_roles_dict_value("illegal_roles", illegal_roles),
         org_roles_dict_value("organizational_roles", organizational_roles),
         # temp_voice_roles_dict_value("voice_temp_roles", voice_temp_roles),
-        # list_csv("fraction_roles", fraction_roles),
     ]
 
     specs = [s for s in specs if s is not None]

@@ -159,6 +159,7 @@ async def update_moderation_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
+        _create=True,
     ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.moderation_access_roles_ids,
@@ -221,6 +222,7 @@ async def update_ban_access(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
         config_type=GuildModerationConfig,
+        _create=True,
     ) as (guild_config, _):
         new_list, changed, state = update_id_list(
             guild_config.ban_access_roles_ids,
