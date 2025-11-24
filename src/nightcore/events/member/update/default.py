@@ -74,7 +74,18 @@ class DefaultUpdateMemberEvent(Cog):
         nickname_changed = old_display != new_display
 
         if nickname_changed:
-            # AuditLogAction.member_update
+            if "!" in new_display:
+                try:
+                    await after.edit(nick=new_display.replace("!", ""))
+                except discord.Forbidden:
+                    logger.warning(
+                        f"[logging] Missing permissions to remove '!' from nickname in guild {guild.id}"  # noqa: E501
+                    )
+                except discord.HTTPException as e:
+                    logger.error(
+                        f"[logging] HTTP error occurred while removing '!' from nickname in guild {guild.id}: {e}"  # noqa: E501
+                    )
+
             try:
                 async for entry in after.guild.audit_logs(
                     action=discord.AuditLogAction.member_update, limit=10
