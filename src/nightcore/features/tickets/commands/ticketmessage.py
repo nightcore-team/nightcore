@@ -43,8 +43,11 @@ class Ticketmessage(Cog):
         ) as (guild_config, _):
             guild_config.create_ticket_channel_id = channel.id  # type: ignore
 
+        await interaction.channel.send(view=CreateTicketViewV2(self.bot))  # type: ignore
+
         await interaction.response.send_message(
-            view=CreateTicketViewV2(self.bot)
+            "Сообщение для создания тикетов отправлено ниже.",
+            ephemeral=True,
         )
 
         logger.info(

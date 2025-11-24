@@ -26,7 +26,7 @@ class LevelUpViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=30)
 
-        container = Container[Self](accent_color=Color.from_str("#9e5bcb"))
+        container = Container[Self](accent_color=Color.from_str("#515cff"))
 
         container.add_item(
             TextDisplay[Self](
@@ -37,7 +37,7 @@ class LevelUpViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "<:6213astralbutterfly:1432749438778085427> **Мы рады, что вы заполняете наш чат своим присутствием!**",  # noqa: E501
+                "<:butterflies:1441872280358748182> **Мы рады, что вы заполняете наш чат своим присутствием!**",  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

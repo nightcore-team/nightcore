@@ -11,12 +11,16 @@ import discord
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.infra.db.models._enums import RoleRequestStateEnum
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
 )
 from src.nightcore.features.moderation.events.dto.base import (
     ModerationBaseEventData,
+)
+from src.nightcore.features.role_requests.components.v2 import (
+    RoleRequestStateView,
 )
 
 logger = logging.getLogger(__name__)
@@ -193,10 +197,16 @@ async def send_rr_channel_log(
         )
         return
 
-    text = f"`[🚮 | ROLE REMOVE]`  Moderator <@{event_data.moderator.id}> removed <@{event_data.user.id}> role <@&{event_data.role.id}>"  # noqa: E501
+    view = RoleRequestStateView(
+        bot=bot,
+        moderator_id=event_data.moderator.id,
+        user_id=event_data.user.id,
+        state=RoleRequestStateEnum.REMOVED,
+        role_id=event_data.role.id,
+    )
 
     try:
-        await channel.send(content=text)
+        await channel.send(view=view)
     except discord.HTTPException as e:
         logger.error(
             "[event] %s: failed to send message to %s: %s",

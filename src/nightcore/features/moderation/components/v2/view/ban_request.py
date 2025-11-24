@@ -71,8 +71,8 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
     @button(
         style=ButtonStyle.green,
-        emoji="<:52104checkmark:1414732973005340672>",
-        label="Approve",
+        emoji="<:check:1442198763694329959>",
+        label="Одобрить",
         custom_id="ban_request:approve",
     )
     async def approve(
@@ -125,6 +125,8 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
             view.bot.dispatch(
                 "user_banned",
                 data=UserBannedEventData(
+                    mode="dm",
+                    guild_name=guild.name,
                     category="ban",
                     moderator=moderator,
                     user=target,
@@ -171,8 +173,8 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
     @button(
         style=ButtonStyle.red,
-        emoji="<:9349_nope:1414732960841859182>",
-        label="Deny",
+        emoji="<:failed:1442197027822768270>",
+        label="Отклонить",
         custom_id="ban_request:deny",
     )
     async def deny(
@@ -255,8 +257,8 @@ class BanRequestViewV2(LayoutView):
         self.attachments = attachments
 
         self.actions: ActionButtons | None = None
-        self.header_text: TextDisplay[Self] | None = None
-        self.footer_text: TextDisplay[Self] | None = None
+        self.header_text: TextDisplay[BanRequestViewV2]
+        self.footer_text: TextDisplay[BanRequestViewV2]
         self.in_favor_moderators_text = ""
         self.against_moderators_text = ""
         self.accent_color = discord.Color.yellow()
@@ -273,28 +275,28 @@ class BanRequestViewV2(LayoutView):
         if self.actions:
             for item in self.actions.children:
                 if isinstance(item, Button):
-                    item.disabled = True
+                    item.disabled = True  # type: ignore
 
     def make_component(self, *, disabled: bool = False) -> Self:
         """Create the layout view component."""
 
-        # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
         container = Container[Self](accent_color=self.accent_color)
 
+        pre_header_text = "## Запрос на бан"
         if self.ping_role:
-            container.add_item(
-                TextDisplay[Self](f"### {self.ping_role.mention}")
-            )
-            container.add_item(Separator[Self]())
+            pre_header_text += f" {self.ping_role.mention}"
+
+        container.add_item(TextDisplay[Self](pre_header_text))
+        container.add_item(Separator[Self]())
 
         self.header_text = TextDisplay[Self](
-            f"Пользователь: {self.target.mention} (`{self.target.id}`)\n"
-            f"Модератор: <@{self.author_id}>\n"
-            f"Причина: **`{self.reason}`**\n"
-            f"Длительность: **`{self.original_duration}`**\n"
-            f"Удалить сообщения за последние: **`{self.original_delete_seconds if self.original_delete_seconds else 'N/A'}`**\n"  # noqa: E501
+            f"**Пользователь:** {self.target.mention} (`{self.target.id}`)\n"
+            f"**Модератор:** <@{self.author_id}>\n"
+            f"**Причина: `{self.reason}`**\n"
+            f"**Длительность: `{self.original_duration}`**\n"
+            f"**Удалить сообщения за последние: `{self.original_delete_seconds if self.original_delete_seconds else 'N/A'}`**\n"  # noqa: E501
         )
         header_section = Section[Self](
             self.header_text,
@@ -332,10 +334,12 @@ class BanRequestViewV2(LayoutView):
 
         # Footer
         now = datetime.now(timezone.utc)
-        self.footer_text = TextDisplay[Self](
-            f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+
+        container.add_item(
+            TextDisplay["BanRequestViewV2"](
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+            )
         )
-        container.add_item(self.footer_text)
 
         if disabled:
             self.disable_buttons()

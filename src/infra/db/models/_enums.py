@@ -58,6 +58,7 @@ class RoleRequestStateEnum(Enum):
     DENIED = "denied"
     CANCELED = "canceled"
     EXPIRED = "expired"
+    REMOVED = "removed"
 
 
 class NotifyStateEnum(Enum):

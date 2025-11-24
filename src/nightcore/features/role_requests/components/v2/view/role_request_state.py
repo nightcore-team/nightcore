@@ -86,6 +86,10 @@ class RoleRequestStateView(LayoutView):
                     "### <:sandclock:1442203739736768632> Запрос на роль истек"
                 )
                 text = f"Запрос на роль пользователя <@{user_id}> истек."
+            case RoleRequestStateEnum.REMOVED:
+                accent_color = Color.from_str("#515cff")
+                header_text = "### <:remove:1442555310631030847> Роль удалена"
+                text = f"Модератор <@{moderator_id}> снял пользователю <@{user_id}> роль <@&{role_id}>."  # noqa: E501
             case _:
                 ...
 

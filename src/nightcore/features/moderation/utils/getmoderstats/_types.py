@@ -36,17 +36,16 @@ class ModerationScores:
             >>> scores_dict = {"mute_score": 1.0, "ban_score": 5.0, ...}
             >>> scores = ModerationScores.from_dict(scores_dict)
         """
+
         return cls(
-            mute=data.get("mute_score", 1.0),
-            ban=data.get("ban_score", 5.0),
-            kick=data.get("kick_score", 2.0),
-            vmute=data.get("vmute_score", 1.0),
-            mpmute=data.get("mpmute_score", 1.0),
-            ticketban=data.get("ticketban_score", 3.0),
-            closed_tickets=data.get("tickets_score", 2.0),
-            approved_role_requests=data.get(
-                "approved_role_requests_score", 1.5
-            ),
+            mute=data.get("mute_score", 0),
+            ban=data.get("ban_score", 0),
+            kick=data.get("kick_score", 0),
+            vmute=data.get("vmute_score", 0),
+            mpmute=data.get("mpmute_score", 0),
+            ticketban=data.get("ticketban_score", 0),
+            closed_tickets=data.get("tickets_score", 0),
+            approved_role_requests=data.get("approved_role_requests_score", 0),
             removed_roles=data.get("changed_roles_score", 1.0),
             message=data.get("message_score", 0.01),
         )

@@ -1,8 +1,8 @@
 """ initial structure
 
-Revision ID: cfeaaf1d838e
-Revises:
-Create Date: 2025-11-19 21:18:03.255572
+Revision ID: d5bfd240d0dd
+Revises: 
+Create Date: 2025-11-24 18:32:10.122368
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'cfeaaf1d838e'
+revision: str = 'd5bfd240d0dd'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -130,16 +130,16 @@ def upgrade() -> None:
     sa.Column('leadership_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
     sa.Column('count_moderator_messages_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('ban_access_roles_ids', sa.ARRAY(sa.BigInteger()), nullable=True),
-    sa.Column('mute_score', sa.Float(), nullable=True),
-    sa.Column('ban_score', sa.Float(), nullable=True),
-    sa.Column('kick_score', sa.Float(), nullable=True),
-    sa.Column('ticket_score', sa.Float(), nullable=True),
-    sa.Column('role_request_score', sa.Float(), nullable=True),
-    sa.Column('role_remove_score', sa.Float(), nullable=True),
-    sa.Column('ticket_ban_score', sa.Float(), nullable=True),
-    sa.Column('mpmute_score', sa.Float(), nullable=True),
-    sa.Column('vmute_score', sa.Float(), nullable=True),
-    sa.Column('message_score', sa.Float(), nullable=True),
+    sa.Column('mute_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('ban_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('kick_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('ticket_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('role_request_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('role_remove_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('ticket_ban_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('mpmute_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('vmute_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
+    sa.Column('message_score', sa.Float(), server_default=sa.text('0.0'), nullable=False),
     sa.Column('trackable_moderation_role_id', sa.BigInteger(), nullable=True),
     sa.Column('ban_request_ping_role_id', sa.BigInteger(), nullable=True),
     sa.Column('send_ban_request_channel_id', sa.BigInteger(), nullable=True),
@@ -186,6 +186,7 @@ def upgrade() -> None:
     sa.Column('rules_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('create_proposal_channel_id', sa.BigInteger(), nullable=True),
     sa.Column('proposals_count', sa.Integer(), nullable=False),
+    sa.Column('illegal_roles', sa.JSON(), server_default=sa.text("'{}'::json"), nullable=False),
     sa.Column('organizational_roles', sa.JSON(), nullable=False),
     sa.Column('voice_temp_roles', sa.JSON(), nullable=False),
     sa.Column('faq', sa.JSON(), server_default=sa.text("'[]'::json"), nullable=False),
@@ -243,7 +244,7 @@ def upgrade() -> None:
     sa.Column('channel_id', sa.BigInteger(), nullable=True),
     sa.Column('moderator_id', sa.BigInteger(), nullable=True),
     sa.Column('message_id', sa.BigInteger(), nullable=True),
-    sa.Column('state', sa.Enum('pending', 'approved', 'denied', 'canceled', 'expired', name='rolerequeststateenum', native_enum=False), nullable=False),
+    sa.Column('state', sa.Enum('pending', 'approved', 'denied', 'canceled', 'expired', 'removed', name='rolerequeststateenum', native_enum=False), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -302,6 +303,15 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_ticket_guild_author_updated_desc', 'ticketstate', ['guild_id', 'author_id', sa.literal_column('updated_at DESC')], unique=False)
+    op.create_table('transferhistory',
+    sa.Column('user_id', sa.BigInteger(), nullable=False),
+    sa.Column('receiver_id', sa.BigInteger(), nullable=False),
+    sa.Column('guild_id', sa.BigInteger(), nullable=False),
+    sa.Column('amount', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('user',
     sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
@@ -350,6 +360,7 @@ def downgrade() -> None:
     op.drop_index('ix_clan_members_clan_role', table_name='clanmember')
     op.drop_table('clanmember')
     op.drop_table('user')
+    op.drop_table('transferhistory')
     op.drop_index('idx_ticket_guild_author_updated_desc', table_name='ticketstate')
     op.drop_table('ticketstate')
     op.drop_index('ix_temp_role_guild_user_time_now', table_name='temprole')
