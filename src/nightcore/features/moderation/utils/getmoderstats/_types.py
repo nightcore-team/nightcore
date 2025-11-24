@@ -121,8 +121,27 @@ class ModeratorStats:
             f"> **Всего сообщений:** {self.total_messages}\n"
         )
 
-    def format_changestat_history(self) -> str:
+    def format_changestat_history_first_5(self) -> str:
         """Format changestat history for display.
+
+        Returns:
+            Formatted history string or message if empty
+        """
+
+        if not self.changestat_details:
+            return "> Нет истории изменений статистики."
+
+        lines: list[str] = []
+        for cs in self.changestat_details[:5]:
+            timestamp = f"<t:{int(cs.time_now.timestamp())}:R>"
+            lines.append(
+                f"> {timestamp} <:42920arrowrightalt:1421170550759489616> **`{cs.type.value.upper()}`** | **Баллы:** **`{cs.amount}`** | **Причина:** {cs.reason}"  # noqa: E501
+            )
+
+        return "\n".join(lines)
+
+    def format_changestats_history(self) -> str:
+        """Format full changestat history for display.
 
         Returns:
             Formatted history string or message if empty
@@ -135,24 +154,7 @@ class ModeratorStats:
         for cs in self.changestat_details:
             timestamp = f"<t:{int(cs.time_now.timestamp())}:R>"
             lines.append(
-                f"> {timestamp} <:42920arrowrightalt:1421170550759489616> **`{cs.type.value.upper()}`** | **Баллы:** **`{cs.amount}`** | **Причина:** {cs.reason}"  # noqa: E501
+                f"{timestamp} <:42920arrowrightalt:1421170550759489616> **`{cs.type.value.upper()}`** | **Баллы:** **`{cs.amount}`** | **Причина:** {cs.reason}"  # noqa: E501
             )
 
         return "\n".join(lines)
-
-    # def format_full_stats(self, scores: ModerationScores) -> str:
-    #     """Format full statistics including changestat history.
-
-    #     Args:
-    #         scores: ModerationScores for calculations
-
-    #     Returns:
-    #         Full formatted statistics with history
-    #     """
-    #     base_stats = self.format_stats(scores)
-
-    #     if self.changestat_details:
-    #         base_stats += "\n\n**Changestat History:**\n"
-    #         base_stats += self.format_changestat_history()
-
-    #     return base_stats

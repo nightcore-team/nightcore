@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, cast
 
 import discord
-from discord import Color
+from discord import ButtonStyle, Color
+from discord.interactions import Interaction
 from discord.ui import (
+    ActionRow,
+    Button,
     Container,
     LayoutView,
     Section,
     Separator,
     TextDisplay,
     Thumbnail,
+    button,
 )
 
 if TYPE_CHECKING:
@@ -26,6 +30,76 @@ if TYPE_CHECKING:
     )
 
 from src.nightcore.utils import discord_ts
+
+
+class ChangeStatDetailsActionRow(ActionRow["SingleGetModerStatsViewV2"]):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @button(
+        label="История изменений статистики",
+        custom_id="change_stat_details:get",
+        style=ButtonStyle.grey,
+        emoji="<:sync:1442576771399684238>",
+    )
+    async def get_change_stat_details(
+        self,
+        interaction: Interaction[Nightcore],
+        button: Button[SingleGetModerStatsViewV2],
+    ) -> None:
+        """Handle get change stat details button click."""
+        view = cast(SingleGetModerStatsViewV2, self.view)
+        stats = view.stats
+        if not stats.changestat_details:
+            await interaction.response.send_message(
+                "Деталей изменений статистики нет.", ephemeral=True
+            )
+            return
+
+        details = stats.format_changestats_history()
+        await interaction.response.send_message(
+            view=ChangeStatDetailsViewV2(
+                bot=view.bot,
+                moderator=view.moderator,
+                stats=stats,
+                details=details,
+            ),
+            ephemeral=True,
+        )
+
+
+class ChangeStatDetailsViewV2(LayoutView):
+    def __init__(
+        self,
+        bot: Nightcore,
+        moderator: discord.Member,
+        stats: ModeratorStats,
+        details: str,
+    ):
+        super().__init__(timeout=None)
+
+        container = Container[Self](accent_color=Color.from_str("#9300d2"))
+        container.add_item(
+            Section[Self](
+                TextDisplay[Self](
+                    f"## <:96965manager:1436470131034427423> Изменения статистики\n**Модератор:** {moderator.mention}\n**Количество изменений:** {len(stats.changestat_details)}"  # noqa: E501
+                ),
+                accessory=Thumbnail[Self](moderator.display_avatar.url),
+            )
+        )
+        container.add_item(Separator[Self]())
+
+        container.add_item(TextDisplay[Self](f"{details}"))
+        container.add_item(Separator[Self]())
+
+        now = discord.utils.utcnow()
+        container.add_item(
+            TextDisplay[Self](
+                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
+            )
+        )
+
+        self.add_item(container)
 
 
 class SingleGetModerStatsViewV2(LayoutView):
@@ -67,10 +141,20 @@ class SingleGetModerStatsViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"### Изменение статистики\n{stats.format_changestat_history()}"  # noqa: E501
+                f"### Изменения статистики\n{stats.format_changestat_history_first_5()}\n"  # noqa: E501
             )
         )
-        container.add_item(Separator[Self]())
+        if stats.changestat_details and len(stats.changestat_details) > 5:
+            container.add_item(
+                TextDisplay[Self](
+                    "<:42920arrowrightalt:1421170550759489616> *Остальные записи доступны по кнопке ниже*"  # noqa: E501
+                )
+            )
+            container.add_item(Separator[Self]())
+            container.add_item(ChangeStatDetailsActionRow())
+            container.add_item(Separator[Self]())
+        else:
+            container.add_item(Separator[Self]())
 
         now = discord.utils.utcnow()
 
