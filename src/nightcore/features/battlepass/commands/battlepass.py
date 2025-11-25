@@ -71,12 +71,14 @@ class Battlepass(Cog):
             outcome = "battlepass_not_configured"
         else:
             for bp_level in battlepass_rewards:
-                if bp_level["level"] == user_level:
+                if int(bp_level["level"]) == user_level:
                     current_level = bp_level
                     break
             else:
                 previous_levels = [
-                    bp for bp in battlepass_rewards if bp["level"] < user_level
+                    bp
+                    for bp in battlepass_rewards
+                    if int(bp["level"]) < user_level
                 ]
                 if previous_levels:
                     current_level = max(

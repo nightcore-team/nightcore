@@ -776,7 +776,7 @@ async def get_role_requests_to_delete(
 ) -> Sequence[RoleRequestState]:
     """Get role requests that need to be deleted based on their duration."""
     boundary = datetime.now(timezone.utc) - timedelta(
-        minutes=config.bot.ROLE_REQUESTS_ALIVE_HOURS
+        hours=config.bot.ROLE_REQUESTS_ALIVE_HOURS
     )
 
     stmt = select(RoleRequestState).where(

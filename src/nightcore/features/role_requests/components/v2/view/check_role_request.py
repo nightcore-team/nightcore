@@ -446,14 +446,19 @@ class CheckRoleRequestView(LayoutView):
         container.add_item(TextDisplay[Self]("## Запрос на роль"))
         container.add_item(Separator[Self]())
 
-        # main text
-        container.add_item(
-            TextDisplay[Self](
+        text = (
+            f"**Пользователь**: <@{self.interaction_user_id}> (`{self.interaction_user_id}`)\n"  # noqa: E501
+            f"**Запрашиваемая роль**: <@&{self.role_requested_id}>\n"
+        )
+        if self.interaction_user_nick:
+            text = (
                 f"**Пользователь**: <@{self.interaction_user_id}> (`{self.interaction_user_id}`)\n"  # noqa: E501
                 f"**Никнейм**: {self.interaction_user_nick}\n"
                 f"**Запрашиваемая роль**: <@&{self.role_requested_id}>\n"
             )
-        )
+
+        # main text
+        container.add_item(TextDisplay[Self](text))
         container.add_item(Separator[Self]())
 
         accent_color: Color | None = None
