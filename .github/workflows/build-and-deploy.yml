@@ -86,4 +86,5 @@ jobs:
               --restart unless-stopped \
               ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
+
             echo "[✅] Bot deployed successfully!"
