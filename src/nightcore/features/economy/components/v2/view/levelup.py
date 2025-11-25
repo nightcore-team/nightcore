@@ -1,8 +1,8 @@
 """
 Level Up View V2 Component.
 
-Used for displaying a notification when a user levels up in the economy/levels system.
-"""  # noqa: E501
+Used for displaying a notification when a user levels up in the levels system.
+"""
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
@@ -28,9 +28,12 @@ class LevelUpViewV2(LayoutView):
 
         container = Container[Self](accent_color=Color.from_str("#515cff"))
 
+        container.add_item(TextDisplay[Self](f"### <@{user_id}>"))
+        container.add_item(Separator[Self]())
+
         container.add_item(
             TextDisplay[Self](
-                f"### <@{user_id}>, вы успешно повысили свой уровень до {new_level}!\n"  # noqa: E501
+                f"### Вы успешно повысили свой уровень до {new_level}!\n"
                 f"> До следующего вам осталось: **`{exp_to_level}`** опыта.\n",
             )
         )

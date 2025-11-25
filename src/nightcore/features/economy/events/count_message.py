@@ -101,10 +101,13 @@ class CountMessageEvent(Cog):
             all_level_role_ids = set(level_roles.values())
 
             # find user roles to remove
-            roles_to_remove: list[Role | None] = has_any_role_from_sequence(
-                member,
-                all_level_role_ids,  # type: ignore
-                with_roles=True,
+            roles_to_remove: list[Role | None] = cast(
+                list[Role | None],
+                has_any_role_from_sequence(
+                    member,
+                    all_level_role_ids,  # type: ignore
+                    with_roles=True,
+                ),
             )
 
             # remove all old roles
