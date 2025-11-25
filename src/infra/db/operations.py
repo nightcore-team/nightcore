@@ -571,7 +571,6 @@ async def get_moderation_stats(
     moderators: dict[int, str],
     from_date: datetime,
     to_date: datetime,
-    with_messages: bool = False,
 ) -> ModerationStatsResultAnnot:
     """Return infractions grouped by moderator_id."""
 
@@ -640,27 +639,26 @@ async def get_moderation_stats(
     )
     changestats = changestats_result.all()
 
-    messages_data: dict[int, int] = {}
-    if with_messages:
-        stmt = (
-            select(
-                ModerationMessage.moderator_id,
-                func.count(ModerationMessage.id).label("messages_count"),
-            )
-            .where(
-                *_build_base_moderstats_filters(
-                    ModerationMessage,
-                    guild_id,
-                    moderator_ids,
-                    from_date,
-                    to_date,
-                )
-            )
-            .group_by(ModerationMessage.moderator_id)
+    # ---- Messages Count ----
+    stmt = (
+        select(
+            ModerationMessage.moderator_id,
+            func.count(ModerationMessage.id).label("messages_count"),
         )
+        .where(
+            *_build_base_moderstats_filters(
+                ModerationMessage,
+                guild_id,
+                moderator_ids,
+                from_date,
+                to_date,
+            )
+        )
+        .group_by(ModerationMessage.moderator_id)
+    )
 
-        result = await session.execute(stmt)
-        messages_data = dict(result.all())  # type: ignore
+    result = await session.execute(stmt)
+    messages_data = dict(result.all())  # type: ignore
 
     return {
         "moderators": moderators,
@@ -668,7 +666,7 @@ async def get_moderation_stats(
         "tickets": tickets,
         "role_requests": role_requests,
         "changestats": changestats,
-        "messages": messages_data,
+        "messages": messages_data,  # type: ignore
     }
 
 

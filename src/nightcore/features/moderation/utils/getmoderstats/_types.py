@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from src.infra.db.models import ChangeStat
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -32,6 +36,8 @@ class ModerationScores:
         Returns:
             ModerationScores instance
 
+        messages
+
         Example:
             >>> scores_dict = {"mute_score": 1.0, "ban_score": 5.0, ...}
             >>> scores = ModerationScores.from_dict(scores_dict)
@@ -43,11 +49,11 @@ class ModerationScores:
             kick=data.get("kick_score", 0),
             vmute=data.get("vmute_score", 0),
             mpmute=data.get("mpmute_score", 0),
-            ticketban=data.get("ticketban_score", 0),
-            closed_tickets=data.get("tickets_score", 0),
-            approved_role_requests=data.get("approved_role_requests_score", 0),
+            ticketban=data.get("ticket_ban_score", 0),
+            closed_tickets=data.get("ticket_score", 0),
+            approved_role_requests=data.get("role_request_score", 0),
             removed_roles=data.get("changed_roles_score", 1.0),
-            message=data.get("message_score", 0.01),
+            message=data.get("message_score", 0),
         )
 
 
