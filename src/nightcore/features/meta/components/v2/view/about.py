@@ -14,12 +14,47 @@ from discord.ui import (
     LayoutView,
     Separator,
     TextDisplay,
+    button,
 )
 
 from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+from src.nightcore.features.meta.components.modal.bugreport import (
+    BugReportModal,
+)
+
+
+class AboutActionRow(ActionRow["AboutViewV2"]):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.add_item(
+            Button["AboutViewV2"](
+                style=ButtonStyle.link,
+                label="Nightcore Community",
+                emoji="<:shootingstar:1437888733990097057>",
+                url="https://discord.gg/sSZs2sWhUZ",
+            )
+        )
+
+    @button(
+        style=ButtonStyle.gray,
+        label="Bug Report",
+        emoji="<:3052shinybluebughunter:1437948101263360053>",
+        custom_id="nightcore:bug_report",
+    )
+    async def send_bug_report(
+        self,
+        interaction: discord.Interaction[Nightcore],
+        button: Button[AboutViewV2],
+    ):
+        """Handle bug report button click."""
+        await interaction.response.send_modal(
+            BugReportModal(interaction.client)
+        )
 
 
 class AboutViewV2(LayoutView):
@@ -71,22 +106,7 @@ class AboutViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        container.add_item(
-            ActionRow[Self](
-                Button[Self](
-                    style=ButtonStyle.link,
-                    label="Nightcore Community",
-                    emoji="<:shootingstar:1437888733990097057>",
-                    url="https://discord.gg/sSZs2sWhUZ",
-                ),
-                Button[Self](
-                    style=ButtonStyle.gray,
-                    label="Bug Report",
-                    emoji="<:3052shinybluebughunter:1437948101263360053>",
-                    custom_id="nightcore:bug_report",
-                ),
-            )
-        )
+        container.add_item(AboutActionRow())
         container.add_item(Separator[Self]())
 
         # container.add_item(

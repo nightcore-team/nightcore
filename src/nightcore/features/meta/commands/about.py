@@ -3,7 +3,7 @@
 import logging
 import os
 from datetime import datetime, timezone
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 import psutil  # type: ignore
@@ -12,7 +12,10 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.utils import snowflake_time
 
 from src.infra.db.operations import get_total_users_count
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.features.meta.components.v2.view.about import AboutViewV2
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -23,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class About(Cog):
-    def __init__(self, bot: Nightcore):
+    def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
     @app_commands.command(  # type: ignore
@@ -32,7 +35,9 @@ class About(Cog):
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def about(
-        self, interaction: discord.Interaction, ephemeral: bool = True
+        self,
+        interaction: discord.Interaction["Nightcore"],
+        ephemeral: bool = True,
     ):
         """Display information about the bot."""
 
@@ -71,6 +76,6 @@ class About(Cog):
         )
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the About cog."""
     await bot.add_cog(About(bot))
