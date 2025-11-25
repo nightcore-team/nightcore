@@ -30,7 +30,7 @@ class ResetTempMultiplierTask(Cog):
         if self.reset_temp_multiplier_task.is_running():
             self.reset_temp_multiplier_task.cancel()
 
-    @tasks.loop(seconds=5.0)
+    @tasks.loop(minutes=1)
     async def reset_temp_multiplier_task(self):
         """Task to reset temporary multipliers when their duration ends."""
         logger.info("[task] - Running reset temp multiplier task")

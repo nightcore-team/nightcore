@@ -37,8 +37,8 @@ class Config(BaseEnvConfig):
     )
     POSTGRES_ECHO: bool = False
     POSTGRES_ECHO_POOL: bool = True
-    POSTGRES_POOL_MAX_OVERFLOW: int = 15
-    POSTGRES_POOL_SIZE: int = 5
+    POSTGRES_POOL_MAX_OVERFLOW: int = 30
+    POSTGRES_POOL_SIZE: int = 10
     POSTGRES_POOL_TIMEOUT: int = 0
     POSTGRES_POOL_PRE_PING: bool = True
 

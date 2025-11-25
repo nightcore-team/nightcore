@@ -25,7 +25,7 @@ class UnPunishTask(Cog):
         if self.un_punish_task.is_running():
             self.un_punish_task.cancel()
 
-    @tasks.loop(seconds=5.0)
+    @tasks.loop(seconds=15)
     async def un_punish_task(self):
         """Task to unpunish users when their punishment duration ends."""
         logger.info("[task] - Running unpunish task")
