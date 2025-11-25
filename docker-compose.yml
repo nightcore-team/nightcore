@@ -16,13 +16,6 @@ services:
     env_file:
       - .env
 
-    dns:
-      - 8.8.8.8 #google
-      - 1.1.1.1 #cloudflare
-
-    ports:
-      - "${BOT_PORT}:${BOT_PORT}"
-
     volumes:
       - ./src/:/app/src/
       - ./main.py:/app/main.py

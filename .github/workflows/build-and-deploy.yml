@@ -1,0 +1,89 @@
+name: Build and Push to Registry
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Image info
+        run: |
+          echo "[✅] Image pushed successfully!"
+          echo "[📦] Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "[🏷️] Tags: ${{ steps.meta.outputs.tags }}"
+          echo ""
+          echo "View at: https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            # Log in to GitHub Container Registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Stop and remove old container
+            docker stop ${{ secrets.CONTAINER_NAME }} || true
+            docker rm ${{ secrets.CONTAINER_NAME }} || true
+
+            # Remove old image (optional, to save space)
+            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest || true
+
+            # Download new image
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+            # Start new container
+            docker run -d \
+              --name ${{ secrets.CONTAINER_NAME }} \
+              -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+              -e POSTGRES_URL=${{ secrets.POSTGRES_URL }} \
+              -e FORUM_API_URL=${{ secrets.FORUM_API_URL }} \
+              -e FORUM_API_KEY=${{ secrets.FORUM_API_KEY }} \
+              --network ${{ secrets.DOCKER_NETWORK }} \
+              --restart unless-stopped \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+            echo "[✅] Bot deployed successfully!"
