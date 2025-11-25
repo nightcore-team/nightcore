@@ -79,7 +79,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         label="Отменить текущий запрос",
         custom_id="role_request:cancel",
         style=ButtonStyle.grey,
-        emoji="<:failed:1442197027822768270>",
+        emoji="<:failed:1442915170320912506>",
     )
     async def cancel_role_request(
         self,
@@ -231,7 +231,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         label="Снять организационные роли",
         custom_id="role_request:remove_roles",
         style=ButtonStyle.grey,
-        emoji="<:idcard:1442195533358960660>",
+        emoji="<:idcard:1442915777593348163>",
     )
     async def remove_organization_roles(
         self,
@@ -340,7 +340,7 @@ class SendRoleRequestView(LayoutView):
         # header
         container.add_item(
             TextDisplay[Self](
-                "## <:fingerprint:1442196665716047942> Отправить запрос на роль"  # noqa: E501
+                "## <:fingerprint:1442915534478774272> Отправить запрос на роль"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

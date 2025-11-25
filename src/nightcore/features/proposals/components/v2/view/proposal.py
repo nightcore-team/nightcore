@@ -38,7 +38,7 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         label="Одобрить",
         custom_id="proposal:approve",
         style=ButtonStyle.grey,
-        emoji="<:52104checkmark:1414732973005340672>",
+        emoji="<:check:1442915033079353404>",
     )
     async def approve_proposal(
         self,
@@ -114,7 +114,7 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         label="Отклонить",
         custom_id="proposal:decline",
         style=ButtonStyle.grey,
-        emoji="<:9349_nope:1414732960841859182>",
+        emoji="<:failed:1442915170320912506>",
     )
     async def decline_proposal(
         self,
@@ -219,7 +219,7 @@ class ProposalViewV2(LayoutView):
         if self.actions:
             for item in self.actions.children:
                 if isinstance(item, Button):
-                    item.disabled = True
+                    item.disabled = True  # type: ignore
 
     def make_component(self, disable_all: bool = False) -> Self:
         """Create view."""

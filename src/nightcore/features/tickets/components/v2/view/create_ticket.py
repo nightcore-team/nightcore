@@ -53,7 +53,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Создать тикет",
-        emoji="<:29909ticket:1418324338142220309>",
+        emoji="<:29909ticket:1442924723528007700>",
         custom_id="ticket:create",
     )
     async def create_ticket(

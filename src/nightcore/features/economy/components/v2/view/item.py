@@ -25,7 +25,7 @@ class AwardNotificationViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:73173rocket:1432056646456049736> Уведомление о выдаче предмета"  # noqa: E501
+                "## <:rocket:1442921496891621377> Уведомление о выдаче предмета"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

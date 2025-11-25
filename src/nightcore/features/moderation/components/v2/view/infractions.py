@@ -44,7 +44,7 @@ class PaginationButtons(ActionRow["InfractionsViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="infractions_prev",
     )
     async def previous(
@@ -60,7 +60,7 @@ class PaginationButtons(ActionRow["InfractionsViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1409850992593338460>",
+        emoji="<:41036arrowforwardios:1442924853085864178>",
         custom_id="infractions_next",
     )
     async def next(
@@ -108,9 +108,9 @@ class InfractionsViewV2(LayoutView):
         for child in self.pagination.children:
             if isinstance(child, Button):
                 if child.custom_id == "infractions_prev":
-                    child.disabled = self.current_page == 0
+                    child.disabled = self.current_page == 0  # type: ignore
                 elif child.custom_id == "infractions_next":
-                    child.disabled = self.current_page == len(self.pages) - 1
+                    child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
 
     def make_component(self) -> Self:
         """Create the layout view component."""
@@ -125,7 +125,7 @@ class InfractionsViewV2(LayoutView):
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"## <:10447banhammer:1436491299673866264> Список нарушений\n"  # noqa: E501
+                    f"## <:10447banhammer:1442917716364230800> Список нарушений\n"  # noqa: E501
                     f"**Пользователь:** {self.user.mention} `({self.user.id})`\n"  # noqa: E501
                     f"**Общее количество нарушений:** `{self.total_punishments}`\n"  # noqa: E501
                     f"> **Количество нарушений за последние 7 дней:** `{self.count_last_7_days_infractions}`"  # noqa: E501

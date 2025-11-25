@@ -38,7 +38,7 @@ class BalanceViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:wallet:1441857506744729841> Информация о балансе\n\n"
+                "## <:wallet:1442916229282136104> Информация о балансе\n\n"
             )
         )
 

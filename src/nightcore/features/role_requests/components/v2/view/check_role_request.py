@@ -53,7 +53,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         label="Одобрить запрос",
         custom_id="role_request:approve",
         style=ButtonStyle.grey,
-        emoji="<:check:1442198763694329959>",
+        emoji="<:check:1442915033079353404>",
     )
     async def approve_role_request(
         self,
@@ -271,7 +271,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
         label="Отклонить запрос",
         custom_id="role_request:decline",
         style=ButtonStyle.grey,
-        emoji="<:failed:1442197027822768270>",
+        emoji="<:failed:1442915170320912506>",
     )
     async def decline_role_request(
         self,

@@ -63,19 +63,19 @@ class RoleRequestStateView(LayoutView):
             case RoleRequestStateEnum.APPROVED:
                 accent_color = Color.from_str("#32F113")
                 header_text = (
-                    "### <:check:1442198763694329959> Запрос на роль одобрен"
+                    "### <:check:1442915033079353404> Запрос на роль одобрен"
                 )
                 text = f"Модератор <@{moderator_id}> одобрил запрос пользователя <@{user_id}> на роль <@&{role_id}>."  # noqa: E501
             case RoleRequestStateEnum.DENIED:
                 accent_color = Color.from_str("#F11313")
                 header_text = (
-                    "### <:failed:1442197027822768270> Запрос на роль отклонен"
+                    "### <:failed:1442915170320912506> Запрос на роль отклонен"
                 )
                 text = f"Модератор <@{moderator_id}> отклонил запрос пользователя <@{user_id}> на роль <@&{role_id}> по причине:\n> {self.reason}."  # noqa: E501
             case RoleRequestStateEnum.CANCELED:
                 accent_color = Color.from_str("#F11313")
                 header_text = (
-                    "### <:failed:1442197027822768270> Запрос на роль отменен"
+                    "### <:failed:1442915170320912506> Запрос на роль отменен"
                 )
                 text = (
                     f"Пользователь <@{user_id}> отменил свой запрос на роль."
@@ -83,12 +83,12 @@ class RoleRequestStateView(LayoutView):
             case RoleRequestStateEnum.EXPIRED:
                 accent_color = Color.from_str("#F1F113")
                 header_text = (
-                    "### <:sandclock:1442203739736768632> Запрос на роль истек"
+                    "### <:sandclock:1442914884147871874> Запрос на роль истек"
                 )
                 text = f"Запрос на роль пользователя <@{user_id}> истек."
             case RoleRequestStateEnum.REMOVED:
                 accent_color = Color.from_str("#515cff")
-                header_text = "### <:remove:1442555310631030847> Роль удалена"
+                header_text = "### <:remove:1442914236836610119> Роль удалена"
                 text = f"Модератор <@{moderator_id}> снял пользователю <@{user_id}> роль <@&{role_id}>."  # noqa: E501
             case _:
                 ...

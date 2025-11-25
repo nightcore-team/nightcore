@@ -94,7 +94,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Закрепить",
-        emoji="<:paperclip1:1442217626393776242>",
+        emoji="<:paperclip1:1442914563321368737>",
         custom_id="ticket:pin",
     )  # type: ignore
     async def pin_ticket(
@@ -306,7 +306,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Открыть",
-        emoji="<:unlock:1442212446440783992>",
+        emoji="<:unlock:1442914794377187448>",
         custom_id="ticket:reopen",
     )
     async def reopen_ticket(
@@ -532,7 +532,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Закрыть",
-        emoji="<:lock4:1442214472004534332>",
+        emoji="<:lock4:1442914715025276988>",
         custom_id="ticket:close",
     )
     async def close_ticket(

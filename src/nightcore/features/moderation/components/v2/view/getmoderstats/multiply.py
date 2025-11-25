@@ -46,7 +46,7 @@ class GetModerStatsPaginationButtons(ActionRow["MultiplyGetModerStatsViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="getmoderstats:prev",
     )
     async def previous(
@@ -64,7 +64,7 @@ class GetModerStatsPaginationButtons(ActionRow["MultiplyGetModerStatsViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1409850992593338460>",
+        emoji="<:41036arrowforwardios:1442924853085864178>",
         custom_id="getmoderstats:next",
     )
     async def next(
@@ -115,9 +115,9 @@ class MultiplyGetModerStatsViewV2(LayoutView):
         for child in self.pagination.children:
             if isinstance(child, Button):
                 if child.custom_id == "getmoderstats:prev":
-                    child.disabled = self.current_page == 0
+                    child.disabled = self.current_page == 0  # type: ignore
                 elif child.custom_id == "getmoderstats:next":
-                    child.disabled = self.current_page == len(self.pages) - 1
+                    child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
 
     def make_component(self) -> Self:
         """Create the layout view component."""
@@ -128,7 +128,7 @@ class MultiplyGetModerStatsViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:96965manager:1436470131034427423>  Статистика модерации\n\n"  # noqa: E501
+                f"## <:96965manager:1442917801953333389>  Статистика модерации\n\n"  # noqa: E501
                 f"**Период:** {discord_ts(self.from_dt)} - {discord_ts(self.to_dt)}\n"  # noqa: E501
                 f"> **Всего модераторов:** {sum(len(page) for page in self.pages)}"  # noqa: E501
             )

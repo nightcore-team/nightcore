@@ -32,7 +32,7 @@ class RouletteViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:2666casinochip:1433848174161821746> Рулетка",
+                "## <:Casino_Chip:1403530383013842994> Рулетка",
             )
         )
         container.add_item(Separator[Self]())

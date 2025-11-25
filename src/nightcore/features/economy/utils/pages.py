@@ -41,7 +41,7 @@ def build_transfer_history_pages(
     ...
     current = ""
     for transfer in transfers:
-        line = f"Дата: {discord_ts(transfer.created_at, style='d')} | <@{transfer.user_id}> <:42920arrowrightalt:1421170550759489616> <@{transfer.receiver_id}> | {transfer.amount} {coin_name or 'коинов'}\n"  # noqa: E501
+        line = f"Дата: {discord_ts(transfer.created_at, style='d')} | <@{transfer.user_id}> <:42920arrowrightalt:1442924551880314921> <@{transfer.receiver_id}> | {transfer.amount} {coin_name or 'коинов'}\n"  # noqa: E501
 
         if (len(current) + len(line) >= limit) or (
             levels_in_current_page >= levels_per_page

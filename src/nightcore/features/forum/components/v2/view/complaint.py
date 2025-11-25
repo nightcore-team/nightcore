@@ -34,7 +34,7 @@ class ComplaintActionRow(ActionRow["ComplaintViewV2"]):
                 style=ButtonStyle.link,
                 label="Ссылка на жалобу",
                 url=self.url,
-                emoji="<:7926copymessagelink:1428766635019206838>",
+                emoji="<:2988copylink:1442925607620055071>",
             )
         )
 
@@ -54,7 +54,7 @@ class ComplaintViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "### <:96965manager:1436470131034427423> Поступила новая жалоба на модератора"  # noqa: E501
+                "### <:96965manager:1442917801953333389> Поступила новая жалоба на модератора"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

@@ -32,7 +32,7 @@ class PaginationButtons(ActionRow["BattlepassInfoViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="battlepass:info_prev",
     )
     async def previous(
@@ -52,7 +52,7 @@ class PaginationButtons(ActionRow["BattlepassInfoViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1409850992593338460>",
+        emoji="<:41036arrowforwardios:1442924853085864178>",
         custom_id="battlepass:info_next",
     )
     async def next(
@@ -100,9 +100,9 @@ class BattlepassInfoViewV2(LayoutView):
         for child in self.pagination.children:
             if isinstance(child, Button):
                 if child.custom_id == "battlepass:info_prev":
-                    child.disabled = self.current_page == 0
+                    child.disabled = self.current_page == 0  # type: ignore
                 elif child.custom_id == "battlepass:info_next":
-                    child.disabled = self.current_page == len(self.pages) - 1
+                    child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
 
     def make_component(self):
         """Create the view components."""
@@ -112,7 +112,7 @@ class BattlepassInfoViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:9057saturn:1434301268288995339> Battlepass Information"
+                "## <:9057saturn:1442919302587093072> Battlepass Information"
             )
         )
         container.add_item(Separator[Self]())
@@ -121,7 +121,7 @@ class BattlepassInfoViewV2(LayoutView):
             TextDisplay[Self](
                 f"**Общее количество уровней: {self.total_bp_levels}**\n"
                 f"**Необходимо BP points для полного прохождения: {self.total_bp_points}**\n"  # noqa: E501
-                "> Для повышения уровня активно общайтесь на нашем сервере <:heartt:1434173700793434223>"  # noqa: E501
+                "> Для повышения уровня активно общайтесь на нашем сервере <:heartt:1442919985004544011>"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

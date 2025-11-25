@@ -41,7 +41,7 @@ class FAQGlobalViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:heartt:1434173700793434223> Часто задаваемые вопросы (FAQ)"  # noqa: E501
+                "## <:heartt:1442919985004544011> Часто задаваемые вопросы (FAQ)"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -59,7 +59,7 @@ class FAQGlobalViewV2(LayoutView):
                 Button[Self](
                     label="Перейти к FAQ",
                     style=ButtonStyle.secondary,
-                    emoji="<:heartt:1434173700793434223>",
+                    emoji="<:heartt:1442919985004544011>",
                     custom_id="faq:open_faq",
                 )
             )
@@ -82,7 +82,7 @@ class FAQViewPaginationButtons(ActionRow["FAQViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="faq:prev",
     )
     async def previous(
@@ -100,7 +100,7 @@ class FAQViewPaginationButtons(ActionRow["FAQViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1409850992593338460>",
+        emoji="<:41036arrowforwardios:1442924853085864178>",
         custom_id="faq:next",
     )
     async def next(
@@ -141,7 +141,7 @@ class FAQViewV2(LayoutView):
         for child in self.actions.children:
             if isinstance(child, Button):
                 if child.custom_id == "faq:prev":
-                    child.disabled = self.current_page == 0
+                    child.disabled = self.current_page == 0  # type: ignore
                 elif child.custom_id == "faq:next":
                     child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
 
@@ -153,7 +153,7 @@ class FAQViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:heartt:1434173700793434223> Часто задаваемые вопросы (FAQ)"  # noqa: E501
+                "## <:heartt:1442919985004544011> Часто задаваемые вопросы (FAQ)"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

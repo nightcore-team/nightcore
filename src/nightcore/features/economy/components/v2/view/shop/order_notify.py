@@ -43,7 +43,7 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:9183shoppingcart:1431625159235731516> Уведомление о покупке товара"  # noqa: E501
+                "## <:9183shoppingcart:1442921975851778310> Уведомление о покупке товара"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

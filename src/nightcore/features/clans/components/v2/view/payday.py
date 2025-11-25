@@ -18,7 +18,7 @@ class ClansPaydayViewV2(LayoutView):
         container = Container[Self]()
 
         container.add_item(
-            TextDisplay[Self]("## <:241508crown:1430227486545018961> PayDay")
+            TextDisplay[Self]("## <:241508crown:1442923559541407844> PayDay")
         )
         container.add_item(Separator[Self]())
 

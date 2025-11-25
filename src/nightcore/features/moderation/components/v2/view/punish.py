@@ -69,7 +69,7 @@ class PunishViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:96965manager:1436470131034427423> {title}\n\n{main_text}"  # noqa: E501
+                f"## <:96965manager:1442917801953333389> {title}\n\n{main_text}"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

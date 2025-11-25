@@ -18,14 +18,6 @@ from src.nightcore.features.meta.components.v2.view.bugreport import (
 
 
 class BugReportModal(Modal, title="Отправить отчёт об ошибке"):
-    short = TextInput["BugReportModal"](
-        label="Краткое описание проблемы",
-        style=TextStyle.paragraph,
-        placeholder="Пример: Проблема с загрузкой данных в команде /profile",
-        required=True,
-        max_length=200,
-    )
-
     long = TextInput["BugReportModal"](
         label="Полное описание проблемы",
         style=TextStyle.long,
@@ -77,7 +69,6 @@ class BugReportModal(Modal, title="Отправить отчёт об ошибк
             bot=self.bot,
             guild_id=guild.id,
             user_id=user.id,
-            short_desc=self.short.value,
             long_desc=self.long.value,
             screenshot=attachment,  # type: ignore
         )

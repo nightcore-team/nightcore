@@ -48,7 +48,7 @@ def build_battlepass_levels_pages(
             reward_type = coin_name or "коины"
 
         arrow = (
-            "<:48765whitearrow:1434313827482341538> "
+            "<:48765whitearrow:1442918703367983225> "
             if level == current_user_level
             else ""
         )

@@ -32,7 +32,7 @@ class CaseOpenViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <a:68842universebox:1433433538581106768> Открытие кейса"
+                "## <a:68842universebox:1442920870996742275> Открытие кейса"
             )
         )
         container.add_item(Separator[Self]())
@@ -70,7 +70,7 @@ class CaseHelpViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <a:68842universebox:1433433538581106768> Информация о кейсах"  # noqa: E501
+                "## <a:68842universebox:1442920870996742275> Информация о кейсах"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

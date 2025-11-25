@@ -40,7 +40,7 @@ class ChangeStatDetailsActionRow(ActionRow["SingleGetModerStatsViewV2"]):
         label="История изменений статистики",
         custom_id="change_stat_details:get",
         style=ButtonStyle.grey,
-        emoji="<:sync:1442576771399684238>",
+        emoji="<:sync:1442913913405702285>",
     )
     async def get_change_stat_details(
         self,
@@ -82,7 +82,7 @@ class ChangeStatDetailsViewV2(LayoutView):
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"## <:96965manager:1436470131034427423> Изменения статистики\n**Модератор:** {moderator.mention}\n**Количество изменений:** {len(stats.changestat_details)}"  # noqa: E501
+                    f"## <:96965manager:1442917801953333389> Изменения статистики\n**Модератор:** {moderator.mention}\n**Количество изменений:** {len(stats.changestat_details)}"  # noqa: E501
                 ),
                 accessory=Thumbnail[Self](moderator.display_avatar.url),
             )
@@ -122,7 +122,7 @@ class SingleGetModerStatsViewV2(LayoutView):
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    "## <:96965manager:1436470131034427423> Статистика модератора\n"  # noqa: E501
+                    "## <:96965manager:1442917801953333389> Статистика модератора\n"  # noqa: E501
                     f"**Модератор:** {moderator.mention} (`{moderator.id}`)\n"
                     f"**Количество баллов:** {stats.calculate_total_points(mod_score)}\n"  # noqa: E501
                     f"> **Количество снятых баллов:** {stats.deducted_points}\n"  # noqa: E501
@@ -147,7 +147,7 @@ class SingleGetModerStatsViewV2(LayoutView):
         if stats.changestat_details and len(stats.changestat_details) > 5:
             container.add_item(
                 TextDisplay[Self](
-                    "<:42920arrowrightalt:1421170550759489616> *Остальные записи доступны по кнопке ниже*"  # noqa: E501
+                    "<:42920arrowrightalt:1442924551880314921> *Остальные записи доступны по кнопке ниже*"  # noqa: E501
                 )
             )
             container.add_item(Separator[Self]())

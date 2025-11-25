@@ -34,9 +34,9 @@ class InfractionsView(View):
         for child in self.children:
             if isinstance(child, Button):
                 if child.custom_id == "infractions:prev":
-                    child.disabled = self.current_page == 0
+                    child.disabled = self.current_page == 0  # type: ignore
                 elif child.custom_id == "infractions:next":
-                    child.disabled = self.current_page == len(self.pages) - 1
+                    child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
 
     def _make_embed(self) -> Embed:
         embed = Embed(
@@ -67,7 +67,7 @@ class InfractionsView(View):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="infractions:prev",
     )
     async def previous(
@@ -82,7 +82,7 @@ class InfractionsView(View):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1409850992593338460>",
+        emoji="<:41036arrowforwardios:1442924853085864178>",
         custom_id="infractions:next",
     )
     async def next(
@@ -99,4 +99,4 @@ class InfractionsView(View):
         """Disable all buttons when view times out."""
         for child in self.children:
             if isinstance(child, Button):
-                child.disabled = True
+                child.disabled = True  # type: ignore

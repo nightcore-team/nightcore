@@ -9,11 +9,11 @@ from src.infra.db.models._enums import RoleRequestStateEnum
 logger = logging.getLogger(__name__)
 
 APPROVED_MESSAGE = """
-<:52104checkmark:1414732973005340672> | APPROVED <:42920arrowrightalt:1421170550759489616> <@{user_id}>, модератор <@{moderator_id}> одобрил ваш запрос на роль.
+<:check:1442915033079353404> | APPROVED <:42920arrowrightalt:1442924551880314921> <@{user_id}>, модератор <@{moderator_id}> одобрил ваш запрос на роль.
 """  # noqa: E501
 
 DENIED_MESSAGE = """
-<:9349_nope:1414732960841859182> | DENIED <:42920arrowrightalt:1421170550759489616> <@{user_id}>, модератор <@{moderator_id}> отклонил ваш запрос на роль.
+<:failed:1442915170320912506> | DENIED <:42920arrowrightalt:1442924551880314921> <@{user_id}>, модератор <@{moderator_id}> отклонил ваш запрос на роль.
 
 Причина: {reason}
 """  # noqa: E501

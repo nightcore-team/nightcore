@@ -55,7 +55,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
     @button(
         label="Одобрить",
         style=ButtonStyle.success,
-        emoji="<:52104checkmark:1414732973005340672>",
+        emoji="<:check:1442915033079353404>",
         custom_id="coins_shop:approve",
     )
     async def approve(
@@ -231,7 +231,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
     @button(
         label="Отклонить",
         style=ButtonStyle.danger,
-        emoji="<:9349_nope:1414732960841859182>",
+        emoji="<:failed:1442915170320912506>",
         custom_id="coins_shop:decline",
     )
     async def decline(
@@ -415,7 +415,7 @@ class CoinsShopOrderViewV2(LayoutView):
         if self.actions:
             for item in self.actions.children:
                 if isinstance(item, Button):
-                    item.disabled = True
+                    item.disabled = True  # type: ignore
 
     def parse_main_component_data(
         self, components: list[MessageComponentType]
@@ -484,7 +484,7 @@ class CoinsShopOrderViewV2(LayoutView):
         container.add_item(Separator[Self]())  # 3
         container.add_item(  # 4
             TextDisplay[Self](
-                "## <:9183shoppingcart:1431625159235731516> Запрос на покупку товара"  # noqa: E501
+                "## <:9183shoppingcart:1442921975851778310> Запрос на покупку товара"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())  # 5

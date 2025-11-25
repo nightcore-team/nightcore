@@ -28,7 +28,7 @@ class ClanMembersActionRow(ActionRow["ClanInfoViewV2"]):
     @button(
         label="Список участников",
         style=ButtonStyle.grey,
-        emoji="<:69800member:1430224513899167755>",
+        emoji="<:7330member:1442923720959332492>",
         custom_id="clan_info:members",
         row=0,
     )
@@ -57,7 +57,7 @@ class ClanMemberListViewV2(LayoutView):
         container = Container[Self]()
         container.add_item(
             TextDisplay[Self](
-                "## <:69800member:1430224513899167755> Список участников клана"
+                "## <:7330member:1442923720959332492> Список участников клана"
             )
         )
         container.add_item(Separator[Self]())
@@ -108,14 +108,14 @@ class ClanInfoViewV2(LayoutView):
         # header
         container.add_item(
             TextDisplay[Self](
-                f"## <:32451information:1430231400208011428> Информация о клане `{name}`"  # noqa: E501
+                f"## <:10447information:1442922761591849021> Информация о клане `{name}`"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
 
         container.add_item(
             TextDisplay[Self](
-                "### <:241508crown:1430227486545018961> Руководители клана:"
+                "### <:241508crown:1442923559541407844> Руководители клана:"
             )
         )
         text = ""
@@ -131,7 +131,7 @@ class ClanInfoViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"### <:278957bluefire:1430228112049705060> Статистика клана:\n"  # noqa: E501
+                f"### <:55506lightbluefire:1442923343094218792> Статистика клана:\n"  # noqa: E501
                 f"> Уровень: **{lvl}**\n"
                 f"> Опыт: **{current_exp}**\n"
                 f"> Репутация: **{reputation}** (x{reputation_multiplier})\n"
@@ -171,7 +171,7 @@ class ClanListViewV2(LayoutView):
         container = Container[Self]()
         container.add_item(
             TextDisplay[Self](
-                "## <:32451information:1430231400208011428> Список кланов"
+                "## <:10447information:1442922761591849021> Список кланов"
             )
         )
         container.add_item(Separator[Self]())
@@ -183,7 +183,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Участники: {len(clan.members)}/{clan.max_members}\n\n"  # noqa: E501
                             )
@@ -192,7 +192,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Репутация: {clan.coins}\n\n"
                             )
@@ -201,7 +201,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Дата создания: {discord_ts(clan.created_at)}\n\n"  # noqa: E501
                             )
@@ -211,7 +211,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Участники: {len(clan.members)}/{clan.max_members}\n"  # noqa: E501
                                 f"Репутация: {clan.coins}\n"

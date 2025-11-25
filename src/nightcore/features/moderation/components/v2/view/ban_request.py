@@ -71,7 +71,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
     @button(
         style=ButtonStyle.green,
-        emoji="<:check:1442198763694329959>",
+        emoji="<:check:1442915033079353404>",
         label="Одобрить",
         custom_id="ban_request:approve",
     )
@@ -173,7 +173,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
     @button(
         style=ButtonStyle.red,
-        emoji="<:failed:1442197027822768270>",
+        emoji="<:failed:1442915170320912506>",
         label="Отклонить",
         custom_id="ban_request:deny",
     )

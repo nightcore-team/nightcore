@@ -42,7 +42,7 @@ class PaginationButtons(ActionRow["RoleMembersViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="rolemembers:prev",
     )
     async def previous(
@@ -58,7 +58,7 @@ class PaginationButtons(ActionRow["RoleMembersViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1409850992593338460>",
+        emoji="<:41036arrowforwardios:1442924853085864178>",
         custom_id="rolemembers:next",
     )
     async def next(
@@ -105,9 +105,9 @@ class RoleMembersViewV2(LayoutView):
         for child in self.pagination.children:
             if isinstance(child, Button):
                 if child.custom_id == "rolemembers_prev":
-                    child.disabled = self.current_page == 0
+                    child.disabled = self.current_page == 0  # type: ignore
                 elif child.custom_id == "rolemembers_next":
-                    child.disabled = self.current_page == len(self.pages) - 1
+                    child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
 
     def make_component(self) -> Self:
         """Create the layout view component."""
@@ -118,7 +118,7 @@ class RoleMembersViewV2(LayoutView):
         container = Container[Self]()
 
         header_section: TextDisplay[Self] | Section[Self] = TextDisplay[Self](
-            f"### <:32451information:1430231400208011428> Список участников с ролью\n"  # noqa: E501
+            f"### <:10447information:1442922761591849021> Список участников с ролью\n"  # noqa: E501
             f"Роль: {self.role.mention}\n"
             f"ID роли: **`{self.role.id}`**\n"
             f"Количество участников: **{self.members_count}**"

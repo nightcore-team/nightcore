@@ -135,7 +135,7 @@ class ModeratorStats:
         for cs in self.changestat_details[:5]:
             timestamp = f"<t:{int(cs.time_now.timestamp())}:R>"
             lines.append(
-                f"> {timestamp} <:42920arrowrightalt:1421170550759489616> **`{cs.type.value.upper()}`** | **Баллы:** **`{cs.amount}`** | **Причина:** {cs.reason}"  # noqa: E501
+                f"> {timestamp} <:42920arrowrightalt:1442924551880314921> **`{cs.type.value.upper()}`** | **Баллы:** **`{cs.amount}`** | **Причина:** {cs.reason}"  # noqa: E501
             )
 
         return "\n".join(lines)
@@ -154,7 +154,7 @@ class ModeratorStats:
         for cs in self.changestat_details:
             timestamp = f"<t:{int(cs.time_now.timestamp())}:R>"
             lines.append(
-                f"{timestamp} <:42920arrowrightalt:1421170550759489616> **`{cs.type.value.upper()}`** | **Баллы:** **`{cs.amount}`** | **Причина:** {cs.reason}"  # noqa: E501
+                f"{timestamp} <:42920arrowrightalt:1442924551880314921> **`{cs.type.value.upper()}`** | **Баллы:** **`{cs.amount}`** | **Причина:** {cs.reason}"  # noqa: E501
             )
 
         return "\n".join(lines)

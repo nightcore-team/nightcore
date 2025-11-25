@@ -96,7 +96,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         # disable select after choice
         for child in self.children:
             if isinstance(child, discord.ui.Select):
-                child.disabled = True
+                child.disabled = True  # type: ignore
 
         await interaction.response.edit_message(
             embed=SuccessMoveEmbed(

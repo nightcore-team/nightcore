@@ -35,15 +35,15 @@ class UsersListViewV2(LayoutView):
         super().__init__(timeout=180)
 
         medals = {
-            1: "<:4210goldmedal:1433144436744785992>",
-            2: "<:4823silvermedal:1433144438846259412>",
-            3: "<:4210bronzemedal:1433144435201544203>",
+            1: "<:4210goldmedal:1442921281443069972>",
+            2: "<:4823silvermedal:1442921153172607107>",
+            3: "<:4210bronzemedal:1442921220172419194>",
         }
 
         container = Container[Self]()
         container.add_item(
             TextDisplay[Self](
-                "## <:32451information:1430231400208011428> Список пользователей"  # noqa: E501
+                "## <:10447information:1442922761591849021> Список пользователей"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -84,7 +84,7 @@ class UsersListViewV2(LayoutView):
                 case _:
                     container.add_item(
                         TextDisplay[Self](
-                            f"<:42920arrowrightalt:1421170550759489616> <@{user.user_id}>\n"  # noqa: E501
+                            f"<:42920arrowrightalt:1442924551880314921> <@{user.user_id}>\n"  # noqa: E501
                             f"> **Уровень:** {user.level}\n"
                             f"> **Баланс:** {user.coins:,} {coin_name or 'коинов'}\n"  # noqa: E501
                             f"> **Сообщения:** {user.messages_count:,}\n"

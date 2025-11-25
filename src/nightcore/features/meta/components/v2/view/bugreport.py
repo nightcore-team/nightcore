@@ -26,7 +26,6 @@ class BugReportViewV2(LayoutView):
         bot: Nightcore,
         guild_id: int,
         user_id: int,
-        short_desc: str,
         long_desc: str,
         screenshot: Attachment | None = None,
     ) -> None:
@@ -36,7 +35,7 @@ class BugReportViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:3052shinybluebughunter:1437948101263360053> Отчёт об ошибке"  # noqa: E501
+                "## <:3052shinybluebughunter:1442916887213375689> Отчёт об ошибке"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -48,11 +47,6 @@ class BugReportViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        container.add_item(
-            TextDisplay[Self](
-                f"### Краткое описание проблемы:\n> {short_desc}\n"
-            )
-        )
         container.add_item(
             TextDisplay[Self](f"### Полное описание проблемы:\n> {long_desc}")
         )

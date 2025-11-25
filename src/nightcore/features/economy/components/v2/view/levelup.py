@@ -40,7 +40,7 @@ class LevelUpViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "<:butterflies:1441872280358748182> **Мы рады, что вы заполняете наш чат своим присутствием!**",  # noqa: E501
+                "<:butterflies:1442916105508360446> **Мы рады, что вы заполняете наш чат своим присутствием!**",  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

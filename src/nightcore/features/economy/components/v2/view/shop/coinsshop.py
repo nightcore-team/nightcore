@@ -56,7 +56,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
             options=options,
         )
 
-        select.callback = self.select_item_callback
+        select.callback = self.select_item_callback  # type: ignore
 
         self.add_item(select)
 
@@ -65,7 +65,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
         interaction: Interaction["Nightcore"],
         guild: Guild,
         coin_name: str | None,
-        shop_items: dict[str, float],
+        shop_items: dict[str, int],
     ) -> None:
         """Update the main shop view after an item selection."""
         bot = interaction.client
@@ -265,7 +265,7 @@ class CoinsShopViewV2(LayoutView):
         bot: "Nightcore",
         guild_name: str | None = None,
         coin_name: str | None = None,
-        shop_items: dict[str, float] | None = None,
+        shop_items: dict[str, int] | None = None,
         options: list[SelectOption] | None = None,
     ):
         super().__init__(timeout=None)
@@ -277,7 +277,7 @@ class CoinsShopViewV2(LayoutView):
         container = Container[Self]()
         container.add_item(
             TextDisplay[Self](
-                f"## <:241508crown:1430227486545018961> Магазин сервера {guild_name}"  # noqa: E501
+                f"## <:241508crown:1442923559541407844> Магазин сервера {guild_name}"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -286,7 +286,7 @@ class CoinsShopViewV2(LayoutView):
             TextDisplay[Self](
                 "**Приветствую вас, уважаемые пользователи.**\n"
                 "Это магазин нашего дискорд сервера.\n"
-                f"Вы можете приобрести различные привилегии за **{coin_name}** <:278957bluefire:1430228112049705060>"  # noqa: E501
+                f"Вы можете приобрести различные привилегии за **{coin_name}** <:55506lightbluefire:1442923343094218792>"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

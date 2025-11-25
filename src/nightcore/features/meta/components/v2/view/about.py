@@ -43,7 +43,7 @@ class AboutActionRow(ActionRow["AboutViewV2"]):
     @button(
         style=ButtonStyle.gray,
         label="Bug Report",
-        emoji="<:3052shinybluebughunter:1437948101263360053>",
+        emoji="<:3052shinybluebughunter:1442916887213375689>",
         custom_id="nightcore:bug_report",
     )
     async def send_bug_report(
@@ -73,7 +73,7 @@ class AboutViewV2(LayoutView):
         container.add_item(
             # Section[Self](
             TextDisplay[Self](
-                "## <:nightcore:1437888715849728041> Nightcore\n\n"
+                "## <:star1:1442917476139667607> Nightcore\n\n"
                 # "**Разработчик: <@566255833684508672>**\n"
                 "> *Born from the rhythm of the night, crafted in the pulse of the stars.*"  # noqa: E501
             ),
@@ -87,7 +87,7 @@ class AboutViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:shootingstar:1437888733990097057> Информация о боте\n\n"
+                "## <:shootingstar:1442917307746619422> Информация о боте\n\n"
                 f"> **Бот ID**: `{bot.user.id}`\n"  # type: ignore
                 f"> **Задержка**: `{bot.latency * 1000:.2f} ms`\n"
                 f"> **Дата создания: {discord_ts(created_at)}**\n"
@@ -98,7 +98,7 @@ class AboutViewV2(LayoutView):
         container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](
-                "## <:code:1437955860251803680> Техническая информация\n\n"
+                "## <:code:1442916730165788876> Техническая информация\n\n"
                 f"> **Потребление памяти: `{memory_usage}`**\n"
                 f"> **Библиотека: `discord.py v{getattr(discord, '__version__', 'unknown')}`**\n"  # noqa: E501
                 f"> **Время работы: {uptime}**\n"

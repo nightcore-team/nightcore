@@ -48,7 +48,7 @@ class TransferHistoryActionRow(ActionRow[LayoutView]):
         style=ButtonStyle.grey,
         label="История переводов",
         custom_id="balance:history",
-        emoji="<:arrows:1441831302578831461>",
+        emoji="<:arrows:1442916548921790575>",
     )
     async def transfer_history_button(
         self,
@@ -94,7 +94,7 @@ class TransferHistoryPaginationActionRow(ActionRow["TransferHistoryViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1409851002256887808>",
+        emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="balance:history:prev",
     )
     async def previous(
@@ -111,7 +111,7 @@ class TransferHistoryPaginationActionRow(ActionRow["TransferHistoryViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1409850992593338460>",
+        emoji="<:41036arrowforwardios:1442924853085864178>",
         custom_id="balance:history:next",
     )
     async def next(
@@ -164,7 +164,7 @@ class TransferHistoryViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:arrows:1441831302578831461> История переводов"
+                "## <:arrows:1442916548921790575> История переводов"
             )
         )
         container.add_item(
@@ -215,7 +215,7 @@ class TransferCoinsViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "### <:arrows:1441831302578831461> Уведомление о переводе"
+                "### <:arrows:1442916548921790575> Уведомление о переводе"
             )
         )
         container.add_item(Separator[Self]())
@@ -228,7 +228,7 @@ class TransferCoinsViewV2(LayoutView):
         if comment:
             container.add_item(
                 TextDisplay[Self](
-                    f'<:send:1441832243071942817> **Комментарий:** \n> *"{comment}"*'  # noqa: E501
+                    f'<:send:1442916328641134632> **Комментарий:** \n> *"{comment}"*'  # noqa: E501
                 )
             )
         container.add_item(Separator[Self]())

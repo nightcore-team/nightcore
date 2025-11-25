@@ -252,7 +252,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
         self.add_item(
             Button["NotifyViewV2"](
                 style=ButtonStyle.link,
-                emoji="<:29909ticket:1418324338142220309>",
+                emoji="<:29909ticket:1442924723528007700>",
                 label="Задать вопрос",
                 url=f"https://discord.com/channels/{self.guild_id}/{self.create_ticket_channel_id}",  # type: ignore
             )
@@ -260,7 +260,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
 
     @button(
         style=ButtonStyle.red,
-        emoji="<:9349_nope:1414732960841859182>",
+        emoji="<:failed:1442915170320912506>",
         label="Отозвать оповещение",
         custom_id="notify:revoke",
     )
@@ -351,7 +351,7 @@ class NotifyViewV2(LayoutView):
         if self.actions:
             for item in self.actions.children:
                 if isinstance(item, Button):
-                    item.disabled = True
+                    item.disabled = True  # type: ignore
 
     def rebuild_component(
         self, components: list[MessageComponentType], disabled: bool = False
@@ -410,7 +410,7 @@ class NotifyViewV2(LayoutView):
         # header
         container.add_item(
             TextDisplay[Self](
-                f"### <:2904notifymember:1428063887281885205> | Оповещение <:42920arrowrightalt:1421170550759489616> <@{self.user_id}>"  # noqa: E501
+                f"### <:2904notifymember:1442924357524394066> | Оповещение <:42920arrowrightalt:1442924551880314921> <@{self.user_id}>"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -476,7 +476,7 @@ class NotifyTimedOutViewV2(LayoutView):
         # header
         container.add_item(
             TextDisplay[Self](
-                f"### <:8736notifyout:1428143076450369689> | Оповещение <:42920arrowrightalt:1421170550759489616> <@{moderator_id}>"  # noqa: E501
+                f"### <:8736notifyout:1442924239001878538> | Оповещение <:42920arrowrightalt:1442924551880314921> <@{moderator_id}>"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

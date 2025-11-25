@@ -51,7 +51,7 @@ class UserProfileViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:butterflies:1441872280358748182> Профиль пользователя <@{user_id}>",  # noqa: E501
+                f"## <:butterflies:1442916105508360446> Профиль пользователя <@{user_id}>",  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -80,7 +80,7 @@ class UserProfileViewV2(LayoutView):
         if cases_with_items:
             container.add_item(
                 TextDisplay[Self](
-                    "### <a:68842universebox:1433433538581106768> Кейсы: "
+                    "### <a:68842universebox:1442920870996742275> Кейсы: "
                 )
             )
             container.add_item(
@@ -95,7 +95,7 @@ class UserProfileViewV2(LayoutView):
 
         if colors:
             container.add_item(
-                TextDisplay[Self]("###<:palette:1441872299845353613> Цвета: ")
+                TextDisplay[Self]("###<:palette:1442915900666679527> Цвета: ")
             )
             container.add_item(
                 TextDisplay[Self](

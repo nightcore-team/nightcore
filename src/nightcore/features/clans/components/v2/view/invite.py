@@ -36,7 +36,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
     @button(
         label="Принять приглашение",
         style=ButtonStyle.green,
-        emoji="<:52104checkmark:1414732973005340672>",
+        emoji="<:check:1442915033079353404>",
         custom_id="clan_invite:accept",
     )
     async def accept(
@@ -124,7 +124,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
     @button(
         label="Отклонить приглашение",
         style=ButtonStyle.red,
-        emoji="<:9349_nope:1414732960841859182>",
+        emoji="<:failed:1442915170320912506>",
         custom_id="clan_invite:decline",
     )
     async def decline(
@@ -164,14 +164,14 @@ class ClanInviteViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:32451information:1430231400208011428> | Приглашение в клан <:42920arrowrightalt:1421170550759489616> {invited_member.mention}"  # noqa: E501
+                f"## <:10447information:1442922761591849021> | Приглашение в клан <:42920arrowrightalt:1442924551880314921> {invited_member.mention}"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
 
         container.add_item(
             TextDisplay[Self](
-                f"<:241508crown:1430227486545018961> **Лидер/заместитель** <@{inviter.user_id}>"  # noqa: E501
+                f"<:241508crown:1442923559541407844> **Лидер/заместитель** <@{inviter.user_id}>"  # noqa: E501
                 f" приглашает Вас в свой клан **{inviter.clan.name}**\n"
             )
         )
@@ -203,7 +203,7 @@ class ClanListViewV2(LayoutView):
         container = Container[Self]()
         container.add_item(
             TextDisplay[Self](
-                "## <:32451information:1430231400208011428> Список кланов"
+                "## <:10447information:1442922761591849021> Список кланов"
             )
         )
         container.add_item(Separator[Self]())
@@ -212,7 +212,7 @@ class ClanListViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self](
                     f"**{clan.name}**\n"
-                    f"<:241508crown:1430227486545018961> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                    f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                     f"Дата создания: {discord_ts(clan.created_at)}\n"
                     f"Роль: <@&{clan.role_id}>\n"
                     f"Участники: {len(clan.members)}/{clan.max_members}\n\n"
