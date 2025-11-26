@@ -40,11 +40,11 @@ def setup_logging() -> tuple[logging.Logger, ...]:
     console_handler.setFormatter(COLOR_FORMATTER)
 
     # --- File handlers ---
-    general_file_handler = _make_file_handler("main")
-    discord_file_handler = _make_file_handler("discord")
-    sqlalchemy_file_handler = _make_file_handler("sqlalchemy")
+    # general_file_handler = _make_file_handler("main")
+    # discord_file_handler = _make_file_handler("discord")
+    # sqlalchemy_file_handler = _make_file_handler("sqlalchemy")
 
-    root_logger.handlers = [console_handler, general_file_handler]
+    # root_logger.handlers = [console_handler, general_file_handler]
 
     # --- Discord ---
     discord_logger = logging.getLogger("discord")
@@ -52,7 +52,7 @@ def setup_logging() -> tuple[logging.Logger, ...]:
     discord_logger.setLevel(
         DEFAULT_LOGGING_LEVEL_DICT.get("discord", logging.INFO)
     )
-    discord_logger.addHandler(discord_file_handler)
+    # discord_logger.addHandler(discord_file_handler)
     discord_logger.propagate = True
 
     # --- SQLAlchemy ---
@@ -60,7 +60,7 @@ def setup_logging() -> tuple[logging.Logger, ...]:
         sa_logger = logging.getLogger(name)
         sa_logger.handlers.clear()
         sa_logger.setLevel(DEFAULT_LOGGING_LEVEL_DICT.get(name, logging.INFO))
-        sa_logger.addHandler(sqlalchemy_file_handler)
+        # sa_logger.addHandler(sqlalchemy_file_handler)
         sa_logger.propagate = True
 
     # --- asyncio та aiohttp ---
