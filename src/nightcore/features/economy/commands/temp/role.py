@@ -12,9 +12,7 @@ from src.infra.db.models import (
     TempRole,
 )
 from src.infra.db.models._enums import ChannelType
-from src.infra.db.operations import (
-    get_specified_channel,
-)
+from src.infra.db.operations import get_specified_channel, get_temp_role
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -25,7 +23,7 @@ from src.nightcore.features.economy._groups import temp as temp_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
-from src.nightcore.utils import compare_top_roles
+from src.nightcore.utils import compare_top_roles, has_any_role
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -57,18 +55,16 @@ async def give_role(
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
 
-    outcome = ""
-
-    async with bot.uow.start() as session:
-        logging_channel_id = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildLoggingConfig,
-            channel_type=ChannelType.LOGGING_ECONOMY,
+    if has_any_role(user, role.id):
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи роли",
+                "У пользователя уже есть эта роль.",
+                bot.user.name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
         )
-
-        if not outcome:
-            outcome = "success"
 
     if user == bot.user:
         return await interaction.response.send_message(
@@ -91,6 +87,17 @@ async def give_role(
             ephemeral=True,
         )
 
+    if role.permissions.administrator:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи роли",
+                "Невозможно выдать временную роль с правами администратора.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
     parsed_duration = parse_duration(duration)
 
     if not parsed_duration:
@@ -103,15 +110,32 @@ async def give_role(
             ephemeral=True,
         )
 
-    if outcome == "success":
+    outcome = ""
+    async with bot.uow.start() as session:
+        logging_channel_id = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildLoggingConfig,
+            channel_type=ChannelType.LOGGING_ECONOMY,
+        )
+
+        now = datetime.now(timezone.utc) + timedelta(seconds=parsed_duration)
+
         try:
-            async with bot.uow.start() as session:
+            temp_role = await get_temp_role(
+                session,
+                guild_id=guild.id,
+                user_id=user.id,
+                role_id=role.id,
+            )
+            if temp_role:
+                temp_role.end_time = now
+            else:
                 temp_role = TempRole(
                     guild_id=guild.id,
                     user_id=user.id,
                     role_id=role.id,
-                    end_time=datetime.now(timezone.utc)
-                    + timedelta(seconds=parsed_duration),
+                    end_time=now,
                 )
                 session.add(temp_role)
 
@@ -123,66 +147,66 @@ async def give_role(
                 guild.id,
                 e,
             )
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка выдачи временной роли",
-                    "Не удалось выдать временную роль пользователю.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-        try:
-            await user.add_roles(
-                role, reason="Temporary role assigned via economy command."
-            )
-        except Exception as e:
-            logger.exception(
-                "[temp/role] Failed to assign role %s to user %s in guild %s: %s",  # noqa: E501
-                role.id,
-                user.id,
-                guild.id,
-                e,
-            )
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка выдачи временной роли",
-                    "Не удалось выдать временную роль пользователю.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+            outcome = "error_to_create_record"
 
-        await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
-                "Временная роль выдана",
-                f"Вы успешно выдали пользователю {user.mention} "
-                f"роль {role.mention} на срок {duration}.",
+    if outcome == "error_to_create_record":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи временной роли",
+                "Не удалось выдать временную роль пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
-
-        logger.info(
-            "[command] - invoker user=%s guild=%s selected_user=%s role=%s duration=%s",  # noqa: E501
-            interaction.user.id,
-            guild.id,
-            user.id,
+    try:
+        await user.add_roles(
+            role, reason="Temporary role assigned via economy command."
+        )
+    except Exception as e:
+        logger.exception(
+            "[temp/role] Failed to assign role %s to user %s in guild %s: %s",
             role.id,
-            duration,
+            user.id,
+            guild.id,
+            e,
         )
-
-        bot.dispatch(
-            "user_items_changed",
-            dto=AwardNotificationEventDTO(
-                guild=guild,
-                event_type="temp/role",
-                logging_channel_id=logging_channel_id,
-                user_id=user.id,
-                moderator_id=interaction.user.id,
-                item_name=f"временная роль (`{role.id}`)",
-                amount=1,
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи временной роли",
+                "Не удалось выдать временную роль пользователю.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
+            ephemeral=True,
         )
+    await interaction.response.send_message(
+        embed=SuccessMoveEmbed(
+            "Временная роль выдана",
+            f"Вы успешно выдали пользователю {user.mention} "
+            f"роль {role.mention} на срок {duration}.",
+            bot.user.display_name,  # type: ignore
+            bot.user.display_avatar.url,  # type: ignore
+        ),
+        ephemeral=True,
+    )
+    logger.info(
+        "[command] - invoker user=%s guild=%s selected_user=%s role=%s duration=%s",  # noqa: E501
+        interaction.user.id,
+        guild.id,
+        user.id,
+        role.id,
+        duration,
+    )
+    bot.dispatch(
+        "user_items_changed",
+        dto=AwardNotificationEventDTO(
+            guild=guild,
+            event_type="temp/role",
+            logging_channel_id=logging_channel_id,
+            user_id=user.id,
+            moderator_id=interaction.user.id,
+            item_name=f"временная роль (`{role.id}`)",
+            amount=1,
+        ),
+    )

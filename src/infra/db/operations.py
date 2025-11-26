@@ -694,6 +694,27 @@ async def get_moderstats_dict(
     return {field: getattr(config, field) for field in score_fields}
 
 
+async def get_temp_role(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    role_id: int,
+) -> TempRole | None:
+    """Get the temporary role for a user in a guild."""
+    stmt = (
+        select(TempRole)
+        .where(
+            TempRole.guild_id == guild_id,
+            TempRole.user_id == user_id,
+            TempRole.role_id == role_id,
+        )
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
 async def create_transfer_money_record(
     session: AsyncSession,
     *,
