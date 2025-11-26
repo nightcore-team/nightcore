@@ -95,7 +95,7 @@ class UserProfileViewV2(LayoutView):
 
         if colors:
             container.add_item(
-                TextDisplay[Self]("###<:palette:1442915900666679527> Цвета: ")
+                TextDisplay[Self]("### <:palette:1442915900666679527> Цвета: ")
             )
             container.add_item(
                 TextDisplay[Self](
