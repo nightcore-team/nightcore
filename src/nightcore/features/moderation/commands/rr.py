@@ -9,7 +9,6 @@ from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from nightcore.utils import has_any_role_from_sequence
 from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import (
     get_organization_roles_ids,
@@ -32,6 +31,7 @@ from src.nightcore.features.moderation.events import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
