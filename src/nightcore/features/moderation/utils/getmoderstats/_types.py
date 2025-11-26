@@ -90,19 +90,23 @@ class ModeratorStats:
             Total calculated points
         """
 
-        return (
-            self.mute_count * scores.mute
-            + self.ban_count * scores.ban
-            + self.kick_count * scores.kick
-            + self.vmute_count * scores.vmute
-            + self.mpmute_count * scores.mpmute
-            + self.ticketban_count * scores.ticketban
-            + self.removed_roles_count * scores.removed_roles
-            + self.closed_tickets_count * scores.closed_tickets
-            + self.total_messages * scores.message
-            + self.approved_role_requests_count * scores.approved_role_requests
-            + self.deducted_points
-        )
+        result = f"{
+            (
+                self.mute_count * scores.mute
+                + self.ban_count * scores.ban
+                + self.kick_count * scores.kick
+                + self.vmute_count * scores.vmute
+                + self.mpmute_count * scores.mpmute
+                + self.ticketban_count * scores.ticketban
+                + self.removed_roles_count * scores.removed_roles
+                + self.closed_tickets_count * scores.closed_tickets
+                + self.total_messages * scores.message
+                + self.approved_role_requests_count
+                * scores.approved_role_requests
+                + self.deducted_points
+            ):.2f}"
+
+        return float(result)
 
     def format_stats(self) -> str:
         """Format statistics as display string.
