@@ -54,7 +54,7 @@ class Rr(Cog):
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def rr(
         self,
-        interaction: Interaction,
+        interaction: Interaction["Nightcore"],
         user: Member,
     ):
         """Remove organization role from a user."""
@@ -85,7 +85,8 @@ class Rr(Cog):
             )
 
         if not has_any_role_from_sequence(
-            member, moderation_access_roles_ids + rr_access_roles_ids
+            cast(Member, interaction.user),
+            moderation_access_roles_ids + rr_access_roles_ids,
         ):
             raise app_commands.MissingPermissions(
                 missing_permissions=["rr_access or moderation_access"]
