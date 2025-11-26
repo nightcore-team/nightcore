@@ -4,6 +4,7 @@ import asyncio
 import logging
 from collections.abc import Awaitable
 from datetime import timezone
+from typing import TYPE_CHECKING
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -14,8 +15,11 @@ from src.infra.db.operations import (
     create_punish,
     get_specified_channel,
 )
-from src.nightcore.bot import Nightcore
-from src.nightcore.features.moderation.events import RolesChangeEventData
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+    from src.nightcore.features.moderation.events import RolesChangeEventData
+
 from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
     send_rr_channel_log,
@@ -25,24 +29,25 @@ logger = logging.getLogger(__name__)
 
 
 class RolesChangeEvent(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @Cog.listener()
     async def on_roles_change(
         self,
         *,
-        data: RolesChangeEventData,
+        data: "RolesChangeEventData",
         _send_to_rr_channel: bool = False,
         _create_punish: bool = True,
     ) -> None:
         """Handle roles changes events."""
+
         logger.info(
-            "[event] on_roles_change - %s: Guild: %s, Member: %s, Role: %s, Option: %s",  # noqa: E501
+            "[event] on_roles_change - %s: Guild: %s, Member: %s, Role(-s): %s, Option: %s",  # noqa: E501
             data.category,
             data.moderator.guild.id,
             data.user.id,
-            data.role.id,
+            ", ".join(f"<@&{role}>" for role in data.roles_ids),
             data.option,
         )
 
@@ -127,6 +132,6 @@ class RolesChangeEvent(Cog):
             return
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the RolesChangeEvent cog."""
     await bot.add_cog(RolesChangeEvent(bot))

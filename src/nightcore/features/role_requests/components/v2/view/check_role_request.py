@@ -229,7 +229,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                     bot=bot,
                     moderator_id=interaction.user.id,
                     user_id=cast(int, view.interaction_user_id),
-                    role_id=cast(int, view.role_requested_id),
+                    roles_ids=cast(list[int], [view.role_requested_id]),
                     state=RoleRequestStateEnum.APPROVED,
                 )
             )
@@ -248,7 +248,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                         category="role_approve",
                         moderator=interaction.user,  # type: ignore
                         user=member,
-                        role=role,
+                        roles_ids=[role.id],
                         created_at=discord.utils.utcnow(),
                     ),
                     _send_to_rr_channel=False,

@@ -19,7 +19,7 @@ class RolesChangeEventData(ModerationBaseEventData):
     category: str
     moderator: discord.Member
     user: discord.User | discord.Member
-    role: discord.Role
+    roles_ids: list[int]
     created_at: datetime
     option: str | None = None
 
@@ -41,7 +41,11 @@ class RolesChangeEventData(ModerationBaseEventData):
             name="Moderator", value=f"<@{self.moderator.id}>", inline=True
         )
         embed.add_field(name="User", value=f"<@{self.user.id}>", inline=True)
-        embed.add_field(name="Role", value=f"<@&{self.role.id}>", inline=True)
+        embed.add_field(
+            name="Role(-s)",
+            value=", ".join(f"<@&{role}>" for role in self.roles_ids),
+            inline=True,
+        )
 
         if self.option:
             embed.add_field(name="Option", value=self.option, inline=True)

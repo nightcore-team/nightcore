@@ -139,7 +139,7 @@ class Rr(Cog):
                         category="role_remove",
                         moderator=interaction.user,  # type: ignore
                         user=member,
-                        role=role,
+                        roles_ids=[role.id],
                         created_at=discord.utils.utcnow().astimezone(
                             tz=timezone.utc
                         ),

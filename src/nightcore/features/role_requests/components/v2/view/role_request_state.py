@@ -45,7 +45,7 @@ class RoleRequestStateView(LayoutView):
         moderator_id: int,
         user_id: int,
         state: RoleRequestStateEnum,
-        role_id: int | None = None,
+        roles_ids: list[int],
         reason: str | None = None,
         message_url: str | None = None,
         image_url: str | None = None,
@@ -65,13 +65,13 @@ class RoleRequestStateView(LayoutView):
                 header_text = (
                     "### <:check:1442915033079353404> Запрос на роль одобрен"
                 )
-                text = f"Модератор <@{moderator_id}> одобрил запрос пользователя <@{user_id}> на роль <@&{role_id}>."  # noqa: E501
+                text = f"Модератор <@{moderator_id}> одобрил запрос пользователя <@{user_id}> на роль <@&{roles_ids[0]}>."  # noqa: E501
             case RoleRequestStateEnum.DENIED:
                 accent_color = Color.from_str("#F11313")
                 header_text = (
                     "### <:failed:1442915170320912506> Запрос на роль отклонен"
                 )
-                text = f"Модератор <@{moderator_id}> отклонил запрос пользователя <@{user_id}> на роль <@&{role_id}> по причине:\n> {self.reason}."  # noqa: E501
+                text = f"Модератор <@{moderator_id}> отклонил запрос пользователя <@{user_id}> на роль <@&{roles_ids[0]}> по причине:\n> {self.reason}."  # noqa: E501
             case RoleRequestStateEnum.CANCELED:
                 accent_color = Color.from_str("#F11313")
                 header_text = (
@@ -89,7 +89,7 @@ class RoleRequestStateView(LayoutView):
             case RoleRequestStateEnum.REMOVED:
                 accent_color = Color.from_str("#515cff")
                 header_text = "### <:remove:1442914236836610119> Роль удалена"
-                text = f"Модератор <@{moderator_id}> снял пользователю <@{user_id}> роль <@&{role_id}>."  # noqa: E501
+                text = f"Модератор <@{moderator_id}> снял пользователю <@{user_id}> роль(-и) {', '.join(f'<@&{role}>' for role in roles_ids)}."  # noqa: E501
             case _:
                 ...
 

@@ -202,7 +202,7 @@ async def send_rr_channel_log(
         moderator_id=event_data.moderator.id,
         user_id=event_data.user.id,
         state=RoleRequestStateEnum.REMOVED,
-        role_id=event_data.role.id,
+        roles_ids=event_data.roles_ids,
     )
 
     try:

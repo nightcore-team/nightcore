@@ -132,7 +132,7 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
             bot=self.bot,
             moderator_id=interaction.user.id,
             user_id=self.user.id,
-            role_id=self.view.role_requested_id,
+            roles_ids=cast(list[int], [self.view.role_requested_id]),
             state=RoleRequestStateEnum.DENIED,
             reason=reason,
         )

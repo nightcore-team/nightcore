@@ -80,7 +80,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
                     category="role_remove",
                     moderator=interaction.user,  # type: ignore
                     user=self.member,
-                    role=roles[0],
+                    roles_ids=[role.id for role in roles],
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
@@ -100,8 +100,8 @@ class RemoveOrgRoleSelect(discord.ui.View):
 
         await interaction.response.edit_message(
             embed=SuccessMoveEmbed(
-                "Role Removed",
-                f"Role {','.join(role.mention for role in roles)} successfully removed from {self.member.mention}.",  # noqa: E501
+                "Снятие ролей",
+                f"Роль (-и) {', '.join(role.mention for role in roles)} успешно сняты с {self.member.mention}.",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             ),
