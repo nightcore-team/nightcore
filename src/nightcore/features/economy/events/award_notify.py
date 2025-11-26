@@ -48,7 +48,7 @@ class UserItemsChangedEvent(Cog):
 
         view = AwardNotificationViewV2(
             bot=self.bot,
-            user_id=dto.user_id,
+            user_id=dto.moderator_id,
             item_name=dto.item_name,
             amount=dto.amount,
         )
