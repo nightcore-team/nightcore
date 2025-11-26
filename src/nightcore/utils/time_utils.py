@@ -350,43 +350,29 @@ def parse_date_utc(
     return dt
 
 
-def compare_date_range(
-    from_date: str | None,
-    to_date: str | None,
-) -> tuple[datetime, datetime]:
-    """Compare and return a valid date range (from_date, to_date)."""
-    from_dt: datetime
-    to_dt: datetime
+def compare_date_range(from_date: str | None, to_date: str | None):
+    """Normalize a date range from strings to datetime objects."""
 
     if from_date:
         from_dt = parse_date_utc(from_date)
     else:
-        now_local = datetime.now(timezone.utc)
-        monday_local_date = now_local.date() - timedelta(
-            days=now_local.weekday()
-        )
-        # Convert local Monday date to UTC datetime at 00:00
+        now = datetime.now(timezone.utc)
+        monday = now.date() - timedelta(days=now.weekday())
         from_dt = datetime(
-            monday_local_date.year,
-            monday_local_date.month,
-            monday_local_date.day,
+            monday.year, monday.month, monday.day, tzinfo=timezone.utc
         )
 
     if to_date:
         to_dt = parse_date_utc(to_date)
     else:
-        now_local = datetime.now(timezone.utc)
-        sunday_local_date = now_local.date() - timedelta(
-            days=now_local.weekday() - 6
-        )
-        # Convert local Sunday date to UTC datetime at 00:00
-        to_dt = datetime(
-            sunday_local_date.year,
-            sunday_local_date.month,
-            sunday_local_date.day,
-        )
+        now = datetime.now(timezone.utc)
+        sunday = now.date() - timedelta(days=now.weekday() - 6)
 
-    return from_dt, to_dt  # type: ignore
+        to_dt = datetime(
+            sunday.year, sunday.month, sunday.day, tzinfo=timezone.utc
+        ) + timedelta(days=1)
+
+    return from_dt, to_dt
 
 
 """
