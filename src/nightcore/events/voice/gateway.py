@@ -1,4 +1,4 @@
-# check member`s voice state and call appropriate handlers  # noqa: D100
+"""Check member`s voice state and call appropriate handlers."""
 
 import logging
 
@@ -64,13 +64,18 @@ class VoiceStateUpdateEvent(Cog):
                             after,
                             logging_channel_id,
                         )
-                    except Exception as e:
+                    except Exception:
                         logger.exception(
-                            "[voice/join] Error dispatching voice channel join event: %s",  # noqa: E501
-                            e,
+                            "[voice/join] Error dispatching voice channel join event"  # noqa: E501
                         )
                 logger.info(
-                    f"[voice/join] {member} joined voice channel {after.channel.name}"  # noqa: E501
+                    "[voice/join] %s joined voice channel %s",
+                    member,
+                    getattr(
+                        after.channel,
+                        "name",
+                        str(getattr(after.channel, "id", "unknown")),
+                    ),
                 )
 
             # check if member left a voice channel
@@ -104,15 +109,21 @@ class VoiceStateUpdateEvent(Cog):
                             before,
                             logging_channel_id,
                         )
-                    except Exception as e:
+                    except Exception:
                         logger.exception(
-                            "[voice/leave] Error dispatching voice channel leave event: %s",  # noqa: E501
-                            e,
+                            "[voice/leave] Error dispatching voice channel leave event"  # noqa: E501
                         )
                 logger.info(
-                    f"[voice/leave] {member} left voice channel {before.channel.name}"  # noqa: E501
+                    "[voice/leave] %s left voice channel %s",
+                    member,
+                    getattr(
+                        before.channel,
+                        "name",
+                        str(getattr(before.channel, "id", "unknown")),
+                    ),
                 )
 
+            # switched between channels
             elif (
                 before.channel is not None
                 and after.channel is not None
@@ -135,7 +146,6 @@ class VoiceStateUpdateEvent(Cog):
                         channel_type=ChannelType.LOGGING_VOICES,
                     )
 
-                # if user switched to create-private channel from their private
                 if (
                     private_room_state
                     and create_private_room_channel_id
@@ -158,7 +168,7 @@ class VoiceStateUpdateEvent(Cog):
                     return
 
                 # if user switched from their private channel to another
-                if (
+                elif (
                     private_room_state
                     and before.channel
                     and before.channel.id == private_room_state.channel_id
@@ -184,9 +194,9 @@ class VoiceStateUpdateEvent(Cog):
                         after.channel.name,
                     )
 
-                # if user switched to their private channel from another non-private  # noqa: E501
-                if (
+                elif (
                     not private_room_state
+                    and create_private_room_channel_id
                     and after.channel.id == create_private_room_channel_id
                 ):
                     self.bot.dispatch(
@@ -217,13 +227,15 @@ class VoiceStateUpdateEvent(Cog):
                     logger.info(
                         "[voice] %s switched voice channel from %s to %s",
                         member,
-                        before.channel.name,
-                        after.channel.name,
+                        getattr(
+                            before.channel, "name", str(before.channel.id)
+                        ),
+                        getattr(after.channel, "name", str(after.channel.id)),
                     )
 
-        except Exception as e:
+        except Exception:
             logger.exception(
-                "[voice] Failed to dispatch voice state update event: %s", e
+                "[voice] Failed to dispatch voice state update event"
             )
 
 

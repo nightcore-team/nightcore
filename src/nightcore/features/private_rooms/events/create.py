@@ -1,5 +1,6 @@
 """Handle create private room events."""
 
+import asyncio
 import logging
 
 import discord
@@ -63,18 +64,30 @@ class CreatePrivateRoomEvent(Cog):
         try:
             async with self.bot.uow.start() as session:
                 private_room = PrivateRoomState(
-                    guild_id=guild.id, user_id=member.id, channel_id=channel.id
+                    guild_id=guild.id,
+                    user_id=member.id,
+                    channel_id=channel.id,
                 )
-
                 session.add(private_room)
-
+                await session.flush()
         except Exception as e:
             logger.error(
-                "[private_rooms/event] Error creating private room record for %s: %s",  # noqa: E501
+                "[private_rooms/event] Error saving private room state for %s: %s",  # noqa: E501
                 member,
                 e,
             )
-            return
+            try:
+                asyncio.create_task(
+                    channel.delete(
+                        reason="Rolling back private room creation due to DB error"  # noqa: E501
+                    )
+                )
+            except Exception as delete_error:
+                logger.exception(
+                    "[private_rooms/event] Error deleting private room channel %s after DB failure: %s",  # noqa: E501
+                    channel.id,
+                    delete_error,
+                )
 
         try:
             await member.move_to(channel)

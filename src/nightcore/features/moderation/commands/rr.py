@@ -9,8 +9,11 @@ from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
+from nightcore.utils import has_any_role_from_sequence
+from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import (
     get_organization_roles_ids,
+    get_specified_field,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -48,7 +51,7 @@ class Rr(Cog):
     @app_commands.describe(
         user="Пользователь, у которого нужно удалить роль",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def rr(
         self,
         interaction: Interaction,
@@ -66,6 +69,27 @@ class Rr(Cog):
                 )
             ):
                 raise FieldNotConfiguredError("organization roles")
+
+            moderation_access_roles_ids = await get_specified_field(
+                session,
+                guild_id=guild.id,
+                config_type=GuildModerationConfig,
+                field_name="moderation_access_roles_ids",
+            )
+
+            rr_access_roles_ids = await get_specified_field(
+                session,
+                guild_id=guild.id,
+                config_type=GuildModerationConfig,
+                field_name="leader_access_rr_roles_ids",
+            )
+
+        if not has_any_role_from_sequence(
+            member, moderation_access_roles_ids + rr_access_roles_ids
+        ):
+            raise app_commands.MissingPermissions(
+                missing_permissions=["rr_access or moderation_access"]
+            )
 
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
