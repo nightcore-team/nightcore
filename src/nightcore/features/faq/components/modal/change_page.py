@@ -6,7 +6,7 @@ Used for changing FAQ page details in guilds.
 """
 
 import logging
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, cast
 
 from discord import Guild, TextStyle
 from discord.interactions import Interaction
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChangeFAQPageModal(Modal, title="Настроить страницу"):
-    page_title = TextInput[Self](
+    page_title = TextInput["ChangeFAQPageModal"](
         label="Новый заголовок страницы",
         style=TextStyle.short,
         placeholder="Введите заголовок страницы",
@@ -36,7 +36,7 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
         max_length=100,
     )
 
-    little_description = TextInput[Self](
+    little_description = TextInput["ChangeFAQPageModal"](
         label="Новое краткое описание",
         style=TextStyle.paragraph,
         placeholder="Введите краткое описание страницы",
@@ -44,7 +44,7 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
         max_length=200,
     )
 
-    content = TextInput[Self](
+    content = TextInput["ChangeFAQPageModal"](
         label="Новое содержание страницы",
         style=TextStyle.paragraph,
         placeholder="Введите содержание страницы",
