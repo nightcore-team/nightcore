@@ -1,5 +1,7 @@
 """Command to check battlepass."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -27,15 +29,16 @@ if TYPE_CHECKING:
 class Battlepass(Cog):
     """Battlepass commands."""
 
-    def __init__(self, bot: "Nightcore") -> None:
+    def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
     @app_commands.command(  # type: ignore
         name="battlepass",
         description="Взаимодействие с баттлпасом сервера.",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
-    async def claim(self, interaction: Interaction["Nightcore"]):
+    async def claim(self, interaction: Interaction[Nightcore]):
         """Claim your battlepass rewards."""
 
         bot = self.bot
@@ -134,6 +137,6 @@ class Battlepass(Cog):
         )
 
 
-async def setup(bot: "Nightcore") -> None:
+async def setup(bot: Nightcore) -> None:
     """Setup the Battlepass cog."""
     await bot.add_cog(Battlepass(bot))
