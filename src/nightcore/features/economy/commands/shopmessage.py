@@ -41,7 +41,7 @@ class ShopMessage(Cog):
         member = cast(Member, interaction.user)
 
         outcome = ""
-        shop_items: dict[str, float] = {}
+        shop_items: dict[str, int] = {}
 
         async with specified_guild_config(
             self.bot, guild.id, config_type=GuildEconomyConfig
@@ -52,7 +52,7 @@ class ShopMessage(Cog):
             else:
                 if not outcome:
                     outcome = "success"
-                    shop_items: dict[str, float] = (
+                    shop_items: dict[str, int] = (
                         guild_config.economy_shop_items
                     )
 
