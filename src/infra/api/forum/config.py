@@ -35,8 +35,8 @@ class Config(BaseEnvConfig):
         Server(
             section_id=538,
             guild_id=952303456222318693,
-            channel_id=1428784779842683123,
-            role_id=1406731851577430108,
+            channel_id=1329005115377717258,
+            role_id=1259548132853944473,
         ),
         Server(
             section_id=714,
