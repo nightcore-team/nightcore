@@ -191,7 +191,7 @@ class FAQViewV2(LayoutView):
 
 class FAQPageViewV2(LayoutView):
     def __init__(self, bot: Nightcore, page: FAQPageAnnot) -> None:
-        super().__init__(timeout=10)
+        super().__init__(timeout=None)
 
         container = Container[Self](accent_color=Color.blurple())
 

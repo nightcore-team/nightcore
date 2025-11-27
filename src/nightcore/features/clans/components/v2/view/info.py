@@ -52,7 +52,7 @@ class ClanMembersActionRow(ActionRow["ClanInfoViewV2"]):
 
 class ClanMemberListViewV2(LayoutView):
     def __init__(self, bot: "Nightcore", members: list[ClanMember]) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         container = Container[Self]()
         container.add_item(
@@ -98,7 +98,7 @@ class ClanInfoViewV2(LayoutView):
         max_deputies: int,
         reputation_multiplier: float,
     ) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         self.bot = bot
         self.members = members
@@ -166,7 +166,7 @@ class ClanListViewV2(LayoutView):
         clans: Sequence[Clan],
         sort_by: str | None = None,
     ) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         container = Container[Self]()
         container.add_item(

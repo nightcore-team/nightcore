@@ -81,9 +81,8 @@ class RoleMembersViewV2(LayoutView):
         pages: list[str],
         role: Role,
         members_count: int,
-        timeout: int = 180,
     ) -> None:
-        super().__init__(timeout=timeout)
+        super().__init__(timeout=None)
         self.author_id = author_id
         self.pages = pages
         self.current_page = 0

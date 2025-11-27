@@ -240,9 +240,8 @@ class BanRequestViewV2(LayoutView):
         original_delete_seconds: str | None = None,
         ping_role: Role | None = None,
         attachments: list[File] | None = None,
-        timeout: int = 180,
     ):
-        super().__init__(timeout=timeout)
+        super().__init__(timeout=None)
         self.author_id = author_id
         self.reason = reason
         self.target = target

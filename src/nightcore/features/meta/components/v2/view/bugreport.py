@@ -29,7 +29,7 @@ class BugReportViewV2(LayoutView):
         long_desc: str,
         screenshot: Attachment | None = None,
     ) -> None:
-        super().__init__(timeout=30)
+        super().__init__(timeout=None)
 
         container = Container[Self](accent_color=Color.from_str("#515cff"))
 

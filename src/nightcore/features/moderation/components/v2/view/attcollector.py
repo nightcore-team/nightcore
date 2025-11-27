@@ -105,9 +105,8 @@ class AttachmentsCollectorV2(LayoutView):
         author_id: int,
         user: User | Member,
         bot: "Nightcore",
-        timeout: int = 3600,
     ):
-        super().__init__(timeout=timeout)
+        super().__init__(timeout=None)
         self.author_id = author_id
         self.done = asyncio.Event()
         self.cancelled = False

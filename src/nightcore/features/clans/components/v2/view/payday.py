@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class ClansPaydayViewV2(LayoutView):
     def __init__(self, bot: "Nightcore") -> None:
-        super().__init__(timeout=60)
+        super().__init__(timeout=None)
 
         container = Container[Self]()
 

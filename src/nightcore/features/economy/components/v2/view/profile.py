@@ -45,7 +45,7 @@ class UserProfileViewV2(LayoutView):
         cases: CasesAnnot,
         colors: list[int],
     ):
-        super().__init__(timeout=10)
+        super().__init__(timeout=None)
 
         container = Container[Self](accent_color=Color.from_str("#515cff"))
 

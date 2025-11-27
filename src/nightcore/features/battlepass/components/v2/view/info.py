@@ -80,7 +80,7 @@ class BattlepassInfoViewV2(LayoutView):
         total_bp_points: int,
         pages: list[str],
     ) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         self.pages = pages
         self.current_page = 0

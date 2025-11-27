@@ -32,7 +32,7 @@ class BalanceViewV2(LayoutView):
         coin_name: str | None,
         balance: float,
     ):
-        super().__init__(timeout=60)
+        super().__init__(timeout=None)
 
         container = Container[Self](accent_color=Color.from_str("#515cff"))
 

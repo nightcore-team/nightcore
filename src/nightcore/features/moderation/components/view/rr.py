@@ -29,7 +29,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         moderator: discord.Member,
         category: str,
     ):
-        super().__init__(timeout=60)
+        super().__init__(timeout=None)
         self.bot = bot
         self.member = member
         self.roles = roles

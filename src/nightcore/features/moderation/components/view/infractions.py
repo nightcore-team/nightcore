@@ -19,9 +19,8 @@ class InfractionsView(View):
         pages: list[str],
         user: User,
         bot: "Nightcore",
-        timeout: int = 180,
     ):
-        super().__init__(timeout=timeout)
+        super().__init__(timeout=None)
         self.author_id = author_id
         self.pages = pages
         self.current_page = 0

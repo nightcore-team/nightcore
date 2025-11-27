@@ -19,7 +19,7 @@ class AwardNotificationViewV2(LayoutView):
     def __init__(
         self, bot: "Nightcore", user_id: int, item_name: str, amount: int
     ):
-        super().__init__(timeout=30)
+        super().__init__(timeout=None)
 
         container = Container[Self]()
 

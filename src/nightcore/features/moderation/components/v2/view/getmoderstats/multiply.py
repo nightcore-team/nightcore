@@ -91,7 +91,7 @@ class MultiplyGetModerStatsViewV2(LayoutView):
         from_dt: datetime,
         to_dt: datetime,
     ):
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
         self.author_id = author_id
         self.bot = bot
         self.pages = pages

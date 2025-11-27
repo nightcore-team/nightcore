@@ -37,7 +37,7 @@ class BattlepassClaimViewV2(LayoutView):
         avatar_url: str,
         disable_button: bool = False,
     ) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         container = Container[Self](accent_color=Color.from_str("#b777a6"))
 

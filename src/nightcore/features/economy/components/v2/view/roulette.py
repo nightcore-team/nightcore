@@ -26,7 +26,7 @@ class RouletteViewV2(LayoutView):
         result: "RouletteResult",
         new_balance: int,
     ) -> None:
-        super().__init__(timeout=30)
+        super().__init__(timeout=None)
 
         container = Container[Self](accent_color=Color.from_str("#ffffff"))
 

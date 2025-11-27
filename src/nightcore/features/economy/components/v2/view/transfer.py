@@ -134,7 +134,7 @@ class TransferHistoryViewV2(LayoutView):
         total_transfers: int,
         pages: list[str],
     ):
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         self.bot = bot
         self.user_id = user_id
@@ -209,7 +209,7 @@ class TransferCoinsViewV2(LayoutView):
         amount: int,
         comment: str | None = None,
     ):
-        super().__init__(timeout=30)
+        super().__init__(timeout=None)
 
         container = Container[Self](accent_color=Color.from_str("#515cff"))
 

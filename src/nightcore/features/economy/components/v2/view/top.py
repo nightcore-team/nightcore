@@ -32,7 +32,7 @@ class UsersListViewV2(LayoutView):
         users: Sequence[User],
         sort_by: str | None = None,
     ) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         medals = {
             1: "<:4210goldmedal:1442921281443069972>",

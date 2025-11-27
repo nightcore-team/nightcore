@@ -154,7 +154,7 @@ class ClanInviteViewV2(LayoutView):
     def __init__(
         self, bot: "Nightcore", inviter: ClanMember, invited_member: Member
     ) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         self.bot = bot
         self.inviter = inviter
@@ -198,7 +198,7 @@ class ClanInviteViewV2(LayoutView):
 
 class ClanListViewV2(LayoutView):
     def __init__(self, bot: "Nightcore", clans: Sequence[Clan]) -> None:
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
 
         container = Container[Self]()
         container.add_item(

@@ -84,9 +84,8 @@ class InfractionsViewV2(LayoutView):
         bot: Nightcore,
         total_punishments: int,
         count_last_7_days_infractions: int,
-        timeout: int = 180,
     ):
-        super().__init__(timeout=timeout)
+        super().__init__(timeout=None)
         self.author_id = author_id
         self.pages = pages
         self.current_page = 0
