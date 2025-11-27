@@ -727,7 +727,11 @@ async def reset_users_battlepass_levels(
             battle_pass_level=1,
             battle_pass_points=0,
         )
-        .where(User.guild_id == guild_id)
+        .where(
+            User.guild_id == guild_id,
+            User.battle_pass_level != 1,
+            User.battle_pass_points != 0,
+        )
         .returning(User.user_id)
     )
 
