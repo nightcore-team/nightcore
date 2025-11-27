@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, TypeVar, cast
 
 from async_lru import alru_cache
-from sqlalchemy import exists, extract, func, select
+from sqlalchemy import exists, extract, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -713,6 +713,42 @@ async def get_temp_role(
     )
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
+
+
+async def reset_users_battlepass_levels(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+) -> int:
+    """Reset all users' battlepass levels and points in a guild and return the count of affected users."""  # noqa: E501
+    stmt = (
+        update(User)
+        .values(
+            battle_pass_level=1,
+            battle_pass_points=0,
+        )
+        .where(User.guild_id == guild_id)
+        .returning(User.user_id)
+    )
+
+    result = await session.execute(stmt)
+    updated_ids = result.scalars().all()
+    return len(updated_ids)
+
+
+async def reset_guild_battlepass_config(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+):
+    """Reset the battlepass levels and rewards in the guild configuration."""
+    stmt = (
+        update(GuildEconomyConfig)
+        .values(battlepass_rewards=[])
+        .where(GuildEconomyConfig.guild_id == guild_id)
+    )
+
+    await session.execute(stmt)
 
 
 async def create_transfer_money_record(
