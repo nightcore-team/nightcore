@@ -1,6 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from discord import app_commands
 
-from src.nightcore.bot import Nightcore
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 from ._groups import config as config_group
 
@@ -18,7 +23,7 @@ from .commands import (
     private_channels,
     tickets,
 )
-from .commands.battlepass import add_level, change_level, delete_level
+from .commands.battlepass import add_level, change_level, delete_level, reset
 
 __all__ = (
     "add_level",
@@ -34,6 +39,7 @@ __all__ = (
     "notifications",
     "other",
     "private_channels",
+    "reset",
     "tickets",
 )
 
