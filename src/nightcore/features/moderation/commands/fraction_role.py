@@ -224,7 +224,7 @@ class FractionRole(Cog):
                     category=f"fraction_role_{option}",
                     moderator=author,
                     user=user,
-                    role=target_role,
+                    roles_ids=[target_role.id],
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
