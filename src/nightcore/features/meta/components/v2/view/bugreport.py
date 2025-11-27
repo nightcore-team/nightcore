@@ -48,7 +48,9 @@ class BugReportViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         container.add_item(
-            TextDisplay[Self](f"### Полное описание проблемы:\n> {long_desc}")
+            TextDisplay[Self](
+                f"### Полное описание проблемы:\n**```{long_desc}```**"
+            )
         )
         container.add_item(Separator[Self]())
         if screenshot:

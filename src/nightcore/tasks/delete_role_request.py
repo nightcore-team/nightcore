@@ -118,6 +118,7 @@ class DeleteRoleRequestTask(Cog):
                                 self.bot,
                                 moderator_id=rr.moderator_id,
                                 user_id=rr.author_id,
+                                roles_ids=[rr.role_id],
                                 state=RoleRequestStateEnum.EXPIRED,
                             )
                         )

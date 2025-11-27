@@ -43,7 +43,7 @@ class BugReportModal(Modal, title="Отправить отчёт об ошибк
         guild = cast(Guild, interaction.guild)
         user = cast(Member, interaction.user)
 
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
 
         attachment: Attachment | None = None  # type: ignore
         if self.screenshot.component.values:  # type: ignore
@@ -83,10 +83,11 @@ class BugReportModal(Modal, title="Отправить отчёт об ошибк
                     "Канал для  отправки отчётов об ошибках не найден.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                )
+                ),
+                ephemeral=True,
             )
 
-        asyncio.create_task(channel.send(view=view))  # type: ignore
+        await channel.send(view=view)  # type: ignore
 
         await interaction.followup.send(
             "Ваш отчет об ошибке был отправлен. Спасибо за помощь в улучшении бота!",  # noqa: E501
