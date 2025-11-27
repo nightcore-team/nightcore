@@ -5,7 +5,7 @@ from datetime import timezone
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, Member, app_commands
+from discord import AppCommandContext, Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -50,6 +50,7 @@ class Ban(Cog):
     @app_commands.describe(
         user="Пользователь для бана", reason="Причина бана пользователя"
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS)  # type: ignore
     async def ban(
         self,
@@ -405,6 +406,7 @@ async def setup(bot: "Nightcore"):
         app_commands.ContextMenu(
             name="Отправить запрос на бан",
             callback=_ban_request_callback,
+            extras={"allowed_contexts": AppCommandContext.guild},
         )
     )
     await bot.add_cog(Ban(bot))

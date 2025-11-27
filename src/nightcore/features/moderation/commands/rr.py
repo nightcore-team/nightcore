@@ -48,6 +48,7 @@ class Rr(Cog):
         name="rr",
         description="Удалить организационную роль у пользователя",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь, у которого нужно удалить роль",
     )

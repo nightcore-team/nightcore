@@ -46,6 +46,7 @@ class VMute(Cog):
         name="vmute",
         description="Выдать пользователю блокировку голосовых каналов.",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для блокировки",
         reason="Причина блокировки пользователя",

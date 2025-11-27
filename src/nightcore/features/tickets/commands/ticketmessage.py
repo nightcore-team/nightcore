@@ -27,6 +27,7 @@ class Ticketmessage(Cog):
         name="ticketmessage",
         description="Отправить сообщение с созданием тикета.",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
     async def ticketmessage(
         self,

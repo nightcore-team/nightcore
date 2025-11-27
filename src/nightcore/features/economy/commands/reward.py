@@ -32,6 +32,7 @@ class Reward(Cog):
     @app_commands.command(
         name="reward", description="Забрать ежедневную награду."
     )  # type: ignore
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def reward(self, interaction: Interaction["Nightcore"]) -> None:
         """Claim your daily reward."""

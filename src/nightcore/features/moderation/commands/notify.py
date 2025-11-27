@@ -40,6 +40,7 @@ class Notify(Cog):
     @app_commands.command(  # type: ignore
         name="notify", description="Отправить оповещение пользователю"
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для оповещения",
         duration="Длительность оповещения",

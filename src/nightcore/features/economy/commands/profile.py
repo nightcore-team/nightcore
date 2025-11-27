@@ -32,6 +32,7 @@ class Profile(Cog):
         name="profile",
         description="Посмотреть профиль пользователя.",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь, чей профиль нужно посмотреть. По умолчанию - вы сами."  # noqa: E501
     )

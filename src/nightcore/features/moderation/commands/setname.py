@@ -41,6 +41,7 @@ class Setname(Cog):
         name="setname",
         description="Установить никнейм пользователю",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для изменения никнейма",
         reason="Причина изменения никнейма",

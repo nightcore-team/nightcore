@@ -50,6 +50,7 @@ class FractionRole(Cog):
         name="fraction_role",
         description="Выдать пользователю фракционную роль.",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь, которому нужно выдать роль.",
         role="Роль, которую нужно выдать.",

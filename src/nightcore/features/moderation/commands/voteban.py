@@ -51,6 +51,7 @@ class Voteban(Cog):
         name="voteban",
         description="Отправить запрос на голосование по бану пользователя",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь, которого нужно забанить",
         reason="Причина бана пользователя",

@@ -43,6 +43,7 @@ class Rrban(Cog):
         name="rrban",
         description="Заблокировать пользователю возможность запрашивать роли",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для блокировки", reason="Причина блокировки"
     )

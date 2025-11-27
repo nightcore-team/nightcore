@@ -41,6 +41,7 @@ class Kick(Cog):
         name="kick",
         description="Кикнуть пользователя с сервера",
     )
+    @app_commands.guild_only()
     @app_commands.describe(user="Пользователь для кика", reason="Причина кика")
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def kick(

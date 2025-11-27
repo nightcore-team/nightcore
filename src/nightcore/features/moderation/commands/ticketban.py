@@ -50,6 +50,7 @@ class Ticketban(Cog):
         reason="Причина блокировки",
         duration="Длительность блокировки",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def ticketban(
         self,

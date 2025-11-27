@@ -32,6 +32,7 @@ class ShopMessage(Cog):
         name="shopmessage",
         description="Отправить компонент магазина.",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)  # type: ignore
     async def shopmessage(self, interaction: Interaction["Nightcore"]):
         """Send shop view."""

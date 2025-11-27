@@ -45,6 +45,7 @@ class UnMpMute(Cog):
         user="Пользователь для разблокировки",
         reason="Причина разблокировки пользователя",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def unmpmute(
         self,

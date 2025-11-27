@@ -45,6 +45,7 @@ class MpMute(Cog):
         name="mpmute",
         description="Заблокировать пользователя на торговой площадке сервера",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для блокировки",
         duration="Длительность блокировки",

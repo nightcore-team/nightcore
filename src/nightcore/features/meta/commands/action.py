@@ -39,6 +39,7 @@ class Action(Cog):
         action="Выберите действие",
         user="Выберите пользователя для действия",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def action(
         self, interaction: Interaction, action: str, user: Member | None = None

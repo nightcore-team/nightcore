@@ -38,6 +38,7 @@ class UnBan(Cog):
     @app_commands.describe(
         user="Пользователь для разбана", reason="Причина разбана пользователя"
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS)  # type: ignore
     async def unban(
         self,

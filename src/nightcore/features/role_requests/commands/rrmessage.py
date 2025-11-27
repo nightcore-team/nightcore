@@ -35,6 +35,7 @@ class Rrmessage(Cog):
         name="rrmessage",
         description="Отправить сообщение для создания заявок на роли.",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
     async def rrmessage(
         self,

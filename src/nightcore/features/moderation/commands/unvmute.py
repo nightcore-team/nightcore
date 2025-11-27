@@ -41,6 +41,7 @@ class UnVMute(Cog):
         name="unvmute",
         description="Снять пользователю блокировку голосовых каналов",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для размута",
         reason="Причина размута пользователя",

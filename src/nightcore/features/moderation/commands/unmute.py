@@ -40,6 +40,7 @@ class UnMute(Cog):
     @app_commands.command(  # type: ignore
         name="unmute", description="Разблокировать чат пользователю"
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для разблокировки", reason="Причина разблокировки"
     )

@@ -38,6 +38,7 @@ class Top(Cog):
             app_commands.Choice(name="Сообщения", value="messages"),
         ]
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def top(
         self,

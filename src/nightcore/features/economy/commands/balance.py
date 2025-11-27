@@ -31,6 +31,7 @@ class Balance(Cog):
         name="balance",
         description="Проверить баланс пользователя.",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь, чей баланс нужно проверить. По умолчанию - вы сами"
     )

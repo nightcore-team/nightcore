@@ -36,6 +36,7 @@ class Unrrban(Cog):
         name="unrrban",
         description="Снять блокировку на запрос роли с пользователя",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для снятия бана", reason="Причина снятия бана"
     )

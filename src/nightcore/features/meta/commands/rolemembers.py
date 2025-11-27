@@ -30,6 +30,7 @@ class RoleMembers(Cog):
         description="Получить список участников с определённой ролью",
     )
     @app_commands.describe(role="Роль, участников которой нужно получить")
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def role_members(
         self,

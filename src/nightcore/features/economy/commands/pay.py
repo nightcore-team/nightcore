@@ -41,6 +41,7 @@ class Pay(Cog):
         amount="Сумма коинов для перевода",
         comment="Комментарий к переводу",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def pay(
         self,

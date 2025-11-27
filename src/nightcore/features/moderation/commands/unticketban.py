@@ -37,6 +37,7 @@ class Unticketban(Cog):
         name="unticketban",
         description="Снять бан на создание тикетов с пользователя",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для снятия бана", reason="Причина снятия бана"
     )

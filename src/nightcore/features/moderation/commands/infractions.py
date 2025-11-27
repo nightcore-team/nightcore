@@ -42,6 +42,7 @@ class Infractions(Cog):
         name="infractions",
         description="Посмотреть список нарушений пользователя",
     )
+    @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь для проверки нарушений",
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",

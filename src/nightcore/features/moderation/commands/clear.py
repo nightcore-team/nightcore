@@ -35,6 +35,7 @@ class Clear(Cog):
         name="clear", description="Очистить сообщения в канале"
     )
     @app_commands.describe(number="Количество сообщений для очистки (1-20)")
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def clear(
         self,

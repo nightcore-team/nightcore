@@ -33,6 +33,7 @@ class Paint(Cog):
     @app_commands.autocomplete(color=own_colors_autocomplete)
     @app_commands.describe(color="Цвет, который вы хотите применить")
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @app_commands.guild_only()
     async def paint(
         self,
         interaction: Interaction["Nightcore"],

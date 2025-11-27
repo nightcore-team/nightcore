@@ -62,6 +62,7 @@ class ChangeStat(Cog):
             app_commands.Choice(name="Role Accept", value="role_accept"),
         ]
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
     async def changestat(
         self,

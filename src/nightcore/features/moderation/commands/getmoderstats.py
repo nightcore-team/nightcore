@@ -56,6 +56,7 @@ class GetModerationStats(Cog):
         to_date="Дата окончания.",
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
+    @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def getmoderstats(
         self,
