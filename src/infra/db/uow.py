@@ -14,7 +14,7 @@ class UnitOfWork:
         self._sm = sessionmaker
 
     @asynccontextmanager
-    async def start(self):
+    async def start(self, readonly: bool = False):
         """Start a new db session."""
         async with self._sm() as session:
             start_time = time.perf_counter()
@@ -22,8 +22,12 @@ class UnitOfWork:
 
             try:
                 yield session
+
                 commit_start = time.perf_counter()
-                await session.commit()
+                if not readonly:
+                    await session.commit()
+                else:
+                    await session.rollback()
                 logger.info(
                     f"[UoW] Commit finished in {time.perf_counter() - commit_start:.10f}s "  # noqa: E501
                     f"(total {time.perf_counter() - start_time:.10f}s)"
