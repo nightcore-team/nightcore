@@ -90,7 +90,8 @@ class Mute(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать чат модераторам.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -100,7 +101,8 @@ class Mute(Cog):
 
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать чат администраторам.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -120,7 +122,8 @@ class Mute(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать чат мне.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore

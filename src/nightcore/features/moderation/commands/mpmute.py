@@ -81,8 +81,9 @@ class MpMute(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете заблокировать модераторов.",
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
+                    "Вы не можете заблокировать торговую площадку модераторам.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -91,8 +92,9 @@ class MpMute(Cog):
 
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете заблокировать администраторов.",
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
+                    "Вы не можете заблокировать торговую площадку администраторам.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -111,8 +113,9 @@ class MpMute(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете заблокировать меня.",
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
+                    "Вы не можете заблокировать торговую площадку мне.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

@@ -63,7 +63,8 @@ class Rrban(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать запрос ролей для меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -96,7 +97,8 @@ class Rrban(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать запрос ролей для модераторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -107,7 +109,8 @@ class Rrban(Cog):
         try:
             if u.role_request_ban:
                 return await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
+                    embed=ErrorEmbed(
+                        "Ошибка блокировки",
                         "Этот пользователь уже заблокирован на запрос ролей.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
@@ -133,7 +136,7 @@ class Rrban(Cog):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка блокировки на запрос ролей",
-                    "Не удалось заблокировать пользователю возможность запрашивать роли.",  # noqa: E501
+                    "Не удалось заблокировать пользователю запрос ролей.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 )

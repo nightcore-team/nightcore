@@ -18,7 +18,6 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
-    ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.view import (
@@ -105,7 +104,8 @@ class Rr(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка снятия роли",
                     "Вы не можете удалить роли у меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore

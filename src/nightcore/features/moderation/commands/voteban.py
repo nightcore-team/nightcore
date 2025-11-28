@@ -104,8 +104,9 @@ class Voteban(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете забанить модераторов.",
+                embed=ErrorEmbed(
+                    "Ошибка отправки запроса на блокировку",
+                    "Вы не можете заблокировать модераторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -114,8 +115,9 @@ class Voteban(Cog):
 
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете забанить администраторов.",
+                embed=ErrorEmbed(
+                    "Ошибка отправки запроса на блокировку",
+                    "Вы не можете заблокировать администраторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -124,8 +126,9 @@ class Voteban(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете забанить меня.",
+                embed=ErrorEmbed(
+                    "Ошибка отправки запроса на блокировку",
+                    "Вы не можете заблокировать меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -217,7 +220,7 @@ class Voteban(Cog):
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
                     "Запрос на бан отправлен",
-                    f"Ваш {message.jump_url} для {user.mention} был успешно отправлен.",  # noqa: E501 # type: ignore
+                    f"Ваш [запрос на бан]({message.jump_url}) для {user.mention} было успешно отправлено.",  # noqa: E501 # type: ignore
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -232,8 +235,8 @@ class Voteban(Cog):
             )
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Ошибка отправки запроса на бан",
-                    "Не удалось отправить сообщение с запросом на бан.",
+                    "Ошибка отправки запроса на блокировку",
+                    "Не удалось отправить сообщение с запросом на блокировку.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 )

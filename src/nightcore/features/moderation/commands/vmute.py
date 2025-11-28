@@ -79,7 +79,8 @@ class VMute(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать модераторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -89,7 +90,8 @@ class VMute(Cog):
 
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать администраторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -109,7 +111,8 @@ class VMute(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -149,7 +152,7 @@ class VMute(Cog):
         if mrole is None:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Роль блокировки не найдена",
+                    "Ошибка блокировки",
                     f"Не удалось найти роль блокировки с ID {mute_role_id} на этом сервере.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -166,8 +169,8 @@ class VMute(Cog):
                 logger.exception("Failed to add role: %s", e)
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Ошибка назначения роли",
-                        "Не удалось добавить роль.",
+                        "Ошибка блокировки",
+                        "Не удалось добавить роль мута пользователю.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -176,7 +179,7 @@ class VMute(Cog):
         else:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Ошибка блокировки пользователя",
+                    "Ошибка блокировки",
                     f"{member.mention} уже заблокирован.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore

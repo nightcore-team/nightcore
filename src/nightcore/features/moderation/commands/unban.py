@@ -12,7 +12,6 @@ from discord.interactions import Interaction
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
@@ -61,8 +60,9 @@ class UnBan(Cog):
 
         if guild.me == user:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете разбанить меня.",
+                embed=ErrorEmbed(
+                    "Ошибка снятия блокировки",
+                    "Вы не можете снять блокировку с меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -74,7 +74,7 @@ class UnBan(Cog):
         except discord.NotFound:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Пользователь не забанен",
+                    "Ошибка снятия блокировки",
                     f"<@{user.id}> не забанен на этом сервере.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -88,8 +88,8 @@ class UnBan(Cog):
                 logger.exception("Failed to unban user: %s", e)
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Ошибка разбана",
-                        f"Не удалось разбанить <@{user.id}>.",
+                        "Ошибка снятия блокировки",
+                        f"Не удалось снять блокировку с <@{user.id}>.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),

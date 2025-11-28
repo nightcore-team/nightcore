@@ -12,7 +12,6 @@ from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserUnmutedEventData
@@ -82,8 +81,9 @@ class UnMpMute(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете разблокировать меня.",
+                embed=ErrorEmbed(
+                    "Ошибка снятия блокировки",
+                    "Вы не можете снять блокировку с меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -107,7 +107,7 @@ class UnMpMute(Cog):
         if mute_role_id is None or mrole is None:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Роль блокировки не найдена",
+                    "Ошибка снятия блокировки",
                     f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -120,7 +120,7 @@ class UnMpMute(Cog):
             if not has_role:
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Роль блокировки не найдена",
+                        "Ошибка снятия блокировки",
                         "Роль блокировки не найдена у этого пользователя.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
@@ -139,7 +139,7 @@ class UnMpMute(Cog):
                     )
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "Не удалось снять роль",
+                            "Ошибка снятия блокировки",
                             "Не удалось снять роль блокировки торг. площадки с пользователя.",  # noqa: E501
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore

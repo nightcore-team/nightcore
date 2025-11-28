@@ -78,7 +78,8 @@ class Ban(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка бана пользователя",
                     "Вы не можете забанить модераторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -88,7 +89,8 @@ class Ban(Cog):
 
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка бана пользователя",
                     "Вы не можете забанить администраторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -108,7 +110,8 @@ class Ban(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка бана пользователя",
                     "Вы не можете забанить меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore

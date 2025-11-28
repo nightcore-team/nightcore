@@ -67,7 +67,8 @@ class Ticketban(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
                     "Вы не можете заблокировать меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -97,7 +98,8 @@ class Ticketban(Cog):
             )
             if is_member_moderator:
                 return await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
+                    embed=ErrorEmbed(
+                        "Ошибка блокировки",
                         "Вы не можете заблокировать модераторов.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore

@@ -12,7 +12,6 @@ from src.infra.db.models import GuildModerationConfig
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserUnmutedEventData
@@ -81,7 +80,8 @@ class UnVMute(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка снятия блокировки",
                     "Вы не можете размутить меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -106,7 +106,7 @@ class UnVMute(Cog):
         if not mute_role_id or mrole is None:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Роль мута не найдена",
+                    "Ошибка снятия блокировки",
                     f"Роль мута с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -119,7 +119,7 @@ class UnVMute(Cog):
             if not has_role:
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Роль мута не найдена",
+                        "Ошибка снятия блокировки",
                         "Роль мута не найдена у этого пользователя.",
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
@@ -138,8 +138,8 @@ class UnVMute(Cog):
                     )
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
-                            "Не удалось удалить роль",
-                            "Не удалось удалить роль.",
+                            "Ошибка снятия блокировки",
+                            "Не удалось удалить роль мута у пользователя.",
                             self.bot.user.name,  # type: ignore
                             self.bot.user.display_avatar.url,  # type: ignore
                         ),

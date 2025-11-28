@@ -11,6 +11,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.components.embed import (
+    ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
@@ -72,7 +73,8 @@ class Setname(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка смены никнейма",
                     "Вы не можете изменить никнейм модератора.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -92,7 +94,8 @@ class Setname(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка смены никнейма",
                     "Вы не можете изменить мой никнейм.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore

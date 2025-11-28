@@ -13,7 +13,6 @@ from src.infra.db.operations import get_moderation_access_roles
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
-    ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserKickEventData
@@ -66,7 +65,8 @@ class Kick(Cog):
         )
         if is_member_moderator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка кика пользователя",
                     "Вы не можете кикнуть модераторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
@@ -76,8 +76,9 @@ class Kick(Cog):
 
         if member.guild_permissions.administrator:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете заблокировать администраторов.",
+                embed=ErrorEmbed(
+                    "Ошибка кика пользователя",
+                    "Вы не можете кикнуть администраторов.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -96,7 +97,8 @@ class Kick(Cog):
 
         if guild.me == member:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+                embed=ErrorEmbed(
+                    "Ошибка кика пользователя",
                     "Вы не можете кикнуть меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore

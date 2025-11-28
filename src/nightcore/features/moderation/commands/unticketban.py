@@ -10,10 +10,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import set_user_field_upsert
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    ValidationErrorEmbed,
-)
+from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.services.config import specified_guild_config
@@ -53,8 +50,9 @@ class Unticketban(Cog):
 
         if guild.me == user:
             return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Вы не можете снять бан с меня.",
+                embed=ErrorEmbed(
+                    "Ошибка снятия блокировки",
+                    "Вы не можете снять блокировку с меня.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -88,7 +86,7 @@ class Unticketban(Cog):
         if outcome == "error":
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
-                    "Ошибка снятия тикет бана",
+                    "Ошибка снятия блокировки",
                     "Не удалось снять тикет бан с пользователя.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
