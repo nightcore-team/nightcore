@@ -36,7 +36,7 @@ async def send_rules(
     guild = cast(Guild, interaction.guild)
 
     async with specified_guild_config(
-        bot=bot, guild_id=guild.id, config_type=MainGuildConfig
+        bot=bot, guild_id=guild.id, config_type=MainGuildConfig, _create=True
     ) as (guild_config, _):
         rules_data = cast(
             dict[str, object], guild_config.guild_rules or {"chapters": []}
