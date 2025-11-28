@@ -21,6 +21,9 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
+from src.nightcore.features.moderation.utils.transformers import (
+    StringToRuleTransformer,
+)
 from src.nightcore.utils import (
     has_any_role_from_sequence,
 )
@@ -57,7 +60,9 @@ class Ticketban(Cog):
         interaction: Interaction,
         user: Member,
         duration: str,
-        reason: str,
+        reason: app_commands.Transform[
+            app_commands.Range[str, 1, 1000], StringToRuleTransformer
+        ],
     ):
         """Ban a user from creating tickets."""
         guild = cast(Guild, interaction.guild)

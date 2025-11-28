@@ -15,6 +15,9 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
+from src.nightcore.features.moderation.utils.transformers import (
+    StringToRuleTransformer,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -43,7 +46,9 @@ class UnBan(Cog):
         self,
         interaction: Interaction,
         user: discord.User,
-        reason: str,
+        reason: app_commands.Transform[
+            app_commands.Range[str, 1, 1000], StringToRuleTransformer
+        ],
     ):
         """Unban a user in the server."""
         guild = cast(Guild, interaction.guild)

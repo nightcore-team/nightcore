@@ -13,6 +13,9 @@ from src.infra.db.operations import set_user_field_upsert
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
+from src.nightcore.features.moderation.utils.transformers import (
+    StringToRuleTransformer,
+)
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -43,7 +46,9 @@ class Unticketban(Cog):
         self,
         interaction: Interaction,
         user: Member,
-        reason: str,
+        reason: app_commands.Transform[
+            app_commands.Range[str, 1, 1000], StringToRuleTransformer
+        ],
     ):
         """Unban a user in the server."""
         guild = cast(Guild, interaction.guild)

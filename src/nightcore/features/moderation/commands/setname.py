@@ -19,6 +19,9 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.moderation.events import (
     UserSetNameEventData,
 )
+from src.nightcore.features.moderation.utils.transformers import (
+    StringToRuleTransformer,
+)
 from src.nightcore.utils import (
     compare_top_roles,
     has_any_role_from_sequence,
@@ -53,7 +56,9 @@ class Setname(Cog):
         self,
         interaction: Interaction,
         user: Member,
-        reason: str,
+        reason: app_commands.Transform[
+            app_commands.Range[str, 1, 1000], StringToRuleTransformer
+        ],
         nickname: str | None = None,
     ):
         """Set/restore a user's nickname."""

@@ -1,15 +1,14 @@
 """Command to notify a user about a rule violation."""
 
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
-from discord import Guild, Member, app_commands
+from discord import Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.infra.db.models._annot import Chapter
-from src.infra.db.operations import (
-    get_guild_rules,
+from src.nightcore.features.moderation.utils.transformers import (
+    StringToRuleTransformer,
 )
 
 if TYPE_CHECKING:
@@ -18,12 +17,7 @@ if TYPE_CHECKING:
 from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
-from src.nightcore.exceptions import FieldNotConfiguredError
-from src.nightcore.features.meta.utils import convert_dict_to_rules
 from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
-from src.nightcore.features.moderation.utils import (
-    find_rule_by_index,
-)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -52,35 +46,13 @@ class Notify(Cog):
         interaction: Interaction["Nightcore"],
         user: Member,
         duration: str,
-        reason: str,
+        reason: app_commands.Transform[
+            app_commands.Range[str, 1, 1000], StringToRuleTransformer
+        ],
     ):
         """Sends a notification to a user."""
 
-        guild = cast(Guild, interaction.guild)
-
         member = user
-
-        async with self.bot.uow.start() as session:
-            if not (
-                rules_data := cast(
-                    dict[str, Any],
-                    await get_guild_rules(session, guild_id=guild.id),
-                )
-            ):
-                raise FieldNotConfiguredError("правила")
-
-        rules = convert_dict_to_rules(rules_data)
-
-        rule, index = find_rule_by_index(rules, reason)  # type: ignore
-        if isinstance(rule, Chapter):
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Пожалуйста, укажите действительный номер правила, а не главы.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         parsed_duration = parse_duration(duration)
 
@@ -101,9 +73,7 @@ class Notify(Cog):
                 bot=self.bot,
                 user_id=member.id,
                 end_time=end_time,
-                content=f"{index}. {rule.text}"  # type: ignore
-                if index and rule.text  # type: ignore
-                else reason,
+                content=reason,
             ),
             ephemeral=True,
         )
