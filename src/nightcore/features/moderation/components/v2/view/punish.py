@@ -165,14 +165,14 @@ class PunishViewV2(LayoutView):
         """
 
         if mode == "expired":
-            meta = f"> **Причина: `{reason}`**"
+            meta = f"> **Причина:** *{reason}*"
             if duration:
                 meta += f"\n> **Длительность была: `{duration}`**"
             if guild_name:
                 meta += f"\n> **Сервер: `{guild_name}`**"
             return meta
 
-        meta = f"> **Модератор: <@{moderator_id}>**\n> **Причина: `{reason}`**"
+        meta = f"> **Модератор: <@{moderator_id}>**\n> **Причина:** *{reason}*"
         if duration:
             meta += f"\n> **Длительность: `{duration}`**"
         if guild_name:
