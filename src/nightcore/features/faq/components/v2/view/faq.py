@@ -130,7 +130,7 @@ class FAQViewV2(LayoutView):
         self.pages = pages
         self.current_page = 0
 
-        self.actions: FAQViewPaginationButtons | None
+        self.actions: FAQViewPaginationButtons | None = None
 
         if _build:
             self.make_component()
