@@ -232,7 +232,7 @@ class Ban(Cog):
                 data=UserBannedEventData(
                     mode="dm",
                     category=self.__class__.__name__.lower(),
-                    moderator=interaction.user,  # type: ignore
+                    moderator_id=interaction.user.id,
                     user=member,
                     reason=reason,
                     created_at=discord.utils.utcnow().astimezone(

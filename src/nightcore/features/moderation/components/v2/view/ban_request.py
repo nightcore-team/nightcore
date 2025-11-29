@@ -13,7 +13,6 @@ from discord import (
     MediaGalleryItem,
     Member,
     Role,
-    User,
 )
 from discord.interactions import Interaction
 from discord.ui import (
@@ -128,7 +127,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
                     mode="dm",
                     guild_name=guild.name,
                     category="ban",
-                    moderator=moderator,
+                    moderator_id=view.author_id,
                     user=target,
                     reason=view.reason,
                     created_at=discord.utils.utcnow().astimezone(
@@ -230,7 +229,7 @@ class BanRequestViewV2(LayoutView):
         self,
         author_id: int,
         reason: str,
-        target: User | Member,
+        target: Member,
         bot: "Nightcore",
         duration: int,
         original_duration: str,

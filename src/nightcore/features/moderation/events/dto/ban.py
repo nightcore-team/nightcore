@@ -19,8 +19,8 @@ class UserBannedEventData(ModerationBaseEventData):
     mode: str
     category: str
     guild_name: str
-    moderator: discord.Member
-    user: discord.Member | discord.User
+    moderator_id: int
+    user: discord.Member
     created_at: datetime
     reason: str
     duration: int
@@ -45,7 +45,7 @@ class UserBannedEventData(ModerationBaseEventData):
             inline=True,
         )
         embed.add_field(
-            name="Moderator", value=f"<@{self.moderator.id}>", inline=True
+            name="Moderator", value=f"<@{self.moderator_id}>", inline=True
         )
         embed.add_field(name="Reason", value=self.reason, inline=True)
         embed.add_field(

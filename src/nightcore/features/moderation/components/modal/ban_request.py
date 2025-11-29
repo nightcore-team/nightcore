@@ -47,7 +47,7 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
 
     def __init__(
         self,
-        target: discord.Member | discord.User,
+        target: discord.Member,
         moderator: discord.Member,
         bot: "Nightcore",
         channel: discord.TextChannel | discord.Thread,

@@ -46,22 +46,10 @@ class UserBanEvent(Cog):
         logger.info(
             "[event] on_user_banned - %s: Guild: %s, Member: %s, Reason: %s",
             data.category,
-            data.moderator.guild.id,
+            data.user.guild.id,
             data.user.id,
             data.reason,
         )
-
-        try:
-            user = await self.bot.fetch_user(data.user.id)
-            data.user = user
-        except Exception as e:
-            logger.exception(
-                "[event] on_user_muted - %s: Failed to fetch user %s: %s",
-                data.category,
-                data.user.id,
-                e,
-            )
-            return
 
         end_time = calculate_end_time(data.duration)
         data.end_time = discord_ts(end_time)
@@ -71,9 +59,9 @@ class UserBanEvent(Cog):
             try:
                 punish_info = await create_punish(
                     session,
-                    guild_id=data.moderator.guild.id,
+                    guild_id=data.user.guild.id,
                     user_id=data.user.id,
-                    moderator_id=data.moderator.id,
+                    moderator_id=data.moderator_id,
                     category=data.category,
                     reason=data.reason,
                     original_duration=data.original_duration,
@@ -92,7 +80,7 @@ class UserBanEvent(Cog):
             try:
                 await create_temp_punish(
                     session,
-                    guild_id=data.moderator.guild.id,
+                    guild_id=data.user.guild.id,
                     user_id=data.user.id,
                     category=data.category,
                     end_time=end_time,
@@ -107,7 +95,7 @@ class UserBanEvent(Cog):
 
             logging_channel_id = await get_specified_channel(
                 session,
-                guild_id=data.moderator.guild.id,
+                guild_id=data.user.guild.id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
@@ -131,7 +119,7 @@ class UserBanEvent(Cog):
         else:
             logger.warning(
                 "[event] on_user_banned - %s: Guild: %s, logging channel is not set",  # noqa: E501
-                data.moderator.guild.id,
+                data.user.guild.id,
                 punish_info.category,
             )
 
