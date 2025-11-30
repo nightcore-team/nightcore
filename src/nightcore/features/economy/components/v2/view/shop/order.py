@@ -344,7 +344,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
         elif outcome == "success":
             await interaction.followup.send(
                 embed=SuccessDeniedEmbed(
-                    "Покупка одобрена",
+                    "Покупка отклонена",
                     f"Покупка товара **{view.item_name}** была отклонена.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
