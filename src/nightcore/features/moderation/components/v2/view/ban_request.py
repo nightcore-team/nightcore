@@ -32,10 +32,14 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+
 from src.nightcore.components.embed import (
     MissingPermissionsEmbed,
 )
 from src.nightcore.features.moderation.events.dto import UserBannedEventData
+from src.nightcore.features.moderation.utils.punish_notify import (
+    send_punish_dm_message,
+)
 from src.nightcore.utils import discord_ts, has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
@@ -120,12 +124,39 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
         target = view.target
 
+        data = UserBannedEventData(
+            mode="dm",
+            guild_name=guild.name,
+            guild_id=guild.id,
+            category="ban",
+            moderator_id=view.author_id,
+            user=target,
+            reason=view.reason,
+            created_at=discord.utils.utcnow().astimezone(tz=timezone.utc),
+            duration=view.duration,
+            original_duration=view.original_duration,
+            delete_messages_per=view.original_delete_seconds,
+        )
+
+        try:
+            await send_punish_dm_message(
+                view.bot, guild_name=guild.name, event_data=data
+            )
+        except Exception as e:
+            logger.exception(
+                "[event] - Failed to send ban DM to user=%s guild=%s: %s",
+                target.id,
+                guild.id,
+                e,
+            )
+
         try:
             view.bot.dispatch(
                 "user_banned",
                 data=UserBannedEventData(
                     mode="dm",
                     guild_name=guild.name,
+                    guild_id=guild.id,
                     category="ban",
                     moderator_id=view.author_id,
                     user=target,

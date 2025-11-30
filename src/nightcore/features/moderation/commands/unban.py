@@ -88,6 +88,26 @@ class UnBan(Cog):
             )
         else:
             try:
+                self.bot.dispatch(
+                    "user_unbanned",
+                    data=UnPunishEventData(
+                        mode="dm",
+                        category="ban",
+                        guild_id=guild.id,
+                        moderator_id=interaction.user.id,
+                        user_id=user.id,
+                        reason=reason,
+                        created_at=datetime.now(timezone.utc),
+                    ),
+                    by_command=True,
+                )
+            except Exception as e:
+                logger.exception(
+                    "[event] - Failed to dispatch user_unbanned event: %s", e
+                )
+                return
+
+            try:
                 await guild.unban(user, reason=reason)
             except discord.HTTPException as e:
                 logger.exception("Failed to unban user: %s", e)
@@ -113,26 +133,6 @@ class UnBan(Cog):
                 mode="server",
             )
         )
-
-        try:
-            self.bot.dispatch(
-                "user_unbanned",
-                data=UnPunishEventData(
-                    mode="dm",
-                    category="ban",
-                    guild_id=guild.id,
-                    moderator_id=interaction.user.id,
-                    user_id=user.id,
-                    reason=reason,
-                    created_at=datetime.now(timezone.utc),
-                ),
-                by_command=True,
-            )
-        except Exception as e:
-            logger.exception(
-                "[event] - Failed to dispatch user_unbanned event: %s", e
-            )
-            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s reason=%s",

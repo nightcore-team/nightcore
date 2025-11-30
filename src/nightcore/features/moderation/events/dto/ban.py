@@ -19,8 +19,9 @@ class UserBannedEventData(ModerationBaseEventData):
     mode: str
     category: str
     guild_name: str
+    guild_id: int
     moderator_id: int
-    user: discord.Member
+    user: discord.Member | discord.User
     created_at: datetime
     reason: str
     duration: int

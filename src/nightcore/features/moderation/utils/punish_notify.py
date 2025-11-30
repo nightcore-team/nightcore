@@ -12,9 +12,14 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models._enums import RoleRequestStateEnum
-from src.nightcore.features.moderation.components.v2 import PunishViewV2
+from src.nightcore.features.moderation.components.v2.view.punish import (
+    PunishViewV2,
+)
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
+)
+from src.nightcore.features.moderation.events.dto.ban import (
+    UserBannedEventData,
 )
 from src.nightcore.features.moderation.events.dto.base import (
     ModerationBaseEventData,
@@ -38,7 +43,9 @@ async def send_punish_dm_message(
         bot=bot,
         user=event_data.user,  # type: ignore
         punish_type=event_data.category,  # type: ignore
-        moderator_id=event_data.moderator.id,  # type: ignore
+        moderator_id=event_data.moderator_id
+        if isinstance(event_data, UserBannedEventData)
+        else event_data.moderator.id,  # type: ignore
         reason=event_data.reason,  # type: ignore
         duration=getattr(event_data, "original_duration", None),  # type: ignore
         mode="dm",

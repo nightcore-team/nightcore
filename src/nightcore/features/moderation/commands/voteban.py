@@ -72,13 +72,10 @@ class Voteban(Cog):
             app_commands.Range[str, 1, 1000], StringToRuleTransformer
         ],
         delete_messages_per: str | None = None,
-        # proofs: bool = False,
     ):
         """Vote to ban a user on the server."""
         guild = cast(Guild, interaction.guild)
-        # proofs = False
 
-        # Ensure we have a guild Member object
         member = user
 
         ping_role = None
@@ -246,39 +243,6 @@ class Voteban(Cog):
                     self.bot.user.display_avatar.url,  # type: ignore
                 )
             )
-
-        # Cleanup: remove user's evidence messages from the channel to avoid clutter  # noqa: E501
-        # if proofs:
-        #     ch = interaction.channel
-        #     if isinstance(ch, discord.TextChannel):
-        #         # Collect messages that still exist and belong to this channel  # noqa: E501
-        #         msgs_to_delete = [
-        #             m
-        #             for m in messages_by_id.values()
-        #             if m and m.channel.id == ch.id
-        #         ]
-        #         if msgs_to_delete:
-        #             now = discord.utils.utcnow()
-        #             recent: list[discord.Message] = []
-        #             old: list[discord.Message] = []
-
-        #             for m in msgs_to_delete:
-        #                 if (now - m.created_at).days < 14:
-        #                     recent.append(m)
-        #                 else:
-        #                     old.append(m)
-
-        #             if recent:
-        #                 with contextlib.suppress(
-        #                     discord.Forbidden, discord.HTTPException
-        #                 ):
-        #                     await ch.delete_messages(recent)
-
-        #             for m in old:
-        #                 with contextlib.suppress(
-        #                     discord.Forbidden, discord.HTTPException
-        #                 ):
-        #                     await m.delete()
 
         logger.info(
             "[ban_request_submit] - invoked user=%s guild=%s target=%s duration=%s reason=%s delete_messages_for_last=%s",  # noqa: E501

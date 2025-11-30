@@ -23,7 +23,6 @@ from src.nightcore.features.moderation.events import (
 )
 from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
-    send_punish_dm_message,
     send_unpunish_dm_message,
 )
 from src.nightcore.utils import discord_ts
@@ -46,7 +45,7 @@ class UserBanEvent(Cog):
         logger.info(
             "[event] on_user_banned - %s: Guild: %s, Member: %s, Reason: %s",
             data.category,
-            data.user.guild.id,
+            data.guild_id,
             data.user.id,
             data.reason,
         )
@@ -59,7 +58,7 @@ class UserBanEvent(Cog):
             try:
                 punish_info = await create_punish(
                     session,
-                    guild_id=data.user.guild.id,
+                    guild_id=data.guild_id,
                     user_id=data.user.id,
                     moderator_id=data.moderator_id,
                     category=data.category,
@@ -80,7 +79,7 @@ class UserBanEvent(Cog):
             try:
                 await create_temp_punish(
                     session,
-                    guild_id=data.user.guild.id,
+                    guild_id=data.guild_id,
                     user_id=data.user.id,
                     category=data.category,
                     end_time=end_time,
@@ -95,19 +94,12 @@ class UserBanEvent(Cog):
 
             logging_channel_id = await get_specified_channel(
                 session,
-                guild_id=data.user.guild.id,
+                guild_id=data.guild_id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
         gather_list: list[Awaitable[None]] = []
-
-        # send dm message to user
-        gather_list.append(
-            send_punish_dm_message(
-                self.bot, guild_name=data.guild_name, event_data=data
-            )
-        )
 
         # sending log message
         if logging_channel_id:
@@ -119,7 +111,7 @@ class UserBanEvent(Cog):
         else:
             logger.warning(
                 "[event] on_user_banned - %s: Guild: %s, logging channel is not set",  # noqa: E501
-                data.user.guild.id,
+                data.guild_id,
                 punish_info.category,
             )
 

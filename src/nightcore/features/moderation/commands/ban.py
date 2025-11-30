@@ -5,7 +5,7 @@ from datetime import timezone
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import AppCommandContext, Guild, Member, app_commands
+from discord import AppCommandContext, Guild, Member, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -20,6 +20,9 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.modal import BanFormModal
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserBannedEventData
+from src.nightcore.features.moderation.utils.punish_notify import (
+    send_punish_dm_message,
+)
 from src.nightcore.features.moderation.utils.transformers import (
     StringToRuleTransformer,
 )
@@ -58,7 +61,7 @@ class Ban(Cog):
     async def ban(
         self,
         interaction: Interaction,
-        user: Member,
+        user: User,
         duration: str,
         reason: app_commands.Transform[
             app_commands.Range[str, 1, 1000], StringToRuleTransformer
@@ -92,7 +95,10 @@ class Ban(Cog):
                 ephemeral=True,
             )
 
-        if member.guild_permissions.administrator:
+        if (
+            isinstance(member, Member)
+            and member.guild_permissions.administrator
+        ):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка бана пользователя",
@@ -179,11 +185,50 @@ class Ban(Cog):
             await guild.fetch_ban(member)
         except discord.NotFound:
             try:
+                data = UserBannedEventData(
+                    mode="dm",
+                    category=self.__class__.__name__.lower(),
+                    guild_id=guild.id,
+                    moderator_id=interaction.user.id,
+                    user=member,
+                    reason=reason,
+                    created_at=discord.utils.utcnow().astimezone(
+                        tz=timezone.utc
+                    ),
+                    guild_name=guild.name,
+                    duration=parsed_duration,
+                    original_duration=duration,
+                    end_time=end_time,  # type: ignore
+                    delete_messages_per=delete_messages_per,
+                )
+                try:
+                    self.bot.dispatch("user_banned", data=data)
+                except Exception as e:
+                    logger.exception(
+                        "[event] - Failed to dispatch user_banned event: %s", e
+                    )
+                    return
+
+                try:
+                    await send_punish_dm_message(
+                        self.bot,
+                        guild_name=guild.name,
+                        event_data=data,  # type: ignore
+                    )
+                except Exception as e:
+                    logger.exception(
+                        "[command] - Failed to send ban DM to user=%s guild=%s: %s",  # noqa: E501
+                        member.id,
+                        guild.id,
+                        e,
+                    )
+
                 await guild.ban(
                     member,
                     reason=reason,
                     delete_message_seconds=parsed_delete_messages_per,
                 )
+
             except discord.HTTPException as e:
                 logger.exception(
                     "Failed to ban user=%s guild=%s: %s",
@@ -225,31 +270,6 @@ class Ban(Cog):
                 ),
                 ephemeral=True,
             )
-
-        try:
-            self.bot.dispatch(
-                "user_banned",
-                data=UserBannedEventData(
-                    mode="dm",
-                    category=self.__class__.__name__.lower(),
-                    moderator_id=interaction.user.id,
-                    user=member,
-                    reason=reason,
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=timezone.utc
-                    ),
-                    guild_name=guild.name,
-                    duration=parsed_duration,
-                    original_duration=duration,
-                    end_time=end_time,  # type: ignore
-                    delete_messages_per=delete_messages_per,
-                ),
-            )
-        except Exception as e:
-            logger.exception(
-                "[event] - Failed to dispatch user_banned event: %s", e
-            )
-            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s reason=%s",

@@ -181,11 +181,13 @@ async def ensure_guild_exists(bot: "Nightcore", guild_id: int) -> Guild | None:
 
 
 def has_any_role_from_sequence(
-    user: Member,
+    user: Member | User,
     roles_sequence: Sequence[int] | None,
     with_roles: bool = False,
 ) -> bool | list[Role | None]:
     """Check if a member has any of the specified roles."""
+    if not isinstance(user, Member):
+        return False
     if roles_sequence is None or not roles_sequence:
         return False
     if with_roles:
@@ -256,8 +258,11 @@ async def safe_delete_role(role: Role, reason: str) -> None:
         )
 
 
-def compare_top_roles(guild: Guild, entity: Member | Role) -> bool:
+def compare_top_roles(guild: Guild, entity: User | Member | Role) -> bool:
     """Compares the top roles between user and bot or check if bot's role is higher than chosen role."""  # noqa: E501
+    if isinstance(entity, User):
+        return True
+
     if isinstance(entity, Member):
         if guild.owner_id == entity.id:
             return False
