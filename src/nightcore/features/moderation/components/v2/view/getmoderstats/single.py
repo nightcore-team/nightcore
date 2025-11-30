@@ -125,7 +125,7 @@ class SingleGetModerStatsViewV2(LayoutView):
                     "## <:96965manager:1442917801953333389> Статистика модератора\n"  # noqa: E501
                     f"**Модератор:** {moderator.mention} (`{moderator.id}`)\n"
                     f"**Количество баллов:** {stats.calculate_total_points(mod_score)}\n"  # noqa: E501
-                    f"> **Количество снятых баллов:** {stats.deducted_points}\n"  # noqa: E501
+                    f"> **Количество {'добавленных' if stats.deducted_points >= 0 else 'снятых'} баллов:** {stats.deducted_points}\n"  # noqa: E501
                 ),
                 accessory=Thumbnail[Self](moderator.display_avatar.url),
             )
