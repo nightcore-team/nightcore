@@ -209,7 +209,11 @@ class UpdateMessageEvent(Cog):
 
         embed.add_field(name="Автор:", value=author.mention, inline=True)
         if channel:
-            embed.add_field(name="Канал:", value=channel.mention, inline=True)
+            embed.add_field(
+                name="Канал:",
+                value=before.channel.mention or after.channel.mention,  # type: ignore
+                inline=True,
+            )
 
         if len(files) == 0 and len(embed.fields) <= 2:
             return
