@@ -193,7 +193,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
                         moderator_id=cast(int, moderator_id),
                         user_id=user.id,
                         state=RoleRequestStateEnum.CANCELED,
-                        role_id=role_id,
+                        roles_ids=[role_id],
                     )
                 )
             except Exception as e:

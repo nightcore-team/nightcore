@@ -59,6 +59,7 @@ async def handle_role_select_button_callback(
     check_role_request_channel_id = 0
     requested_role: Role | None = None
     channel = None
+    org_illegal_roles_ids: list[int] = []
 
     async with bot.uow.start() as session:
         try:
@@ -79,6 +80,10 @@ async def handle_role_select_button_callback(
                         )
                         for k, v in org_roles.items()
                     ]
+                    org_illegal_roles_ids.extend(
+                        [v["role_id"] for v in org_roles.values()]
+                    )
+
                 if ill_roles:
                     ill_options = [
                         SelectOption(
@@ -86,6 +91,9 @@ async def handle_role_select_button_callback(
                         )
                         for k, v in ill_roles.items()
                     ]
+                    org_illegal_roles_ids.extend(
+                        [v["role_id"] for v in ill_roles.values()]
+                    )
 
                 dbuser, _ = await get_or_create_user(
                     session, guild_id=guild.id, user_id=user.id
@@ -245,6 +253,7 @@ async def handle_role_select_button_callback(
             channel=channel,
             role=requested_role,
             bot=bot,
+            all_roles_ids=org_illegal_roles_ids,
             selected_role_tag=cast(str, selected_role_tag),
             view=CheckRoleRequestView,
         )

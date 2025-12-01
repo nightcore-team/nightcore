@@ -1,5 +1,6 @@
 """Modal for submitting ban requests."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Self, cast
 
@@ -23,6 +24,7 @@ from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
 from src.nightcore.features.role_requests.utils import validate_user_nickname
+from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
         self,
         channel: discord.abc.GuildChannel | discord.Thread,
         role: discord.Role,
+        all_roles_ids: list[int],
         selected_role_tag: str,
         bot: "Nightcore",
         view: type["CheckRoleRequestView"],
@@ -60,6 +63,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
         super().__init__()
         self.bot = bot
         self.channel = channel
+        self.all_roles_ids = all_roles_ids
         self.requested_role = role
         self.selected_role_tag = selected_role_tag
         self.view = view
@@ -123,9 +127,11 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
             )
 
         with contextlib.suppress(Exception):
-            user = await user.edit(
+            edited_user = await user.edit(
                 nick=f"[{self.selected_role_tag}][{rank}] {nickname}",
             )
+            if edited_user:
+                user = edited_user
 
         view = self.view(
             bot=self.bot,
@@ -196,6 +202,21 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 ),
                 ephemeral=True,
             )
+        else:
+            roles = has_any_role_from_sequence(
+                user, self.all_roles_ids, with_roles=True
+            )
+
+            if roles:
+                asyncio.create_task(
+                    user.remove_roles(
+                        *cast(
+                            list[discord.Role],
+                            roles,
+                        ),
+                        reason="Removing org/illegal roles after role request submission",  # noqa: E501
+                    )
+                )
 
         logger.info(
             "[role_request_submit] - invoked user=%s guild=%s role=%s",

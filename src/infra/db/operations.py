@@ -908,21 +908,38 @@ async def get_illegal_roles_full_json(
 async def get_organization_roles_ids(
     session: AsyncSession, *, guild_id: int
 ) -> list[int]:
-    """Get the list of organization role IDs for a guild."""
-    ids: list[int] = []
-    stmt = select(MainGuildConfig.organizational_roles).where(
-        MainGuildConfig.guild_id == guild_id
+    """Get the list of organization and illegal roles IDs for a guild."""
+    stmt = (
+        select(
+            MainGuildConfig.organizational_roles, MainGuildConfig.illegal_roles
+        )
+        .where(MainGuildConfig.guild_id == guild_id)
+        .limit(1)
     )
-    result = (await session.execute(stmt)).scalar_one_or_none()
-    if result is None:
+
+    row = (await session.execute(stmt)).one_or_none()
+    if not row:
         return []
 
-    for _, value in result.items():
-        role_id: int | None = value.get("role_id")
-        if role_id is not None:
-            ids.append(role_id)
+    organizational_roles, illegal_roles = row
 
-    return ids
+    ids: list[int] = []
+    for roles in (organizational_roles, illegal_roles):
+        if roles:
+            for value in roles.values():
+                role_id = value.get("role_id")
+                if role_id is not None:
+                    ids.append(role_id)
+
+    # Preserve original order while removing duplicates
+    seen: set[int] = set()
+    unique_ids: list[int] = []
+    for r in ids:
+        if r not in seen:
+            seen.add(r)
+            unique_ids.append(r)
+
+    return unique_ids
 
 
 async def get_mute_role(session: AsyncSession, *, guild_id: int) -> int | None:
