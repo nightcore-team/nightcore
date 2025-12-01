@@ -70,7 +70,14 @@ class CheckProposalModal(Modal, title="Рассмотрение предложе
 
             view = self.view.make_component(disable_all=True)
 
-            message = await self.message.edit(view=view)
+            message = await self.message.edit(
+                view=view,
+                allowed_mentions=discord.AllowedMentions(
+                    everyone=False,
+                    users=False,
+                    roles=False,
+                ),
+            )
             if additional_view:
                 await message.reply(view=additional_view)
 

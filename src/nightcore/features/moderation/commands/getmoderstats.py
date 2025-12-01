@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, Member, app_commands
+from discord import AllowedMentions, Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -199,7 +199,14 @@ class GetModerationStats(Cog):
                     to_dt=to_dt,
                 )
 
-        await interaction.followup.send(view=view)
+        await interaction.followup.send(
+            view=view,
+            allowed_mentions=AllowedMentions(
+                everyone=False,
+                users=False,
+                roles=False,
+            ),
+        )
 
 
 async def setup(bot: "Nightcore"):

@@ -3,7 +3,7 @@
 import logging
 from typing import cast
 
-from discord import Guild, Message
+from discord import AllowedMentions, Guild, Message
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import MainGuildConfig
@@ -61,6 +61,11 @@ class CreateProposalEvent(Cog):
         try:
             await message.channel.send(
                 view=view,
+                allowed_mentions=AllowedMentions(
+                    everyone=False,
+                    users=False,
+                    roles=False,
+                ),
             )
         except Exception as e:
             logger.exception(
