@@ -49,7 +49,7 @@ class CreatePrivateRoomEvent(Cog):
                     speak=True,
                     mute_members=True,
                     deafen_members=True,
-                    kick_members=True,
+                    move_members=True,
                 ),
             )
 
