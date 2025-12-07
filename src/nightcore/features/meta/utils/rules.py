@@ -83,6 +83,9 @@ parse_clause("1") -> [1]
 
 def convert_dict_to_rules(data: dict[str, Any]) -> Rules:
     """Convert a dictionary to a Rules object."""
+    if not data or not data.get("chapters"):
+        return Rules(chapters=[])
+
     rules = Rules(
         chapters=[
             Chapter(
