@@ -44,6 +44,7 @@ class CreatePrivateRoomEvent(Cog):
                 member,
                 overwrite=discord.PermissionOverwrite(
                     manage_channels=True,
+                    manage_permissions=True,
                     view_channel=True,
                     connect=True,
                     speak=True,
