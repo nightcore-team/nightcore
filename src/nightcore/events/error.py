@@ -99,28 +99,6 @@ async def setup(bot: "Nightcore") -> None:
                     )
                 return
 
-            if original.type == AppCommandOptionType.string:
-                if not interaction.response.is_done():
-                    await interaction.response.send_message(
-                        embed=ValidationErrorEmbed(
-                            "Пожалуйста, укажите корректный номер правила, не главы.",  # noqa: E501
-                            interaction.client.user.name,  # type: ignore
-                            interaction.client.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-                else:
-                    await interaction.followup.send(
-                        embed=ErrorEmbed(
-                            "Неверный номер правила",
-                            "Пожалуйста, укажите корректный номер правила из списка правил вашего сервера.",  # noqa: E501
-                            interaction.client.user.name,  # type: ignore
-                            interaction.client.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-                return
-
         if isinstance(original, app_commands.MissingPermissions):
             logger.info(
                 "%s handled guild=%s user=%s",
