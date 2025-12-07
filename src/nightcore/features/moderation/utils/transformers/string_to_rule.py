@@ -56,7 +56,7 @@ class StringToRuleTransformer(Transformer["Nightcore"]):
         rule, index = find_rule_by_index(rules, value)  # type: ignore
 
         if isinstance(rule, Chapter):
-            raise TransformerError(value, self.type, self)
+            return value
 
         if rule and index:
             return f"{index}. {rule.text}"
