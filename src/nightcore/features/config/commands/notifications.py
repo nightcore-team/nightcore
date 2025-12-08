@@ -39,9 +39,13 @@ logger = logging.getLogger(__name__)
 )
 async def notifications(
     interaction: Interaction,
-    notifications: discord.TextChannel | None = None,
-    moderation_notifications: discord.TextChannel | None = None,
-    nightcore_notifications: discord.TextChannel | None = None,
+    notifications: discord.TextChannel | discord.Thread | None = None,
+    moderation_notifications: discord.TextChannel
+    | discord.Thread
+    | None = None,
+    nightcore_notifications: discord.TextChannel
+    | discord.Thread
+    | None = None,
 ):
     """Configure notifications settings."""
 
