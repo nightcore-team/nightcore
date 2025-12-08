@@ -1,5 +1,6 @@
 """Check member`s voice state and call appropriate handlers."""
 
+import asyncio
 import logging
 
 import discord
@@ -12,6 +13,7 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.bot import Nightcore
+from src.nightcore.utils import ensure_messageable_channel_exists
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,9 @@ class VoiceStateUpdateEvent(Cog):
             # user joined a voice channel
             if before.channel is None and after.channel is not None:
                 async with self.bot.uow.start() as session:
+                    private_room_state = await get_private_room_state(
+                        session, user_id=member.id
+                    )
                     create_private_room_channel_id = await get_specified_channel(  # noqa: E501
                         session,
                         guild_id=guild.id,
@@ -53,6 +58,56 @@ class VoiceStateUpdateEvent(Cog):
                     create_private_room_channel_id
                     and after.channel.id == create_private_room_channel_id
                 ):
+                    if private_room_state:
+                        _ch = await ensure_messageable_channel_exists(
+                            guild, private_room_state.channel_id
+                        )
+                        if _ch:
+                            try:
+                                await member.move_to(_ch)  # type: ignore
+                                logger.info(
+                                    "[voice] Moved %s to their existing private room %s",  # noqa: E501
+                                    member,
+                                    _ch.name,
+                                )
+                                return
+                            except Exception as e:
+                                logger.exception(
+                                    "Error moving %s to their private room %s: %s",  # noqa: E501
+                                    member,
+                                    _ch.name,
+                                    e,
+                                )
+                                try:
+                                    asyncio.gather(
+                                        member.move_to(None),
+                                        member.send(
+                                            f"Произошла ошибка при перемещении вас в ваш приватный канал. Пожалуйста, зайдите сами в {_ch.mention}."  # noqa: E501
+                                        ),
+                                    )
+                                except Exception as e:
+                                    logger.exception(
+                                        "Error moving %s to None or sending message: %s",  # noqa: E501
+                                        member,
+                                        e,
+                                    )
+                                return
+
+                        else:
+                            async with self.bot.uow.start() as session:
+                                await session.delete(private_room_state)
+                                await session.flush()
+                            logger.warning(
+                                "[voice] Private room channel %s for %s not found, creating a new one",  # noqa: E501
+                                private_room_state.channel_id,
+                                member,
+                            )
+                    else:
+                        self.bot.dispatch(
+                            "create_private_room", member, after.channel
+                        )
+                        return
+
                     self.bot.dispatch(
                         "create_private_room", member, after.channel
                     )
