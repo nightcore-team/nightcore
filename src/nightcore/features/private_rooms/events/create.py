@@ -43,7 +43,7 @@ class CreatePrivateRoomEvent(Cog):
             await channel.set_permissions(
                 member,
                 overwrite=discord.PermissionOverwrite(
-                    manage_channels=True,
+                    # manage_channels=True,
                     manage_permissions=True,
                     view_channel=True,
                     connect=True,
