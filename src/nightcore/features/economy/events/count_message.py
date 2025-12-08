@@ -240,7 +240,7 @@ class CountMessageEvent(Cog):
 
                 new_exp_to_level = calculate_user_exp_to_level(new_level + 1)
 
-                user.exp_to_level = new_current_exp
+                user.exp_to_level = new_exp_to_level
                 user.coins += coins_multiplier
                 user.battle_pass_points += 100
                 exp_to_level = +(new_exp_to_level - new_current_exp)
