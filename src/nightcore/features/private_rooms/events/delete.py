@@ -33,7 +33,12 @@ class DeletePrivateRoomEvent(Cog):
 
         try:
             await channel.delete(reason="Deleting private room on user leave")
-
+        except discord.NotFound as e:
+            logger.error(
+                "[private_rooms/event] Private room channel not found for %s: %s",  # noqa: E501
+                member,
+                e,
+            )
         except Exception as e:
             logger.error(
                 "[private_rooms/event] Error deleting private room for %s: %s",

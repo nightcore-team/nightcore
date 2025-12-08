@@ -159,13 +159,28 @@ class VoiceStateUpdateEvent(Cog):
                     )
                     try:
                         await member.move_to(before.channel)
-                    except Exception:
+                    except Exception as e:
                         logger.exception(
-                            "Error moving %s back to %s",
+                            "Error moving %s back to %s: %s",
                             member,
                             before.channel.name,
+                            e,
                         )
-                    return
+                        self.bot.dispatch(
+                            "delete_private_room",
+                            member,
+                            before.channel,
+                            private_room_state,
+                        )
+                        try:
+                            await member.move_to(None)
+                        except Exception as e:
+                            logger.exception(
+                                "Error moving %s to None: %s",
+                                member,
+                                e,
+                            )
+                        return
 
                 # if user switched from their private channel to another
                 elif (

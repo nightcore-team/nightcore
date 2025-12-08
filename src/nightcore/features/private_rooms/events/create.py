@@ -63,6 +63,27 @@ class CreatePrivateRoomEvent(Cog):
             return
 
         try:
+            await member.move_to(channel)
+        except Exception as e:
+            logger.error(
+                "[private_rooms/event] Error moving %s to private room: %s",
+                member,
+                e,
+            )
+            try:
+                asyncio.create_task(
+                    channel.delete(
+                        reason="Rolling back private room creation due to DB error"  # noqa: E501
+                    )
+                )
+            except Exception as e:
+                logger.exception(
+                    "[private_rooms/event] Error deleting private room channel %s after DB failure: %s",  # noqa: E501
+                    channel.id,
+                    e,
+                )
+
+        try:
             async with self.bot.uow.start() as session:
                 private_room = PrivateRoomState(
                     guild_id=guild.id,
@@ -74,27 +95,6 @@ class CreatePrivateRoomEvent(Cog):
         except Exception as e:
             logger.error(
                 "[private_rooms/event] Error saving private room state for %s: %s",  # noqa: E501
-                member,
-                e,
-            )
-            try:
-                asyncio.create_task(
-                    channel.delete(
-                        reason="Rolling back private room creation due to DB error"  # noqa: E501
-                    )
-                )
-            except Exception as delete_error:
-                logger.exception(
-                    "[private_rooms/event] Error deleting private room channel %s after DB failure: %s",  # noqa: E501
-                    channel.id,
-                    delete_error,
-                )
-
-        try:
-            await member.move_to(channel)
-        except Exception as e:
-            logger.error(
-                "[private_rooms/event] Error moving %s to private room: %s",
                 member,
                 e,
             )
