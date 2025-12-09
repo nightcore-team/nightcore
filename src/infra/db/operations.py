@@ -71,6 +71,23 @@ GuildT = TypeVar(
 )
 
 
+def get_config_type_by_name(name: str) -> type[GuildT]:
+    """Get the guild configuration type by its name."""
+    config_types: dict[str, type[GuildT]] = {
+        "clans": GuildClansConfig,
+        "economy": GuildEconomyConfig,
+        "infomaker": GuildInfomakerConfig,
+        "levels": GuildLevelsConfig,
+        "logging": GuildLoggingConfig,
+        "moderation": GuildModerationConfig,
+        "notifications": GuildNotificationsConfig,
+        "other": MainGuildConfig,
+        "private_channels": GuildPrivateChannelsConfig,
+        "tickets": GuildTicketsConfig,
+    }  # type: ignore
+    return config_types[name]
+
+
 async def get_specified_guild_config(
     session: AsyncSession, *, config_type: type[GuildT], guild_id: int
 ) -> GuildT | None:
