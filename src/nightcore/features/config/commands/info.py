@@ -67,7 +67,10 @@ class ConfigInfo(Cog):
             pages = build_guild_config_pages(guild_config, is_v2=True)  # type: ignore
 
         view = ConfigInfoViewV2(
-            bot=interaction.client, pages=pages, config_name=system.name
+            bot=interaction.client,
+            author_id=interaction.user.id,
+            pages=pages,
+            config_name=system.name,
         ).make_component()
 
         await interaction.response.send_message(view=view, ephemeral=ephemeral)
