@@ -29,7 +29,8 @@ class ConfigInfoPaginationButtons(ActionRow["ConfigInfoViewV2"]):
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         """Ensure only the author can interact."""
-        if interaction.user.id != self.view.author_id:  # type: ignore
+        view = cast(ConfigInfoViewV2, self.view)
+        if interaction.user.id != view.author_id:
             await interaction.response.send_message(
                 "Вы не можете управлять этой пагинацией.", ephemeral=True
             )
@@ -75,10 +76,15 @@ class ConfigInfoPaginationButtons(ActionRow["ConfigInfoViewV2"]):
 
 class ConfigInfoViewV2(LayoutView):
     def __init__(
-        self, bot: Nightcore, config_name: str, pages: list[str]
+        self,
+        bot: Nightcore,
+        author_id: int,
+        config_name: str,
+        pages: list[str],
     ) -> None:
         super().__init__(timeout=None)
         self.bot = bot
+        self.author_id = author_id
         self.config_name = config_name
         self.pages = pages
         self.current_page = 0
