@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 
 from discord import AppCommandOptionType, Guild
-from discord.app_commands import Transformer, TransformerError
+from discord.app_commands import Transformer
 from discord.interactions import Interaction
 
 from src.infra.db.models._annot import Chapter

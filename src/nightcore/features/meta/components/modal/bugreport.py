@@ -1,6 +1,5 @@
 """Modal for bug report submission."""
 
-import asyncio
 from typing import TYPE_CHECKING, cast
 
 from discord import Attachment, Guild, Member, TextStyle
