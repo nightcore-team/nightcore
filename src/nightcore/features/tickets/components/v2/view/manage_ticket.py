@@ -264,49 +264,20 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         label="Открыть",
         emoji="<:unlock:1442914794377187448>",
         custom_id="ticket:reopen",
-    )
+    )  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
     async def reopen_ticket(
-        self, interaction: Interaction, button: Button["ManageTicketViewV2"]
+        self,
+        interaction: Interaction["Nightcore"],
+        button: Button["ManageTicketViewV2"],
     ):
         """Reopen the ticket."""
+
         view = cast(ManageTicketViewV2, self.view)
         guild = cast(Guild, interaction.guild)
         channel = cast(TextChannel, interaction.channel)
-        user = cast(Member, interaction.user)
-
-        # Extract interaction_user_id if not set
-        if view.interaction_user_id is None:
-            for component in interaction.message.components:  # type: ignore
-                for child in component.children:  # type: ignore
-                    if (
-                        isinstance(child, discord.components.TextDisplay)
-                        and child.id == 2
-                    ):
-                        view.interaction_user_id = extract_id_from_str(
-                            child.content
-                        )
-                        logger.info(
-                            "Extracted interaction_user_id %s from message in guild %s",  # noqa: E501
-                            view.interaction_user_id,
-                            guild.id,
-                        )
-                        break
 
         await interaction.response.defer()
-
-        ticket_author = await ensure_member_exists(
-            guild, cast(int, view.interaction_user_id)
-        )
-        if ticket_author is None:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Не удалось открыть тикет",
-                    "Автор тикета не найден на сервере.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         if not guild.me.guild_permissions.manage_channels:
             return await interaction.followup.send(
@@ -324,62 +295,44 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         logging_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
-            moderation_access_roles = await get_head_moderation_access_roles(
+            ticket = await get_latest_user_ticket(
                 session,
                 guild_id=guild.id,
+                channel_id=channel.id,
             )
 
-            if not has_any_role_from_sequence(user, moderation_access_roles):
-                outcome = "missing_permissions"
+            if ticket is None:
+                outcome = "ticket_not_found"
+            elif ticket.state == TicketStateEnum.OPENED:
+                outcome = "already_opened"
+            elif ticket.state == TicketStateEnum.PINNED:
+                outcome = "already_pinned"
             else:
-                ticket = await get_latest_user_ticket(
-                    session,
-                    guild_id=guild.id,
-                    user_id=cast(int, view.interaction_user_id),
-                )
+                # Save ticket data
+                ticket_author_id = ticket.author_id
 
-                if ticket is None:
-                    outcome = "ticket_not_found"
-                elif ticket.state == TicketStateEnum.OPENED:
-                    outcome = "already_opened"
-                elif ticket.state == TicketStateEnum.PINNED:
-                    outcome = "already_pinned"
-                else:
-                    # Save ticket data
-                    ticket_author_id = ticket.author_id
+                # Update ticket state to OPENED (not PINNED)
+                ticket.state = TicketStateEnum.OPENED
 
-                    # Update ticket state to OPENED (not PINNED)
-                    ticket.moderator_id = user.id
-                    ticket.state = TicketStateEnum.OPENED
-
-                    # Get pinned tickets category ID (ticket will be moved here and reopened)  # noqa: E501
-                    pinned_tickets_category_id = cast(
-                        int,
-                        await get_specified_channel(
-                            session,
-                            guild_id=guild.id,
-                            config_type=GuildTicketsConfig,
-                            channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
-                        ),
-                    )
-
-                    logging_channel_id = await get_specified_channel(
+                # Get pinned tickets category ID (ticket will be moved here and reopened)  # noqa: E501
+                pinned_tickets_category_id = cast(
+                    int,
+                    await get_specified_channel(
                         session,
                         guild_id=guild.id,
-                        config_type=GuildLoggingConfig,
-                        channel_type=ChannelType.LOGGING_TICKETS,
-                    )
+                        config_type=GuildTicketsConfig,
+                        channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
+                    ),
+                )
 
-                    outcome = "success"
+                logging_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_TICKETS,
+                )
 
-        if outcome == "missing_permissions":
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+                outcome = "success"
 
         if outcome == "ticket_not_found":
             logger.warning(
@@ -443,13 +396,16 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 )
 
             # Update channel permissions to grant ticket author access
+            ticket_author = await ensure_member_exists(guild, ticket_author_id)
             overwrites = channel.overwrites
-            overwrites[ticket_author] = discord.PermissionOverwrite(
-                read_messages=True,
-                send_messages=True,
-                attach_files=True,
-                read_message_history=True,
-            )
+
+            if ticket_author:
+                overwrites[ticket_author] = discord.PermissionOverwrite(
+                    read_messages=True,
+                    send_messages=True,
+                    attach_files=True,
+                    read_message_history=True,
+                )
 
             await channel.edit(
                 category=cast(CategoryChannel, pinned_tickets_category),
@@ -472,7 +428,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     data=TicketEventData(
                         guild,
                         channel.id,
-                        cast(int, view.interaction_user_id),
+                        ticket_author_id,
                         interaction.user.id,
                         TicketStateEnum.OPENED,
                         logging_channel_id,
