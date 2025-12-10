@@ -13,11 +13,13 @@ from discord import (
     Member,
     TextChannel,
 )
+from discord import app_commands
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
     Button,
     Container,
+    Item,
     LayoutView,
     Separator,
     TextDisplay,
@@ -30,19 +32,19 @@ if TYPE_CHECKING:
 from src.infra.db.models import GuildLoggingConfig, GuildTicketsConfig
 from src.infra.db.models._enums import ChannelType, TicketStateEnum
 from src.infra.db.operations import (
-    get_head_moderation_access_roles,
     get_latest_user_ticket,
-    get_moderation_access_roles,
     get_specified_channel,
 )
 from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
 from src.nightcore.features.tickets.events.dto import TicketEventData
-from src.nightcore.features.tickets.utils import extract_id_from_str
 from src.nightcore.utils import (
     discord_ts,
     ensure_member_exists,
     ensure_messageable_channel_exists,
-    has_any_role_from_sequence,
+)
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
 )
 
 logger = logging.getLogger(__name__)
