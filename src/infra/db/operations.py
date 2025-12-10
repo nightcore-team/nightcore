@@ -487,19 +487,28 @@ async def get_latest_temp_punish(
 
 
 async def get_user_notify_by_end_time(
-    session: AsyncSession, *, guild_id: int, user_id: int, ts: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int | None = None,
+    message_id: int | None = None,
+    ts: int,
 ) -> NotifyState | None:
     """Get the notify state for a user in a guild by end time."""
     stmt = (
         select(NotifyState)
         .where(
             NotifyState.guild_id == guild_id,
-            NotifyState.user_id == user_id,
             func.floor(extract("epoch", NotifyState.end_time)) == ts,
             NotifyState.state == NotifyStateEnum.PENDING,
         )
         .limit(1)
     )
+    if user_id:
+        stmt = stmt.where(NotifyState.user_id == user_id)
+    if message_id:
+        stmt = stmt.where(NotifyState.message_id == message_id)
+
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 

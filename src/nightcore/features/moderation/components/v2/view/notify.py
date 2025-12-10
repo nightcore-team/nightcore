@@ -2,7 +2,7 @@ import logging  # noqa: D100
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Guild, Message, SelectOption
+from discord import ButtonStyle, Guild, Message, SelectOption, app_commands
 from discord.components import ActionRow as ActionRowOverride
 from discord.components import TextDisplay as TextDisplayOverride
 from discord.interactions import Interaction
@@ -10,6 +10,7 @@ from discord.ui import (
     ActionRow,
     Button,
     Container,
+    Item,
     LayoutView,
     Select,
     Separator,
@@ -31,6 +32,7 @@ from src.infra.db.operations import (
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
+    MissingPermissionsEmbed,
     SuccessMoveEmbed,
 )
 from src.nightcore.features.tickets.utils import (
@@ -38,6 +40,10 @@ from src.nightcore.features.tickets.utils import (
     extract_str_by_pattern,
 )
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.utils.types import MessageComponentType
 
 if TYPE_CHECKING:
@@ -263,7 +269,8 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
         emoji="<:failed:1442915170320912506>",
         label="Отозвать оповещение",
         custom_id="notify:revoke",
-    )
+    )  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def revoke(
         self, interaction: Interaction, button: Button["NotifyViewV2"]
     ):
@@ -279,10 +286,6 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
             for item in component.children:  # type: ignore
                 if isinstance(item, TextDisplayOverride):
                     match item.id:
-                        case 2:
-                            view.user_id = extract_id_from_str(
-                                item.content.split(" ")[-1]
-                            )
                         case 8:
                             view.end_time = datetime.fromtimestamp(
                                 float(
@@ -294,12 +297,11 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
                             )
                         case _:
                             ...
-
         async with view.bot.uow.start() as session:
             notifystate = await get_user_notify_by_end_time(
                 session,
                 guild_id=guild.id,
-                user_id=cast(int, view.user_id),
+                message_id=message.id,
                 ts=cast(int, cast(datetime, view.end_time).timestamp()),
             )
             if not notifystate or notifystate.state != NotifyStateEnum.PENDING:
@@ -308,9 +310,8 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
                     view.user_id,
                     guild.id,
                 )
-                return await message.delete()
-
-            await session.delete(notifystate)
+            else:
+                await session.delete(notifystate)
 
         await message.delete()
 
@@ -345,6 +346,41 @@ class NotifyViewV2(LayoutView):
 
         if _build:
             self.make_component()
+
+    async def on_error(
+        self,
+        interaction: Interaction,
+        error: Exception,
+        item: Item[Self],
+    ):
+        """Handle errors for button interactions."""
+        original = getattr(error, "original", error)
+
+        if not isinstance(original, app_commands.MissingPermissions):
+            return
+
+        missing_perms: list[str] = getattr(original, "missing_permissions", [])
+
+        _missing_perms = ", ".join(missing_perms)
+
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    interaction.client.user.name,  # type: ignore
+                    interaction.client.user.display_avatar.url,  # type: ignore
+                    f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+        else:
+            await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    interaction.client.user.name,  # type: ignore
+                    interaction.client.user.display_avatar.url,  # type: ignore
+                    f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
 
     def disable_buttons(self):
         """Disable all buttons in the view."""
