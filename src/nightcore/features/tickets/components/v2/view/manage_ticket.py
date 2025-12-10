@@ -647,3 +647,38 @@ class ManageTicketViewV2(LayoutView):
         )
 
         self.add_item(container)
+
+    async def on_error(
+        self,
+        interaction: Interaction,
+        error: Exception,
+        item: Item[Self],
+    ):
+        """Handle errors for button interactions."""
+        original = getattr(error, "original", error)
+
+        if not isinstance(original, app_commands.MissingPermissions):
+            return
+
+        missing_perms: list[str] = getattr(original, "missing_permissions", [])
+
+        _missing_perms = ", ".join(missing_perms)
+
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    interaction.client.user.name,  # type: ignore
+                    interaction.client.user.display_avatar.url,  # type: ignore
+                    f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+        else:
+            await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    interaction.client.user.name,  # type: ignore
+                    interaction.client.user.display_avatar.url,  # type: ignore
+                    f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
