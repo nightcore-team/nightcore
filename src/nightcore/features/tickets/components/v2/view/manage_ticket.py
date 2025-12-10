@@ -99,44 +99,18 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         emoji="<:paperclip1:1442914563321368737>",
         custom_id="ticket:pin",
     )  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def pin_ticket(
         self, interaction: Interaction, button: Button["ManageTicketViewV2"]
     ):
         """Pin the ticket."""
+
         view = cast(ManageTicketViewV2, self.view)
         guild = cast(Guild, interaction.guild)
         channel = cast(TextChannel, interaction.channel)
         user = cast(Member, interaction.user)
 
-        # Extract interaction_user_id if not set
-        if view.interaction_user_id is None:
-            for component in interaction.message.components:  # type: ignore
-                for child in component.children:  # type: ignore
-                    if (
-                        isinstance(child, discord.components.TextDisplay)
-                        and child.id == 2
-                    ):
-                        view.interaction_user_id = extract_id_from_str(
-                            child.content
-                        )
-
-                        break
-
         await interaction.response.defer()
-
-        ticket_author = await ensure_member_exists(
-            guild, cast(int, view.interaction_user_id)
-        )
-        if ticket_author is None:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Не удалось закрепить тикет",
-                    "Автор тикета не найден на сервере. Вы можете закрыть тикет.",  # noqa: E501
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         if not guild.me.guild_permissions.manage_channels:
             return await interaction.followup.send(
@@ -154,62 +128,42 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         logging_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session,
-                guild_id=guild.id,
+            ticket_state = await get_latest_user_ticket(
+                session, guild_id=guild.id, channel_id=channel.id
             )
 
-            if not has_any_role_from_sequence(user, moderation_access_roles):
-                outcome = "missing_permissions"
+            if ticket_state is None:
+                outcome = "ticket_not_found"
+            elif ticket_state.state == TicketStateEnum.CLOSED:
+                outcome = "ticket_closed"
+            elif ticket_state.state == TicketStateEnum.PINNED:
+                outcome = "already_pinned"
             else:
-                ticket = await get_latest_user_ticket(
-                    session,
-                    guild_id=guild.id,
-                    user_id=cast(int, view.interaction_user_id),
-                )
+                # Save ticket data
+                ticket_author_id = ticket_state.author_id
+                # Update ticket state to PINNED
+                ticket_state.moderator_id = user.id
+                ticket_state.state = TicketStateEnum.PINNED
 
-                if ticket is None:
-                    outcome = "ticket_not_found"
-                elif ticket.state == TicketStateEnum.CLOSED:
-                    outcome = "ticket_closed"
-                elif ticket.state == TicketStateEnum.PINNED:
-                    outcome = "already_pinned"
-                else:
-                    # Save ticket data
-                    ticket_author_id = ticket.author_id
-
-                    # Update ticket state to PINNED
-                    ticket.moderator_id = user.id
-                    ticket.state = TicketStateEnum.PINNED
-
-                    # Get pinned tickets category ID
-                    pinned_tickets_category_id = cast(
-                        int,
-                        await get_specified_channel(
-                            session,
-                            guild_id=guild.id,
-                            config_type=GuildTicketsConfig,
-                            channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
-                        ),
-                    )
-
-                    logging_channel_id = await get_specified_channel(
+                # Get pinned tickets category ID
+                pinned_tickets_category_id = cast(
+                    int,
+                    await get_specified_channel(
                         session,
                         guild_id=guild.id,
-                        config_type=GuildLoggingConfig,
-                        channel_type=ChannelType.LOGGING_TICKETS,
-                    )
+                        config_type=GuildTicketsConfig,
+                        channel_type=ChannelType.PINNED_TICKETS_CATEGORY,
+                    ),
+                )
 
-                    outcome = "success"
+                logging_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_TICKETS,
+                )
 
-        if outcome == "missing_permissions":
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+                outcome = "success"
 
         if outcome == "ticket_not_found":
             logger.warning(
@@ -292,7 +246,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     data=TicketEventData(
                         guild,
                         channel.id,
-                        cast(int, view.interaction_user_id),
+                        ticket_author_id,
                         interaction.user.id,
                         TicketStateEnum.PINNED,
                         logging_channel_id,
