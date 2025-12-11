@@ -4,12 +4,13 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Color, Guild, Member, Message
+from discord import ButtonStyle, Color, Message, app_commands
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
     Button,
     Container,
+    Item,
     LayoutView,
     Separator,
     TextDisplay,
@@ -19,13 +20,16 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.operations import get_moderation_access_roles
-from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
+from src.nightcore.components.embed import MissingPermissionsEmbed
 from src.nightcore.features.proposals.components.modal import (
     CheckProposalModal,
 )
 from src.nightcore.features.tickets.utils import extract_id_from_str
-from src.nightcore.utils import discord_ts, has_any_role_from_sequence
+from src.nightcore.utils import discord_ts
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,49 +43,18 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         custom_id="proposal:approve",
         style=ButtonStyle.grey,
         emoji="<:check:1442915033079353404>",
-    )
+    )  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
     async def approve_proposal(
         self,
         interaction: Interaction["Nightcore"],
         button: Button["ProposalViewV2"],
     ) -> None:
         """Approve proposal."""
-        guild = cast(Guild, interaction.guild)
+
         view = cast("ProposalViewV2", self.view)
         view.moderator_id = interaction.user.id
         message = cast(Message, interaction.message)
-
-        outcome = ""
-        async with view.bot.uow.start() as session:
-            if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
-            ):
-                outcome = "moderation_access_not_configured"
-
-        if outcome == "moderation_access_not_configured":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка одобрения предложения",
-                    "Роли с доступом к модерации не настроены.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(Member, interaction.user), moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         for container in interaction.message.components:  # type: ignore
             for item in container.children:  # type: ignore
@@ -115,49 +88,18 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         custom_id="proposal:decline",
         style=ButtonStyle.grey,
         emoji="<:failed:1442915170320912506>",
-    )
+    )  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
     async def decline_proposal(
         self,
         interaction: Interaction["Nightcore"],
         button: Button["ProposalViewV2"],
     ) -> None:
         """Decline proposal."""
-        guild = cast(Guild, interaction.guild)
+
         view = cast("ProposalViewV2", self.view)
         view.moderator_id = interaction.user.id
         message = cast(Message, interaction.message)
-
-        outcome = ""
-        async with view.bot.uow.start() as session:
-            if not (
-                moderation_access_roles := await get_moderation_access_roles(
-                    session, guild_id=guild.id
-                )
-            ):
-                outcome = "moderation_access_not_configured"
-
-        if outcome == "moderation_access_not_configured":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка одобрения предложения",
-                    "Роли с доступом к модерации не настроены.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        has_moder_role = has_any_role_from_sequence(
-            cast(Member, interaction.user), moderation_access_roles
-        )
-        if not has_moder_role:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         for container in interaction.message.components:  # type: ignore
             for item in container.children:  # type: ignore
@@ -265,6 +207,41 @@ class ProposalViewV2(LayoutView):
         self.add_item(container)
 
         return self
+
+    async def on_error(
+        self,
+        interaction: Interaction,
+        error: Exception,
+        item: Item[Self],
+    ):
+        """Handle errors for button interactions."""
+        original = getattr(error, "original", error)
+
+        if not isinstance(original, app_commands.MissingPermissions):
+            return
+
+        missing_perms: list[str] = getattr(original, "missing_permissions", [])
+
+        _missing_perms = ", ".join(missing_perms)
+
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                embed=MissingPermissionsEmbed(
+                    interaction.client.user.name,  # type: ignore
+                    interaction.client.user.display_avatar.url,  # type: ignore
+                    f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+        else:
+            await interaction.followup.send(
+                embed=MissingPermissionsEmbed(
+                    interaction.client.user.name,  # type: ignore
+                    interaction.client.user.display_avatar.url,  # type: ignore
+                    f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
 
 
 class AdditionalProposalAnswerViewV2(LayoutView):
