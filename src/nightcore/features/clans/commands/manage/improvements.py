@@ -85,7 +85,7 @@ async def improvements(
                             else:
                                 outcome = "max_deputies_reached"
                         case 1:
-                            if clan.max_members + 10 <= 30:
+                            if clan.max_members + 10 <= 100:
                                 clan.max_members += 10
                                 clan.coins -= icost
                                 await session.flush()
