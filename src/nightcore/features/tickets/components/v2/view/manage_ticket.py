@@ -12,8 +12,8 @@ from discord import (
     Guild,
     Member,
     TextChannel,
+    app_commands,
 )
-from discord import app_commands
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -225,6 +225,14 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ephemeral=True,
                 )
 
+            overwrites = channel.overwrites
+            overwrites[user] = discord.PermissionOverwrite(
+                read_message_history=True,
+                read_messages=True,
+                send_messages=True,
+                attach_files=True,
+            )
+
             await channel.edit(
                 category=cast(CategoryChannel, pinned_tickets_category),
                 overwrites=channel.overwrites,
@@ -276,6 +284,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         view = cast(ManageTicketViewV2, self.view)
         guild = cast(Guild, interaction.guild)
         channel = cast(TextChannel, interaction.channel)
+        user = cast(Member, interaction.user)
 
         await interaction.response.defer()
 
@@ -337,7 +346,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         if outcome == "ticket_not_found":
             logger.warning(
                 "No ticket found for user %s in guild %s",
-                view.interaction_user_id,
+                ticket_author_id,
                 guild.id,
             )
             return await interaction.followup.send(
@@ -397,6 +406,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
 
             # Update channel permissions to grant ticket author access
             ticket_author = await ensure_member_exists(guild, ticket_author_id)
+            moderator = await ensure_member_exists(guild, ticket.moderator_id)  # type: ignore
             overwrites = channel.overwrites
 
             if ticket_author:
@@ -406,6 +416,19 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     attach_files=True,
                     read_message_history=True,
                 )
+            if moderator:
+                overwrites[moderator] = discord.PermissionOverwrite(
+                    read_messages=True,
+                    send_messages=True,
+                    attach_files=True,
+                    read_message_history=True,
+                )
+            overwrites[user] = discord.PermissionOverwrite(
+                send_messages=True,
+                read_messages=True,
+                attach_files=True,
+                read_message_history=True,
+            )
 
             await channel.edit(
                 category=cast(CategoryChannel, pinned_tickets_category),
@@ -573,6 +596,9 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     read_messages=False,
                     send_messages=False,
                 )
+            overwrites[user] = discord.PermissionOverwrite(
+                send_messages=False,
+            )
 
             await channel.edit(
                 category=cast(CategoryChannel, closed_tickets_category),
@@ -596,7 +622,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                         guild,
                         channel.id,
                         ticket_author_id,
-                        interaction.user.id,
+                        user.id,
                         TicketStateEnum.CLOSED,
                         logging_channel_id,
                     ),
