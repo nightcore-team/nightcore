@@ -55,6 +55,17 @@ class LeaveMemberEvent(Cog):
             timestamp=datetime.now(timezone.utc),
         )
 
+        if member.roles:
+            embed.add_field(
+                name="Роли",
+                value=", ".join(
+                    role.mention
+                    for role in member.roles
+                    if role != guild.default_role
+                ),
+                inline=False,
+            )
+
         if (
             member.joined_at
             and member.joined_at != discord.utils.snowflake_time(member.id)
