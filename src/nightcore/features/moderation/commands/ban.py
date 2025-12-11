@@ -1,5 +1,6 @@
 """Ban command for the Nightcore bot."""
 
+import asyncio
 import logging
 from datetime import timezone
 from typing import TYPE_CHECKING, cast
@@ -181,6 +182,8 @@ class Ban(Cog):
 
         end_time = calculate_end_time(parsed_duration)
 
+        await interaction.response.defer()
+
         try:
             await guild.fetch_ban(member)
         except discord.NotFound:
@@ -210,10 +213,12 @@ class Ban(Cog):
                     return
 
                 try:
-                    await send_punish_dm_message(
-                        self.bot,
-                        guild_name=guild.name,
-                        event_data=data,  # type: ignore
+                    asyncio.create_task(
+                        send_punish_dm_message(
+                            self.bot,
+                            guild_name=guild.name,
+                            event_data=data,  # type: ignore
+                        )
                     )
                 except Exception as e:
                     logger.exception(
@@ -236,7 +241,7 @@ class Ban(Cog):
                     guild.id,
                     e,
                 )
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка бана пользователя",
                         "Не удалось забанить пользователя.",
@@ -246,9 +251,6 @@ class Ban(Cog):
                     ephemeral=True,
                 )
             else:
-                if not interaction.response.is_done():
-                    await interaction.response.defer(thinking=True)
-
                 await interaction.followup.send(
                     view=PunishViewV2(
                         bot=self.bot,
@@ -261,7 +263,7 @@ class Ban(Cog):
                     )
                 )
         else:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка бана пользователя",
                     f"{user.mention} уже забанен на этом сервере.",
