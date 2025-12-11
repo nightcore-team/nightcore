@@ -44,7 +44,7 @@ async def invite(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            with_relations=True,
+            with_clan_members=True,
         )
 
         if not interaction_clan_member:

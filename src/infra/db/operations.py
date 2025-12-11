@@ -382,6 +382,7 @@ async def get_clan_member(
     guild_id: int,
     user_id: int,
     with_relations: bool = False,
+    with_clan_members: bool = False,
 ) -> ClanMember | None:
     """Get the clan member configuration from the database."""
     stmt = select(ClanMember).where(
@@ -390,6 +391,10 @@ async def get_clan_member(
     if with_relations:
         stmt = stmt.options(
             selectinload(ClanMember.clan).selectinload(Clan.deputies)
+        )
+    if with_clan_members:
+        stmt = stmt.options(
+            selectinload(ClanMember.clan).selectinload(Clan.members)
         )
     result = await session.execute(stmt)
 
