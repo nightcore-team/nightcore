@@ -17,6 +17,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.meta.commands.rules",
         "src.nightcore.features.meta.commands.rolemembers",
         "src.nightcore.features.meta.commands.bugreport",
+        "src.nightcore.features.meta.commands.winter_holidays",
         # faq commands
         "src.nightcore.features.faq",
         # config commands
