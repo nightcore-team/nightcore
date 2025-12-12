@@ -151,24 +151,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
             )
 
         try:
-            view.bot.dispatch(
-                "user_banned",
-                data=UserBannedEventData(
-                    mode="dm",
-                    guild_name=guild.name,
-                    guild_id=guild.id,
-                    category="ban",
-                    moderator_id=view.author_id,
-                    user=target,
-                    reason=view.reason,
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=timezone.utc
-                    ),
-                    duration=view.duration,
-                    original_duration=view.original_duration,
-                    delete_messages_per=view.original_delete_seconds,
-                ),
-            )
+            view.bot.dispatch("user_banned", data=data)
         except Exception as e:
             logger.exception(
                 "[event] - Failed to dispatch user_banned event: %s", e
