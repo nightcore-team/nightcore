@@ -71,12 +71,12 @@ class WinterHolidays(Cog):
         holidays = get_all_holidays(zone_info, calendar)
 
         # get random winter holiday image or load from cache
-        image_url = await self.bot.photo_cache.get_or_fetch(
-            key="winter_holidays",
-            fetch_fn=lambda: self.bot.apis.unsplash.get_random_photo(
-                query="christmas new year winter holidays"
-            ),
-        )
+        # image_url = await self.bot.photo_cache.get_or_fetch(
+        #     key="winter_holidays",
+        #     fetch_fn=lambda: self.bot.apis.unsplash.get_random_photo(
+        #         query="christmas new year winter holidays"
+        #     ),
+        # )
 
         # send layout view with results
         view = WinterHolidaysViewV2(
@@ -84,7 +84,6 @@ class WinterHolidays(Cog):
             calendar=calendar,
             tz=zone_info.key,
             holidays=holidays,
-            image_url=image_url,
         )
 
         await interaction.followup.send(view=view)

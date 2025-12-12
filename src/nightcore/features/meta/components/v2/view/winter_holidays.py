@@ -27,7 +27,7 @@ class WinterHolidaysViewV2(LayoutView):
         calendar: str,
         tz: str,
         holidays: list[dict[str, object]],
-        image_url: str | None,
+        image_url: str = "https://i.pinimg.com/1200x/64/92/e9/6492e92ba27852433d6e00fd82c757ac.jpg",
     ) -> None:
         super().__init__()
 
@@ -58,9 +58,8 @@ class WinterHolidaysViewV2(LayoutView):
 
         container.add_item(Separator[Self]())
 
-        if image_url:
-            container.add_item(MediaGallery[Self](MediaGalleryItem(image_url)))
-            container.add_item(Separator[Self]())
+        container.add_item(MediaGallery[Self](MediaGalleryItem(image_url)))
+        container.add_item(Separator[Self]())
 
         now = datetime.now(timezone.utc)
         container.add_item(
