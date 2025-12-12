@@ -1,6 +1,5 @@
 """Ban command for the Nightcore bot."""
 
-import asyncio
 import logging
 from datetime import timezone
 from typing import TYPE_CHECKING, cast
@@ -213,12 +212,10 @@ class Ban(Cog):
                     return
 
                 try:
-                    asyncio.create_task(
-                        send_punish_dm_message(
-                            self.bot,
-                            guild_name=guild.name,
-                            event_data=data,  # type: ignore
-                        )
+                    await send_punish_dm_message(
+                        self.bot,
+                        guild_name=guild.name,
+                        event_data=data,  # type: ignore
                     )
                 except Exception as e:
                     logger.exception(
