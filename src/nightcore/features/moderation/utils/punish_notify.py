@@ -51,7 +51,7 @@ async def send_punish_dm_message(
         mode="dm",
         guild_name=guild_name,
     )
-    try:  # type: ignore
+    try:
         await event_data.user.send(view=view)  # type: ignore
         logger.info(
             "[event] - on_user_punish - %s: DM sent to %s",
