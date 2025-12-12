@@ -14,9 +14,10 @@ from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
 
 from src.config.config import config
-from src.infra.api.base_client import IAPIClient
 from src.infra.api.forum.client import ForumAPIClient
 from src.infra.api.httpx_client import HttpxAPIClient
+from src.infra.api.unsplash.client import UnsplashAPIClient
+from src.infra.cache.photo import PhotoCache
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
@@ -42,13 +43,32 @@ logger = logging.getLogger(__name__)
 
 
 class CustomAPICollection:
-    def __init__(self, http_client: IAPIClient):
-        self.http_client = http_client
+    def __init__(self):
+        pass
 
     @property
     def forum(self) -> ForumAPIClient:
         """Get the Forum API client."""
-        return ForumAPIClient(self.http_client)
+        return ForumAPIClient(
+            client=HttpxAPIClient(
+                base_url=config.forum.FORUM_API_URL,
+                default_headers={
+                    "XF-Api-Key": config.forum.FORUM_API_KEY,
+                },
+            )
+        )
+
+    @property
+    def unsplash(self) -> UnsplashAPIClient:
+        """Get the Unsplash API client."""
+        return UnsplashAPIClient(
+            HttpxAPIClient(
+                base_url=config.unsplash.UNSPLASH_API_URL,
+                default_headers={
+                    "Authorization": f"Client-ID {config.unsplash.UNSPLASH_ACCESS_KEY}",  # noqa: E501
+                },
+            )
+        )
 
 
 class GuildOnlyTree(app_commands.CommandTree):
@@ -75,13 +95,8 @@ class Nightcore(Bot):
     ):
         self.cog_modules = cog_modules
         self.uow = uow
-        self.outside_http_client = HttpxAPIClient(
-            base_url=config.forum.FORUM_API_URL,
-            default_headers={
-                "XF-Api-Key": config.forum.FORUM_API_KEY,
-            },
-        )
-        self.apis = CustomAPICollection(self.outside_http_client)
+        self.apis = CustomAPICollection()
+        self.photo_cache = PhotoCache(default_ttl_seconds=300)
 
         super().__init__(
             command_prefix=".",
