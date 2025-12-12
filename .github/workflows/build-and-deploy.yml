@@ -81,6 +81,8 @@ jobs:
               --restart unless-stopped \
               --network ${{ secrets.DOCKER_NETWORK }} \
               -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+              -e UNSPLASH_ACCESS_KEY=${{ secrets.UNSPLASH_ACCESS_KEY }} \
+              -e UNSPLASH_API_URL=${{ secrets.UNSPLASH_API_URL }} \
               -e POSTGRES_URL=${{ secrets.POSTGRES_URL }} \
               -e FORUM_API_URL=${{ secrets.FORUM_API_URL }} \
               -e FORUM_API_KEY=${{ secrets.FORUM_API_KEY }} \
