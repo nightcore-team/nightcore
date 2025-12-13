@@ -172,7 +172,7 @@ class PunishViewV2(LayoutView):
                 meta += f"\n> **Сервер: `{guild_name}`**"
             return meta
 
-        meta = f"> **Модератор: <@{moderator_id}>**\n> **Причина:** *{reason}*"
+        meta = f"> **Модератор: <@{moderator_id}>** ({moderator_id})\n> **Причина:** *{reason}*"  # noqa: E501
         if duration:
             meta += f"\n> **Длительность: `{duration}`**"
         if guild_name:
