@@ -104,7 +104,7 @@ class ModeratorStats:
                 + self.approved_role_requests_count
                 * scores.approved_role_requests
                 + self.deducted_points
-            ):.2f}"
+            ):.5f}"
 
         return float(result)
 

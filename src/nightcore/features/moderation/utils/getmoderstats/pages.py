@@ -70,7 +70,7 @@ def format_moderstats_page_components(
             f"> **Одобренные запросы ролей:** {mod_stats.approved_role_requests_count}\n"  # noqa: E501
             f"> **Всего сообщений:** {mod_stats.total_messages}\n"
             f"> **Количество баллов:** **`{total_points}`**\n"
-            f"> **Количество {'добавленных' if mod_stats.deducted_points >= 0 else 'снятых'} баллов::** {mod_stats.deducted_points}"  # noqa: E501
+            f"> **Количество {'добавленных' if mod_stats.deducted_points >= 0 else 'снятых'} баллов:** {mod_stats.deducted_points}"  # noqa: E501
         )
 
         components.append(TextDisplay(text))
