@@ -6,6 +6,12 @@ give = app_commands.Group(
     guild_only=True,
 )
 
+remove = app_commands.Group(
+    name="remove",
+    description="Команды связанные с удалением предметов/валюты.",
+    guild_only=True,
+)
+
 case = app_commands.Group(
     name="case",
     description="Команды связанные с кейсами.",
