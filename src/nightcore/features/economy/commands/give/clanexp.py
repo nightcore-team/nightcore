@@ -38,6 +38,7 @@ async def give_clanexp(
     interaction: Interaction["Nightcore"],
     clan: str,
     amount: app_commands.Range[int, -50000, 50000],
+    reason: str | None = None,
 ):
     """Give experience to a clan."""
 
@@ -98,5 +99,6 @@ async def give_clanexp(
             moderator_id=interaction.user.id,
             item_name="клановый опыт",
             amount=amount,
+            reason=reason,
         ),
     )

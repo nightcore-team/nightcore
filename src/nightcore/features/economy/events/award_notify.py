@@ -51,6 +51,7 @@ class UserItemsChangedEvent(Cog):
             user_id=dto.moderator_id,
             item_name=dto.item_name,
             amount=dto.amount,
+            reason=dto.reason,
         )
 
         gather_list: list[Awaitable[Any]] = []

@@ -51,6 +51,7 @@ class ClanItemsChangedEvent(Cog):
             user_id=dto.user_id,
             item_name=dto.item_name,
             amount=dto.amount,
+            reason=dto.reason,
         )
 
         gather_list: list[Awaitable[Any]] = []

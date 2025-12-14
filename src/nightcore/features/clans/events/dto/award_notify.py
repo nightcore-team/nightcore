@@ -23,6 +23,7 @@ class AwardNotificationEventDTO(BaseEventDTO):
     moderator_id: int
     item_name: str
     amount: int
+    reason: str | None = None
 
     def build_log_embed(self, bot: "Nightcore") -> Embed:
         """Build and return the log embed for the event."""
@@ -46,6 +47,11 @@ class AwardNotificationEventDTO(BaseEventDTO):
             .add_field(
                 name="Количество",
                 value=f"**{self.amount}**",
+            )
+            .add_field(
+                name="Причина",
+                value=self.reason if self.reason else "Не указана",
+                inline=False,
             )
             .set_footer(
                 text="Powered by nightcore",

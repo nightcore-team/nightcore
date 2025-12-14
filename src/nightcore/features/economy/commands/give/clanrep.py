@@ -40,6 +40,7 @@ async def give_clanrep(
     interaction: Interaction["Nightcore"],
     clan: str,
     amount: app_commands.Range[int, -50000, 50000],
+    reason: str | None = None,
 ):
     """Give reputation to a clan."""
 

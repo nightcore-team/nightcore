@@ -39,6 +39,7 @@ async def give_bp_exp(
     interaction: Interaction["Nightcore"],
     user: User,
     amount: app_commands.Range[int, -50000, 50000],
+    reason: str | None = None,
 ):
     """Give battlepass experience to a user."""
 
@@ -118,5 +119,6 @@ async def give_bp_exp(
                 moderator_id=interaction.user.id,
                 item_name="очки батлпасса",
                 amount=amount,
+                reason=reason,
             ),
         )

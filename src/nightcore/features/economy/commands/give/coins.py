@@ -40,6 +40,7 @@ async def give_coins(
     interaction: Interaction["Nightcore"],
     user: User,
     amount: app_commands.Range[int, -50000, 50000],
+    reason: str | None = None,
 ):
     """Give coins to a user."""
 
@@ -133,5 +134,6 @@ async def give_coins(
                 moderator_id=interaction.user.id,
                 item_name=cast(str, coin_name),
                 amount=amount,
+                reason=reason,
             ),
         )

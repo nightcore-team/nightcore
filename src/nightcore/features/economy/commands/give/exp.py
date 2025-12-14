@@ -40,6 +40,7 @@ async def give_exp(
     interaction: Interaction["Nightcore"],
     user: User,
     amount: app_commands.Range[int, -50000, 50000],
+    reason: str | None = None,
 ):
     """Give experience to a user."""
 
@@ -118,5 +119,6 @@ async def give_exp(
                 moderator_id=interaction.user.id,
                 item_name="опыт",
                 amount=amount,
+                reason=reason,
             ),
         )

@@ -49,6 +49,7 @@ async def give_case(
     user: User,
     case: app_commands.Choice[str],
     amount: int,
+    reason: str | None = None,
 ):
     """Give a case to user."""
 
@@ -137,5 +138,6 @@ async def give_case(
                 moderator_id=interaction.user.id,
                 item_name=case.name,
                 amount=amount,
+                reason=reason,
             ),
         )

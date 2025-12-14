@@ -46,6 +46,7 @@ async def give_color(
     interaction: Interaction["Nightcore"],
     user: User,
     color: str,
+    reason: str | None = None,
 ):
     """Give a color to user."""
 
@@ -166,5 +167,6 @@ async def give_color(
                 moderator_id=interaction.user.id,
                 item_name=f"{role_name} ({role_id})",
                 amount=1,
+                reason=reason,
             ),
         )
