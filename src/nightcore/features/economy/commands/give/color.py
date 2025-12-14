@@ -20,9 +20,6 @@ from src.nightcore.features.economy.events.dto import (
 )
 from src.nightcore.features.economy.utils import all_colors_autocomplete
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils import (
-    ensure_member_exists,
-)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -63,18 +60,6 @@ async def give_color(
             embed=ErrorEmbed(
                 "Ошибка выдачи цвета",
                 "Не удалось определить цвет.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
-    member = await ensure_member_exists(guild, user.id)
-    if not member:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка выдачи цвета",
-                "Пользователь не найден на сервере.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
