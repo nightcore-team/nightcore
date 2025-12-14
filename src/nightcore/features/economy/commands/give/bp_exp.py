@@ -34,7 +34,11 @@ logger = logging.getLogger(__name__)
     name="bp_exp", description="Выдать очки батлпасса пользователю"
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
-@app_commands.describe()
+@app_commands.describe(
+    user="Пользователь, которому выдаются очки батлпасса",
+    amount="Количество очков батлпасса для выдачи",
+    reason="Причина выдачи очков батлпасса (необязательно)",
+)
 async def give_bp_exp(
     interaction: Interaction["Nightcore"],
     user: User,

@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     user="Пользователь, которому выдаётся опыт",
     amount="Количество опыта для выдачи",
+    reason="Причина выдачи опыта (необязательно)",
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_exp(

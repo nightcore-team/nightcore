@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     user="Пользователь, которому выдаются коины",
     amount="Количество коинов для выдачи",
+    reason="Причина выдачи коинов (необязательно)",
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_coins(

@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 @app_commands.describe(
     clan="Клан, которому выдаётся опыт",
     amount="Количество опыта для выдачи",
+    reason="Причина выдачи опыта (необязательно)",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)

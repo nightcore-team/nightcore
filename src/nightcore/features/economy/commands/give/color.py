@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     user="Пользователь, которому выдается цвет",
     color="Цвет для выдачи",
+    reason="Причина выдачи цвета (необязательно)",
 )
 @app_commands.autocomplete(color=all_colors_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)

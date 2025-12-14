@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
     user="Пользователь, которому выдается кейс.",
     case="Кейс для выдачи.",
     amount="Количество кейсов для выдачи.",
+    reason="Причина выдачи кейса (необязательно).",
 )
 @app_commands.choices(
     case=[

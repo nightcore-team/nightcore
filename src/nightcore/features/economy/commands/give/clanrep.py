@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 @app_commands.describe(
     clan="Клан, которому выдаётся репутация",
     amount="Количество репутации для выдачи",
+    reason="Причина выдачи репутации (необязательно)",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
