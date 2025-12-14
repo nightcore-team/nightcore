@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
     user="Пользователь, которому выдается роль.",
     role="Роль для выдачи.",
     duration="Срок действия роли.",
+    reason="Причина выдачи роли (необязательно).",
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_role(
@@ -49,6 +50,7 @@ async def give_role(
     user: Member,
     role: Role,
     duration: str,
+    reason: str | None = None,
 ):
     """Give a role to user for a limited time."""
 
@@ -208,5 +210,6 @@ async def give_role(
             moderator_id=interaction.user.id,
             item_name=f"временная роль (`{role.id}`)",
             amount=1,
+            reason=reason,
         ),
     )
