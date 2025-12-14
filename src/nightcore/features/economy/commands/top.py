@@ -36,6 +36,7 @@ class Top(Cog):
             app_commands.Choice(name="Коины", value="coins"),
             app_commands.Choice(name="Уровень", value="level"),
             app_commands.Choice(name="Сообщения", value="messages"),
+            app_commands.Choice(name="Уровень battlepass", value="battlepass"),
         ]
     )
     @app_commands.guild_only()

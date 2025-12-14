@@ -81,6 +81,13 @@ class UsersListViewV2(LayoutView):
                             f"**{user.messages_count:,}** сообщений"
                         )
                     )
+                case "battlepass":
+                    container.add_item(
+                        TextDisplay[Self](
+                            f"{prefix} <@{user.user_id}> — "
+                            f"**Уровень {user.battle_pass_level}** "
+                        )
+                    )
                 case _:
                     container.add_item(
                         TextDisplay[Self](
