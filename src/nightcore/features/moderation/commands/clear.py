@@ -5,7 +5,7 @@ from datetime import timezone
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, app_commands
+from discord import Guild, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -34,13 +34,17 @@ class Clear(Cog):
     @app_commands.command(  # type: ignore
         name="clear", description="Очистить сообщения в канале"
     )
-    @app_commands.describe(number="Количество сообщений для очистки (1-20)")
+    @app_commands.describe(
+        amount="Количество сообщений для очистки (1-100)",
+        user="Пользователь, чьи сообщения нужно очистить (необязательно)",
+    )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def clear(
         self,
         interaction: Interaction,
-        number: app_commands.Range[int, 1, 20],
+        amount: app_commands.Range[int, 1, 100],
+        user: User | None = None,
     ):
         """Clear messages from a channel."""
         guild = cast(Guild, interaction.guild)
@@ -66,7 +70,7 @@ class Clear(Cog):
                     moderator=interaction.user,  # type: ignore
                     category=self.__class__.__name__.lower(),
                     channel_cleared_id=channel.id,  # type: ignore
-                    amount=number,
+                    amount=amount,
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
@@ -79,7 +83,10 @@ class Clear(Cog):
             return
 
         try:
-            await channel.purge(limit=number)  # type: ignore
+            await channel.purge(  # type: ignore
+                limit=amount,
+                check=lambda m: m.author == user if user else True,  # type: ignore
+            )
         except Exception as e:
             logger.exception("[command] - Failed to clear messages: %s", e)
             return await interaction.followup.send(
@@ -95,7 +102,7 @@ class Clear(Cog):
         await interaction.followup.send(
             embed=SuccessMoveEmbed(
                 "Сообщения очищены",
-                f"Успешно очищено {number} сообщений из канала.",
+                f"Успешно очищено {amount} сообщений из канала {'от ' + user.mention if user else ''}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             ),
@@ -106,7 +113,7 @@ class Clear(Cog):
             interaction.user.id,
             guild.id,
             channel.id,  # type: ignore
-            number,
+            amount,
         )
 
 
