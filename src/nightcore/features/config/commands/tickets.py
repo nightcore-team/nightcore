@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
     closed_tickets_category="Категория для закрытых тикетов",
     create_ticket_ping_role="Роль для упоминания при создании тикета",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def tickets(
     interaction: Interaction,
     new_tickets_category: discord.CategoryChannel | None = None,

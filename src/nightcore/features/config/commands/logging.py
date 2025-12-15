@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
     clans="Канал для логирования обновлений кланов.",
     ignoring_channels="Каналы для игнорирования при логировании. Формат: id,id,id,...",  # noqa: E501
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.LOGGING_CONFIG_ACCESS)
 async def setup(
     interaction: Interaction,
     bans: discord.TextChannel | None = None,
@@ -138,7 +138,7 @@ async def setup(
     channel="Канал для обновления",
     option="Добавить или удалить канал из списка игнорируемых",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.LOGGING_CONFIG_ACCESS)
 async def update_ignoring_channels(
     interaction: Interaction,
     channel: discord.TextChannel,

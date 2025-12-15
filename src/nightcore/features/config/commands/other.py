@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 @other_group.command(
     name="setup", description="Настроить остальные настройки."
 )  # type: ignore
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.OTHER_CONFIG_ACCESS)
 @app_commands.describe(
     rules_channel="Канал для правил",
     proposal_channel="Канал для предложений",

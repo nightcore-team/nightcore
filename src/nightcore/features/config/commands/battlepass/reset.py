@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     reset_config="Сбросить дополнительно уровни и награды боевого пропуска в конфиге сервера",  # noqa: E501
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def reset(
     interaction: Interaction[Nightcore], reset_config: bool | None = False
 ):

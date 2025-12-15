@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     create_private_channel="Канал для создания приватных комнат."
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.PRIVATE_CHANNELS_CONFIG_ACCESS)
 async def private_channels(
     interaction: Interaction,
     create_private_channel: discord.VoiceChannel | None = None,

@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
         app_commands.Choice(name="Только указанный", value="channel_only"),
     ]
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.LEVELS_CONFIG_ACCESS)
 async def setup(
     interaction: Interaction,
     count_messages_channel: discord.TextChannel | None = None,

@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 @main_config_group.command(
     name="moderstats", description="Настроить систему статистики модерации"
 )  # type: ignore
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 @app_commands.describe(
     mute="Mute score",  #
     ban="Ban score",  #

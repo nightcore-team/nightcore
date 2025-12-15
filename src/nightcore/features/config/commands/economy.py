@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
     coins_drop="Конфигурация выпадения монет с кейса. Формат: коины, шанс (без %) | монеты, шанс | ...",  # noqa: E501
     colors_drop="Конфигурация выпадения цветов с кейса. Формат: role_id, шанс (без %) | role_id, шанс | ...",  # noqa: E501
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def setup(
     interaction: Interaction,
     shop_buy_ping_roles: str | None = None,
@@ -141,7 +141,7 @@ async def setup(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка доступа к экономике",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def update_economy_access(
     interaction: Interaction,
     role: discord.Role,

@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
     base_exp_multiplier="Базовый множитель опыта, выдаваемого за сообщение.",
     improvements_costs="Стоимость улучшений клана (Всего их 3). Формат: cost,cost,cost",  # noqa: E501
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.CLANS_CONFIG_ACCESS)
 async def setup(
     interaction: Interaction,
     shop_threads_channel: discord.TextChannel | None = None,
@@ -123,7 +123,7 @@ async def setup(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка доступа к кланам.",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.CLANS_CONFIG_ACCESS)
 async def update_clans_access(
     interaction: Interaction,
     role: discord.Role,

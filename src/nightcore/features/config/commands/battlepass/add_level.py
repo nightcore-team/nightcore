@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 @app_commands.choices(
     reward_type=BATTLEPASS_REWARDS_CHOICES,
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def add_level(
     interaction: Interaction["Nightcore"],
     required_exp: app_commands.Range[int, 1, 1000000],

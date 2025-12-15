@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 @main_config_group.command(
     name="notifications", description="Настроить систему уведомлений"
 )  # type: ignore
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.NOTIFICATIONS_CONFIG_ACCESS)
 @app_commands.describe(
     notifications="Канал для отправки уведомлений (/notify)",
     moderation_notifications="Канал для отправки уведомлений для модерации",

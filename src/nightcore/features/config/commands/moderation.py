@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
         app_commands.Choice(name="Role", value="role"),
     ]
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def setup_moderation(
     interaction: Interaction,
     moderation_access_roles: str | None = None,  #
@@ -147,7 +147,7 @@ async def setup_moderation(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к модерации",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def update_moderation_access(
     interaction: Interaction,
     role: discord.Role,
@@ -211,7 +211,7 @@ async def update_moderation_access(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к бану",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def update_ban_access(
     interaction: Interaction,
     role: discord.Role,
@@ -272,7 +272,7 @@ async def update_ban_access(
         app_commands.Choice(name="Удалить", value="remove"),
     ]
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 @app_commands.describe(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к rr",
@@ -341,7 +341,7 @@ async def update_rr_access(
     fraction_role="Роль для которой выдается доступ. Пример: role=лидер фбр, fraction_role=инспектор фбр",  # noqa: E501
     option="Добавить или удалить роль из списка ролей с доступом",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def update_fraction_role_access(
     interaction: Interaction,
     access_role: discord.Role,
@@ -416,7 +416,7 @@ async def update_fraction_role_access(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к модерации для руководства.",  # noqa: E501
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def update_leadership_access(
     interaction: Interaction,
     role: discord.Role,

@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     level="Уровень, который нужно удалить",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def delete_level(
     interaction: Interaction["Nightcore"],
     level: int,

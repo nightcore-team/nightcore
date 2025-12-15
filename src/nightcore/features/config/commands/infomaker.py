@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
     admins_logging_channel="Канал, в который будут отправляться логи административных ролей.",  # noqa: E501
     leaders_logging_channel="Канал, в который будут отправляться логи лидерских ролей.",  # noqa: E501
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.INFOMAKER_CONFIG_ACCESS)
 async def setup_infomaker(
     interaction: Interaction,
     admins_roles: str | None = None,
@@ -121,7 +121,7 @@ async def setup_infomaker(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка логируемых ролей",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.INFOMAKER_CONFIG_ACCESS)
 async def update_admins_roles(
     interaction: Interaction,
     role: discord.Role,
@@ -188,7 +188,7 @@ async def update_admins_roles(
     role="Роль для обновления",
     option="Добавить или удалить роль из списка логируемых ролей",
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.INFOMAKER_CONFIG_ACCESS)
 async def update_leaders_roles(
     interaction: Interaction,
     role: discord.Role,
