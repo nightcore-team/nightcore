@@ -106,7 +106,6 @@ class MetaConfigAccessTypeEnum(Enum):
     PRIVATE_CHANNELS = "private_channels_config_access_roles_ids"
     MODERATION = "moderation_config_access_roles_ids"
     NOTIFICATIONS = "notifications_config_access_roles_ids"
-    TICKETS = "tickets_config_access_roles_ids"
     INFOMAKER = "infomaker_config_access_roles_ids"
 
     @classmethod
@@ -125,7 +124,6 @@ class MetaConfigAccessTypeEnum(Enum):
             "moderation": cls.MODERATION,
             "notifications": cls.NOTIFICATIONS,
             "private_channels": cls.PRIVATE_CHANNELS,
-            "tickets": cls.TICKETS,
             "other": cls.OTHER,
             "infomaker": cls.INFOMAKER,
         }
@@ -142,7 +140,6 @@ class MetaConfigAccessTypeEnum(Enum):
             ("Модерация", "moderation"),
             ("Уведомления", "notifications"),
             ("Приватные каналы", "private_channels"),
-            ("Тикеты", "tickets"),
             ("Другое", "other"),
             ("Инфомейкер", "infomaker"),
         ]

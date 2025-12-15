@@ -42,7 +42,6 @@ logger = logging.getLogger(__name__)
     moderation="Список ролей с доступом к системе модерации. Формат: role_id,role_id,...",  # noqa: E501
     notifications="Список ролей с доступом к системе уведомлений. Формат: role_id,role_id,...",  # noqa: E501
     private_channels="Список ролей с доступом к системе приватных каналов. Формат: role_id,role_id,...",  # noqa: E501
-    tickets="Список ролей с доступом к системе тикетов. Формат: role_id,role_id,...",  # noqa: E501
     infomaker="Список ролей с доступом к системе инфомейкера. Формат: role_id,role_id,...",  # noqa: E501
 )
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
@@ -56,7 +55,6 @@ async def setup_access(
     moderation: str | None = None,
     notifications: str | None = None,
     private_channels: str | None = None,
-    tickets: str | None = None,
     infomaker: str | None = None,
 ):
     """Configure system access settings."""
@@ -70,7 +68,6 @@ async def setup_access(
         list_csv("moderation_config_access_roles_ids", moderation),
         list_csv("notifications_config_access_roles_ids", notifications),
         list_csv("private_channels_config_access_roles_ids", private_channels),
-        list_csv("tickets_config_access_roles_ids", tickets),
         list_csv("infomaker_config_access_roles_ids", infomaker),
     ]
 
