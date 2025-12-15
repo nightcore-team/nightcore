@@ -144,9 +144,9 @@ async def setup_access(
     ]
 )
 @app_commands.describe(
-    system="Система для обновления доступа",
+    system="Система для обновления доступа (или 'all' для всех систем)",
     role="Роль для обновления",
-    option="Добавить или удалить роль из списка доступа к экономике",
+    option="Добавить или удалить роль из списка доступа",
 )
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def update_config_access(
@@ -157,7 +157,8 @@ async def update_config_access(
 ):
     """Update the list of roles with config access."""
 
-    choice = MetaConfigAccessTypeEnum.from_choice(system.value)
+    fields_to_update: list[str] = []
+    state = ""
 
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
@@ -165,18 +166,21 @@ async def update_config_access(
         config_type=GuildMetaConfig,
         _create=True,
     ) as (guild_config, _):
-        current = getattr(guild_config, choice.value)
-        new_list, changed, state = update_id_list(
-            current,
-            role.id,
-            option,
-        )
-        if changed:
-            setattr(
-                guild_config,
-                choice.value,
-                new_list,
+        if system.value == "all":
+            fields_to_update = MetaConfigAccessTypeEnum.all_values()
+        else:
+            choice = MetaConfigAccessTypeEnum.from_choice(system.value)
+            fields_to_update = [choice.value]
+
+        for field_name in fields_to_update:
+            current = getattr(guild_config, field_name)
+            new_list, field_changed, state = update_id_list(
+                current,
+                role.id,
+                option,
             )
+            if field_changed:
+                setattr(guild_config, field_name, new_list)
 
     if state == "exists":
         desc = f"Роль <@&{role.id}> уже в списке доступа."
@@ -185,10 +189,10 @@ async def update_config_access(
         desc = f"Роль <@&{role.id}> не в списке доступа."
         color = discord.Color.red()
     elif state == "added":
-        desc = f"Роль <@&{role.id}> добавлена в список доступа."
+        desc = f"Роль <@&{role.id}> добавлена в список доступа{'ко всем системам' if system.value == 'all' else ''}."  # noqa: E501
         color = discord.Color.blurple()
     else:  # removed
-        desc = f"Роль <@&{role.id}> удалена из списка доступа."
+        desc = f"Роль <@&{role.id}> удалена из списка доступа{'всех систем' if system.value == 'all' else ''}."  # noqa: E501
         color = discord.Color.blurple()
 
     await interaction.response.send_message(
@@ -201,9 +205,10 @@ async def update_config_access(
     )
 
     logger.info(
-        "[command] - invoked user=%s guild=%s option=%s role=%s",
+        "[command] - invoked user=%s guild=%s option=%s role=%s system=%s",
         interaction.user.id,
         cast(Guild, interaction.guild).id,
         option,
         role.id,
+        system.value,
     )
