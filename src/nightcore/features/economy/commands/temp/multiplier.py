@@ -52,8 +52,8 @@ logger = logging.getLogger(__name__)
 async def set_multiplier(
     interaction: Interaction["Nightcore"],
     multiplier_type: app_commands.Choice[str],
-    multiplier: int,
-    duration: str,
+    multiplier: app_commands.Range[int, 1, 10000],
+    duration: app_commands.Range[str, 1, 20],
 ):
     """Give a role to user for a limited time."""
 
