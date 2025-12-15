@@ -139,8 +139,11 @@ async def setup_access(
 )  # type: ignore
 @app_commands.choices(
     system=[
-        app_commands.Choice(name=name, value=value)
-        for name, value in MetaConfigAccessTypeEnum.choices()
+        app_commands.Choice(name="Все", value="all"),
+        *[
+            app_commands.Choice(name=name, value=value)
+            for name, value in MetaConfigAccessTypeEnum.choices()
+        ],
     ]
 )
 @app_commands.describe(
