@@ -110,6 +110,11 @@ class MetaConfigAccessTypeEnum(Enum):
     INFOMAKER = "infomaker_config_access_roles_ids"
 
     @classmethod
+    def all_values(cls) -> list[str]:
+        """Get all enum values."""
+        return [choice.value for choice in cls]
+
+    @classmethod
     def from_choice(cls, choice: str) -> "MetaConfigAccessTypeEnum":
         """Get enum member from choice string."""
         mapping = {
