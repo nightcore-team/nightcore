@@ -93,3 +93,51 @@ class ChangeStatTypeEnum(Enum):
     TICKET = "ticket"
     ROLE_REMOVE = "role_remove"
     ROLE_ACCEPT = "role_accept"
+
+
+class MetaConfigAccessTypeEnum(Enum):
+    """Enumeration for meta config access types."""
+
+    OTHER = "other_config_access_roles_ids"
+    LOGGING = "logging_config_access_roles_ids"
+    ECONOMY = "economy_config_access_roles_ids"
+    LEVELS = "levels_config_access_roles_ids"
+    CLANS = "clans_config_access_roles_ids"
+    PRIVATE_CHANNELS = "private_channels_config_access_roles_ids"
+    MODERATION = "moderation_config_access_roles_ids"
+    NOTIFICATIONS = "notifications_config_access_roles_ids"
+    TICKETS = "tickets_config_access_roles_ids"
+    INFOMAKER = "infomaker_config_access_roles_ids"
+
+    @classmethod
+    def from_choice(cls, choice: str) -> "MetaConfigAccessTypeEnum":
+        """Get enum member from choice string."""
+        mapping = {
+            "clans": cls.CLANS,
+            "economy": cls.ECONOMY,
+            "levels": cls.LEVELS,
+            "logging": cls.LOGGING,
+            "moderation": cls.MODERATION,
+            "notifications": cls.NOTIFICATIONS,
+            "private_channels": cls.PRIVATE_CHANNELS,
+            "tickets": cls.TICKETS,
+            "other": cls.OTHER,
+            "infomaker": cls.INFOMAKER,
+        }
+        return mapping[choice]
+
+    @classmethod
+    def choices(cls) -> list[tuple[str, str]]:
+        """Get list of choices for Discord bot commands."""
+        return [
+            ("Кланы", "clans"),
+            ("Экономика", "economy"),
+            ("Уровни", "levels"),
+            ("Логирование", "logging"),
+            ("Модерация", "moderation"),
+            ("Уведомления", "notifications"),
+            ("Приватные каналы", "private_channels"),
+            ("Тикеты", "tickets"),
+            ("Другое", "other"),
+            ("Инфомейкер", "infomaker"),
+        ]

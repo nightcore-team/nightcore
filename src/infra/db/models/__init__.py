@@ -13,6 +13,7 @@ from .guild import (
     GuildTicketsConfig,
     MainGuildConfig,
 )
+from .meta import Base, GuildMetaConfig  # noqa: F811
 from .moderationmessage import Base, ModerationMessage  # noqa: F811
 from .notify import Base, NotifyState  # noqa: F811
 from .private_rooms import Base, PrivateRoomState  # noqa: F811
@@ -36,6 +37,7 @@ __all__ = (
     "GuildInfomakerConfig",
     "GuildLevelsConfig",
     "GuildLoggingConfig",
+    "GuildMetaConfig",
     "GuildModerationConfig",
     "GuildNotificationsConfig",
     "GuildPrivateChannelsConfig",

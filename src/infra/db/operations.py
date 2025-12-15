@@ -21,6 +21,7 @@ from src.infra.db.models import (
     GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
+    GuildMetaConfig,
     GuildModerationConfig,
     GuildNotificationsConfig,
     GuildPrivateChannelsConfig,
@@ -68,12 +69,14 @@ GuildT = TypeVar(
     GuildTicketsConfig,
     MainGuildConfig,
     GuildInfomakerConfig,
+    GuildMetaConfig,
 )
 
 
 def get_config_type_by_name(name: str) -> type[GuildT]:
     """Get the guild configuration type by its name."""
     config_types: dict[str, type[GuildT]] = {
+        "meta": GuildMetaConfig,
         "clans": GuildClansConfig,
         "economy": GuildEconomyConfig,
         "infomaker": GuildInfomakerConfig,
