@@ -20,8 +20,8 @@ class Say(Cog):
         self.bot = bot
 
     @app_commands.command(name="say", description="Посмотреть задержку бота")  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
-    async def ping(self, interaction: Interaction[Nightcore], text: str):
+    @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
+    async def ping(self, interaction: Interaction["Nightcore"], text: str):
         """Send a message displaying the bot's current latency."""
 
         await interaction.channel.send(text)  # type: ignore
