@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from discord import app_commands
-
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -46,8 +44,4 @@ __all__ = (
 
 async def setup(bot: Nightcore):
     """Setup the configuration commands for the Nightcore bot."""
-    if not any(
-        isinstance(cmd, app_commands.AppCommand) and cmd.name == "config"  # type: ignore
-        for cmd in bot.tree.get_commands()
-    ):
-        bot.tree.add_command(config_group)
+    bot.tree.add_command(config_group)
