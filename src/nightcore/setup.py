@@ -8,6 +8,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
     """Create and return an instance of the Nightcore bot."""
 
     cog_modules = [
+        # system
+        "src.nightcore.features.system",
         # meta
         "src.nightcore.features.meta.commands.ping",
         "src.nightcore.features.meta.commands.avatar",
