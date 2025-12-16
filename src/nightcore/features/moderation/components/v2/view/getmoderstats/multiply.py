@@ -124,7 +124,7 @@ class MultiplyGetModerStatsViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#2b268b"))
+        container = Container[Self](accent_color=Color.from_str("#d5d5f9"))
 
         container.add_item(
             TextDisplay[Self](

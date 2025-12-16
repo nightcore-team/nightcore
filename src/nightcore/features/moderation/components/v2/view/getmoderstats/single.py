@@ -78,7 +78,7 @@ class ChangeStatDetailsViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#2b268b"))
+        container = Container[Self](accent_color=Color.from_str("#d5d5f9"))
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
@@ -118,11 +118,11 @@ class SingleGetModerStatsViewV2(LayoutView):
         self.mod_score = mod_score
         self.stats = stats
 
-        container = Container[Self](accent_color=Color.from_str("#9300d2"))
+        container = Container[Self](accent_color=Color.from_str("#d5d5f9"))
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    "## <:96965manager:1442917801953333389> Статистика модератора\n"  # noqa: E501
+                    "## <:nightcoremoderation:1450443148009406557> Статистика модератора\n"  # noqa: E501
                     f"**Модератор:** {moderator.mention} (`{moderator.id}`)\n"
                     f"**Количество баллов:** {stats.calculate_total_points(mod_score)}\n"  # noqa: E501
                     f"> **Количество {'добавленных' if stats.deducted_points >= 0 else 'снятых'} баллов:** {stats.deducted_points}\n"  # noqa: E501

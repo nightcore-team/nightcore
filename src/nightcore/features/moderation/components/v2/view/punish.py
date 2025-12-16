@@ -49,7 +49,7 @@ class PunishViewV2(LayoutView):
     ):
         super().__init__()
 
-        container = Container[Self](accent_color=Color.from_str("#2b268b"))
+        container = Container[Self](accent_color=Color.from_str("#d5d5f9"))
 
         if mode == "expired":
             title = "Оповещение об окончании наказания"
