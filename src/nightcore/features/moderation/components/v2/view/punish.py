@@ -49,7 +49,7 @@ class PunishViewV2(LayoutView):
     ):
         super().__init__()
 
-        container = Container[Self](accent_color=Color.from_str("#9300d2"))
+        container = Container[Self](accent_color=Color.from_str("#2b268b"))
 
         if mode == "expired":
             title = "Оповещение об окончании наказания"
@@ -69,7 +69,7 @@ class PunishViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:96965manager:1442917801953333389> {title}\n\n{main_text}"  # noqa: E501
+                f"## <:nightcoremoderation:1450443148009406557> {title}\n\n{main_text}"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

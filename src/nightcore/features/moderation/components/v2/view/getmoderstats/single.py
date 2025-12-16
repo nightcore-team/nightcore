@@ -78,11 +78,11 @@ class ChangeStatDetailsViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#9300d2"))
+        container = Container[Self](accent_color=Color.from_str("#2b268b"))
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"## <:96965manager:1442917801953333389> Изменения статистики\n**Модератор:** {moderator.mention}\n**Количество изменений:** {len(stats.changestat_details)}"  # noqa: E501
+                    f"## <:nightcoremoderation:1450443148009406557> Изменения статистики\n**Модератор:** {moderator.mention}\n**Количество изменений:** {len(stats.changestat_details)}"  # noqa: E501
                 ),
                 accessory=Thumbnail[Self](moderator.display_avatar.url),
             )
