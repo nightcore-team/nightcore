@@ -48,7 +48,7 @@ class TransferHistoryActionRow(ActionRow[LayoutView]):
         style=ButtonStyle.grey,
         label="История переводов",
         custom_id="balance:history",
-        emoji="<:arrows:1442916548921790575>",
+        emoji="<:winterarrowsnightcore:1450562878166925334>",
     )
     async def transfer_history_button(
         self,
@@ -160,11 +160,13 @@ class TransferHistoryViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#515cff"))
+        container = Container[Self](
+            accent_color=Color.from_str("#ffffff")
+        )  # #515cff
 
         container.add_item(
             TextDisplay[Self](
-                "## <:arrows:1442916548921790575> История переводов"
+                "## <:winterarrowsnightcore:1450562878166925334> История переводов"  # noqa: E501
             )
         )
         container.add_item(

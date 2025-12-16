@@ -47,11 +47,11 @@ class UserProfileViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#515cff"))
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:butterflies:1442916105508360446> Профиль пользователя <@{user_id}>",  # noqa: E501
+                f"## <:snowflakesnightcore:1450559241365491723> Профиль пользователя <@{user_id}>",  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

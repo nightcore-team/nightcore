@@ -7,6 +7,7 @@ Used for displaying notifications about shop order status changes.
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 
+from discord import Color
 from discord.ui import (
     Container,
     LayoutView,
@@ -39,7 +40,7 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
         super().__init__(timeout=None)
         self.bot = bot
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))
 
         container.add_item(
             TextDisplay[Self](

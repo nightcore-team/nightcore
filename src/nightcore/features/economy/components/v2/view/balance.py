@@ -34,11 +34,11 @@ class BalanceViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#515cff"))
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:wallet:1442916229282136104> Информация о балансе\n\n"
+                "## <:icedwalletnightcore:1450561560660410630> Информация о балансе\n\n"  # noqa: E501
             )
         )
 

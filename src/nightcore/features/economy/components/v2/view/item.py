@@ -7,6 +7,7 @@ Used for displaying a notification when an item is awarded to a user.
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self
 
+from discord import Color
 from discord.ui import Container, LayoutView, Separator, TextDisplay
 
 if TYPE_CHECKING:
@@ -26,11 +27,11 @@ class AwardNotificationViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:rocket:1442921496891621377> Уведомление о выдаче предмета"  # noqa: E501
+                "## <:snowflakesnightcore:1450559241365491723> Уведомление о выдаче предмета"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
