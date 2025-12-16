@@ -124,11 +124,11 @@ class MultiplyGetModerStatsViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#d5d5f9"))
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:nightcoremoderation:1450443148009406557> Статистика модерации\n\n"  # noqa: E501
+                f"## <:winternightcoremoderation:1450513379897905415> Статистика модерации\n\n"  # noqa: E501
                 f"**Период:** {discord_ts(self.from_dt)} - {discord_ts(self.to_dt)}\n"  # noqa: E501
                 f"> **Всего модераторов:** {sum(len(page) for page in self.pages)}"  # noqa: E501
             )

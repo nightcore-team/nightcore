@@ -2,7 +2,14 @@ import logging  # noqa: D100
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Guild, Message, SelectOption, app_commands
+from discord import (
+    ButtonStyle,
+    Color,
+    Guild,
+    Message,
+    SelectOption,
+    app_commands,
+)
 from discord.components import ActionRow as ActionRowOverride
 from discord.components import TextDisplay as TextDisplayOverride
 from discord.interactions import Interaction
@@ -441,7 +448,7 @@ class NotifyViewV2(LayoutView):
         """Creates the notify view component."""
         self.clear_items()
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))
 
         # header
         container.add_item(

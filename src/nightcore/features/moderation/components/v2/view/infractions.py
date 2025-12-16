@@ -117,14 +117,14 @@ class InfractionsViewV2(LayoutView):
         # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.red())
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))
 
         # Header
 
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"## <:10447banhammer:1442917716364230800> Список нарушений\n"  # noqa: E501
+                    f"## <:winternightcoreinfractions:1450531448384917614> Список нарушений\n"  # noqa: E501
                     f"**Пользователь:** {self.user.mention} `({self.user.id})`\n"  # noqa: E501
                     f"**Общее количество нарушений:** `{self.total_punishments}`\n"  # noqa: E501
                     f"> **Количество нарушений за последние 7 дней:** `{self.count_last_7_days_infractions}`"  # noqa: E501
