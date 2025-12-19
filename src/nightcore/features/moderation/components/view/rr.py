@@ -28,6 +28,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         roles: list[discord.Role],
         moderator: discord.Member,
         category: str,
+        reason: str | None = None,
     ):
         super().__init__(timeout=None)
         self.bot = bot
@@ -35,6 +36,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         self.roles = roles
         self.moderator = moderator
         self.category = category
+        self.reason = reason
 
         options = [
             discord.SelectOption(label=role.name, value=str(role.id))
@@ -58,7 +60,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         try:
             await self.member.remove_roles(
                 *roles,
-                reason="Снятие организационных ролей через /rr",
+                reason=self.reason or "Снятие организационных ролей через /rr",
                 atomic=False,
             )
         except Exception as e:
@@ -84,6 +86,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
                     created_at=discord.utils.utcnow().astimezone(
                         tz=timezone.utc
                     ),
+                    reason=self.reason,
                 ),
                 _send_to_rr_channel=True,
             )
@@ -101,7 +104,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         await interaction.response.edit_message(
             embed=SuccessMoveEmbed(
                 "Снятие ролей",
-                f"Роль (-и) {', '.join(role.mention for role in roles)} успешно сняты с {self.member.mention}.",  # noqa: E501
+                f"Роль (-и) {', '.join(role.mention for role in roles)} успешно сняты с {self.member.mention}.{f' Причина: {self.reason}' if self.reason else ''}",  # noqa: E501
                 self.bot.user.name,  # type: ignore
                 self.bot.user.display_avatar.url,  # type: ignore
             ),

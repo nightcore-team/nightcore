@@ -47,9 +47,6 @@ class RoleRequestStateView(LayoutView):
         state: RoleRequestStateEnum,
         roles_ids: list[int],
         reason: str | None = None,
-        message_url: str | None = None,
-        image_url: str | None = None,
-        image_proxy_url: str | None = None,
     ):
         super().__init__()
 
@@ -89,7 +86,7 @@ class RoleRequestStateView(LayoutView):
             case RoleRequestStateEnum.REMOVED:
                 accent_color = Color.from_str("#515cff")
                 header_text = "### <:remove:1442914236836610119> Роль удалена"
-                text = f"Модератор <@{moderator_id}> снял пользователю <@{user_id}> роль(-и) {', '.join(f'<@&{role}>' for role in roles_ids)}."  # noqa: E501
+                text = f"Модератор <@{moderator_id}> снял пользователю <@{user_id}> роль(-и) {', '.join(f'<@&{role}>' for role in roles_ids)} по причине:\n> {self.reason}."  # noqa: E501
             case _:
                 ...
 

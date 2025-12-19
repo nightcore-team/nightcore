@@ -50,12 +50,14 @@ class Rr(Cog):
     @app_commands.guild_only()
     @app_commands.describe(
         user="Пользователь, у которого нужно удалить роль",
+        reason="Причина удаления роли",
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def rr(
         self,
         interaction: Interaction["Nightcore"],
         user: Member,
+        reason: str | None = None,
     ):
         """Remove organization role from a user."""
         guild = cast(Guild, interaction.guild)
@@ -144,7 +146,8 @@ class Rr(Cog):
 
             try:
                 await member.remove_roles(
-                    role, reason="Organization role removal via /rr"
+                    role,
+                    reason=reason or "Снятие организационных ролей через /rr",
                 )
             except Exception as e:
                 logger.exception("[command] - Failed to remove role: %s", e)
@@ -169,6 +172,7 @@ class Rr(Cog):
                         created_at=discord.utils.utcnow().astimezone(
                             tz=timezone.utc
                         ),
+                        reason=reason,
                     ),
                     _send_to_rr_channel=True,
                 )
@@ -182,7 +186,7 @@ class Rr(Cog):
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
                     "Роль удалена",
-                    f"Роль {role.mention} успешно снята с {member.mention}.",
+                    f"Роль {role.mention} успешно снята с {member.mention}.{f' Причина: {reason}' if reason else ''}",  # noqa: E501
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 )
@@ -194,6 +198,7 @@ class Rr(Cog):
                 roles=user_org_roles,
                 moderator=interaction.user,  # type: ignore
                 category=self.__class__.__name__.lower(),
+                reason=reason,
             )
             await interaction.response.send_message(
                 view=view,

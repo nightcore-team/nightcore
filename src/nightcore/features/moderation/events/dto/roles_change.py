@@ -22,6 +22,7 @@ class RolesChangeEventData(ModerationBaseEventData):
     roles_ids: list[int]
     created_at: datetime
     option: str | None = None
+    reason: str | None = None
 
     def build_embed(
         self,
@@ -49,5 +50,8 @@ class RolesChangeEventData(ModerationBaseEventData):
 
         if self.option:
             embed.add_field(name="Option", value=self.option, inline=True)
+
+        if self.reason:
+            embed.add_field(name="Reason", value=self.reason, inline=False)
 
         return embed
