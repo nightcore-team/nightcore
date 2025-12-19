@@ -50,11 +50,13 @@ class ComplaintViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#9300d2"))
+        container = Container[Self](
+            accent_color=Color.from_str("#ffffff")
+        )  # 9300d2
 
         container.add_item(
             TextDisplay[Self](
-                "### <:96965manager:1442917801953333389> Поступила новая жалоба на модератора"  # noqa: E501
+                "### <:winternightcoremoderation:1450513379897905415> Поступила новая жалоба на модератора"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
