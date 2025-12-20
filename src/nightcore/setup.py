@@ -112,6 +112,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # === private rooms
         "src.nightcore.features.private_rooms.events.create",
         "src.nightcore.features.private_rooms.events.delete",
+        # === compbuilder
+        "src.nightcore.features.compbuilder",
         # === tasks
         "src.nightcore.tasks.unpunish",
         "src.nightcore.tasks.delete_ticket",
