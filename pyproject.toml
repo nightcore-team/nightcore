@@ -31,7 +31,7 @@ discord-py = { git = "https://github.com/Rapptz/discord.py.git" }
 line-length = 79
 
 # Target Python version
-target-version = "py310"
+target-version = "py313"
 
 exclude = [".venv", "venv", "__pycache__", "migrations", "build", "dist"]
 
