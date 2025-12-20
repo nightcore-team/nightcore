@@ -1,7 +1,7 @@
 """UnBan command for the Nightcore bot."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
@@ -119,7 +119,7 @@ class Unrrban(Cog):
                     moderator_id=interaction.user.id,
                     user_id=user.id,
                     reason=reason,
-                    created_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
                 ),
                 by_command=True,
             )

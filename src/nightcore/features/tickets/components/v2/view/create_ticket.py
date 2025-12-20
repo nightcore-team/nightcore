@@ -1,7 +1,7 @@
 """View for paginating infractions."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
@@ -350,7 +350,7 @@ class CreateTicketViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         # Footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore

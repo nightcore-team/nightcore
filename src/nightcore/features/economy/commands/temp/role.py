@@ -1,7 +1,7 @@
 """Command to give a role to a user for a limited time."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, Role, app_commands
@@ -121,7 +121,7 @@ async def give_role(
             channel_type=ChannelType.LOGGING_ECONOMY,
         )
 
-        now = datetime.now(timezone.utc) + timedelta(seconds=parsed_duration)
+        now = datetime.now(UTC) + timedelta(seconds=parsed_duration)
 
         try:
             temp_role = await get_temp_role(

@@ -2,7 +2,7 @@
 
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -52,7 +52,7 @@ class About(Cog):
         async with self.bot.uow.start() as session:
             total_members = await get_total_users_count(session)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         d = now - self.bot.startup_time
 
         total_seconds = int(d.total_seconds())

@@ -1,7 +1,7 @@
 """Command to clear messages in text channel."""
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -72,7 +72,7 @@ class Clear(Cog):
                     channel_cleared_id=channel.id,  # type: ignore
                     amount=amount,
                     created_at=discord.utils.utcnow().astimezone(
-                        tz=timezone.utc
+                        tz=UTC
                     ),
                 ),
             )

@@ -1,6 +1,6 @@
 """Role request state view."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Color
@@ -97,7 +97,7 @@ class RoleRequestStateView(LayoutView):
         container.add_item(TextDisplay(text))
         container.add_item(Separator())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

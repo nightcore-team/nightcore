@@ -1,7 +1,7 @@
 """DTO for coins shop order notification event."""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord import Color, Embed, Guild
@@ -39,7 +39,7 @@ class CoinsShopOrderNotifyDTO(BaseEventDTO):
         return (
             Embed(
                 title="Покупка в магазине коинов",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 color=color,
             )
             .add_field(

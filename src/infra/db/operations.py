@@ -1,7 +1,7 @@
 """The module contains database operations for the Nightcore bot."""
 
 from collections.abc import Sequence
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, TypeVar, cast
 
 from async_lru import alru_cache
@@ -857,7 +857,7 @@ async def count_user_infractions_last_7_days(
     user_id: int,
 ) -> int:
     """Count the number of punishments for a user in the last 7 days."""
-    boundary = datetime.now(timezone.utc) - timedelta(days=7)
+    boundary = datetime.now(UTC) - timedelta(days=7)
 
     stmt = (
         select(func.count())
@@ -878,7 +878,7 @@ async def get_role_requests_to_delete(
     session: AsyncSession,
 ) -> Sequence[RoleRequestState]:
     """Get role requests that need to be deleted based on their duration."""
-    boundary = datetime.now(timezone.utc) - timedelta(
+    boundary = datetime.now(UTC) - timedelta(
         hours=config.bot.ROLE_REQUESTS_ALIVE_HOURS
     )
 
@@ -1043,7 +1043,7 @@ async def get_or_create_temp_multiplier(
             multiplier_type=multiplier_type,
             multiplier=multiplier,
             duration=duration,
-            end_time=datetime.now(timezone.utc) + timedelta(seconds=duration),
+            end_time=datetime.now(UTC) + timedelta(seconds=duration),
         )
         .on_conflict_do_nothing(constraint="ux_temp_multiplier_guild_type")
         .returning(TempEconomyMultiplier.id)

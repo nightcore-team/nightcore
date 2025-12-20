@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color, Interaction
@@ -153,7 +153,7 @@ class MultiplyGetModerStatsViewV2(LayoutView):
         else:
             self.pagination = None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

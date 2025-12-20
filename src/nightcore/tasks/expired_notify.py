@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
@@ -48,7 +48,7 @@ class ExpiredNotifyTask(Cog):
             )
 
             for notify in pending_notifications:
-                if not notify.end_time < datetime.now(timezone.utc):
+                if not notify.end_time < datetime.now(UTC):
                     continue
 
                 guild = await ensure_guild_exists(self.bot, notify.guild_id)

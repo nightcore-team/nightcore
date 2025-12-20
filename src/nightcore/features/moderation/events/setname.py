@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from collections.abc import Awaitable
-from datetime import timezone
+from datetime import UTC
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -65,7 +65,7 @@ class UserSetNameEvent(Cog):
                     category=data.category,
                     reason=data.reason,
                     end_time=None,
-                    time_now=discord.utils.utcnow().astimezone(timezone.utc),
+                    time_now=discord.utils.utcnow().astimezone(UTC),
                 )
             except Exception as e:
                 logger.exception(

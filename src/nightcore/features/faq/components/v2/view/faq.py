@@ -7,7 +7,7 @@ Handles FAQ page button interactions.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color, MediaGalleryItem
@@ -66,7 +66,7 @@ class FAQGlobalViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore
@@ -176,7 +176,7 @@ class FAQViewV2(LayoutView):
             )
             container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
@@ -201,7 +201,7 @@ class FAQPageViewV2(LayoutView):
         container.add_item(TextDisplay[Self](f"{page['content']}"))
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore

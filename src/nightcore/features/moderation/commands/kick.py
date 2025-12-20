@@ -1,7 +1,7 @@
 """Kick command for the Nightcore bot."""
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -131,7 +131,7 @@ class Kick(Cog):
                     category=self.__class__.__name__.lower(),
                     reason=reason,
                     created_at=discord.utils.utcnow().astimezone(
-                        tz=timezone.utc
+                        tz=UTC
                     ),
                     guild_name=guild.name,
                 ),

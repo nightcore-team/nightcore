@@ -1,7 +1,7 @@
 """Command to add fraction role to a user."""
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -225,9 +225,7 @@ class FractionRole(Cog):
                     moderator=author,
                     user=user,
                     roles_ids=[target_role.id],
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=timezone.utc
-                    ),
+                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
                 ),
                 _create_punish=False,
             )

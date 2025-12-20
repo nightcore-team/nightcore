@@ -1,6 +1,6 @@
 """Utility functions for tasks."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import cast
 
 from discord import ClientUser
@@ -25,7 +25,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 moderator_id=cast(ClientUser, bot.user).id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             bot.dispatch("user_unmute", data=m)
 
@@ -38,7 +38,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 moderator_id=cast(ClientUser, bot.user).id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             bot.dispatch("user_unmute", data=mpm)
 
@@ -51,7 +51,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 moderator_id=cast(ClientUser, bot.user).id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             bot.dispatch("user_unmute", data=vm)
 
@@ -63,7 +63,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 moderator_id=cast(ClientUser, bot.user).id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             bot.dispatch("user_unticketbanned", data=t)
 
@@ -75,7 +75,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 moderator_id=cast(ClientUser, bot.user).id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             bot.dispatch("user_unbanned", data=b)
 
@@ -87,7 +87,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 moderator_id=cast(ClientUser, bot.user).id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             bot.dispatch("user_unrole_request_banned", data=rr)
 

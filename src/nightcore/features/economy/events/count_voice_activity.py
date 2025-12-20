@@ -1,7 +1,7 @@
 """Handle count user voice activity event."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord import Member, VoiceState
@@ -35,7 +35,7 @@ class CountVoiceActivityEvent(Cog):
                 user_id=member.id,
             )
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             # join
             if before.channel is None and after.channel is not None:
                 # start counting

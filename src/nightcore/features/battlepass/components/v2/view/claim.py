@@ -4,7 +4,7 @@ Battlepass claim view v2 component.
 Used for displaying user's battlepass information with info/claim buttons.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Color
@@ -87,7 +87,7 @@ class BattlepassClaimViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore

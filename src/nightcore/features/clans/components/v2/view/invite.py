@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Member
@@ -186,7 +186,7 @@ class ClanInviteViewV2(LayoutView):
         container.add_item(ClanInviteActionRow())
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
@@ -221,7 +221,7 @@ class ClanListViewV2(LayoutView):
 
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore

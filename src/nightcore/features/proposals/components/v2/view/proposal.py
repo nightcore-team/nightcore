@@ -1,7 +1,7 @@
 """Proposal view v2 component."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color, Message, app_commands
@@ -193,7 +193,7 @@ class ProposalViewV2(LayoutView):
         container.add_item(self.actions)
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](
@@ -269,7 +269,7 @@ class AdditionalProposalAnswerViewV2(LayoutView):
         container.add_item(TextDisplay[Self](f"{description}"))
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

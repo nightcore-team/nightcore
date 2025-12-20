@@ -1,7 +1,7 @@
 """Task cog for unpunishing users."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
@@ -44,7 +44,7 @@ class DeleteTicketTask(Cog):
                     continue
                 if not ticket.updated_at + timedelta(
                     hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
-                ) <= datetime.now(timezone.utc):
+                ) <= datetime.now(UTC):
                     continue
 
                 guild = await ensure_guild_exists(self.bot, ticket.guild_id)

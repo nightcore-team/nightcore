@@ -1,7 +1,7 @@
 """Handle member ban events."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -53,7 +53,7 @@ class BanMemberEvent(Cog):
             title="Пользователь был заблокирован",
             description=f"{user.mention} ({user.id})",
             color=discord.Color.red(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         async for entry in guild.audit_logs(

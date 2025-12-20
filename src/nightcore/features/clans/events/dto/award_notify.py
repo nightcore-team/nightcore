@@ -1,7 +1,7 @@
 """DTO for user items changed event."""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord import Color, Embed, Guild
@@ -31,7 +31,7 @@ class AwardNotificationEventDTO(BaseEventDTO):
         return (
             Embed(
                 title="Выдача предмета клану",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 color=Color.dark_purple(),
             )
             .add_field(

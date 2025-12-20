@@ -7,7 +7,7 @@ Used for displaying a list of users with their stats by chosen criteria.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord.ui import (
@@ -101,7 +101,7 @@ class UsersListViewV2(LayoutView):
 
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore

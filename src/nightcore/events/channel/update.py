@@ -1,7 +1,7 @@
 """Handle guild channel update events."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import cast
 
 import discord
@@ -58,7 +58,7 @@ class UpdateChannelHandler(Cog):
             if hasattr(new, "mention")
             else f"Канал {new.id} был изменен",
             color=discord.Color.yellow(),
-            timestamp=datetime.now(tz=timezone.utc),
+            timestamp=datetime.now(tz=UTC),
         )
         embed.set_footer(
             text="Powered by nightcore",

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
@@ -132,7 +132,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
             moderator_id=view.author_id,
             user=target,
             reason=view.reason,
-            created_at=discord.utils.utcnow().astimezone(tz=timezone.utc),
+            created_at=discord.utils.utcnow().astimezone(tz=UTC),
             duration=view.duration,
             original_duration=view.original_duration,
             delete_messages_per=view.original_delete_seconds,
@@ -345,7 +345,7 @@ class BanRequestViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         # Footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay["BanRequestViewV2"](

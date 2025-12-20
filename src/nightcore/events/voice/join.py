@@ -1,5 +1,5 @@
 import logging  # noqa: D100
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -51,7 +51,7 @@ class VoiceStateJoinEvent(Cog):
         embed = Embed(
             title="Участник зашёл в голосовой канал",
             color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         embed.add_field(

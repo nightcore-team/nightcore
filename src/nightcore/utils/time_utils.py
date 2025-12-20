@@ -1,13 +1,13 @@
 """Utilities for parsing and formatting time durations."""
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 def discord_ts(dt: datetime, style: str = "f") -> str:
     """Convert a datetime to a Discord timestamp string."""
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return f"<t:{int(dt.timestamp())}:{style}>"
 
 
@@ -160,7 +160,7 @@ def calculate_end_time(duration: int) -> datetime:
     except (ValueError, TypeError) as e:
         raise ValueError("Invalid duration format") from e
 
-    return datetime.now(timezone.utc) + timedelta(seconds=seconds)
+    return datetime.now(UTC) + timedelta(seconds=seconds)
 
 
 def _normalize_two_digit_year(y: int, *, pivot: int = 70) -> int:
@@ -336,16 +336,16 @@ def parse_date_utc(
 
     # Got a naive datetime -> make it aware in UTC
     if set_time_to_now:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         dt = dt.replace(
             hour=now.hour,
             minute=now.minute,
             second=now.second,
             microsecond=now.microsecond,
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
         )
     else:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
 
     return dt
 
@@ -356,20 +356,20 @@ def compare_date_range(from_date: str | None, to_date: str | None):
     if from_date:
         from_dt = parse_date_utc(from_date)
     else:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         monday = now.date() - timedelta(days=now.weekday())
         from_dt = datetime(
-            monday.year, monday.month, monday.day, tzinfo=timezone.utc
+            monday.year, monday.month, monday.day, tzinfo=UTC
         )
 
     if to_date:
         to_dt = parse_date_utc(to_date)
     else:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         sunday = now.date() - timedelta(days=now.weekday() - 6)
 
         to_dt = datetime(
-            sunday.year, sunday.month, sunday.day, tzinfo=timezone.utc
+            sunday.year, sunday.month, sunday.day, tzinfo=UTC
         ) + timedelta(days=1)
 
     return from_dt, to_dt

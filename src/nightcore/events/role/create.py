@@ -1,7 +1,7 @@
 """Handle role creation events."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import discord
@@ -84,7 +84,7 @@ class CreateRoleEvent(Cog):
             title="Роль создана",
             description=f"{role.mention} ({role.id})",
             color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         embed.set_footer(
             text="Powered by nightcore",

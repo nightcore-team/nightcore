@@ -1,7 +1,7 @@
 """Handle member leave events."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -52,7 +52,7 @@ class LeaveMemberEvent(Cog):
             title="Пользователь покинул сервер",
             description=f"{member.mention} ({member.id}).",
             color=discord.Color.red(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         if member.roles:

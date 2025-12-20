@@ -1,7 +1,7 @@
 """Task cog for unpunishing users."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
@@ -33,7 +33,7 @@ class UnPunishTask(Cog):
             active_infractions = await get_temp_infractions(session)
 
             for infraction in active_infractions:
-                if infraction.end_time <= datetime.now(timezone.utc):
+                if infraction.end_time <= datetime.now(UTC):
                     await session.delete(infraction)
                     handle_infraction_type_event(
                         active_punish=infraction, bot=self.bot

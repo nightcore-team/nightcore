@@ -1,7 +1,7 @@
 """Handle infomaker member update events."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -86,7 +86,7 @@ class InfomakerUpdateMemberEvent(Cog):
             leader_embed = discord.Embed(
                 description=f"Изменение лидерских ролей пользователя {after.mention}",  # noqa: E501
                 color=discord.Color.blurple(),
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
             leader_embed.set_footer(
                 text="Powered by nightcore",
@@ -120,7 +120,7 @@ class InfomakerUpdateMemberEvent(Cog):
             admin_embed = discord.Embed(
                 description=f"Изменение административных ролей пользователя {after.mention}",  # noqa: E501
                 color=discord.Color.blurple(),
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
             admin_embed.set_footer(
                 text="Powered by nightcore",

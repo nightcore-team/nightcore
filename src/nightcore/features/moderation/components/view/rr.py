@@ -1,7 +1,7 @@
 """View for removing organization roles via a dropdown menu."""
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 import discord
@@ -84,7 +84,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
                     user=self.member,
                     roles_ids=[role.id for role in roles],
                     created_at=discord.utils.utcnow().astimezone(
-                        tz=timezone.utc
+                        tz=UTC
                     ),
                     reason=self.reason,
                 ),

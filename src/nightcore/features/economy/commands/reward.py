@@ -1,7 +1,7 @@
 """Command to take daily coins reward."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -48,7 +48,7 @@ class Reward(Cog):
                 session, guild_id=guild.id, user_id=interaction.user.id
             )
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             if user.reward_time is not None:
                 time_since_last_reward = now - user.reward_time

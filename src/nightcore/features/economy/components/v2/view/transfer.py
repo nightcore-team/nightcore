@@ -5,7 +5,7 @@ Used for displaying a notification when an item is transferred to a user.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color
@@ -188,7 +188,7 @@ class TransferHistoryViewV2(LayoutView):
             container.add_item(TextDisplay[Self](self.pages[0]))
             container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](
@@ -235,7 +235,7 @@ class TransferCoinsViewV2(LayoutView):
             )
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore

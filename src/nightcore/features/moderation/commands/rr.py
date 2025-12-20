@@ -1,7 +1,7 @@
 """Rr command for the Nightcore bot."""
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -170,7 +170,7 @@ class Rr(Cog):
                         user=member,
                         roles_ids=[role.id],
                         created_at=discord.utils.utcnow().astimezone(
-                            tz=timezone.utc
+                            tz=UTC
                         ),
                         reason=reason,
                     ),

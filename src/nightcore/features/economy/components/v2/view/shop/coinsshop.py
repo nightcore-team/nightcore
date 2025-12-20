@@ -7,7 +7,7 @@ Handles item selection and purchase flow, including creating threads for orders.
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import (
@@ -305,7 +305,7 @@ class CoinsShopViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore

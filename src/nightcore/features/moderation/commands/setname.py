@@ -1,7 +1,7 @@
 """Setname command for the Nightcore bot."""
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -145,7 +145,7 @@ class Setname(Cog):
                     reason=reason,
                     old_nickname=old_member_nickname,
                     new_nickname=nickname,
-                    created_at=discord.utils.utcnow().astimezone(timezone.utc),
+                    created_at=discord.utils.utcnow().astimezone(UTC),
                 ),
             )
         except Exception as e:

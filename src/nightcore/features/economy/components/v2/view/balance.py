@@ -4,7 +4,7 @@ Balance view v2 component.
 Used for displaying a user's balance information.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import Color
@@ -53,7 +53,7 @@ class BalanceViewV2(LayoutView):
         container.add_item(TransferHistoryActionRow(guild_id, user_id))
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore

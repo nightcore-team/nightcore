@@ -1,7 +1,7 @@
 """View for sending role requests."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color, Guild, Member, Role, SelectOption
@@ -373,7 +373,7 @@ class SendRoleRequestView(LayoutView):
         container.add_item(Separator[Self]())
 
         # footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

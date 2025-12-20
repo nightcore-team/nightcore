@@ -1,7 +1,7 @@
 """Handle default member update events."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -60,7 +60,7 @@ class DefaultUpdateMemberEvent(Cog):
 
         embed = discord.Embed(
             color=discord.Color.yellow(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         embed.set_footer(
             text="Powered by nightcore",

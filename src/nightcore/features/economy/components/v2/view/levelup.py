@@ -4,7 +4,7 @@ Level Up View V2 Component.
 Used for displaying a notification when a user levels up in the levels system.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import Color
@@ -45,7 +45,7 @@ class LevelUpViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore

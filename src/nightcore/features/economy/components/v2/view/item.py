@@ -4,7 +4,7 @@ Award notification view v2 component.
 Used for displaying a notification when an item is awarded to a user.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import Color
@@ -51,7 +51,7 @@ class AwardNotificationViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore

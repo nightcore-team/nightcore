@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from collections.abc import Awaitable
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 import discord
@@ -63,9 +63,7 @@ class RolesChangeEvent(Cog):
                         moderator_id=data.moderator.id,
                         category=data.category,
                         reason=None,
-                        time_now=discord.utils.utcnow().astimezone(
-                            timezone.utc
-                        ),
+                        time_now=discord.utils.utcnow().astimezone(UTC),
                     )
                 except Exception as e:
                     logger.exception(

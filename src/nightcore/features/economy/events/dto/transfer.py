@@ -1,7 +1,7 @@
 """DTO for user items changed event."""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord import Color, Embed, Guild, Member
@@ -31,7 +31,7 @@ class TransferCoinsEventDTO(BaseEventDTO):
         return (
             Embed(
                 title="Перевод коинов между пользователями",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 color=Color.orange(),
             )
             .add_field(

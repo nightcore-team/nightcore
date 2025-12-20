@@ -1,6 +1,6 @@
 """Role members view v2 component."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Role
@@ -136,7 +136,7 @@ class RoleMembersViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         # Footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Page {self.current_page + 1} of {len(self.pages)}\n"

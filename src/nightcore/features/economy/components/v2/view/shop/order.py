@@ -6,7 +6,7 @@ Used for displaying and managing shop orders.
 
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Guild, Interaction, Member, Message, Thread
@@ -520,7 +520,7 @@ class CoinsShopOrderViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         # 15
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
                 f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore

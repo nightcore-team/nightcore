@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord.ext import tasks
@@ -42,7 +42,7 @@ class DeleteTempRoleTask(Cog):
             temp_roles = await get_all_temp_roles(session)
 
             for temp_role in temp_roles:
-                if not temp_role.end_time <= datetime.now(timezone.utc):
+                if not temp_role.end_time <= datetime.now(UTC):
                     continue
 
                 guild = await ensure_guild_exists(self.bot, temp_role.guild_id)

@@ -1,7 +1,7 @@
 """Command to set an specified multiplier for a guild for a limited time."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
@@ -92,7 +92,7 @@ async def set_multiplier(
             )
 
             if not created:
-                end_time = datetime.now(timezone.utc) + timedelta(
+                end_time = datetime.now(UTC) + timedelta(
                     seconds=parsed_duration
                 )
 

@@ -4,7 +4,7 @@ Battlepass info view v2 component.
 Used for displaying a general battlepass information with pagination.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color
@@ -139,7 +139,7 @@ class BattlepassInfoViewV2(LayoutView):
         else:
             self.pagination = None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

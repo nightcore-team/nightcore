@@ -4,7 +4,7 @@ Complaint view v2 component.
 Used for displaying complaint information in forum threads.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Color
@@ -82,7 +82,7 @@ class ComplaintViewV2(LayoutView):
         container.add_item(ComplaintActionRow(url))
         container.add_item(Separator[Self]())
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

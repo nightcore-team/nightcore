@@ -1,7 +1,7 @@
 """Handle member add events."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
@@ -55,7 +55,7 @@ class AddMemberEvent(Cog):
             title="Пользователь присоединился к серверу",
             description=f"{member.mention} ({member.id})",
             color=discord.Color.green(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         embed.add_field(
             name="Дата регистрации",

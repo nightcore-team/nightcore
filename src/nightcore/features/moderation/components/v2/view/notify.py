@@ -1,5 +1,5 @@
 import logging  # noqa: D100
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import (
@@ -240,7 +240,7 @@ class PrepareNotifyViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         # footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](
@@ -300,7 +300,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
                                         item.content, r"<t:(\d+):[A-Za-z]>"
                                     )  # type: ignore
                                 ),
-                                tz=timezone.utc,
+                                tz=UTC,
                             )
                         case _:
                             ...
@@ -430,7 +430,7 @@ class NotifyViewV2(LayoutView):
                                         item.content, r"<t:(\d+):[A-Za-z]>"
                                     )  # type: ignore
                                 ),
-                                tz=timezone.utc,
+                                tz=UTC,
                             )
                         case _:
                             ...
@@ -490,7 +490,7 @@ class NotifyViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         # footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](
@@ -531,7 +531,7 @@ class NotifyTimedOutViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         # footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

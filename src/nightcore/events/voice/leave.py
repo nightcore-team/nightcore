@@ -1,5 +1,5 @@
 import logging  # noqa: D100
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -51,7 +51,7 @@ class VoiceStateLeaveEvent(Cog):
         embed = Embed(
             title="Участник вышел из голосового канала",
             color=discord.Color.red(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         embed.add_field(

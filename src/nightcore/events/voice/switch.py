@@ -1,5 +1,5 @@
 import logging  # noqa: D100
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -50,7 +50,7 @@ class VoiceStateSwitchEvent(Cog):
             )
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         mover = None
         try:
@@ -103,7 +103,7 @@ class VoiceStateSwitchEvent(Cog):
         embed = Embed(
             description=description,
             color=color,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         embed.set_footer(

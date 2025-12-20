@@ -1,6 +1,6 @@
 """Embed components for punishment notifications."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord import Embed
@@ -42,6 +42,6 @@ def generate_log_punish_embed(
         text=f"Powered by {bot.user.name}",  # type: ignore
         icon_url=bot.user.avatar.url,  # type: ignore
     )
-    embed.timestamp = datetime.now(timezone.utc)
+    embed.timestamp = datetime.now(UTC)
 
     return embed

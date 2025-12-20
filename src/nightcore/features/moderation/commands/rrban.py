@@ -1,7 +1,7 @@
 """Role requesting ban command for the Nightcore bot."""
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -159,7 +159,7 @@ class Rrban(Cog):
                     user=member,
                     reason=reason,
                     created_at=discord.utils.utcnow().astimezone(
-                        tz=timezone.utc
+                        tz=UTC
                     ),
                     guild_name=guild.name,
                     duration=parsed_duration,

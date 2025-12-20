@@ -2,7 +2,7 @@
 
 import io
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -116,7 +116,7 @@ class UpdateMessageEvent(Cog):
 
         embed = discord.Embed(
             color=discord.Color.red(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         embed.set_author(name="Сообщение было изменено")
 

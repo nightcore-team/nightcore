@@ -1,7 +1,7 @@
 """View for sending role requests."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
@@ -504,7 +504,7 @@ class CheckRoleRequestView(LayoutView):
             self.disable_buttons()
 
         # footer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         container.add_item(
             TextDisplay[Self](

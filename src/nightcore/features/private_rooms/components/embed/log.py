@@ -1,6 +1,6 @@
 """Private rooms log embed component."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import discord
 from discord.embeds import Embed
@@ -19,7 +19,7 @@ class PrivateRoomLogEmbed(Embed):
         super().__init__(
             title=title,
             color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         self.set_footer(
             text="Powered by nightcore",
