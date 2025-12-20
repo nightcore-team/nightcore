@@ -95,6 +95,11 @@ class ChangeStatTypeEnum(Enum):
     ROLE_ACCEPT = "role_accept"
 
 
+class ComponentTypeEnum(Enum):
+    EMBED = "embed"
+    V2_COMPONENT = "v2_component"
+
+
 class MetaConfigAccessTypeEnum(Enum):
     """Enumeration for meta config access types."""
 

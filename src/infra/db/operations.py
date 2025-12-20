@@ -16,6 +16,7 @@ from src.infra.db.models import (
     ChangeStat,
     Clan,
     ClanMember,
+    CustomComponent,
     GuildClansConfig,
     GuildEconomyConfig,
     GuildInfomakerConfig,
@@ -1067,12 +1068,34 @@ async def get_all_expired_temp_multipliers(
 
     Returns multipliers where end_time <= current time.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     stmt = select(TempEconomyMultiplier).where(
         TempEconomyMultiplier.end_time <= now
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def get_custom_components(
+    session: AsyncSession, *, guild_id: int
+) -> Sequence[CustomComponent]:
+    """Get the custom components for a guild."""
+    stmt = select(CustomComponent).where(CustomComponent.guild_id == guild_id)
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_custom_component_by_id(
+    session: AsyncSession, *, guild_id: int, id: int
+) -> CustomComponent | None:
+    """Get a custom component by name for a guild."""
+    stmt = select(CustomComponent).where(
+        CustomComponent.guild_id == guild_id, CustomComponent.id == id
+    )
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()

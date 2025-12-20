@@ -1,5 +1,6 @@
 from .changestat import Base, ChangeStat
 from .clan import Base, Clan, ClanMember  # noqa: F811
+from .custom_component import Base, CustomComponent  # noqa: F811  # noqa: F811
 from .guild import (
     Base,  # noqa: F811
     GuildClansConfig,
@@ -32,6 +33,7 @@ __all__ = (
     "ChangeStat",
     "Clan",
     "ClanMember",
+    "CustomComponent",
     "GuildClansConfig",
     "GuildEconomyConfig",
     "GuildInfomakerConfig",
