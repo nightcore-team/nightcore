@@ -2,9 +2,15 @@
 
 from collections.abc import Iterable
 from logging import Logger
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 from discord import app_commands
+
+
+class Result(TypedDict):
+    top_level_total: int
+    top_level: list[dict[str, Any]]
+    leaf_overall: int
 
 
 def walk_group(
@@ -20,7 +26,7 @@ def walk_group(
             yield (f"{prefix}{cmd.name}", cmd)  # type: ignore
 
 
-def summarize_tree(tree: app_commands.CommandTree) -> dict[str, str | Any]:
+def summarize_tree(tree: app_commands.CommandTree) -> Result:
     """
     Returns summary information about the command tree.
     {
@@ -45,11 +51,13 @@ def summarize_tree(tree: app_commands.CommandTree) -> dict[str, str | Any]:
         "leaf_overall": X   # total number of leaf commands (excluding groups)
     }.
     """  # noqa: D205
-    result = {
+
+    result: Result = {
         "top_level_total": 0,
         "top_level": [],
         "leaf_overall": 0,
     }
+
     top_cmds = tree.get_commands()
     result["top_level_total"] = len(top_cmds)
 
@@ -84,7 +92,7 @@ def summarize_tree(tree: app_commands.CommandTree) -> dict[str, str | Any]:
                     )
                     leaf_count += 1
             overall_leaf += leaf_count
-            cast(list, result["top_level"]).append(
+            result["top_level"].append(
                 {
                     "name": top.name,  # type: ignore
                     "type": "group",
