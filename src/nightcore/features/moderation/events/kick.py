@@ -64,7 +64,7 @@ class UserKickEvent(Cog):
                     user_id=data.user.id,
                     moderator_id=data.moderator.id,
                     category=data.category,
-                    reason=data.reason,  # type: ignore
+                    reason=data.reason,
                     end_time=None,
                     time_now=discord.utils.utcnow().astimezone(UTC),
                 )
