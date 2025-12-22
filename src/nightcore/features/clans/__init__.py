@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from discord import app_commands
-
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
