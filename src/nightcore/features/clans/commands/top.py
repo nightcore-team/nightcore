@@ -45,8 +45,12 @@ async def clan_top(
     start_time = time.perf_counter()
     async with interaction.client.uow.start() as session:
         clans = await get_clans_by_spec(
-            session, guild_id=guild.id, spec=sort_by.value if sort_by else None
+            session,
+            guild_id=guild.id,
+            spec=sort_by.value if sort_by else None,
+            limit=10,
         )
+
     end_time = time.perf_counter()
     logger.info(
         "[clan/top] Fetched clans for guild %s in %.4f seconds",

@@ -92,7 +92,7 @@ def get_config_type_by_name(name: str) -> type[GuildT]:
     return config_types[name]
 
 
-async def get_specified_guild_config(
+async def get_specified_guild_config(  # noqa: UP047
     session: AsyncSession, *, config_type: type[GuildT], guild_id: int
 ) -> GuildT | None:
     """Get the guild configuration from the database."""
@@ -113,7 +113,7 @@ async def get_guild_rules(
     return result.scalar_one_or_none()
 
 
-async def get_specified_channel(
+async def get_specified_channel(  # noqa: UP047
     session: AsyncSession,
     *,
     guild_id: int,
@@ -126,7 +126,7 @@ async def get_specified_channel(
     return await session.scalar(stmt)
 
 
-async def get_specified_field(
+async def get_specified_field(  # noqa: UP047
     session: AsyncSession,
     *,
     guild_id: int,
@@ -257,6 +257,7 @@ async def create_punish(
     end_time: datetime | None = None,
 ) -> Punish:
     """Create a new punishment entry in the database."""
+
     punish = Punish(
         guild_id=guild_id,
         user_id=user_id,
@@ -354,20 +355,19 @@ async def get_clans_by_spec(
     *,
     guild_id: int,
     spec: str | None = None,
+    limit: int | None = None,
 ) -> Sequence[Clan]:
     """Get clans for a guild ordered by the specified spec (e.g., 'reputation' or 'members')."""  # noqa: E501
-    stmt = select(Clan).where(Clan.guild_id == guild_id).limit(10)
+    stmt = select(Clan).where(Clan.guild_id == guild_id).limit(limit)
 
     match spec:
         case "members":
             stmt = (
-                select(Clan)
-                .join(Clan.members)
-                .where(Clan.guild_id == guild_id)
+                stmt.join(Clan.members)
                 .group_by(Clan.id)
                 .order_by(func.count(ClanMember.id).desc())
-                .limit(10)
             )
+
         case "created_at":
             # Order by a Clan column if it exists, otherwise fall back to id
             stmt = stmt.order_by(Clan.created_at.asc())
