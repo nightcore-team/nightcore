@@ -95,6 +95,14 @@ class ChangeStatTypeEnum(Enum):
     ROLE_ACCEPT = "role_accept"
 
 
+class ClanManageActionEnum(Enum):
+    CREATE = "create"
+    DELETE = "delete"
+    CHANGE_LEADER = "change_leader"
+    CHANGE_ROLE = "change_role"
+    BUY_IMPOVEMENT = "buy_impovement"
+
+
 class ComponentTypeEnum(Enum):
     EMBED = "embed"
     V2_COMPONENT = "v2_component"

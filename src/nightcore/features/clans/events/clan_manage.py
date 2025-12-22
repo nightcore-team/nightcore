@@ -1,0 +1,32 @@
+"""Clan manage notify event handler."""
+
+import logging
+from typing import TYPE_CHECKING
+
+from discord.ext.commands import Cog  # type: ignore
+
+from nightcore.features.clans.events.dto.clan_manage import (
+    ClanManageNotifyDTO,
+)
+from src.nightcore.utils.log import send_log_message
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
+logger = logging.getLogger(__name__)
+
+
+class ClanManageNotifyEvent(Cog):
+    def __init__(self, bot: "Nightcore") -> None:
+        self.bot = bot
+
+    @Cog.listener()
+    async def on_clan_manage_notify(self, dto: ClanManageNotifyDTO):
+        """Handle clan manae notify event."""
+
+        await send_log_message(self.bot, dto)
+
+
+async def setup(bot: "Nightcore"):
+    """Setup the ClanChangeNotifyEvent cog."""
+    await bot.add_cog(ClanManageNotifyEvent(bot))
