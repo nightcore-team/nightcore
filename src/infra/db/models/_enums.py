@@ -102,6 +102,10 @@ class ClanManageActionEnum(Enum):
     CHANGE_ROLE = "Изменение роли"
     CHANGE_NAME = "Изменение названия"
     BUY_IMPOVEMENT = "Покупка улучшения"
+    ADD_DEPUTY = "Добавление заместителя"
+    REMOVE_DEPUTY = "Снятие заместителя"
+    INVITE_MEMBER = "Приглашение участника"
+    KICK_MEMBER = "Исключение участника"
 
 
 class ComponentTypeEnum(Enum):

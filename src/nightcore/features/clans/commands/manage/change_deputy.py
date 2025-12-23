@@ -6,9 +6,15 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import ClanMemberRoleEnum
+from src.infra.db.models._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
+)
+from src.infra.db.models.guild import GuildClansConfig
 from src.infra.db.operations import (
     get_clan_member,
+    get_specified_channel,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -16,6 +22,10 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
+from src.nightcore.features.clans.events.dto.clan_manage_notify import (
+    ClanManageAction,
+    ClanManageNotifyDTO,
+)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -193,6 +203,36 @@ async def change_deputy(
             ),
             ephemeral=True,
         )
+
+    async with bot.uow.start() as session:
+        clans_logging_channel = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildClansConfig,
+            channel_type=ChannelType.LOGGING_CLANS,
+        )
+
+    if option == "add":
+        action_type = ClanManageActionEnum.ADD_DEPUTY
+
+    if option == "remove":
+        action_type = ClanManageActionEnum.REMOVE_DEPUTY
+
+    clan_deputy_change_action = ClanManageAction(
+        type=action_type,  # type: ignore one of the ifs on 215 or 218 will always work, because the option is required for selection
+        after=member.mention,
+    )
+
+    dto = ClanManageNotifyDTO(
+        guild=guild,
+        event_type="clan_manage_notify",
+        actor_id=interaction.user.id,
+        clan_name=leader.clan.name,  # type: ignore The clan will always exist here because of the checks on lines 91 and 132
+        actions=[clan_deputy_change_action],
+        logging_channel_id=clans_logging_channel,
+    )
+
+    bot.dispatch("clan_manage_notify", dto)
 
     if outcome == "deputy_added":
         await interaction.response.send_message(
