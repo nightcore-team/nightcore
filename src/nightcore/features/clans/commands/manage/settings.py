@@ -6,10 +6,16 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member, Role, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import ClanMemberRoleEnum
+from src.infra.db.models._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
+)
+from src.infra.db.models.guild import GuildClansConfig
 from src.infra.db.operations import (
     get_clan_by_id,
     get_clan_member,
+    get_specified_channel,
 )
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
@@ -18,6 +24,10 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
+from src.nightcore.features.clans.events.dto.clan_manage_notify import (
+    ClanManageAction,
+    ClanManageNotifyDTO,
+)
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
     compare_top_roles,
@@ -67,6 +77,7 @@ async def settings(
     clan_name: str | None = None
     changed_leader_to: int | None = None
     changed_role_to: int | None = None
+    old_role_id: int | None = None
 
     async with bot.uow.start() as session:
         if outcome is None:
@@ -116,6 +127,7 @@ async def settings(
                             outcome = "role_has_administrator_permissions"
                         else:
                             try:
+                                old_role_id = clan_entity.role_id
                                 clan_entity.role_id = new_role.id
                                 changed_role_to = new_role.id
                             except Exception as e:
@@ -214,6 +226,45 @@ async def settings(
         if summary_lines
         else "Настройки клана успешно обновлены."
     )
+
+    async with bot.uow.start() as session:
+        clans_logging_channel = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildClansConfig,
+            channel_type=ChannelType.LOGGING_CLANS,
+        )
+
+    actions: list[ClanManageAction] = []
+
+    if new_leader is not None:
+        clan_change_leader_action = ClanManageAction(
+            type=ClanManageActionEnum.CHANGE_LEADER,
+            before=f"<@{clan_entity.leader.id}>",  # type: ignore The clan will always exist here because of the checks on lines 86 and 139
+            after=new_leader.mention,
+        )
+
+        actions.append(clan_change_leader_action)
+
+    if new_role is not None and old_role_id is not None:
+        clan_change_role_action = ClanManageAction(
+            type=ClanManageActionEnum.CHANGE_ROLE,
+            before=f"<@&{old_role_id}>",
+            after=clan_entity.role_id,  # type: ignore The clan will always exist here because of the checks on lines 86 and 139
+        )
+
+        actions.append(clan_change_role_action)
+
+    dto = ClanManageNotifyDTO(
+        guild=guild,
+        event_type="clan_manage_notify",
+        actor_id=interaction.user.id,
+        clan_name=clan,
+        actions=actions,
+        logging_channel_id=clans_logging_channel,
+    )
+
+    bot.dispatch("clan_manage_notify", dto)
 
     await interaction.response.send_message(
         embed=SuccessMoveEmbed(

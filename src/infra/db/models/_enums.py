@@ -96,11 +96,12 @@ class ChangeStatTypeEnum(Enum):
 
 
 class ClanManageActionEnum(Enum):
-    CREATE = "create"
-    DELETE = "delete"
-    CHANGE_LEADER = "change_leader"
-    CHANGE_ROLE = "change_role"
-    BUY_IMPOVEMENT = "buy_impovement"
+    CREATE = "Создание"
+    DELETE = "Удаление"
+    CHANGE_LEADER = "Изменение лидера"
+    CHANGE_ROLE = "Изменение роли"
+    CHANGE_NAME = "Изменение названия"
+    BUY_IMPOVEMENT = "Покупка улучшения"
 
 
 class ComponentTypeEnum(Enum):
