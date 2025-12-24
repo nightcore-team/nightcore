@@ -11,6 +11,7 @@ from discord import (
     Embed,
     Interaction,
     Role,
+    TextChannel,
     TextStyle,
 )
 from discord.ui import FileUpload, Label, LayoutView, Modal, TextInput
@@ -49,10 +50,10 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
         type: ComponentTypeEnum,
         name: str,
         text: str,
+        channel: TextChannel | None = None,
         color: Color | None = None,
         author_text: str | None = None,
         role: Role | None = None,
-        ephemeral: bool = True,
     ):
         self.bot = bot
         super().__init__()
@@ -63,7 +64,7 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
         self.color = color
         self.author_text = author_text
         self.role = role
-        self.ephemeral = ephemeral
+        self.channel = channel
 
     async def on_submit(self, interaction: Interaction) -> None:
         """Handles the submission of the ban form modal."""
@@ -138,37 +139,29 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
 
         if isinstance(component, Embed):
             content = (
-                self.role.mention if self.role and not self.ephemeral else None
+                self.role.mention if self.role and not self.channel else None
             )
-            await interaction.response.send_message(
-                content=content,
-                embed=component,
-                ephemeral=self.ephemeral,
-            )
+
+            if self.channel:
+                await self.channel.send(content=content, embed=component)
+            else:
+                await interaction.response.send_message(
+                    content=content,
+                    embed=component,
+                    ephemeral=True,
+                )
         else:
-            if self.ephemeral:
+            if self.channel is None:
                 # Якщо ephemeral - відправляємо через interaction
                 await interaction.response.send_message(
                     view=component,
                     ephemeral=True,
                 )
             else:
-                # Перевірка наявності каналу
-                if not interaction.channel:
-                    return await interaction.response.send_message(
-                        embed=ErrorEmbed(
-                            "Ошибка компонента",
-                            "Невозможно отправить компонент в этот канал.",
-                            self.bot.user.display_name,  # type: ignore
-                            self.bot.user.avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-
                 if self.role:
-                    await interaction.channel.send(self.role.mention)  # type: ignore
+                    await self.channel.send(self.role.mention)  # type: ignore
 
-                await interaction.channel.send(view=component)  # type: ignore
+                await self.channel.send(view=component)  # type: ignore
 
                 await interaction.response.send_message(
                     content="Компонент отправлен.", ephemeral=True

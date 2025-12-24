@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Color, Guild, Role, app_commands
+from discord import Color, Guild, Role, TextChannel, app_commands
 from discord.interactions import Interaction
 
 if TYPE_CHECKING:
@@ -36,12 +36,14 @@ logger = logging.getLogger(__name__)
     component="Выберите компонент для отправки",
     color="Цвет компонента в HEX формате (опционально): Пример: #FF5733",
     role="Роль, которую нужно упомянуть при отправке компонента (опционально)",
+    channel="Канал для отправки компонента",
 )
 @app_commands.autocomplete(component=components_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
 async def send(
     interaction: Interaction["Nightcore"],
     component: str,
+    channel: TextChannel,
     color: str | None = None,
     role: Role | None = None,
 ):
@@ -101,8 +103,8 @@ async def send(
             name=cmp.name,
             text=cmp.text,
             author_text=cmp.author_text,
+            channel=channel,
             color=c,
             role=role,
-            ephemeral=False,
         )
     )
