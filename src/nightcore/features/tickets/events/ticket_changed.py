@@ -16,18 +16,18 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
 )
-from src.nightcore.features.tickets.events.dto import TicketEventData
+from src.nightcore.features.tickets.events.dto import TicketChangeEventData
 from src.nightcore.utils import ensure_messageable_channel_exists
 
 logger = logging.getLogger(__name__)
 
 
-class TicketEvent(Cog):
+class TicketChangeEvent(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
     @Cog.listener()
-    async def on_ticket_changed(self, *, data: TicketEventData) -> None:
+    async def on_ticket_changed(self, *, data: TicketChangeEventData) -> None:
         """Handle ticket change events."""
 
         logger.info(
@@ -65,7 +65,7 @@ class TicketEvent(Cog):
             )
 
     @Cog.listener()
-    async def on_ticket_deleted(self, data: TicketEventData) -> None:
+    async def on_ticket_deleted(self, data: TicketChangeEventData) -> None:
         """Called when a ticket is deleted."""
         logger.info(
             "[tickets/event] on_ticket_deleted - %s: Guild: %s, Member: %s, Moderator: %s",  # noqa: E501
@@ -131,5 +131,5 @@ class TicketEvent(Cog):
 
 
 async def setup(bot: Nightcore):
-    """Setup the TicketEvent cog."""
-    await bot.add_cog(TicketEvent(bot))
+    """Setup the TicketChangeEvent cog."""
+    await bot.add_cog(TicketChangeEvent(bot))

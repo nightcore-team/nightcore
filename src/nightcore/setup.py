@@ -81,7 +81,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.battlepass.commands.battlepass",
         # === tickets
         "src.nightcore.features.tickets.commands.ticketmessage",
-        "src.nightcore.features.tickets.events.ticket",
+        "src.nightcore.features.tickets.events.ticket_changed",
         # === role requests
         "src.nightcore.features.role_requests.commands.rrmessage",
         # === proposals

@@ -38,7 +38,7 @@ from src.nightcore.components.embed import (
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.features.tickets.events.dto import TicketEventData
+from src.nightcore.features.tickets.events.dto import TicketChangeEventData
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
 
 from .manage_ticket import ManageTicketViewV2
@@ -299,7 +299,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
             if logging_channel_id:
                 view.bot.dispatch(
                     "ticket_changed",
-                    data=TicketEventData(
+                    data=TicketChangeEventData(
                         guild,
                         new_channel_id,
                         user.id,
