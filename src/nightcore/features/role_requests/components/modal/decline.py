@@ -1,6 +1,7 @@
 """Modal for submitting ban requests."""
 
 import logging
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
@@ -86,6 +87,7 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
             if not outcome:
                 last_rr.state = RoleRequestStateEnum.DENIED  # type: ignore
                 last_rr.moderator_id = interaction.user.id  # type: ignore
+                last_rr.updated_at = datetime.now(UTC)  # type: ignore
 
         if outcome == "role_request_not_found":
             return await interaction.followup.send(
