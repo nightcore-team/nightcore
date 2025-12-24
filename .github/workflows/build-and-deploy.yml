@@ -51,6 +51,7 @@ jobs:
           echo "View at: https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}"
 
   deploy:
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'dev' }}
     needs: build
     runs-on: ubuntu-latest
 
