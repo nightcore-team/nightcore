@@ -6,14 +6,22 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import Clan, GuildClansConfig
-from src.infra.db.models._enums import ClanMemberRoleEnum
-from src.infra.db.operations import get_clan_member
+from src.infra.db.models._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
+)
+from src.infra.db.operations import get_clan_member, get_specified_channel
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as clan_manage_group
+from src.nightcore.features.clans.events.dto.clan_manage_notify import (
+    ClanManageAction,
+    ClanManageNotifyDTO,
+)
 from src.nightcore.features.clans.utils import clans_improvements_autocomplete
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
@@ -61,10 +69,10 @@ async def improvements(
 
         else:
             icost = 0
-            iindex = 0
+            index = 0
             try:
-                iindex = int(improvement)
-                icost = guild_config.clan_improvements[iindex]
+                index = int(improvement)
+                icost = guild_config.clan_improvements[index]
             except (IndexError, ValueError, KeyError):
                 outcome = "invalid_improvement"
 
@@ -75,7 +83,7 @@ async def improvements(
                 if not (clan.coins > icost):
                     outcome = "insufficient_funds"
                 else:
-                    match iindex:
+                    match index:
                         case 0:
                             if clan.max_deputies + 1 <= 3:
                                 clan.max_deputies += 1
@@ -167,13 +175,35 @@ async def improvements(
             ephemeral=True,
         )
 
-    if outcome == "success":
-        return await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
-                "Успешное улучшение клана",
-                "Улучшение клана применено успешно.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
+    async with bot.uow.start() as session:
+        clans_logging_channel = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildClansConfig,
+            channel_type=ChannelType.LOGGING_CLANS,
         )
+
+    clan_buy_improvement_action = ClanManageAction(
+        type=ClanManageActionEnum.BUY_IMPOVEMENT, after=improvement
+    )
+
+    dto = ClanManageNotifyDTO(
+        guild=guild,
+        event_type="clan_manage_notify",
+        actor_id=interaction.user.id,
+        clan_name=clan_member.clan.name,  # type: ignore The clan will always exist here because of the checks on lines 64 and 125
+        actions=[clan_buy_improvement_action],
+        logging_channel_id=clans_logging_channel,
+    )
+
+    bot.dispatch("clan_manage_notify", dto)
+
+    return await interaction.response.send_message(
+        embed=SuccessMoveEmbed(
+            "Успешное улучшение клана",
+            "Улучшение клана применено успешно.",
+            bot.user.display_name,  # type: ignore
+            bot.user.display_avatar.url,  # type: ignore
+        ),
+        ephemeral=True,
+    )
