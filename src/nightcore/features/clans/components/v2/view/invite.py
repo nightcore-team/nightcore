@@ -25,7 +25,7 @@ from src.infra.db.models._enums import (
     ClanManageActionEnum,
     ClanMemberRoleEnum,
 )
-from src.infra.db.models.guild import GuildClansConfig
+from src.infra.db.models.guild import GuildLoggingConfig
 from src.infra.db.operations import create_clan_member, get_specified_channel
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
@@ -134,7 +134,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
             clans_logging_channel = await get_specified_channel(
                 session,
                 guild_id=view.inviter.guild_id,
-                config_type=GuildClansConfig,
+                config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_CLANS,
             )
 

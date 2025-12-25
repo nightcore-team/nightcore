@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import Clan, GuildClansConfig
+from src.infra.db.models import Clan, GuildClansConfig, GuildLoggingConfig
 from src.infra.db.models._enums import (
     ChannelType,
     ClanManageActionEnum,
@@ -179,7 +179,7 @@ async def improvements(
         clans_logging_channel = await get_specified_channel(
             session,
             guild_id=guild.id,
-            config_type=GuildClansConfig,
+            config_type=GuildLoggingConfig,
             channel_type=ChannelType.LOGGING_CLANS,
         )
 
