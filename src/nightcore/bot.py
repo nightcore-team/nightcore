@@ -222,6 +222,15 @@ class Nightcore(Bot):
         if self.cog_modules:
             for module in self.cog_modules:
                 try:
+                    if (
+                        "check_forum" in module
+                        and config.bot.DISABLE_FORUM_TASK
+                    ):
+                        logger.info(
+                            f"Skipping loading cog {module} because forum task is disabled."  # noqa: E501
+                        )
+                        continue
+
                     logger.info(f"Loading cog: {module}")
                     await self.load_extension(module)
                     logger.info(f"[success] Successfully loaded {module}")
