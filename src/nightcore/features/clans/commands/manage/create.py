@@ -9,16 +9,10 @@ from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.exc import IntegrityError
 
-from src.infra.db.models._enums import (
-    ChannelType,
-    ClanManageActionEnum,
-    ClanMemberRoleEnum,
-)
-from src.infra.db.models.guild import GuildClansConfig
+from src.infra.db.models._enums import ClanMemberRoleEnum
 from src.infra.db.operations import (
     create_clan,
     create_clan_member,
-    get_specified_channel,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -26,10 +20,6 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
-from src.nightcore.features.clans.events.dto.clan_manage_notify import (
-    ClanManageAction,
-    ClanManageNotifyDTO,
-)
 from src.nightcore.utils import (
     safe_delete_role,
 )
@@ -213,29 +203,6 @@ async def create(
         leader.id,
         color_int,
     )
-
-    async with bot.uow.start() as session:
-        clans_logging_channel = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildClansConfig,
-            channel_type=ChannelType.LOGGING_CLANS,
-        )
-
-    clan_create_action = ClanManageAction(
-        type=ClanManageActionEnum.CREATE,
-    )
-
-    dto = ClanManageNotifyDTO(
-        guild=guild,
-        event_type="clan_manage_notify",
-        actor_id=interaction.user.id,
-        clan_name=name,
-        actions=[clan_create_action],
-        logging_channel_id=clans_logging_channel,
-    )
-
-    bot.dispatch("clan_manage_notify", dto)
 
     return await interaction.followup.send(
         embed=SuccessMoveEmbed(

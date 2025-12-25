@@ -7,23 +7,14 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import (
-    ChannelType,
-    ClanManageActionEnum,
-    ClanMemberRoleEnum,
-)
-from src.infra.db.models.guild import GuildClansConfig
-from src.infra.db.operations import get_clan_member, get_specified_channel
+from src.infra.db.models._enums import ClanMemberRoleEnum
+from src.infra.db.operations import get_clan_member
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as clan_manage_group
-from src.nightcore.features.clans.events.dto.clan_manage_notify import (
-    ClanManageAction,
-    ClanManageNotifyDTO,
-)
 from src.nightcore.utils import ensure_role_exists
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -153,29 +144,6 @@ async def kick(
         interaction.response.send_message(embed=embed, ephemeral=True),
         user.remove_roles(role, reason="Кик из клана."),
     )
-
-    async with bot.uow.start() as session:
-        clans_logging_channel = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildClansConfig,
-            channel_type=ChannelType.LOGGING_CLANS,
-        )
-
-    clan_kick_member_action = ClanManageAction(
-        type=ClanManageActionEnum.KICK_MEMBER, after=user.mention
-    )
-
-    dto = ClanManageNotifyDTO(
-        guild=guild,
-        event_type="clan_manage_notify",
-        actor_id=interaction.user.id,
-        clan_name=interaction_clan_member.clan.name,
-        actions=[clan_kick_member_action],
-        logging_channel_id=clans_logging_channel,
-    )
-
-    bot.dispatch("clan_manage_notify", dto)
 
     logger.info(
         "[command] - invoked user=%s guild=%s clan_name=%s kicked_user=%s",
