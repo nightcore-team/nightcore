@@ -198,15 +198,18 @@ class CountMessageEvent(Cog):
 
             levelup_channel_id = guild_config.level_notify_channel_id
 
-            if t := guild_config.temp_exp_multiplier:
-                exp_multiplier = t
-            else:
-                exp_multiplier = guild_config.base_exp_multiplier
-
-            if c := guild_config.temp_coins_multiplier:
-                coins_multiplier = c
-            else:
-                coins_multiplier = guild_config.base_coins_multiplier
+            exp_multiplier = (
+                guild_config.temp_exp_multiplier
+                or guild_config.base_exp_multiplier
+            )
+            coins_multiplier = (
+                guild_config.temp_coins_multiplier
+                or guild_config.base_coins_multiplier
+            )
+            battlepass_multiplier = (
+                guild_config.temp_battlepass_multiplier
+                or guild_config.base_battlepass_multiplier
+            )
 
             # check bonus multiplier
             bonus_multiplier = 1
