@@ -20,7 +20,6 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
-    float_value,
     format_changes,
     int_id_value,
     split_changes,
