@@ -178,3 +178,28 @@ async def improvements(
             config_type=GuildLoggingConfig,
             channel_type=ChannelType.LOGGING_CLANS,
         )
+
+    clan_buy_improvement_action = ClanManageAction(
+        type=ClanManageActionEnum.BUY_IMPOVEMENT, after=improvement
+    )
+    
+    dto = ClanManageNotifyDTO(
+        guild=guild,
+        event_type="clan_manage_notify",
+        actor_id=interaction.user.id,
+        clan_name=clan_member.clan.name,  # type: ignore The clan will always exist here because of the checks on lines 64 and 125
+        actions=[clan_buy_improvement_action],
+        logging_channel_id=clans_logging_channel,
+    )
+
+    bot.dispatch("clan_manage_notify", dto)
+
+    return await interaction.response.send_message(
+        embed=SuccessMoveEmbed(
+            "Успешное улучшение клана",
+            "Улучшение клана применено успешно.",
+            bot.user.display_name,  # type: ignore
+            bot.user.display_avatar.url,  # type: ignore
+        ),
+        ephemeral=True,
+    )
