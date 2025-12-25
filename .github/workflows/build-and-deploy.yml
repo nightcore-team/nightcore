@@ -2,7 +2,7 @@ name: Build and Push to Registry
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 env:
   REGISTRY: ghcr.io
@@ -32,7 +32,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -51,6 +51,7 @@ jobs:
           echo "View at: https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}"
 
   deploy:
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'dev' }}
     needs: build
     runs-on: ubuntu-latest
 

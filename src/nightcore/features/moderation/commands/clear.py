@@ -71,9 +71,7 @@ class Clear(Cog):
                     category=self.__class__.__name__.lower(),
                     channel_cleared_id=channel.id,  # type: ignore
                     amount=amount,
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=UTC
-                    ),
+                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
                 ),
             )
         except Exception as e:

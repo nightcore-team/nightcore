@@ -15,7 +15,6 @@ from src.infra.db.models.guild import GuildLoggingConfig
 from src.infra.db.operations import (
     get_clan_by_id,
     get_clan_member,
-    get_specified_channel,
 )
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
@@ -24,10 +23,6 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
-from src.nightcore.features.clans.events.dto.clan_manage_notify import (
-    ClanManageAction,
-    ClanManageNotifyDTO,
-)
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
     compare_top_roles,
@@ -77,7 +72,6 @@ async def settings(
     clan_name: str | None = None
     changed_leader_to: int | None = None
     changed_role_to: int | None = None
-    old_role_id: int | None = None
 
     async with bot.uow.start() as session:
         if outcome is None:
@@ -127,7 +121,6 @@ async def settings(
                             outcome = "role_has_administrator_permissions"
                         else:
                             try:
-                                old_role_id = clan_entity.role_id
                                 clan_entity.role_id = new_role.id
                                 changed_role_to = new_role.id
                             except Exception as e:

@@ -77,3 +77,8 @@ section-order = [
 quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"

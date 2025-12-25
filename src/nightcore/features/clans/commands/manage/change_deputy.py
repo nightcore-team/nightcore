@@ -14,7 +14,6 @@ from src.infra.db.models._enums import (
 from src.infra.db.models.guild import GuildLoggingConfig
 from src.infra.db.operations import (
     get_clan_member,
-    get_specified_channel,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -22,10 +21,6 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
-from src.nightcore.features.clans.events.dto.clan_manage_notify import (
-    ClanManageAction,
-    ClanManageNotifyDTO,
-)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
