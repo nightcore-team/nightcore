@@ -87,6 +87,7 @@ jobs:
               -e POSTGRES_URL=${{ secrets.POSTGRES_URL }} \
               -e FORUM_API_URL=${{ secrets.FORUM_API_URL }} \
               -e FORUM_API_KEY=${{ secrets.FORUM_API_KEY }} \
+              -e DISABLE_FORUM_TASK=${{ secrets.DISABLE_FORUM_TASK }} \
               ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
 
