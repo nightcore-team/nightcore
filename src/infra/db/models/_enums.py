@@ -81,6 +81,7 @@ class ShopOrderStateEnum(Enum):
 class MultiplierTypeEnum(Enum):
     EXP = "exp"
     COINS = "coins"
+    BATTLEPASS = "battlepass"
 
 
 class ChangeStatTypeEnum(Enum):

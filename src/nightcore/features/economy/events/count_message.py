@@ -229,6 +229,7 @@ class CountMessageEvent(Cog):
 
             exp_multiplier *= bonus_multiplier
             coins_multiplier *= bonus_multiplier
+            battlepass_multiplier *= bonus_multiplier
 
             # count user exp and coins
             new_current_exp = user.current_exp + exp_multiplier
@@ -247,7 +248,7 @@ class CountMessageEvent(Cog):
             else:
                 user.current_exp = new_current_exp
                 user.coins += coins_multiplier
-                user.battle_pass_points += 8
+                user.battle_pass_points += battlepass_multiplier
 
             level_roles = guild_config.level_roles
 
