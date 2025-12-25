@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from discord.ext.commands import Cog  # type: ignore
 
-from nightcore.features.clans.events.dto.clan_manage_notify import (
+from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageNotifyDTO,
 )
 from src.nightcore.utils.log import send_log_message
