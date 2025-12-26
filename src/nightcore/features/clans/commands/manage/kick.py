@@ -20,6 +20,10 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.features.clans._groups import manage as clan_manage_group
+from src.nightcore.features.clans.events.dto.clan_manage_notify import (
+    ClanManageAction,
+    ClanManageNotifyDTO,
+)
 from src.nightcore.utils import ensure_role_exists
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
