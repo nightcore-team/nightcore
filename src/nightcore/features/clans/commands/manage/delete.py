@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.operations import get_clan_by_id
+from src.infra.db.models._enums import ChannelType, ClanManageActionEnum
+from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.operations import get_clan_by_id, get_specified_channel
+from src.nightcore.features.clans.events.dto.clan_manage_notify import (
+    ClanManageAction,
+    ClanManageNotifyDTO,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -108,6 +114,29 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
                 bot.user.display_avatar.url,  # type: ignore
             )
         )
+
+    async with bot.uow.start() as session:
+        clans_logging_channel = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildLoggingConfig,
+            channel_type=ChannelType.LOGGING_CLANS,
+        )
+
+    clan_delete_action = ClanManageAction(
+        type=ClanManageActionEnum.DELETE,
+    )
+
+    dto = ClanManageNotifyDTO(
+        guild=guild,
+        event_type="clan_manage_notify",
+        actor_id=interaction.user.id,
+        clan_name=clan_name, # type: ignore The clan_name will always exist here because of the checks on lines 64 and 84
+        actions=[clan_delete_action],
+        logging_channel_id=clans_logging_channel,
+    )
+
+    bot.dispatch("clan_manage_notify", dto)
 
     logger.info(
         "[command] - invoked user=%s guild=%s clan_name=%s deleted_clan=%s",

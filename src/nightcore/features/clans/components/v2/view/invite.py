@@ -20,8 +20,17 @@ from discord.ui import (
 from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import Clan, ClanMember
-from src.infra.db.models._enums import ClanMemberRoleEnum
-from src.infra.db.operations import create_clan_member
+from src.infra.db.models._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
+)
+from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.operations import create_clan_member, get_specified_channel
+from src.nightcore.features.clans.events.dto.clan_manage_notify import (
+    ClanManageAction,
+    ClanManageNotifyDTO,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -120,6 +129,30 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
         )
 
         await interaction.message.delete()  # type: ignore
+
+        async with view.bot.uow.start() as session:
+            clans_logging_channel = await get_specified_channel(
+                session,
+                guild_id=view.inviter.guild_id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_CLANS,
+            )
+
+        clan_invite_member_action = ClanManageAction(
+            type=ClanManageActionEnum.INVITE_MEMBER,
+            after=interaction.user.mention,
+        )
+
+        dto = ClanManageNotifyDTO(
+            guild=view.invited_member.guild,
+            event_type="clan_manage_notify",
+            actor_id=view.inviter.user_id,
+            clan_name=view.inviter.clan.name,
+            actions=[clan_invite_member_action],
+            logging_channel_id=clans_logging_channel,
+        )
+
+        view.bot.dispatch("clan_manage_notify", dto)
 
     @button(
         label="Отклонить приглашение",

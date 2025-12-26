@@ -63,6 +63,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # === clans events
         "src.nightcore.features.clans.events.order_notify",
         "src.nightcore.features.clans.events.count_clan_message",
+        "src.nightcore.features.clans.events.clan_manage_notify",
         # === economy
         "src.nightcore.features.economy",
         "src.nightcore.features.economy.commands.top",
