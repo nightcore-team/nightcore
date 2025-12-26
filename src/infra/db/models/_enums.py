@@ -100,6 +100,19 @@ class ComponentTypeEnum(Enum):
     V2_COMPONENT = "v2_component"
 
 
+class ClanManageActionEnum(Enum):
+    CREATE = "Создание"
+    DELETE = "Удаление"
+    CHANGE_LEADER = "Изменение лидера"
+    CHANGE_ROLE = "Изменение роли"
+    CHANGE_NAME = "Изменение названия"
+    BUY_IMPOVEMENT = "Покупка улучшения"
+    ADD_DEPUTY = "Добавление заместителя"
+    REMOVE_DEPUTY = "Снятие заместителя"
+    INVITE_MEMBER = "Приглашение участника"
+    KICK_MEMBER = "Исключение участника"
+
+
 class MetaConfigAccessTypeEnum(Enum):
     """Enumeration for meta config access types."""
 
