@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from discord import app_commands
+from discord import app_commands, File
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -19,12 +19,23 @@ class Say(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(name="say", description="Посмотреть задержку бота")  # type: ignore
+    @app_commands.command(
+        name="say", description="Отправить сообщение от бота"
+    )  # type: ignore
     @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
-    async def ping(self, interaction: Interaction["Nightcore"], text: str):
+    async def say(
+        self,
+        interaction: Interaction["Nightcore"],
+        text: str,
+        image: File | None = None,
+    ) -> None:
         """Send a message displaying the bot's current latency."""
 
-        await interaction.channel.send(text)  # type: ignore
+        await interaction.channel.send(text, file=image)  # type: ignore
+
+        await interaction.response.send_message(
+            "Сообщение отправлено!", ephemeral=True
+        )
 
 
 async def setup(bot: "Nightcore"):
