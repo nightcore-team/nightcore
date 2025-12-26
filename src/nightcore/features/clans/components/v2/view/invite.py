@@ -146,7 +146,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
         dto = ClanManageNotifyDTO(
             guild=view.invited_member.guild,
             event_type="clan_manage_notify",
-            actor_id=interaction.user.id,
+            actor_id=view.inviter.user_id,
             clan_name=view.inviter.clan.name,
             actions=[clan_invite_member_action],
             logging_channel_id=clans_logging_channel,
