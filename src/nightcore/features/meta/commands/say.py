@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from discord import app_commands, File
+from discord import Attachment, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -27,7 +27,7 @@ class Say(Cog):
         self,
         interaction: Interaction["Nightcore"],
         text: str,
-        image: File | None = None,
+        image: Attachment | None = None,
     ) -> None:
         """Send a message displaying the bot's current latency."""
 
