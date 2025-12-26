@@ -131,7 +131,7 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
         guild=guild,
         event_type="clan_manage_notify",
         actor_id=interaction.user.id,
-        clan_name=clan,
+        clan_name=clan_name, # type: ignore The clan_name will always exist here because of the checks on lines 64 and 84
         actions=[clan_delete_action],
         logging_channel_id=clans_logging_channel,
     )
