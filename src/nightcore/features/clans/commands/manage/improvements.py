@@ -22,7 +22,10 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
     ClanManageNotifyDTO,
 )
-from src.nightcore.features.clans.utils import clans_improvements_autocomplete
+from src.nightcore.features.clans.utils import (
+    CLAN_IMPROVEMENTS,
+    clans_improvements_autocomplete,
+)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -184,7 +187,8 @@ async def improvements(
         )
 
     clan_buy_improvement_action = ClanManageAction(
-        type=ClanManageActionEnum.BUY_IMPOVEMENT, after=improvement
+        type=ClanManageActionEnum.BUY_IMPOVEMENT,
+        after=CLAN_IMPROVEMENTS[iindex],  # type: ignore
     )
 
     dto = ClanManageNotifyDTO(
