@@ -20,9 +20,9 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
     select = Label[Self](
         text="Выберите роли для селектора",
         component=RoleSelect[Self](
-            placeholder="Максимум - 25 ролей",
+            placeholder="Максимум - 24 ролей",
             min_values=1,
-            max_values=25,
+            max_values=24,
             required=True,
         ),
     )

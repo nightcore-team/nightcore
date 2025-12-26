@@ -58,7 +58,11 @@ class RoleSelectorViewV2(LayoutView):
             container.add_item(Separator[Self]())
 
         options = [
-            SelectOption(label=role.name, value=str(role.id)) for role in roles
+            *[
+                SelectOption(label=role.name, value=str(role.id))
+                for role in roles
+            ],
+            SelectOption(label="Удалить все роли", value="remove_all_roles"),
         ]
         container.add_item(ActionRow(RoleSelectorSelect(options)))
         container.add_item(Separator[Self]())
