@@ -249,8 +249,8 @@ async def settings(
     if new_role is not None and old_role_id is not None:
         clan_change_role_action = ClanManageAction(
             type=ClanManageActionEnum.CHANGE_ROLE,
-            before=f"<@&{old_role_id}>",
-            after=clan_entity.role_id,  # type: ignore The clan will always exist here because of the checks on lines 86 and 139
+            before=f"<@&{old_role_id}> ('{old_role_id}')",
+            after=f"<@&{clan_entity.role_id}> ('{clan_entity.role_id}')",  # type: ignore The clan will always exist here because of the checks on lines 86 and 139
         )
 
         actions.append(clan_change_role_action)
