@@ -37,7 +37,7 @@ class RoleSelector(Cog):
         color="Цвет акцента для селектора ролей в формате HEX (необязательно)",
     )
     @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
-    async def ping(
+    async def role_selector(
         self,
         interaction: Interaction[Nightcore],
         title: str | None = None,
