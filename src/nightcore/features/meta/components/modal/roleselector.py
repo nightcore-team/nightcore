@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import Color, Guild, Member, Role
+from discord import Color, Guild, Role
 from discord.interactions import Interaction
 from discord.ui import Label, Modal, RoleSelect
 
@@ -48,7 +48,6 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
         await interaction.response.defer(ephemeral=True)
 
         guild = cast(Guild, interaction.guild)
-        member = cast(Member, interaction.user)
 
         values = cast(list[Role], self.select.component.values)  # type: ignore
 
@@ -65,7 +64,7 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
 
             if not compare_top_roles(
                 guild,
-                member,
+                role,
             ):
                 await interaction.followup.send(
                     embed=ErrorEmbed(

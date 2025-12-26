@@ -95,5 +95,5 @@ async def setup(bot: "Nightcore") -> None:
             "[interaction] Handle interaction: %s from user: %s, custom_id: %s",  # noqa: E501
             interaction.type,
             interaction.user.id,
-            interaction.data["custom_id"],  # type: ignore
+            custom_id,
         )
