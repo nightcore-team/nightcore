@@ -54,7 +54,7 @@ class DeleteRoleRequestTask(Cog):
                         guild, rr.channel_id
                     )
                 ):
-                    logger.info(
+                    logger.warning(
                         "[task] - Role request channel %s not found in guild %s, deleting role request %s from DB",  # noqa: E501
                         rr.channel_id,
                         rr.guild_id,
@@ -67,7 +67,7 @@ class DeleteRoleRequestTask(Cog):
                         self.bot, channel, rr.message_id
                     )
                 ):
-                    logger.info(
+                    logger.warning(
                         "[task] - Role request message %s not found in guild %s, deleting role request %s from DB",  # noqa: E501
                         rr.message_id,
                         rr.guild_id,

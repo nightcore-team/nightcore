@@ -72,14 +72,14 @@ class ExpiredNotifyTask(Cog):
                     channel_type=ChannelType.NOTIFICATIONS,
                 )
                 if not moderation_notifications:
-                    logger.error(
+                    logger.warning(
                         "[task] - Moderation notifications channel not set in guild %s",  # noqa: E501
                         guild.id,
                     )
                     continue
 
                 if not notifications:
-                    logger.error(
+                    logger.warning(
                         "[task] - Notifications channel not set in guild %s",
                         guild.id,
                     )

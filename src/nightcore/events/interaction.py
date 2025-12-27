@@ -87,7 +87,7 @@ async def setup(bot: "Nightcore") -> None:
 
                 case _:  # type: ignore
                     logger.debug(
-                        "[interaction] Unknown custom_id (likely slash command): %s",
+                        "[interaction] Unknown custom_id (likely slash command): %s",  # noqa: E501
                         interaction.type,
                     )
 

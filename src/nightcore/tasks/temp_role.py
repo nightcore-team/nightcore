@@ -37,7 +37,7 @@ class DeleteTempRoleTask(Cog):
     @tasks.loop(seconds=60.0)
     async def delete_temp_role_task(self):
         """Task to delete temporary roles when their duration ends."""
-        logger.debug("[task] - Running delete temp role task")
+        logger.info("[task] - Running delete temp role task")
         async with self.bot.uow.start() as session:
             temp_roles = await get_all_temp_roles(session)
 
@@ -76,8 +76,8 @@ class DeleteTempRoleTask(Cog):
                     session.delete(temp_role),
                 )
 
-                logger.debug(
-                    "[task] - Removed temporary role %s from member %s in guild %s",
+                logger.info(
+                    "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
                     temp_role.role_id,
                     member.id,
                     guild.id,

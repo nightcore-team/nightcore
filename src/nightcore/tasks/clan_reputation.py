@@ -62,7 +62,7 @@ class ClansPayDayTask(Cog):
                     )
 
                 if not guild_config or not guild_config.clan_payday_channel_id:
-                    logger.error(
+                    logger.warning(
                         "[task] - Guild %s does not have clan payday channel configured.",  # noqa: E501
                         guild.id,
                     )
