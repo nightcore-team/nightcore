@@ -61,6 +61,7 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
                         self.bot.user.avatar.url,  # type: ignore
                     )
                 )
+                return
 
             if not compare_top_roles(
                 guild,

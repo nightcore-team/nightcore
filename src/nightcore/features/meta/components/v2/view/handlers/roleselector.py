@@ -112,7 +112,7 @@ async def _remove_roles(
             if len(roles) > 1
             else "Удаление роли через селектор ролей"
         )
-        await member.remove_roles(*roles, reason=reason)
+        await member.remove_roles(*roles, reason=reason, atomic=False)
 
         message = (
             "Все роли из селектора ролей были успешно удалены."
