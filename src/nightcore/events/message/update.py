@@ -52,7 +52,7 @@ class UpdateMessageEvent(Cog):
         guild = after.guild
 
         if not guild:
-            logger.error(
+            logger.debug(
                 "[message] Updated message is not from a guild: %s", after
             )
             return
@@ -66,7 +66,7 @@ class UpdateMessageEvent(Cog):
                     channel_type=ChannelType.LOGGING_MESSAGES,
                 )
             ):
-                logger.error(
+                logger.debug(
                     "[message] No logging channel configured for guild %s",
                     guild.id,
                 )
@@ -84,14 +84,14 @@ class UpdateMessageEvent(Cog):
 
         if ignoring_channels_ids:
             if after.channel.id in ignoring_channels_ids:
-                logger.info(
-                    "[message] Message can't be deleted from ignored channel %s in guild %s",  # noqa: E501
+                logger.debug(
+                    "[message] Message from ignored channel %s in guild %s",
                     after.channel.id,
                     guild.id,
                 )
                 return
         else:
-            logger.error(
+            logger.debug(
                 "[message] No ignoring channels configured for guild %s",
                 guild.id,
             )
@@ -100,7 +100,7 @@ class UpdateMessageEvent(Cog):
             guild=guild, channel_id=logging_channel_id
         )
         if not channel:
-            logger.error(
+            logger.debug(
                 "[message] Logging channel %s not found in guild %s",
                 logging_channel_id,
                 guild.id,
@@ -221,14 +221,14 @@ class UpdateMessageEvent(Cog):
         try:
             await channel.send(embed=embed, files=files)  # type: ignore
         except Exception as e:
-            logger.error(
-                "[message] Failed to send deleted message log to channel %s in guild %s: %s",  # noqa: E501
+            logger.warning(
+                "[message] Failed to send message log to channel %s in guild %s: %s",
                 channel.id,
                 guild.id,
                 e,
             )
 
-        logger.info(
+        logger.debug(
             "[message] Message updated: Old - %s, New - %s",
             before,
             after,

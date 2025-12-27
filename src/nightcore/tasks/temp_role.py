@@ -37,7 +37,7 @@ class DeleteTempRoleTask(Cog):
     @tasks.loop(seconds=60.0)
     async def delete_temp_role_task(self):
         """Task to delete temporary roles when their duration ends."""
-        logger.info("[task] - Running delete temp role task")
+        logger.debug("[task] - Running delete temp role task")
         async with self.bot.uow.start() as session:
             temp_roles = await get_all_temp_roles(session)
 
@@ -47,7 +47,7 @@ class DeleteTempRoleTask(Cog):
 
                 guild = await ensure_guild_exists(self.bot, temp_role.guild_id)
                 if guild is None:
-                    logger.error(
+                    logger.warning(
                         "[task] - Guild %s not found",
                         temp_role.guild_id,
                     )
@@ -55,7 +55,7 @@ class DeleteTempRoleTask(Cog):
 
                 role = await ensure_role_exists(guild, temp_role.role_id)
                 if role is None:
-                    logger.error(
+                    logger.warning(
                         "[task] - Role %s not found in guild %s",
                         temp_role.role_id,
                         guild.id,
@@ -64,7 +64,7 @@ class DeleteTempRoleTask(Cog):
 
                 member = await ensure_member_exists(guild, temp_role.user_id)
                 if member is None:
-                    logger.error(
+                    logger.warning(
                         "[task] - Member %s not found in guild %s",
                         temp_role.user_id,
                         guild.id,
@@ -76,8 +76,8 @@ class DeleteTempRoleTask(Cog):
                     session.delete(temp_role),
                 )
 
-                logger.info(
-                    "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
+                logger.debug(
+                    "[task] - Removed temporary role %s from member %s in guild %s",
                     temp_role.role_id,
                     member.id,
                     guild.id,
@@ -86,7 +86,7 @@ class DeleteTempRoleTask(Cog):
     @delete_temp_role_task.before_loop
     async def before_delete_temp_role_task(self):
         """Prepare before starting the delete temp role task."""
-        logger.info("[task] - Waiting for bot...")
+        logger.debug("[task] - Waiting for bot...")
         await self.bot.wait_until_ready()
 
     @delete_temp_role_task.error

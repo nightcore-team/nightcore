@@ -38,8 +38,9 @@ class CreateChannelHandler(Cog):
                     channel_type=ChannelType.LOGGING_CHANNELS,
                 )
             ):
-                logger.warning(
-                    f"[logging] Logging channel (channels) not configured for guild {guild.id}"  # noqa: E501
+                logger.debug(
+                    "[logging] Logging channel (channels) not configured for guild %s",
+                    guild.id,
                 )
                 return
 
@@ -48,8 +49,9 @@ class CreateChannelHandler(Cog):
                 guild, logging_channels_channel_id
             )
         ):
-            logger.warning(
-                f"[logging] Logging channel (channels) not found in guild {guild.id}"  # noqa: E501
+            logger.debug(
+                "[logging] Logging channel (channels) not found in guild %s",
+                guild.id,
             )
             return
 
@@ -86,15 +88,15 @@ class CreateChannelHandler(Cog):
                     return
 
         except discord.Forbidden as e:
-            logger.exception(
-                "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
+            logger.warning(
+                "[logging] Missing permissions to access audit logs in guild %s: %s",
                 guild.id,
                 e,
             )
             return
         except discord.HTTPException as e:
-            logger.exception(
-                "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+            logger.warning(
+                "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",
                 guild.id,
                 e,
             )

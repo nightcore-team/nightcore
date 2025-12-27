@@ -109,8 +109,8 @@ class UserBanEvent(Cog):
                 )
             )
         else:
-            logger.warning(
-                "[event] on_user_banned - %s: Guild: %s, logging channel is not set",  # noqa: E501
+            logger.debug(
+                "[event] on_user_banned - %s: Guild: %s, logging channel is not set",
                 data.guild_id,
                 punish_info.category,
             )
@@ -118,8 +118,8 @@ class UserBanEvent(Cog):
         try:
             await asyncio.gather(*gather_list, return_exceptions=True)
         except Exception as e:
-            logger.exception(
-                "[event] on_user_banned - %s: Failed to send DM or log message: %s",  # noqa: E501
+            logger.warning(
+                "[event] on_user_banned - %s: Failed to send DM or log message: %s",
                 data.category,
                 e,
             )
@@ -144,7 +144,7 @@ class UserBanEvent(Cog):
             try:
                 user = await self.bot.fetch_user(data.user_id)
             except Exception as e:
-                logger.exception(
+                logger.warning(
                     "[event] user_unbanned - %s: Failed to fetch user %s: %s",
                     data.category,
                     data.user_id,
@@ -153,7 +153,7 @@ class UserBanEvent(Cog):
                 return
 
         if guild is None:
-            logger.error(
+            logger.warning(
                 "[event] user_unbanned - %s: Guild %s not in cache",
                 data.category,
                 data.guild_id,
@@ -189,8 +189,8 @@ class UserBanEvent(Cog):
                 if temp:
                     await session.delete(temp)
                 else:
-                    logger.error(
-                        "[event] user_unmute - %s: No active temporary punishment found for user %s in guild %s",  # noqa: E501
+                    logger.warning(
+                        "[event] user_unmute - %s: No active temporary punishment found for user %s in guild %s",
                         data.category,
                         data.user_id,
                         data.guild_id,

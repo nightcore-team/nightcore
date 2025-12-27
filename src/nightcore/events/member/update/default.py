@@ -27,7 +27,7 @@ class DefaultUpdateMemberEvent(Cog):
     ) -> None:
         """Handle default member update events."""
         if not before:
-            logger.warning("[logging] 'before' member is None.")
+            logger.debug("[logging] 'before' member is None.")
             return
 
         guild = after.guild
@@ -41,8 +41,9 @@ class DefaultUpdateMemberEvent(Cog):
                     channel_type=ChannelType.LOGGING_MEMBERS,
                 )
             ):
-                logger.warning(
-                    f"[logging] Logging channel (members) not configured for guild {guild.id}"  # noqa: E501
+                logger.debug(
+                    "[logging] Logging channel (members) not configured for guild %s",
+                    guild.id,
                 )
                 return
 
@@ -51,8 +52,9 @@ class DefaultUpdateMemberEvent(Cog):
                 guild, logging_members_channel_id
             )
         ):
-            logger.warning(
-                f"[logging] Logging channel (members) not found in guild {guild.id}"  # noqa: E501
+            logger.debug(
+                "[logging] Logging channel (members) not found in guild %s",
+                guild.id,
             )
             return
 
@@ -95,22 +97,22 @@ class DefaultUpdateMemberEvent(Cog):
                         break
 
             except discord.Forbidden as e:
-                logger.exception(
-                    "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
+                logger.warning(
+                    "[logging] Missing permissions to access audit logs in guild %s: %s",
                     guild.id,
                     e,
                 )
                 return
             except discord.HTTPException as e:
-                logger.exception(
-                    "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+                logger.warning(
+                    "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",
                     guild.id,
                     e,
                 )
                 return
             except Exception as e:
                 logger.exception(
-                    "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+                    "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",
                     guild.id,
                     e,
                 )
@@ -152,22 +154,22 @@ class DefaultUpdateMemberEvent(Cog):
                             break
 
                 except discord.Forbidden as e:
-                    logger.exception(
-                        "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
+                    logger.warning(
+                        "[logging] Missing permissions to access audit logs in guild %s: %s",
                         guild.id,
                         e,
                     )
                     return
                 except discord.HTTPException as e:
-                    logger.exception(
-                        "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+                    logger.warning(
+                        "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",
                         guild.id,
                         e,
                     )
                     return
                 except Exception as e:
                     logger.exception(
-                        "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+                        "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",
                         guild.id,
                         e,
                     )
@@ -212,7 +214,7 @@ class DefaultUpdateMemberEvent(Cog):
             try:
                 await logging_channel.send(embed=embed)  # type: ignore
             except Exception as e:
-                logger.error(f"Failed to send member join log message: {e}")
+                logger.warning("Failed to send member join log message: %s", e)
                 return
 
 

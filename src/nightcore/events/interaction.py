@@ -86,12 +86,12 @@ async def setup(bot: "Nightcore") -> None:
                     await handle_role_selector_select(interaction=interaction)
 
                 case _:  # type: ignore
-                    logger.error(
-                        "[interaction] Could not found custom id in interaction, possible slash command used: %s",  # noqa: E501
+                    logger.debug(
+                        "[interaction] Unknown custom_id (likely slash command): %s",
                         interaction.type,
                     )
 
-        logger.info(
+        logger.debug(
             "[interaction] Handle interaction: %s from user: %s, custom_id: %s",  # noqa: E501
             interaction.type,
             interaction.user.id,

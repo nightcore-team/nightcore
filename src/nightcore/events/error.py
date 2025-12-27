@@ -44,14 +44,11 @@ async def setup(bot: "Nightcore") -> None:
         original = getattr(error, "original", error)
 
         if isinstance(original, ConfigMissingButCreatingError):
-            logger.info(
+            logger.warning(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
-            )
-            logger.exception(
-                "%s occurred", original.__class__.__name__, exc_info=original
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -72,7 +69,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, app_commands.TransformerError):
-            logger.info(
+            logger.warning(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -100,7 +97,7 @@ async def setup(bot: "Nightcore") -> None:
                 return
 
         if isinstance(original, app_commands.MissingPermissions):
-            logger.info(
+            logger.warning(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -129,10 +126,11 @@ async def setup(bot: "Nightcore") -> None:
 
         if isinstance(original, app_commands.CommandOnCooldown):
             logger.info(
-                "%s handled guild=%s user=%s",
+                "%s handled guild=%s user=%s retry_after=%.2fs",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
+                original.retry_after,
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -157,14 +155,11 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, ConfigMissingError):
-            logger.info(
+            logger.warning(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
-            )
-            logger.exception(
-                "%s occurred", original.__class__.__name__, exc_info=original
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -185,14 +180,12 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, OrgRolesParsingError):
-            logger.info(
-                "%s handled guild=%s user=%s",
+            logger.warning(
+                "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
-            )
-            logger.exception(
-                "%s occurred", original.__class__.__name__, exc_info=original
+                original.msg,
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -215,14 +208,12 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, TempVoiceRolesParsingError):
-            logger.info(
-                "%s handled guild=%s user=%s",
+            logger.warning(
+                "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
-            )
-            logger.exception(
-                "%s occurred", original.__class__.__name__, exc_info=original
+                original.msg,
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -245,14 +236,12 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, LevelRolesParsingError):
-            logger.info(
-                "%s handled guild=%s user=%s",
+            logger.warning(
+                "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
-            )
-            logger.exception(
-                "%s occurred", original.__class__.__name__, exc_info=original
+                original.msg,
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -275,14 +264,12 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, FieldNotConfiguredError):
-            logger.info(
-                "%s handled guild=%s user=%s",
+            logger.warning(
+                "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
-            )
-            logger.exception(
-                "%s occurred", original.__class__.__name__, exc_info=original
+                str(original),
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -317,7 +304,3 @@ async def setup(bot: "Nightcore") -> None:
                 "Unexpected error occurred. Please contact the developer.",
                 ephemeral=True,
             )
-        return
-
-
-# TODO: create embed for unexpected error with contact information

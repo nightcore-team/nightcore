@@ -194,9 +194,7 @@ class Ban(Cog):
                     moderator_id=interaction.user.id,
                     user=member,
                     reason=reason,
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=UTC
-                    ),
+                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
                     guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,
@@ -206,7 +204,7 @@ class Ban(Cog):
                 try:
                     self.bot.dispatch("user_banned", data=data)
                 except Exception as e:
-                    logger.exception(
+                    logger.warning(
                         "[event] - Failed to dispatch user_banned event: %s", e
                     )
                     return
@@ -218,8 +216,8 @@ class Ban(Cog):
                         event_data=data,  # type: ignore
                     )
                 except Exception as e:
-                    logger.exception(
-                        "[command] - Failed to send ban DM to user=%s guild=%s: %s",  # noqa: E501
+                    logger.warning(
+                        "[command] - Failed to send ban DM to user=%s guild=%s: %s",
                         member.id,
                         guild.id,
                         e,
@@ -232,7 +230,7 @@ class Ban(Cog):
                 )
 
             except discord.HTTPException as e:
-                logger.exception(
+                logger.warning(
                     "Failed to ban user=%s guild=%s: %s",
                     member.id,
                     guild.id,

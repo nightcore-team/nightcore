@@ -65,15 +65,15 @@ class VoiceStateUpdateEvent(Cog):
                         if _ch:
                             try:
                                 await member.move_to(_ch)  # type: ignore
-                                logger.info(
-                                    "[voice] Moved %s to their existing private room %s",  # noqa: E501
+                                logger.debug(
+                                    "[voice] Moved %s to their existing private room %s",
                                     member,
                                     _ch.name,
                                 )
                                 return
                             except Exception as e:
-                                logger.exception(
-                                    "Error moving %s to their private room %s: %s",  # noqa: E501
+                                logger.warning(
+                                    "Error moving %s to their private room %s: %s",
                                     member,
                                     _ch.name,
                                     e,
@@ -86,8 +86,8 @@ class VoiceStateUpdateEvent(Cog):
                                         ),
                                     )
                                 except Exception as e:
-                                    logger.exception(
-                                        "Error moving %s to None or sending message: %s",  # noqa: E501
+                                    logger.warning(
+                                        "Error moving %s to None or sending message: %s",
                                         member,
                                         e,
                                     )
@@ -121,9 +121,9 @@ class VoiceStateUpdateEvent(Cog):
                         )
                     except Exception:
                         logger.exception(
-                            "[voice/join] Error dispatching voice channel join event"  # noqa: E501
+                            "[voice/join] Error dispatching voice channel join event"
                         )
-                logger.info(
+                logger.debug(
                     "[voice/join] %s joined voice channel %s",
                     member,
                     getattr(

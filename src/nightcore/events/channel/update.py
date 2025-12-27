@@ -38,8 +38,9 @@ class UpdateChannelHandler(Cog):
                     channel_type=ChannelType.LOGGING_CHANNELS,
                 )
             ):
-                logger.warning(
-                    f"[logging] Logging channel (channels) not configured for guild {guild.id}"  # noqa: E501
+                logger.debug(
+                    "[logging] Logging channel (channels) not configured for guild %s",
+                    guild.id,
                 )
                 return
 
@@ -48,8 +49,9 @@ class UpdateChannelHandler(Cog):
                 guild, logging_channels_channel_id
             )
         ):
-            logger.warning(
-                f"[logging] Logging channel (channels) not found in guild {guild.id}"  # noqa: E501
+            logger.debug(
+                "[logging] Logging channel (channels) not found in guild %s",
+                guild.id,
             )
             return
         embed = discord.Embed(
@@ -90,13 +92,13 @@ class UpdateChannelHandler(Cog):
             try:
                 await logging_channel.send(embed=embed)  # type: ignore
             except Exception as e:
-                logger.exception(
-                    "[logging] Failed to send logging embed about channel updating: %s",  # noqa: E501
+                logger.warning(
+                    "[logging] Failed to send logging embed about channel updating: %s",
                     e,
                 )
         else:
-            logger.info(
-                "[logging] No relevant changes detected for channel %s in guild %s, skipping logging",  # noqa: E501
+            logger.debug(
+                "[logging] No relevant changes detected for channel %s in guild %s, skipping logging",
                 new.id,
                 guild.id,
             )

@@ -130,14 +130,12 @@ class Kick(Cog):
                     user=member,
                     category=self.__class__.__name__.lower(),
                     reason=reason,
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=UTC
-                    ),
+                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
                     guild_name=guild.name,
                 ),
             )
         except Exception as e:
-            logger.exception(
+            logger.warning(
                 "[event] - Failed to dispatch user_kicked event: %s", e
             )
             return
@@ -145,7 +143,7 @@ class Kick(Cog):
         try:
             await guild.kick(member, reason=reason)
         except Exception as e:
-            logger.exception("[command] - Failed to kick user: %s", e)
+            logger.warning("[command] - Failed to kick user: %s", e)
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка кика",  # type: ignore
@@ -168,7 +166,7 @@ class Kick(Cog):
                 mode="server",
             )
         )
-        logger.info(
+        logger.debug(
             "[command] - invoked user=%s guild=%s target=%s reason=%s",
             interaction.user.id,
             guild.id,
