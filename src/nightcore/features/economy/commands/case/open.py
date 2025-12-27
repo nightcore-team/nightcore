@@ -7,14 +7,16 @@ from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
-from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models._enums import ChannelType
+from src.infra.db.operations import get_or_create_user, get_specified_channel
 from src.nightcore.components.embed import (
     ErrorEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
+from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils import cases_autocomplete
 from src.nightcore.features.economy.utils.case import (
     CASES_NAMES,
@@ -54,6 +56,8 @@ async def open_case(
     color_role_id = 0
     color_name = ""
     chance = 0
+    logging_channel_id = None
+    coin_name = ""
 
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
@@ -63,6 +67,13 @@ async def open_case(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
+            )
+
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
             case_count = user.inventory.get("cases", {}).get(case, 0)
@@ -89,8 +100,11 @@ async def open_case(
 
                             attributes.flag_modified(user, "inventory")
 
-                            coin_name = guild_config.coin_name or "коинов"
-                            reward_text = f"{coins_reward} {coin_name}"
+                            coin_name = guild_config.coin_name or "коины"
+                            reward_coin_name = (
+                                guild_config.coin_name or "коинов"
+                            )
+                            reward_text = f"{coins_reward} {reward_coin_name}"
                             outcome = "success"
 
                     case "colors_case":
@@ -186,6 +200,20 @@ async def open_case(
         await interaction.response.send_message(
             view=view,
             ephemeral=True,
+        )
+
+        bot.dispatch(
+            "user_items_changed",
+            dto=AwardNotificationEventDTO(
+                guild=guild,
+                event_type="case/open",
+                logging_channel_id=logging_channel_id,
+                user_id=member.id,
+                moderator_id=bot.user.id,  # type: ignore
+                item_name=coin_name if coin_name else f"цвет {color_name}",
+                amount=coins_reward if coins_reward else 1,
+                reason="открытие кейса",
+            ),
         )
 
     logger.info(

@@ -7,11 +7,13 @@ from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
-from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models._enums import ChannelType
+from src.infra.db.operations import get_or_create_user, get_specified_channel
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.economy._groups import casino as casino_group
 from src.nightcore.features.economy.components.v2 import RouletteViewV2
+from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils.casino import (
     RouletteColor,
     RouletteResult,
@@ -58,6 +60,7 @@ async def roulette(
 
     outcome = ""
     result: RouletteResult | None = None
+    logging_channel_id = None
 
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
@@ -67,6 +70,12 @@ async def roulette(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
+            )
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
             if user.coins < bet:
@@ -134,14 +143,29 @@ async def roulette(
         )
 
     if outcome == "success" and result:
-        coin_name = guild_config.coin_name or "коинов"
+        coin_name = guild_config.coin_name or "коины"
+        reward_coin_name = guild_config.coin_name or "коинов"
 
         view = RouletteViewV2(
             bot=bot,
-            coin_name=coin_name,
+            coin_name=reward_coin_name,
             last_roulette_games=guild_config.last_roulette_games,
             result=result,
             new_balance=user.coins,  # type: ignore
+        )
+
+        bot.dispatch(
+            "user_items_changed",
+            dto=AwardNotificationEventDTO(
+                guild=guild,
+                event_type="casino/roulette",
+                logging_channel_id=logging_channel_id,
+                user_id=member.id,
+                moderator_id=bot.user.id,  # type: ignore
+                item_name=coin_name,
+                amount=result.coins_change,
+                reason="игра в рулетку",
+            ),
         )
 
         return await interaction.response.send_message(
