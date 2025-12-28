@@ -80,7 +80,7 @@ async def settings(
         return
 
     if not new_leader and not new_role and not new_name:
-        return await interaction.followup.send(
+        return await interaction.response.send_message(
             embed=NoOptionsSuppliedEmbed(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
