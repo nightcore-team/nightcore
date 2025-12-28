@@ -48,6 +48,19 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
     """Delete an existing clan."""
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
+    try:
+        clan_id = int(clan)
+    except ValueError:
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка получения информации о клане",
+                "Не удалось найти данный клан в базе данных.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -58,7 +71,7 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
     async with bot.uow.start() as session:
         try:
             dbclan = await get_clan_by_id(
-                session, guild_id=guild.id, clan_id=int(clan)
+                session, guild_id=guild.id, clan_id=clan_id
             )
 
             if not dbclan:
@@ -131,7 +144,7 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
         guild=guild,
         event_type="clan_manage_notify",
         actor_id=interaction.user.id,
-        clan_name=clan_name, # type: ignore The clan_name will always exist here because of the checks on lines 64 and 84
+        clan_name=clan_name,  # type: ignore The clan_name will always exist here because of the checks on lines 64 and 84
         actions=[clan_delete_action],
         logging_channel_id=clans_logging_channel,
     )
