@@ -63,6 +63,19 @@ async def settings(
     """Manage clan settings."""
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
+    try:
+        clan_id = int(clan)
+    except ValueError:
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка получения информации о клане",
+                "Не удалось найти данный клан в базе данных.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
 
     if not new_leader and not new_role:
         return await interaction.followup.send(
@@ -82,7 +95,7 @@ async def settings(
     async with bot.uow.start() as session:
         if outcome is None:
             clan_entity = await get_clan_by_id(
-                session, guild_id=guild.id, clan_id=int(clan)
+                session, guild_id=guild.id, clan_id=clan_id
             )
             if not clan_entity:
                 outcome = "clan_not_found"
