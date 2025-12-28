@@ -1,6 +1,7 @@
 """Command to get stats for a moderator."""
 
 import logging
+from datetime import timedelta
 from typing import TYPE_CHECKING, cast
 
 import discord
@@ -75,6 +76,8 @@ class GetModerationStats(Cog):
 
         try:
             from_dt, to_dt = compare_date_range(from_date, to_date)
+            from_dt += timedelta(hours=3)
+            to_dt += timedelta(hours=3)
         except ValueError as e:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
