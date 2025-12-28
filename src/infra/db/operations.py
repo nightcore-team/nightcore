@@ -202,24 +202,36 @@ async def is_user_ticketbanned(
     return bool(await session.scalar(stmt))
 
 
-# TODO: rewrite to use all models (like in get_specified_guild_config)
 async def get_or_create_user(
     session: AsyncSession, *, guild_id: int, user_id: int
 ) -> tuple[User, bool]:
     """Get or create a user in the database."""
+    user = await session.scalar(
+        select(User).where(User.guild_id == guild_id, User.user_id == user_id)
+    )
+
+    if user is not None:
+        return user, False
+
     stmt = (
         insert(User)
         .values(guild_id=guild_id, user_id=user_id)
         .on_conflict_do_nothing(constraint="ux_user_guild_user")
-        .returning(User.user_id)
+        .returning(User)
     )
-    res = await session.execute(stmt)
-    created = res.scalar_one_or_none() is not None
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
 
-    user = await session.scalar(
-        select(User).where(User.guild_id == guild_id, User.user_id == user_id)
-    )
-    return user, created  # type: ignore
+    # race condition: between select and insert
+    if user is None:
+        user = await session.scalar(
+            select(User).where(
+                User.guild_id == guild_id, User.user_id == user_id
+            )
+        )
+        return user, False  # type: ignore
+
+    return user, True
 
 
 # TODO: rewrite to use all models (like in get_specified_guild_config)
