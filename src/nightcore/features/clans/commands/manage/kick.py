@@ -2,9 +2,10 @@
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, cast
+from collections.abc import Awaitable
+from typing import TYPE_CHECKING, Any, cast
 
-from discord import Guild, Member, app_commands
+from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models._enums import (
@@ -24,7 +25,7 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
     ClanManageNotifyDTO,
 )
-from src.nightcore.utils import ensure_role_exists
+from src.nightcore.utils import ensure_member_exists, ensure_role_exists
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -43,7 +44,7 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.NONE)
 async def kick(
     interaction: Interaction["Nightcore"],
-    user: Member,
+    user: User,
 ):
     """Kick member from your clan."""
 
@@ -137,21 +138,32 @@ async def kick(
         bot.user.display_avatar.url,  # type: ignore
     )
 
-    role = await ensure_role_exists(
-        guild=guild, role_id=interaction_clan_member.clan.role_id
-    )
-    if not role:
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        logger.error(
-            "[clans] Clan role %s not found in guild %s",
-            interaction_clan_member.clan.role_id,
-            guild.id,
+    to_gather: list[Awaitable[Any]] = [
+        interaction.response.send_message(embed=embed, ephemeral=True),
+    ]
+
+    if member := await ensure_member_exists(guild, user.id):
+        role = await ensure_role_exists(
+            guild=guild, role_id=interaction_clan_member.clan.role_id
         )
-        return
+
+        if not role:
+            await interaction.response.send_message(
+                embed=embed, ephemeral=True
+            )
+            logger.error(
+                "[clans] Clan role %s not found in guild %s",
+                interaction_clan_member.clan.role_id,
+                guild.id,
+            )
+            return
+
+        to_gather.append(
+            member.remove_roles(role, reason="Кик из клана."),
+        )
 
     await asyncio.gather(
-        interaction.response.send_message(embed=embed, ephemeral=True),
-        user.remove_roles(role, reason="Кик из клана."),
+        *to_gather,
     )
 
     async with bot.uow.start() as session:
