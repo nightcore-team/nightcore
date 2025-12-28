@@ -66,7 +66,7 @@ async def settings(
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    if not new_leader and not new_role:
+    if not new_leader and not new_role and not new_name:
         return await interaction.followup.send(
             embed=NoOptionsSuppliedEmbed(
                 bot.user.display_name,  # type: ignore
@@ -248,6 +248,8 @@ async def settings(
         )
     if changed_role_to:
         summary_lines.append(f"Роль клана обновлена: <@&{changed_role_to}>")
+    if new_name:
+        summary_lines.append(f"Название клана обновлено: {new_name}")
     details = (
         "\n".join(summary_lines)
         if summary_lines
