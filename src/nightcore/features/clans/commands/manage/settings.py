@@ -143,16 +143,19 @@ async def settings(
 
                 # change clan name
                 if outcome is None and new_name:
-                    try:
-                        old_name = clan_entity.name
-                        clan_entity.name = new_name
-                    except Exception as e:
-                        logger.error(
-                            "[clans] Error changing clan name in guild %s: %s",
-                            guild.id,
-                            e,
-                        )
-                        outcome = "name_change_internal_error"
+                    if new_name == clan_entity.name:
+                        outcome = "name_equal_to_the_current"
+                    else:
+                        try:
+                            old_name = clan_entity.name
+                            clan_entity.name = new_name
+                        except Exception as e:
+                            logger.error(
+                                "[clans] Error changing clan name in guild %s: %s",  # noqa: E501
+                                guild.id,
+                                e,
+                            )
+                            outcome = "name_change_internal_error"
 
     if outcome == "clan_not_found":
         return await interaction.response.send_message(
@@ -235,6 +238,17 @@ async def settings(
             embed=ErrorEmbed(
                 "Ошибка изменения названии клана",
                 "Произошла ошибка при изменении названия клана.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "name_equal_to_the_current":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения названии клана",
+                "Новое название не отличается от текущего.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
