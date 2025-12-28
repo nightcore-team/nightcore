@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
     clan="Клан, настройки которого вы хотите изменить.",
     new_leader="Новый лидер клана.",
     new_role="Новая роль, связанная с кланом.",
+    new_name="Новое название клана",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
@@ -59,6 +60,7 @@ async def settings(
     clan: str,
     new_leader: Member | None = None,
     new_role: Role | None = None,
+    new_name: app_commands.Range[str, 1, 100] | None = None,
 ):
     """Manage clan settings."""
     bot = interaction.client
@@ -78,6 +80,7 @@ async def settings(
     changed_leader_to: int | None = None
     changed_role_to: int | None = None
     old_role_id: int | None = None
+    old_name: str | None = None
 
     async with bot.uow.start() as session:
         if outcome is None:
@@ -137,6 +140,19 @@ async def settings(
                                     e,
                                 )
                                 outcome = "role_change_internal_error"
+
+                # change clan name
+                if outcome is None and new_name:
+                    try:
+                        old_name = clan_entity.name
+                        clan_entity.name = new_name
+                    except Exception as e:
+                        logger.error(
+                            "[clans] Error changing clan name in guild %s: %s",
+                            guild.id,
+                            e,
+                        )
+                        outcome = "name_change_internal_error"
 
     if outcome == "clan_not_found":
         return await interaction.response.send_message(
@@ -214,6 +230,17 @@ async def settings(
             ephemeral=True,
         )
 
+    if outcome == "name_change_internal_error":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения названии клана",
+                "Произошла ошибка при изменении названия клана.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
     summary_lines: list[str] = []
     if changed_leader_to:
         summary_lines.append(
@@ -254,6 +281,15 @@ async def settings(
         )
 
         actions.append(clan_change_role_action)
+
+    if new_name is not None and old_name is not None:
+        clan_change_name_action = ClanManageAction(
+            type=ClanManageActionEnum.CHANGE_NAME,
+            before=old_name,
+            after=new_name,
+        )
+
+        actions.append(clan_change_name_action)
 
     dto = ClanManageNotifyDTO(
         guild=guild,
