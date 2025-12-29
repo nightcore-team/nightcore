@@ -63,6 +63,17 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
                 )
                 return
 
+            if role.position >= interaction.user.top_role.position:  # type: ignore this modal is only used in the guild because of the decorator @guild_only in the command that calls it
+                await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка создания селектора ролей",
+                        f"Позиция роли {role.mention} больше чем позиция вашей наивысшей роли.",  # noqa: E501
+                        self.bot.user.display_name,  # type: ignore
+                        self.bot.user.avatar.url,  # type: ignore
+                    )
+                )
+                return
+
             if not compare_top_roles(
                 guild,
                 role,
