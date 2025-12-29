@@ -170,6 +170,12 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
     temp_coins_multiplier: Mapped[int | None] = mapped_column(
         Float, nullable=True
     )
+    base_battlepass_multiplier: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
+    temp_battlepass_multiplier: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )
     bonus_access_roles_ids: Mapped[dict[int, int]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )

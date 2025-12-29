@@ -69,6 +69,12 @@ class ResetTempMultiplierTask(Cog):
                             "[task] - Reset COINS multiplier for guild %s",
                             guild_id,
                         )
+                    case MultiplierTypeEnum.BATTLEPASS:
+                        guild_config.temp_battlepass_multiplier = None
+                        logger.info(
+                            "[task] - Reset BATTLEPASS multiplier for guild %s",  # noqa: E501
+                            guild_id,
+                        )
 
                 await session.delete(temp_multiplier)
 

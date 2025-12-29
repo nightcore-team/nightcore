@@ -36,8 +36,13 @@ class CountVoiceActivityEvent(Cog):
             )
 
             now = datetime.now(UTC)
+
             # join
-            if before.channel is None and after.channel is not None:
+            if (
+                before.channel is None
+                and after.channel is not None
+                and after.channel != guild.afk_channel
+            ):
                 # start counting
                 try:
                     user.temp_voice_activity = now

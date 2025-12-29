@@ -20,7 +20,6 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.field_validators import (
     FieldSpec,
     apply_field_changes,
-    float_value,
     format_changes,
     int_id_value,
     split_changes,
@@ -41,6 +40,7 @@ logger = logging.getLogger(__name__)
     level_notify_channel="Канал для уведомлений о повышении уровня.",
     exp_multiplier="Множитель опыта для уровней.",
     coins_multiplier="Множитель монет для уровней.",
+    battlepass_multiplier="Множитель опыта для боевого пропуска.",
     roles_with_bonus="Роли, которые получают бонусные очки опыта. Формат: role_id, multiplier | ...",  # noqa: E501
     roles_per_level="Роли, назначаемые на каждом уровне. Формат: level, role_id | level, role_id | ...",  # noqa: E501
 )
@@ -58,6 +58,7 @@ async def setup(
     level_notify_channel: discord.TextChannel | None = None,
     exp_multiplier: int | None = None,
     coins_multiplier: int | None = None,
+    battlepass_multiplier: int | None = None,
     roles_with_bonus: str | None = None,
     roles_per_level: str | None = None,
 ):
@@ -66,8 +67,9 @@ async def setup(
         int_id_value("count_messages_channel_id", count_messages_channel),
         str_value("count_messages_type", count_messages_type),
         int_id_value("level_notify_channel_id", level_notify_channel),
-        float_value("base_exp_multiplier", exp_multiplier),
-        float_value("base_coins_multiplier", coins_multiplier),
+        int_id_value("base_exp_multiplier", exp_multiplier),
+        int_id_value("base_coins_multiplier", coins_multiplier),
+        int_id_value("base_battlepass_multiplier", battlepass_multiplier),
         bonus_roles_dict_value("bonus_access_roles_ids", roles_with_bonus),
         level_roles_dict_value("level_roles", roles_per_level),
     ]
