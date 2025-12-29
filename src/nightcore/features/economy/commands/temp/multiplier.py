@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
     multiplier_type=[
         app_commands.Choice(name="Опыт", value="exp"),
         app_commands.Choice(name="Коины", value="coins"),
+        app_commands.Choice(name="Боевой пропуск", value="battlepass"),
     ]
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
@@ -105,6 +106,8 @@ async def set_multiplier(
                     guild_config.temp_exp_multiplier = multiplier
                 case MultiplierTypeEnum.COINS:
                     guild_config.temp_coins_multiplier = multiplier
+                case MultiplierTypeEnum.BATTLEPASS:
+                    guild_config.temp_battlepass_multiplier = multiplier
 
             outcome = "success"
         except Exception as e:
