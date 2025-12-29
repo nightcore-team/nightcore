@@ -52,7 +52,7 @@ class ModerationScores:
             ticketban=data.get("ticket_ban_score", 0),
             closed_tickets=data.get("ticket_score", 0),
             approved_role_requests=data.get("role_request_score", 0),
-            removed_roles=data.get("changed_roles_score", 0),
+            removed_roles=data.get("role_remove_score", 0),
             message=data.get("message_score", 0),
         )
 
