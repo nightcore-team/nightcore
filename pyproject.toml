@@ -16,6 +16,7 @@ dependencies = [
     "psutil>=7.0.0",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
+    "pynacl>=1.6.1",
     "sqlalchemy[asyncio]>=2.0.42",
 ]
 
