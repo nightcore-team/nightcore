@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING
 from discord import Member, VoiceState
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.models.guild import GuildLevelsConfig
+from src.infra.db.operations import (
+    get_or_create_user,
+    get_specified_guild_config,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -34,6 +38,18 @@ class CountVoiceActivityEvent(Cog):
                 guild_id=guild.id,
                 user_id=member.id,
             )
+
+            guild_config = await get_specified_guild_config(
+                session, config_type=GuildLevelsConfig, guild_id=guild.id
+            )
+
+            if guild_config is None:
+                battlepass_multipler = 1
+            else:
+                battlepass_multipler = (
+                    guild_config.temp_battlepass_multiplier
+                    or guild_config.base_battlepass_multiplier
+                )
 
             now = datetime.now(UTC)
 
@@ -76,7 +92,7 @@ class CountVoiceActivityEvent(Cog):
                     user.temp_voice_activity = None
                     user.battle_pass_points += (
                         int(total_seconds) // 60
-                    ) * 8  # 8 points per minute
+                    ) * battlepass_multipler
                 except Exception as e:
                     logger.exception(
                         "[voice/count] Error stopping voice activity count for user %s in guild %s: %s",  # noqa: E501
@@ -113,7 +129,7 @@ class CountVoiceActivityEvent(Cog):
                         user.temp_voice_activity = None
                         user.battle_pass_points += (
                             int(total_seconds) // 60
-                        ) * 8  # 8 points per minute
+                        ) * battlepass_multipler
                     except Exception as e:
                         logger.exception(
                             "[voice/count] Error stopping voice activity count for user %s in guild %s: %s",  # noqa: E501
