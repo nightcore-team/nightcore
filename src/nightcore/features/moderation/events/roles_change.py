@@ -62,7 +62,7 @@ class RolesChangeEvent(Cog):
                         user_id=data.user.id,
                         moderator_id=data.moderator.id,
                         category=data.category,
-                        reason=None,
+                        reason=data.reason,
                         time_now=discord.utils.utcnow().astimezone(UTC),
                     )
                 except Exception as e:
