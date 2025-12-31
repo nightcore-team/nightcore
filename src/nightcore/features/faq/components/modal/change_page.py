@@ -78,19 +78,19 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
                 if faq_page["title"] == self.page["title"]:
                     if title:
                         faq_page["title"] = title
-                    elif description:
+                        outcome = "modified"
+                    if description:
                         faq_page["description"] = description
-                    elif content:
+                        outcome = "modified"
+                    if content:
                         faq_page["content"] = content
-                    else:
-                        outcome = "nothing_to_change"
-                    break
+                        outcome = "modified"
 
-            if not outcome:
+            if outcome != "":
                 attributes.flag_modified(guild_config, "faq")
                 outcome = "success"
 
-        if outcome == "nothing_to_change":
+        if outcome == "":
             await interaction.response.send_message(
                 embed=NoOptionsSuppliedEmbed(
                     self.bot.user.display_name,  # type: ignore
