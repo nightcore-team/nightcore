@@ -65,14 +65,18 @@ def check_required_permissions(
 
     Example:
         # In Cog:
+        ```
         @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
         async def my_command(self, interaction: Interaction):
             ...
+        ```
 
         # Standalone:
+        ```
         @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
         async def my_function(interaction: Interaction):
             ...
+        ```
     """
 
     def decorator(
