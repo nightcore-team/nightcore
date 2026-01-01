@@ -139,22 +139,31 @@ async def setup_moderation(
     )
 
 
-@moderation_group.command(name="update_moderation_access")  # type: ignore
+@moderation_group.command(name="update_access")  # type: ignore
 @app_commands.choices(
+    type=[
+        app_commands.Choice(name="Руководство модерации", value="leadership"),
+        app_commands.Choice(name="Модерация", value="moderation"),
+        app_commands.Choice(name="Команда /ban", value="ban"),
+        app_commands.Choice(name="Команда /unban", value="unban"),
+        app_commands.Choice(name="Команда /rr", value="rr"),
+    ],
     option=[
         app_commands.Choice(name="Добавить", value="add"),
         app_commands.Choice(name="Удалить", value="remove"),
-    ]
+    ],
 )
 @app_commands.describe(
+    type="Тип доступа для обновления",
     role="Роль для обновления",
     option="Добавить или удалить роль из списка ролей с доступом к модерации",
 )
 @check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def update_moderation_access(
     interaction: Interaction,
+    type: app_commands.Choice[str],
     role: discord.Role,
-    option: Literal["add", "remove"],
+    option: app_commands.Choice[str],
 ):
     """Update the list of roles with moderation access."""
 
@@ -164,91 +173,26 @@ async def update_moderation_access(
         config_type=GuildModerationConfig,
         _create=True,
     ) as (guild_config, _):
+        # Map type to config attribute name
+        attr_map = {
+            "leadership": "leadership_access_roles_ids",
+            "moderation": "moderation_access_roles_ids",
+            "ban": "ban_access_roles_ids",
+            "unban": "unban_access_roles_ids",
+            "rr": "leader_access_rr_roles_ids",
+        }
+
+        attr_name = attr_map[type.value]
+        id_list = getattr(guild_config, attr_name)
+
         new_list, changed, state = update_id_list(
-            guild_config.moderation_access_roles_ids,
+            id_list,
             role.id,
-            option,
+            option.value,
         )
+
         if changed:
-            guild_config.moderation_access_roles_ids = new_list
-
-    if state == "exists":
-        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к модерации."
-        color = discord.Color.yellow()
-    elif state == "absent":
-        desc = f"Роль <@&{role.id}> не в списке ролей с доступом к модерации."
-        color = discord.Color.red()
-    elif state == "added":
-        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к модерации."  # noqa: E501
-        color = discord.Color.blurple()
-    else:
-        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к модерации."  # noqa: E501
-        color = discord.Color.blurple()
-
-    await interaction.response.send_message(
-        embed=Embed(
-            title="Настройка модерации",
-            description=desc,
-            color=color,
-        ),
-        ephemeral=True,
-    )
-
-    logger.info(
-        "[command] - update_moderation_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
-    )
-
-
-@moderation_group.command(name="update_ban_unban_access")  # type: ignore
-@app_commands.choices(
-    type=[
-        app_commands.Choice(name="Бан", value="ban"),
-        app_commands.Choice(name="Разбан", value="unban"),
-    ],
-    option=[
-        app_commands.Choice(name="Добавить", value="add"),
-        app_commands.Choice(name="Удалить", value="remove"),
-    ],
-)
-@app_commands.describe(
-    role="Роль для обновления",
-    option="Добавить или удалить роль из списка ролей с доступом к бану",
-)
-@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
-async def update_ban_access(
-    interaction: Interaction,
-    type: Literal["ban", "unban"],
-    role: discord.Role,
-    option: Literal["add", "remove"],
-):
-    """Update the list of roles with ban access."""
-    async with specified_guild_config(
-        cast(Nightcore, interaction.client),
-        cast(Guild, interaction.guild).id,
-        config_type=GuildModerationConfig,
-        _create=True,
-    ) as (guild_config, _):
-        if type == "ban":
-            new_list, changed, state = update_id_list(
-                guild_config.ban_access_roles_ids,
-                role.id,
-                option,
-            )
-            if changed:
-                guild_config.ban_access_roles_ids = new_list
-
-        else:  # unban
-            new_list, changed, state = update_id_list(
-                guild_config.unban_access_roles_ids,
-                role.id,
-                option,
-            )
-            if changed:
-                guild_config.unban_access_roles_ids = new_list
+            setattr(guild_config, attr_name, new_list)
 
     if state == "exists":
         desc = f"Роль <@&{role.id}> уже в списке ролей с доступом."
@@ -259,7 +203,7 @@ async def update_ban_access(
     elif state == "added":
         desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом."
         color = discord.Color.blurple()
-    else:  # removed
+    else:
         desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом."
         color = discord.Color.blurple()
 
@@ -270,78 +214,6 @@ async def update_ban_access(
             color=color,
         ),
         ephemeral=True,
-    )
-
-    logger.info(
-        "[command] - update_ban_unban_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
-    )
-
-
-@moderation_group.command(name="update_rr_access")  # type: ignore
-@app_commands.choices(
-    option=[
-        app_commands.Choice(name="Добавить", value="add"),
-        app_commands.Choice(name="Удалить", value="remove"),
-    ]
-)
-@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
-@app_commands.describe(
-    role="Роль для обновления",
-    option="Добавить или удалить роль из списка ролей с доступом к rr",
-)
-async def update_rr_access(
-    interaction: Interaction,
-    role: discord.Role,
-    option: Literal["add", "remove"],
-):
-    """Update the list of leaders roles with `rr` access."""
-    async with specified_guild_config(
-        cast(Nightcore, interaction.client),
-        cast(Guild, interaction.guild).id,
-        config_type=GuildModerationConfig,
-        _create=True,
-    ) as (guild_config, _):
-        new_list, changed, state = update_id_list(
-            guild_config.leader_access_rr_roles_ids,
-            role.id,
-            option,
-        )
-
-        if changed:
-            guild_config.leader_access_rr_roles_ids = new_list
-
-    if state == "exists":
-        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к rr."
-        color = discord.Color.yellow()
-    elif state == "absent":
-        desc = f"Роль <@&{role.id}> не в списке ролей с доступом к rr."
-        color = discord.Color.red()
-    elif state == "added":
-        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к rr."
-        color = discord.Color.blurple()
-    else:  # removed
-        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к rr."
-        color = discord.Color.blurple()
-
-    await interaction.response.send_message(
-        embed=Embed(
-            title="Настройка модерации",
-            description=desc,
-            color=color,
-        ),
-        ephemeral=True,
-    )
-
-    logger.info(
-        "[command] - update_rr_access user=%s guild=%s option=%s role=%s",
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
     )
 
 
@@ -418,67 +290,4 @@ async def update_fraction_role_access(
         option,
         access_role.id,
         fraction_role.id,
-    )
-
-
-@moderation_group.command(name="update_leardership_access")  # type: ignore
-@app_commands.choices(
-    option=[
-        app_commands.Choice(name="Добавить", value="add"),
-        app_commands.Choice(name="Удалить", value="remove"),
-    ]
-)
-@app_commands.describe(
-    role="Роль для обновления",
-    option="Добавить или удалить роль из списка ролей с доступом к модерации для руководства.",  # noqa: E501
-)
-@check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
-async def update_leadership_access(
-    interaction: Interaction,
-    role: discord.Role,
-    option: Literal["add", "remove"],
-):
-    """Update the list of roles with leadership moderation access."""
-    async with specified_guild_config(
-        cast(Nightcore, interaction.client),
-        cast(Guild, interaction.guild).id,
-        config_type=GuildModerationConfig,
-        _create=True,
-    ) as (guild_config, _):
-        new_list, changed, state = update_id_list(
-            guild_config.leadership_access_roles_ids,
-            role.id,
-            option,
-        )
-        if changed:
-            guild_config.leadership_access_roles_ids = new_list
-
-    if state == "exists":
-        desc = f"Роль <@&{role.id}> уже в списке ролей с доступом к модерации для руководства."  # noqa: E501
-        color = discord.Color.yellow()
-    elif state == "absent":
-        desc = f"Роль <@&{role.id}> не в списке ролей с доступом к модерации для руководства."  # noqa: E501
-        color = discord.Color.red()
-    elif state == "added":
-        desc = f"Роль <@&{role.id}> добавлена в список ролей с доступом к модерации для руководства."  # noqa: E501
-        color = discord.Color.blurple()
-    else:  # removed
-        desc = f"Роль <@&{role.id}> удалена из списка ролей с доступом к модерации для руководства."  # noqa: E501
-        color = discord.Color.blurple()
-
-    await interaction.response.send_message(
-        embed=Embed(
-            title="Настройка модерации",
-            description=desc,
-            color=color,
-        ),
-        ephemeral=True,
-    )
-
-    logger.info(
-        "[command] - update_leadership_access user=%s guild=%s option=%s role=%s",  # noqa: E501
-        interaction.user.id,
-        cast(Guild, interaction.guild).id,
-        option,
-        role.id,
     )
