@@ -14,7 +14,7 @@ from .base import TicketBaseEventData  # type: ignore
 
 
 @dataclass(slots=True)
-class TicketEventData(TicketBaseEventData):
+class TicketChangeEventData(TicketBaseEventData):
     guild: discord.Guild
     channel_id: int
     author_id: int

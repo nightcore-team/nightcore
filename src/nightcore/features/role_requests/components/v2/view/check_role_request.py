@@ -142,6 +142,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 else:
                     last_rr.state = RoleRequestStateEnum.APPROVED
                     last_rr.moderator_id = interaction.user.id
+                    last_rr.updated_at = datetime.now(UTC)
 
                     nightcore_notifications_channel_id = (
                         await get_specified_channel(

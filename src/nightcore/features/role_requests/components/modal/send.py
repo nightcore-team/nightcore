@@ -183,6 +183,7 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                     state=RoleRequestStateEnum.PENDING,
                 )
                 session.add(new_rr)
+
             except Exception as e:
                 logger.exception(
                     "Failed to create RoleRequestState in guild %s for user %s: %s",  # noqa: E501

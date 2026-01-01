@@ -36,7 +36,7 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
-from src.nightcore.features.tickets.events.dto import TicketEventData
+from src.nightcore.features.tickets.events.dto import TicketChangeEventData
 from src.nightcore.utils import (
     discord_ts,
     ensure_member_exists,
@@ -144,6 +144,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 # Update ticket state to PINNED
                 ticket_state.moderator_id = user.id
                 ticket_state.state = TicketStateEnum.PINNED
+                ticket_state.updated_at = datetime.now(UTC)
 
                 # Get pinned tickets category ID
                 pinned_tickets_category_id = cast(
@@ -251,7 +252,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             if logging_channel_id:
                 view.bot.dispatch(
                     "ticket_changed",
-                    data=TicketEventData(
+                    data=TicketChangeEventData(
                         guild,
                         channel.id,
                         ticket_author_id,
@@ -322,6 +323,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
 
                 # Update ticket state to OPENED (not PINNED)
                 ticket.state = TicketStateEnum.OPENED
+                ticket.updated_at = datetime.now(UTC)
 
                 # Get pinned tickets category ID (ticket will be moved here and reopened)  # noqa: E501
                 pinned_tickets_category_id = cast(
@@ -448,7 +450,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             if logging_channel_id:
                 view.bot.dispatch(
                     "ticket_changed",
-                    data=TicketEventData(
+                    data=TicketChangeEventData(
                         guild,
                         channel.id,
                         ticket_author_id,
@@ -518,6 +520,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 # Update ticket state to CLOSED
                 ticket.moderator_id = user.id
                 ticket.state = TicketStateEnum.CLOSED
+                ticket.updated_at = datetime.now(UTC)
 
                 # Get closed tickets category ID
                 closed_tickets_category_id = cast(
@@ -618,7 +621,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             if logging_channel_id:
                 view.bot.dispatch(
                     "ticket_changed",
-                    data=TicketEventData(
+                    data=TicketChangeEventData(
                         guild,
                         channel.id,
                         ticket_author_id,

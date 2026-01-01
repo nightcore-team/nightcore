@@ -14,7 +14,9 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.features.tickets.events.dto import TicketEventData
+from src.nightcore.features.tickets.events.dto import (
+    TicketChangeEventData,
+)
 from src.nightcore.utils import ensure_guild_exists
 
 logger = logging.getLogger(__name__)
@@ -64,7 +66,7 @@ class DeleteTicketTask(Cog):
 
                 self.bot.dispatch(
                     "ticket_deleted",
-                    data=TicketEventData(
+                    data=TicketChangeEventData(
                         guild=guild,
                         channel_id=ticket.channel_id,
                         author_id=ticket.author_id,
