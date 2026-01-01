@@ -30,6 +30,7 @@ class PermissionsFlagEnum(str, Enum):
     ECONOMY_ACCESS = "economy_access"
     CLANS_ACCESS = "clans_access"
     BAN_ACCESS = "ban_access"
+    UNBAN_ACCESS = "unban_access"
     UNSAFE = "unsafe"
 
 
@@ -48,6 +49,11 @@ PERMISSION_CONFIG_MAP: dict[PermissionsFlagEnum, tuple[type, str, str]] = {
         GuildModerationConfig,
         "ban_access_roles_ids",
         "доступ к бану",
+    ),
+    PermissionsFlagEnum.UNBAN_ACCESS: (
+        GuildModerationConfig,
+        "unban_access_roles_ids",
+        "доступ к разбану",
     ),
     PermissionsFlagEnum.HEAD_MODERATION_ACCESS: (
         GuildModerationConfig,

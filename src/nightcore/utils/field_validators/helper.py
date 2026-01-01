@@ -139,7 +139,7 @@ def format_changes(
 def update_id_list(
     current: Sequence[int] | None,
     value: int,
-    action: Literal["add", "remove"],
+    action: str,
 ) -> tuple[list[int], bool, str]:
     """Updates a list of IDs by adding or removing a value."""
     ids = list(current or [])
