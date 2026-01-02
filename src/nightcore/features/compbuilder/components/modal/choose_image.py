@@ -138,9 +138,7 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
                 )
 
         if isinstance(component, Embed):
-            content = (
-                self.role.mention if self.role and not self.channel else None
-            )
+            content = self.role.mention if self.role and self.channel else None
 
             if self.channel:
                 await self.channel.send(content=content, embed=component)
@@ -152,7 +150,6 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
                 )
         else:
             if self.channel is None:
-                # Якщо ephemeral - відправляємо через interaction
                 await interaction.response.send_message(
                     view=component,
                     ephemeral=True,
@@ -163,6 +160,6 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
 
                 await self.channel.send(view=component)  # type: ignore
 
-                await interaction.response.send_message(
-                    content="Компонент отправлен.", ephemeral=True
-                )
+        await interaction.response.send_message(
+            content="Компонент отправлен.", ephemeral=True
+        )
