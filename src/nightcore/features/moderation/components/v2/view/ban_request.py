@@ -13,6 +13,7 @@ from discord import (
     MediaGalleryItem,
     Member,
     Role,
+    User,
 )
 from discord.interactions import Interaction
 from discord.ui import (
@@ -243,7 +244,7 @@ class BanRequestViewV2(LayoutView):
         self,
         author_id: int,
         reason: str,
-        target: Member,
+        target: User | Member,
         bot: "Nightcore",
         duration: int,
         original_duration: str,

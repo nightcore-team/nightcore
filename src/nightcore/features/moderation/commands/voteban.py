@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 from discord import (
     Guild,
-    Member,
+    User,
     app_commands,
 )
 from discord.ext.commands import Cog  # type: ignore
@@ -30,6 +30,7 @@ from src.nightcore.features.moderation.utils.transformers import (
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     compare_top_roles,
+    ensure_member_exists,
     ensure_messageable_channel_exists,
     ensure_role_exists,
     has_any_role_from_sequence,
@@ -60,13 +61,12 @@ class Voteban(Cog):
         reason="Причина бана пользователя",
         duration="Продолжительность бана (например, 1h, 1d, 7d)",
         delete_messages_per="Удалять сообщения за последний период времени (например, 1h, 1d, 7d)",  # noqa: E501
-        # proofs="Собрать доказательства для запроса на бан",
     )
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def voteban(
         self,
         interaction: Interaction,
-        user: Member,
+        user: User,
         duration: str,
         reason: app_commands.Transform[
             app_commands.Range[str, 1, 1000], StringToRuleTransformer
@@ -75,8 +75,6 @@ class Voteban(Cog):
     ):
         """Vote to ban a user on the server."""
         guild = cast(Guild, interaction.guild)
-
-        member = user
 
         ping_role = None
 
@@ -101,32 +99,7 @@ class Voteban(Cog):
         if ping_role_id:
             ping_role = await ensure_role_exists(guild, ping_role_id)
 
-        is_member_moderator = has_any_role_from_sequence(
-            member, moderation_access_roles
-        )
-        if is_member_moderator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка отправки запроса на блокировку",
-                    "Вы не можете заблокировать модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if member.guild_permissions.administrator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка отправки запроса на блокировку",
-                    "Вы не можете заблокировать администраторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if guild.me == member:
+        if guild.me == user:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка отправки запроса на блокировку",
@@ -137,15 +110,42 @@ class Voteban(Cog):
                 ephemeral=True,
             )
 
-        if not compare_top_roles(guild, member):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "Я не могу забанить этого пользователя, потому что у него роль выше, чем у меня.",  # noqa: E501
-                ),
-                ephemeral=True,
+        if (member := await ensure_member_exists(guild, user.id)) is not None:
+            if member.guild_permissions.administrator:
+                return await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Ошибка отправки запроса на блокировку",
+                        "Вы не можете заблокировать администраторов.",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
+            is_member_moderator = has_any_role_from_sequence(
+                member, moderation_access_roles
             )
+
+            if is_member_moderator:
+                return await interaction.response.send_message(
+                    embed=ErrorEmbed(
+                        "Ошибка отправки запроса на блокировку",
+                        "Вы не можете заблокировать модераторов.",
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+
+            if not compare_top_roles(guild, member):
+                return await interaction.response.send_message(
+                    embed=MissingPermissionsEmbed(
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                        "Я не могу забанить этого пользователя, потому что у него роль выше, чем у меня.",  # noqa: E501
+                    ),
+                    ephemeral=True,
+                )
 
         parsed_duration = parse_duration(duration)
 
