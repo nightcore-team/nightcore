@@ -52,6 +52,14 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
         max_length=3000,
     )
 
+    image_url = TextInput["ChangeFAQPageModal"](
+        label="Ссылка на изображение",
+        placeholder="Пример: https://example.com/image.png",
+        required=False,
+        style=TextStyle.short,
+        max_length=300,
+    )
+
     def __init__(self, bot: "Nightcore", page: FAQPageAnnot) -> None:
         super().__init__()
         self.bot = bot
@@ -65,6 +73,7 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
         title = self.page_title.value
         description = self.little_description.value
         content = self.content.value
+        image_url = self.image_url.value
 
         outcome = ""
 
@@ -84,6 +93,10 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
                         outcome = "modified"
                     if content:
                         faq_page["content"] = content
+                        outcome = "modified"
+
+                    if image_url:
+                        faq_page["image_url"] = image_url
                         outcome = "modified"
 
             if outcome != "":
