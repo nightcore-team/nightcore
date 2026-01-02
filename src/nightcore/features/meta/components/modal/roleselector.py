@@ -59,7 +59,8 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
                         f"Роль {role.mention} имеет права администратора и не может быть добавлена в селектор ролей.",  # noqa: E501
                         self.bot.user.display_name,  # type: ignore
                         self.bot.user.avatar.url,  # type: ignore
-                    )
+                    ),
+                    ephemeral=True,
                 )
                 return
 
@@ -70,7 +71,8 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
                         f"Позиция роли {role.mention} больше чем позиция вашей наивысшей роли.",  # noqa: E501
                         self.bot.user.display_name,  # type: ignore
                         self.bot.user.avatar.url,  # type: ignore
-                    )
+                    ),
+                    ephemeral=True,
                 )
                 return
 
@@ -84,7 +86,8 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
                         f"Роль {role.mention} выше роли бота, поэтому вы не можете добавить её в селектор ролей.",  # noqa: E501
                         self.bot.user.display_name,  # type: ignore
                         self.bot.user.avatar.url,  # type: ignore
-                    )
+                    ),
+                    ephemeral=True,
                 )
                 return
 
