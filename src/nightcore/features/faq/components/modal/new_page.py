@@ -47,6 +47,14 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
         max_length=3000,
     )
 
+    image_url = TextInput[Self](
+        label="Ссылка на изображение",
+        placeholder="Пример: https://example.com/image.png",
+        required=False,
+        style=TextStyle.short,
+        max_length=300,
+    )
+
     def __init__(self, bot: "Nightcore") -> None:
         super().__init__()
         self.bot = bot
@@ -59,6 +67,7 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
         title = self.page_title.value
         description = self.little_description.value
         content = self.content.value
+        image_url = self.image_url.value
 
         outcome = ""
         async with specified_guild_config(
@@ -82,6 +91,7 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
                         "title": title,
                         "description": description,
                         "content": content,
+                        "image_url": image_url,
                     }
                 )
 
