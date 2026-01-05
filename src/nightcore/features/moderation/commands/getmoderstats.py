@@ -30,7 +30,6 @@ from src.nightcore.features.moderation.utils.getmoderstats import (
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     get_all_members_with_specified_role,
-    has_any_role,
 )
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -112,20 +111,7 @@ class GetModerationStats(Cog):
 
         moderators: list[discord.Member] = []
         if member:
-            is_member_moderator = has_any_role(
-                member, trackable_moderation_role
-            )
-            if is_member_moderator:
-                moderators.append(member)
-            else:
-                return await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        "Этот пользователь не является модератором для получения статистики.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
+            moderators.append(member)
         else:
             moderators = await get_all_members_with_specified_role(  # type: ignore
                 guild, trackable_moderation_role
