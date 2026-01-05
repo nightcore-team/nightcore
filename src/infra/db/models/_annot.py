@@ -87,6 +87,7 @@ class FAQPageAnnot(TypedDict):
     title: str
     description: str
     content: str
+    image_url: str | None
 
 
 class BattlepassRewardAnnot(TypedDict):
