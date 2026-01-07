@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
     text="Текст главы или правила",
     clause="Номер пункта (например, '1' для главы, '1.1' для правила, '1.1.1' для подпункта)",  # noqa: E501
 )
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
 async def create_chapter_or_rule(
     interaction: Interaction["Nightcore"],
     text: str,

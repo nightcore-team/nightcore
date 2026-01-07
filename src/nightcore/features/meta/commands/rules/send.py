@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 @rules_group.command(
     name="send", description="Отправить правила в текущий канал"
 )  # type: ignore
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
 async def send_rules(
     interaction: Interaction["Nightcore"],
 ):
