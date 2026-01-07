@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 @rules_group.command(name="delete", description="Удалить главу или правило")  # type: ignore
-@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     clause="Номер пункта (например, '1' для главы, '1.1' для правила, '1.1.1' для подпункта)",  # noqa: E501
 )

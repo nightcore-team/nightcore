@@ -140,7 +140,7 @@ async def edit_chapter_or_rule(
             bot.user.display_name,  # type: ignore
             bot.user.avatar.url,  # type: ignore
         ),
-        ephemeral=False,
+        ephemeral=True,
     )
 
     logger.info(
