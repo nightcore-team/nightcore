@@ -4,6 +4,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypedDict
 
+from src.infra.db.models._enums import CaseDropTypeEnum
+
 if TYPE_CHECKING:
     from src.infra.db.models import (
         ChangeStat,
@@ -57,7 +59,7 @@ class Rule:
 
 
 class CasesAnnot(TypedDict):
-    """{"case_name": amount}."""
+    """{"case_id": amount}."""
 
 
 class ColorsAnnot(TypedDict):
@@ -66,20 +68,14 @@ class ColorsAnnot(TypedDict):
 
 class UserInventoryAnnot(TypedDict):
     cases: CasesAnnot
-    colors: list[str]
+    colors: list[int]
 
 
-class CoinDropAnnot(TypedDict):
-    """Single coin drop configuration."""
+class CaseDropAnnot(TypedDict):
+    """Single drop configuration."""
 
+    type: CaseDropTypeEnum
     amount: int
-    chance: int
-
-
-class ColorDropAnnot(TypedDict):
-    """Single color drop configuration."""
-
-    role_id: int
     chance: int
 
 

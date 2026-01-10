@@ -5,8 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._annot import (
     BattlepassLevelAnnot,
-    CoinDropAnnot,
-    ColorDropAnnot,
     FAQPageAnnot,
     Rules,
 )
@@ -120,15 +118,6 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         ARRAY(BigInteger), nullable=True
     )
     economy_shop_items: Mapped[dict[str, int]] = mapped_column(
-        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
-    )
-    colors: Mapped[dict[str, str]] = mapped_column(
-        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
-    )
-    drop_from_coins_case: Mapped[list[CoinDropAnnot]] = mapped_column(
-        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
-    )
-    drop_from_colors_case: Mapped[dict[str, ColorDropAnnot]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
     last_roulette_games: Mapped[list[str]] = mapped_column(

@@ -162,3 +162,11 @@ class MetaConfigAccessTypeEnum(Enum):
             ("Другое", "other"),
             ("Инфомейкер", "infomaker"),
         ]
+
+
+class CaseDropTypeEnum(Enum):
+    EXP = 0
+    COINS = 1
+    COLOR = 3
+    CASE = 4
+    CUSTOM = 5
