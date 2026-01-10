@@ -17,7 +17,7 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
-from src.nightcore.features.economy.utils import cases_autocomplete
+from src.nightcore.features.economy.utils import user_cases_autocomplete
 from src.nightcore.features.economy.utils.case import (
     CASES_NAMES,
     open_coins_case,
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 @case_group.command(name="open", description="Открыть кейс")  # type: ignore
 @app_commands.describe(case="Кейс для открытия.")
-@app_commands.autocomplete(case=cases_autocomplete)
+@app_commands.autocomplete(case=user_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)
 async def open_case(
     interaction: Interaction["Nightcore"],

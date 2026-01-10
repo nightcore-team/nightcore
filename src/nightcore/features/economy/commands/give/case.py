@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
-from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
@@ -38,17 +37,12 @@ logger = logging.getLogger(__name__)
     amount="Количество кейсов для выдачи.",
     reason="Причина выдачи кейса (необязательно).",
 )
-@app_commands.choices(
-    case=[
-        app_commands.Choice(name="Кейс с монетами", value="coins_case"),
-        app_commands.Choice(name="Кейс с цветами", value="colors_case"),
-    ]
-)
+@app_commands.autocomplete(case_name=guild_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_case(
     interaction: Interaction["Nightcore"],
     user: User,
-    case: app_commands.Choice[str],
+    case_name: app_commands.Choice[str],
     amount: int,
     reason: str | None = None,
 ):
@@ -87,19 +81,12 @@ async def give_case(
                     user_id=user.id,
                 )
 
-                if case.value in user_record.inventory["cases"]:
-                    user_record.inventory["cases"][case.value] += amount
-                else:
-                    user_record.inventory["cases"][case.value] = amount
-
-                attributes.flag_modified(user_record, "inventory")
-
                 outcome = "success"
 
             except Exception as e:
                 logger.exception(
                     "[give/case] Error giving case %s to user %s in guild %s: %s",  # noqa: E501
-                    case,
+                    case_name,
                     user.id,
                     guild.id,
                     e,
@@ -122,7 +109,7 @@ async def give_case(
             embed=SuccessMoveEmbed(
                 "Выдача кейса успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
-                f"**{case.name}** в количестве **{amount}**.",
+                f"**{case_name.name}** в количестве **{amount}**.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -137,7 +124,7 @@ async def give_case(
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=case.name,
+                item_name=case_name.name,
                 amount=amount,
                 reason=reason,
             ),

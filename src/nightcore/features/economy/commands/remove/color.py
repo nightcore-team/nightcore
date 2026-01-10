@@ -18,7 +18,7 @@ from src.nightcore.features.economy._groups import remove as remove_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
-from src.nightcore.features.economy.utils import all_colors_autocomplete
+from src.nightcore.features.economy.utils import guild_colors_autocomplete
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
     color="Цвет для удаления",
     reason="Причина удаления цвета (необязательно)",
 )
-@app_commands.autocomplete(color=all_colors_autocomplete)
+@app_commands.autocomplete(color=guild_colors_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def remove_color(
     interaction: Interaction["Nightcore"],

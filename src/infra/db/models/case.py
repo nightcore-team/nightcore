@@ -2,7 +2,7 @@
 
 import random
 
-from sqlalchemy import JSON, text
+from sqlalchemy import JSON, BigInteger, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._annot import CaseDropAnnot
@@ -11,7 +11,12 @@ from src.infra.db.models.base import Base
 
 
 class Case(IdIntegerMixin, Base):
+    __table_args__ = (
+        UniqueConstraint("guild_id", "name", name="ux_name_guild_case"),
+    )
+
     name: Mapped[str] = mapped_column(nullable=False)
+    guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     drop: Mapped[list[CaseDropAnnot]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )

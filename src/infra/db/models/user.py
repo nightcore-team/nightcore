@@ -1,20 +1,35 @@
 """User model for the Nightcore bot database."""
 
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import (
-    JSON,
     BigInteger,
+    Column,
     DateTime,
+    ForeignKey,
+    Index,
     Integer,
+    PrimaryKeyConstraint,
+    Table,
     UniqueConstraint,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.infra.db.models._annot import UserInventoryAnnot
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.infra.db.models.case import Case
+from src.infra.db.models.color import Color
+
+user_colors = Table(
+    "user_colors",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("color_id", Integer, ForeignKey("color.id", ondelete="CASCADE")),
+    Index("idx_user_cases_user_id", "user_id"),
+    PrimaryKeyConstraint("user_id", "color_id"),
+)
 
 
 class User(IdIntegerMixin, Base):
@@ -52,9 +67,41 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=1, server_default=text("1")
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
-    inventory: Mapped[UserInventoryAnnot] = mapped_column(
-        JSON,
-        nullable=False,
-        default=lambda: {"cases": {}, "colors": []},  # type: ignore
-        server_default=text('\'{"cases": {}, "colors": []}\'::json'),
+    cases: Mapped[list["UserCase"]] = relationship(
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
+    colors: Mapped[list[Color]] = relationship(
+        lazy="selectin",
+        secondary=user_colors,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    def get_case(self, name: str) -> Optional["UserCase"]:
+        """Retrieves a case from the user's collection by its name."""
+
+        for case in self.cases:
+            if case.item.name == name:
+                return case
+
+    def get_color(self, color_id: int) -> Optional["Color"]:
+        """Retrieves a color from the user's collection by its id."""
+        for color in self.colors:
+            if color.id == color_id:
+                return color
+
+
+class UserCase(Base):
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    case_id: Mapped[int] = mapped_column(
+        ForeignKey("cases.id", ondelete="CASCADE"), primary_key=True
+    )
+    amount: Mapped[int] = mapped_column(default=1)
+    user: Mapped["User"] = relationship(back_populates="user_cases")
+    item: Mapped["Case"] = relationship(back_populates="user_cases")
+
+    Index("idx_user_cases_user_id", "user_id")

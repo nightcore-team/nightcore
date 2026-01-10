@@ -66,11 +66,6 @@ class ColorsAnnot(TypedDict):
     """["color_name"]."""
 
 
-class UserInventoryAnnot(TypedDict):
-    cases: CasesAnnot
-    colors: list[int]
-
-
 class CaseDropAnnot(TypedDict):
     """Single drop configuration."""
 

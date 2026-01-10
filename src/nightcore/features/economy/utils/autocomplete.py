@@ -6,7 +6,7 @@ Used for providing autocomplete options for cases and colors.
 
 import logging
 import time
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from discord import Guild, app_commands
 from discord.interactions import Interaction
@@ -21,8 +21,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+CLEAR_COLOR_ID: Final[int] = -1
 
-async def cases_autocomplete(
+
+async def user_cases_autocomplete(
     interaction: Interaction["Nightcore"],
     current: str,
 ) -> list[app_commands.Choice[str]]:
@@ -41,26 +43,13 @@ async def cases_autocomplete(
     if created:
         result = []
     else:
-        inventory = user.inventory or {}
-        cases = inventory.get("cases", {})
-        for case_name in cases:
-            match case_name.lower():
-                case "coins_case":
-                    result.append(
-                        app_commands.Choice(
-                            name=f"Кейс с монетами, количество: {cases[case_name]}",  # noqa: E501
-                            value=case_name,
-                        )
-                    )
-                case "colors_case":
-                    result.append(
-                        app_commands.Choice(
-                            name=f"Кейс с цветами, количество: {cases[case_name]}",  # noqa: E501
-                            value=case_name,
-                        )
-                    )
-                case _:
-                    ...
+        for case in user.cases:
+            result.append(
+                app_commands.Choice(
+                    name=f"{case.item.name}, количество: {case.amount}",
+                    value=case.item.name,
+                )
+            )
 
     end_autocomplete = time.perf_counter()
     logger.info(
@@ -72,7 +61,7 @@ async def cases_autocomplete(
     return result
 
 
-async def own_colors_autocomplete(
+async def user_colors_autocomplete(
     interaction: Interaction["Nightcore"],
     current: str,
 ) -> list[app_commands.Choice[str]]:
@@ -83,39 +72,32 @@ async def own_colors_autocomplete(
 
     async with specified_guild_config(
         interaction.client, guild.id, config_type=GuildEconomyConfig
-    ) as (guild_config, session):
-        user, created = await get_or_create_user(
+    ) as (_, session):
+        user, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
         )
-        drop_from_colors = guild_config.drop_from_colors_case or {}
 
-    if created:
-        result = []
-    else:
-        inventory = user.inventory.get("colors", []) or []
-        for color_key in inventory:
-            color_data = drop_from_colors.get(color_key, None)
-            if color_data is None:
-                continue
+    for color in user.colors:
+        role = guild.get_role(color.role_id)
 
-            role_id = color_data["role_id"]
-            role = guild.get_role(role_id)
-
-            if role is not None:
-                result.append(
-                    app_commands.Choice(
-                        name=role.name,
-                        value=f"{color_key}",
-                    )
-                )
+        if role is None:
+            value = f"Цвет не найден. id: {color.id}"
+        else:
+            value = role.name
         result.append(
             app_commands.Choice(
-                name="Сбросить цвет",
-                value="reset",
+                name=value,
+                value=str(color.id),
             )
         )
+    result.append(
+        app_commands.Choice(
+            name="Сбросить цвет",
+            value=str(CLEAR_COLOR_ID),
+        )
+    )
 
     end_autocomplete = time.perf_counter()
     logger.info(
@@ -127,7 +109,7 @@ async def own_colors_autocomplete(
     return result
 
 
-async def all_colors_autocomplete(
+async def guild_colors_autocomplete(
     interaction: Interaction["Nightcore"],
     current: str,
 ) -> list[app_commands.Choice[str]]:
