@@ -13,6 +13,8 @@ from sqlalchemy.orm import selectinload
 from src.config.config import config
 from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
+    CasinoBet,
+    CasinoGame,
     ChangeStat,
     Clan,
     ClanMember,
@@ -1110,4 +1112,36 @@ async def get_custom_component_by_id(
     )
     result = await session.execute(stmt)
 
+    return result.scalar_one_or_none()
+
+
+async def get_casino_game_by_message_id(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    message_id: int,
+    with_bets: bool = False,
+) -> CasinoGame | None:
+    """Get a casino game by message ID for a guild."""
+    stmt = select(CasinoGame).where(
+        CasinoGame.guild_id == guild_id,
+        CasinoGame.message_id == message_id,
+    )
+    if with_bets:
+        stmt = stmt.options(selectinload(CasinoGame.bets))
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_user_casino_bet_by_game_id(
+    session: AsyncSession, *, user_id: int, game_id: int
+) -> Any:
+    """Get a user's casino bet by game ID."""
+    stmt = select(CasinoBet).where(
+        CasinoBet.user_id == user_id,
+        CasinoBet.game_id == game_id,
+    )
+    result = await session.execute(stmt)
     return result.scalar_one_or_none()
