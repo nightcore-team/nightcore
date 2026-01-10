@@ -248,18 +248,6 @@ async def roulette(
                 view=view, ephemeral=True
             )
         else:
-            # Multiplayer game
-            if casino_multiplayer_channel_id is None:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка конфигурации",
-                        "Канал для многопользовательской рулетки не настроен.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-
             view = MultiplayerRouletteViewV2(
                 bot=bot,
                 coin_name=coin_name,
@@ -267,6 +255,20 @@ async def roulette(
                 bet_count=bet,
                 selected_color=selected_color,
             )
+
+            if casino_multiplayer_channel_id is None:
+                message = await cast(TextChannel, interaction.channel).send(
+                    view=view
+                )
+                return await interaction.response.send_message(
+                    embed=SuccessMoveEmbed(
+                        "Игра отправлена",
+                        f"Ваша игра отправлена в канал {message.jump_url}.",
+                        bot.user.display_name,  # type: ignore
+                        bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
 
             channel = cast(
                 TextChannel,
@@ -301,9 +303,9 @@ async def roulette(
                 return await interaction.response.send_message(
                     embed=SuccessMoveEmbed(
                         "Игра отправлена",
-                        f"Ваша игра отправлена в канал {message.jump_url}.",
+                        f"Ваша игра отправлена в канал {message.jump_url}.\nОстальные игроки могут присоединиться к игре в течение 1 минуты нажав на ссылку",  # noqa: E501
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),
-                    ephemeral=True,
+                    ephemeral=False,
                 )
