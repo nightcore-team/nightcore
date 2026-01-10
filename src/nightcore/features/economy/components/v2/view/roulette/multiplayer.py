@@ -7,8 +7,15 @@ Used for displaying the results of a casino roulette game.
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
-from discord import Color
-from discord.ui import Container, LayoutView, Separator, TextDisplay
+from discord import ButtonStyle, Color
+from discord.ui import (
+    ActionRow,
+    Button,
+    Container,
+    LayoutView,
+    Separator,
+    TextDisplay,
+)
 
 from src.nightcore.utils import discord_ts
 
@@ -25,9 +32,9 @@ class MultiplayerRouletteViewV2(LayoutView):
         bot: "Nightcore",
         coin_name: str | None,
         initiator_id: int,
-        bet_count: int,
-        selected_color: str,
-        participants: list["CasinoBetAnnot"] | None = None,
+        initiator_bet: int,
+        initiator_selected_color: str,
+        bets: list["CasinoBetAnnot"] | None = None,
     ) -> None:
         super().__init__(timeout=None)
 
@@ -44,19 +51,19 @@ class MultiplayerRouletteViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"### Пользователь <@{initiator_id}> запустил игру\n"
-                f"> **Его ставка:** {bet_count} {coin_name_display} | {COLORS[selected_color]}\n"  # noqa: E501
+                f"> **Его ставка:** {initiator_bet} {coin_name_display} | {COLORS[initiator_selected_color]}\n"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
 
-        if participants:
+        if bets:
             container.add_item(
                 TextDisplay[Self](
                     "### Список остальных участников:\n"
                     "-# пользователь - ставка - цвет"
                     + "\n".join(
-                        f"> <@{user['user_id']}> - {user['bet']} - {COLORS[user['selected_color']]}"  # noqa: E501
-                        for user in participants
+                        f"> <@{bet['user_id']}> - {bet['bet']} - {COLORS[bet['selected_color']]}"  # noqa: E501
+                        for bet in bets
                     )
                 )
             )
@@ -65,6 +72,18 @@ class MultiplayerRouletteViewV2(LayoutView):
             TextDisplay[Self](
                 "\nОжидается начало игры... <:sandclock:1442914884147871874>\n"
                 "Другие пользователи могут присоединиться в течение 60 секунд"
+            )
+        )
+        container.add_item(Separator[Self]())
+
+        container.add_item(
+            ActionRow[Self](
+                Button[Self](
+                    style=ButtonStyle.grey,
+                    label="Присоединиться к игре",
+                    custom_id="casino:roulette:multiplayer",
+                    emoji=None,
+                )
             )
         )
         container.add_item(Separator[Self]())
