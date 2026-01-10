@@ -252,14 +252,18 @@ async def roulette(
                 bot=bot,
                 coin_name=coin_name,
                 initiator_id=member.id,
-                bet_count=bet,
-                selected_color=selected_color,
+                initiator_bet=bet,
+                initiator_selected_color=selected_color,
             )
 
             if casino_multiplayer_channel_id is None:
                 message = await cast(TextChannel, interaction.channel).send(
                     view=view
                 )
+                async with bot.uow.start() as session:
+                    casino_game = await session.merge(casino_game)  # type: ignore
+                    casino_game.message_id = message.id
+
                 return await interaction.response.send_message(
                     embed=SuccessMoveEmbed(
                         "Игра отправлена",
@@ -299,6 +303,10 @@ async def roulette(
                         ),
                         ephemeral=True,
                     )
+
+                async with bot.uow.start() as session:
+                    casino_game = await session.merge(casino_game)  # type: ignore
+                    casino_game.message_id = message.id
 
                 return await interaction.response.send_message(
                     embed=SuccessMoveEmbed(
