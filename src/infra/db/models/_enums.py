@@ -162,3 +162,17 @@ class MetaConfigAccessTypeEnum(Enum):
             ("Другое", "other"),
             ("Инфомейкер", "infomaker"),
         ]
+
+
+class CasinoGameTypeEnum(Enum):
+    ROULETTE = "roulette"
+
+
+class CasinoPlayersTypeEnum(Enum):
+    SINGLE = "single"
+    MULTIPLAYER = "multiplayer"
+
+
+class CasinoGameStateEnum(Enum):
+    PENDING = "pending"
+    FINISHED = "finished"
