@@ -12,7 +12,11 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.operations import (
+    get_guild_cases,
+    get_guild_colors,
+    get_or_create_user,
+)
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -33,23 +37,21 @@ async def user_cases_autocomplete(
     guild = cast(Guild, interaction.guild)
 
     async with interaction.client.uow.start() as session:
-        user, created = await get_or_create_user(
+        user, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
         )
 
     result: list[app_commands.Choice[str]] = []
-    if created:
-        result = []
-    else:
-        for case in user.cases:
-            result.append(
-                app_commands.Choice(
-                    name=f"{case.item.name}, количество: {case.amount}",
-                    value=case.item.name,
-                )
+
+    for case in user.cases:
+        result.append(
+            app_commands.Choice(
+                name=f"{case.item.name}, количество: {case.amount}",
+                value=case.item.name,
             )
+        )
 
     end_autocomplete = time.perf_counter()
     logger.info(
@@ -120,25 +122,61 @@ async def guild_colors_autocomplete(
 
     async with specified_guild_config(
         interaction.client, guild.id, config_type=GuildEconomyConfig
-    ) as (guild_config, _):
-        drop_from_colors = guild_config.drop_from_colors_case or {}
+    ) as (_, session):
+        guild_colors = await get_guild_colors(
+            session,
+            guild_id=interaction.guild.id,  # type: ignore
+        )
 
-        for color_key, color_data in drop_from_colors.items():
-            role_id = color_data["role_id"]
-
-            role = guild.get_role(role_id)
+        for color in guild_colors:
+            role = guild.get_role(color.role_id)
 
             if role is not None:
                 result.append(
                     app_commands.Choice(
                         name=role.name,
-                        value=f"{role.name},{role_id},{color_key}",
+                        value=str(color.id),
                     )
                 )
 
     end_autocomplete = time.perf_counter()
     logger.info(
         "[colors/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
+async def guild_cases_autocomplete(
+    interaction: Interaction["Nightcore"],
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get all cases for guild."""
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+    result: list[app_commands.Choice[str]] = []
+
+    async with specified_guild_config(
+        interaction.client, guild.id, config_type=GuildEconomyConfig
+    ) as (_, session):
+        guild_cases = await get_guild_cases(
+            session,
+            guild_id=interaction.guild.id,  # type: ignore
+        )
+
+        for case in guild_cases:
+            result.append(
+                app_commands.Choice(
+                    name=case.name,
+                    value=str(case.id),
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[cases/autocomplete] Autocomplete for guild %s took %.4f seconds",
         guild.id,
         end_autocomplete - start_autocomplete,
     )

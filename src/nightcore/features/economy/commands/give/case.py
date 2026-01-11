@@ -8,7 +8,12 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.models.user import UserCase
+from src.infra.db.operations import (
+    get_case_by_id,
+    get_or_create_user,
+    get_specified_channel,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -16,6 +21,9 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
+)
+from src.nightcore.features.economy.utils.autocomplete import (
+    guild_cases_autocomplete,
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
@@ -51,6 +59,19 @@ async def give_case(
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
 
+    try:
+        case_id = int(case_name.value)
+    except Exception as _:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка",
+                "Был введен неверный id цвета",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
     if user == bot.user:
         return await interaction.response.send_message(
             embed=ErrorEmbed(
@@ -79,9 +100,26 @@ async def give_case(
                     session,
                     guild_id=guild.id,
                     user_id=user.id,
+                    with_relations=True,
                 )
 
-                outcome = "success"
+                case = await get_case_by_id(
+                    session, guild_id=guild.id, case_id=case_id
+                )
+
+                if case is None:
+                    outcome = "unknown_case"
+                else:
+                    if user_case := user_record.get_case(case.id):
+                        user_case.amount += amount
+                    else:
+                        new_case = UserCase(
+                            case_id=case.id, amount=amount, user_id=user.id
+                        )
+
+                        session.add(new_case)
+
+                    outcome = "success"
 
             except Exception as e:
                 logger.exception(

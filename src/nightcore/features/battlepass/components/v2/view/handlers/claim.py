@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild
 from discord.interactions import Interaction
-from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_or_create_user
@@ -94,7 +93,6 @@ async def handle_battlepass_claim_reward_button(
                                     reward_amount
                                 )
 
-                            attributes.flag_modified(user_record, "inventory")
                             reward_name = f"{reward_amount} кейсов с коинами"
 
                         case "exp":

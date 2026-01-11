@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Self
 from discord import Color
 from discord.ui import Container, LayoutView, Separator, TextDisplay
 
-from src.infra.db.models._annot import CoinDropAnnot, ColorDropAnnot
+from src.infra.db.models.case import Case
 from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
@@ -58,11 +58,7 @@ class CaseOpenViewV2(LayoutView):
 
 class CaseHelpViewV2(LayoutView):
     def __init__(
-        self,
-        bot: "Nightcore",
-        coin_name: str | None,
-        coins_drops: list[CoinDropAnnot],
-        colors_drops: dict[str, ColorDropAnnot],
+        self, bot: "Nightcore", coin_name: str | None, cases: list[Case]
     ):
         super().__init__()
 

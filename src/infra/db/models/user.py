@@ -79,11 +79,11 @@ class User(IdIntegerMixin, Base):
         passive_deletes=True,
     )
 
-    def get_case(self, name: str) -> Optional["UserCase"]:
+    def get_case(self, case_id: int) -> Optional["UserCase"]:
         """Retrieves a case from the user's collection by its name."""
 
         for case in self.cases:
-            if case.item.name == name:
+            if case.item.id == case_id:
                 return case
 
     def get_color(self, color_id: int) -> Optional["Color"]:
@@ -94,6 +94,10 @@ class User(IdIntegerMixin, Base):
 
 
 class UserCase(Base):
+    __table_args__ = (
+        UniqueConstraint("case_id", "user_id", name="ux_user_case_user"),
+    )
+
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
@@ -101,7 +105,6 @@ class UserCase(Base):
         ForeignKey("cases.id", ondelete="CASCADE"), primary_key=True
     )
     amount: Mapped[int] = mapped_column(default=1)
-    user: Mapped["User"] = relationship(back_populates="user_cases")
-    item: Mapped["Case"] = relationship(back_populates="user_cases")
+    item: Mapped["Case"] = relationship()
 
     Index("idx_user_cases_user_id", "user_id")

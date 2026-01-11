@@ -5,11 +5,14 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
-from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.operations import (
+    get_color_by_id,
+    get_or_create_user,
+    get_specified_channel,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -43,7 +46,7 @@ logger = logging.getLogger(__name__)
 async def remove_color(
     interaction: Interaction["Nightcore"],
     user: User,
-    color: str,
+    color_name: app_commands.Choice[str],
     reason: str | None = None,
 ):
     """Give a color to user."""
@@ -52,14 +55,12 @@ async def remove_color(
     bot = interaction.client
 
     try:
-        role_name, role_id, _color = color.split(",")
-        role_id = int(role_id)
-    except Exception as e:
-        logger.error("[remove/color] Error parsing color: %s", e)
+        color_id = int(color_name.value)
+    except Exception as _:
         return await interaction.response.send_message(
             embed=ErrorEmbed(
-                "Ошибка удаления цвета",
-                "Не удалось определить цвет.",
+                "Ошибка",
+                "Был введен неверный id цвета",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -80,7 +81,7 @@ async def remove_color(
         )
 
     async with specified_guild_config(bot, guild.id, GuildEconomyConfig) as (
-        guild_config,
+        _,
         session,
     ):
         logging_channel_id = await get_specified_channel(
@@ -96,15 +97,15 @@ async def remove_color(
                 guild_id=guild.id,
                 user_id=user.id,
             )
-            drop_from_colors = guild_config.drop_from_colors_case or {}
-            color_drop = drop_from_colors.get(_color)
+            color = await get_color_by_id(
+                session, guild_id=guild.id, color_id=color_id
+            )
 
-            if not color_drop:
+            if color is None:
                 outcome = "unknown_color"
             else:
-                if _color in user_record.inventory["colors"]:
-                    user_record.inventory["colors"].remove(_color)
-                    attributes.flag_modified(user_record, "inventory")
+                if color in user_record.colors:
+                    user_record.colors.remove(color)
 
                     outcome = "success"
                 else:
@@ -136,7 +137,7 @@ async def remove_color(
         await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Удаление цвета успешно",
-                f"Вы успешно удалили пользователю <@{user.id}> цвет <@&{role_id}>.",  # noqa: E501
+                f"Вы успешно удалили пользователю <@{user.id}> цвет <@&{color.role_id}>.",  # noqa: E501 # type: ignore
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -151,7 +152,7 @@ async def remove_color(
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=f"{role_name} ({role_id})",
+                item_name=f"{color_name.name} ({color.role_id})",  # type: ignore
                 amount=-1,
                 reason=reason,
             ),

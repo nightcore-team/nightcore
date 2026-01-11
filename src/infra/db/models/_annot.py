@@ -58,18 +58,11 @@ class Rule:
     subrules: list[Rule]
 
 
-class CasesAnnot(TypedDict):
-    """{"case_id": amount}."""
-
-
-class ColorsAnnot(TypedDict):
-    """["color_name"]."""
-
-
 class CaseDropAnnot(TypedDict):
     """Single drop configuration."""
 
     type: CaseDropTypeEnum
+    drop_id: int | None
     amount: int
     chance: int
 

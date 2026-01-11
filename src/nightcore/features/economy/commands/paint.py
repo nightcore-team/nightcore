@@ -9,7 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.operations import get_guild_colors, get_or_create_user
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.economy.utils import (
     CLEAR_COLOR_ID,
@@ -40,7 +40,7 @@ class Paint(Cog):
     async def paint(
         self,
         interaction: Interaction["Nightcore"],
-        color_name: str,
+        color_name: app_commands.Choice[str],
     ):
         """Apply a color role to the user or reset all color roles."""
 
@@ -48,7 +48,7 @@ class Paint(Cog):
         member = cast(Member, interaction.user)
 
         try:
-            color_id = int(color_name)
+            color_id = int(color_name.value)
         except Exception as _:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
@@ -69,16 +69,16 @@ class Paint(Cog):
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
+                with_relations=True,
             )
+
+            guild_colors = await get_guild_colors(session, guild_id=guild.id)
 
             if color_id == CLEAR_COLOR_ID:
                 color_roles_to_remove = []
 
-                # TODO: ЗДЕСЬ ДОЛЖНА БЫТЬ ПРОВЕРКА HA BCE ЦВЕТА ГИЛЬДИИ,
-                # A HE ТОЛЬКО HA TE, КОТОРЫЕ СЕЙЧАС ECTb Y ЮЗЕРА
-
-                for user_color in user_record.colors:
-                    color_role = guild.get_role(user_color.role_id)
+                for guild_color in guild_colors:
+                    color_role = guild.get_role(guild_color.role_id)
                     if color_role and color_role in member.roles:
                         color_roles_to_remove.append(color_role)
 
@@ -113,28 +113,17 @@ class Paint(Cog):
                     elif role in member.roles:
                         outcome = "already_has_role"
                     else:
-                        # TODO: ЗДЕСЬ ДОЛЖНА БЫТЬ ПРОВЕРКА HA BCE ЦВЕТА ГИЛЬДИИ
-                        # A HE ТОЛЬКО HA TE, КОТОРЫЕ СЕЙЧАС ECTb Y ЮЗЕРА
-
                         color_roles_to_remove: list[Role] = []
-                        for user_color in user_record.colors:
-                            if user_color.id == selected_color.id:
+                        for guild_color in guild_colors:
+                            guild_role = guild.get_role(guild_color.role_id)
+                            if (
+                                guild_role is None
+                                or guild_role.id == selected_color.id
+                            ):
                                 continue
 
-                            other_color_data = drop_from_colors.get(
-                                user_color_key
-                            )
-                            if other_color_data:
-                                other_color_role = guild.get_role(
-                                    other_color_data["role_id"]
-                                )
-                                if (
-                                    other_color_role
-                                    and other_color_role in member.roles
-                                ):
-                                    color_roles_to_remove.append(
-                                        other_color_role
-                                    )
+                            if guild_role.id in member.roles:
+                                color_roles_to_remove.append(guild_role)
 
                         try:
                             if color_roles_to_remove:

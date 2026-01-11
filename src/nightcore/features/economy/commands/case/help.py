@@ -7,6 +7,7 @@ from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.operations import get_guild_cases
 from src.nightcore.components.embed import (
     ErrorEmbed,
 )
@@ -37,16 +38,12 @@ async def open_case(
 
     outcome = ""
     coin_name = ""
-    coin_drop = []
-    color_drop = {}
 
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
-    ) as (guild_config, _):
+    ) as (_, session):
         try:
-            coin_drop = guild_config.drop_from_coins_case
-            color_drop = guild_config.drop_from_colors_case
-            coin_name = guild_config.coin_name
+            cases = await get_guild_cases(session, guild_id=guild.id)
         except Exception as e:
             logger.error(
                 "[case/help] Failed to get guild economy config for guild %s: %s",  # noqa: E501
@@ -72,8 +69,7 @@ async def open_case(
         view = CaseHelpViewV2(
             bot=bot,
             coin_name=coin_name,
-            coins_drops=coin_drop,
-            colors_drops=color_drop,
+            cases=cases,
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)
