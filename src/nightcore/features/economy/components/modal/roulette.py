@@ -180,7 +180,7 @@ class JoinMultiplayerRouletteModal(
                     {
                         "bet": bet.amount,
                         "selected_color": bet.color,
-                        "result_type": bet.result_type,  # type: ignore
+                        "result_coins": None,
                         "user_id": bet.user_id,
                     }
                 )

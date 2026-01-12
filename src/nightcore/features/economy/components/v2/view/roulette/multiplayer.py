@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models._enums import (
-    CasinoBetResultTypeEnum,
     CasinoGameStateEnum,
 )
 from src.nightcore.features.economy.utils.casino import COLORS
@@ -39,8 +38,9 @@ class MultiplayerRouletteViewV2(LayoutView):
         initiator_bet: int,
         initiator_selected_color: str,
         state: CasinoGameStateEnum,
-        initiator_result: CasinoBetResultTypeEnum | None = None,
+        initiator_result_coins: int | None = None,
         bets: list["CasinoBetAnnot"] | None = None,
+        disable_buttons: bool = False,
     ) -> None:
         super().__init__(timeout=None)
 
@@ -57,8 +57,8 @@ class MultiplayerRouletteViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"### Пользователь <@{initiator_id}> запустил игру\n"
-                f"> **Его ставка:** {initiator_bet} {coin_name_display} | {COLORS[initiator_selected_color]}\n"  # noqa: E501
-                f"> **Результат:** {initiator_result.value if initiator_result else 'Ожидание...'}\n"  # noqa: E501
+                f"> **Его ставка:** {initiator_bet} {coin_name_display} - {COLORS[initiator_selected_color]}\n"  # noqa: E501
+                f"> **Результат:** {initiator_result_coins if initiator_result_coins is not None else 'Ожидание...'}\n"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -67,9 +67,9 @@ class MultiplayerRouletteViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self](
                     "### Список остальных участников:\n"
-                    "-# пользователь - ставка - цвет - результат\n"
+                    "-# цвет - пользователь - ставка - результат\n"
                     + "\n".join(
-                        f"> <@{bet['user_id']}> - {bet['bet']} - {COLORS[bet['selected_color']]} - {bet['result_type'].value if bet['result_type'] else 'Ожидание...'}"  # noqa: E501
+                        f"> {COLORS[bet['selected_color']]} <:42920arrowrightalt:1442924551880314921> <@{bet['user_id']}> - {bet['bet']} {coin_name_display} - {bet['result_coins'] if bet['result_coins'] is not None else 'Ожидание...'}"  # noqa: E501
                         for bet in bets
                     )
                 )
@@ -79,11 +79,11 @@ class MultiplayerRouletteViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self](
                     "\nОжидается начало игры... <:sandclock:1442914884147871874>\n"  # noqa: E501
-                    "Другие пользователи могут присоединиться в течение 60 секунд"  # noqa: E501
+                    "**Другие пользователи могут присоединиться в течение 60 секунд**"  # noqa: E501
                 )
             )
         else:
-            container.add_item(TextDisplay[Self]("\nИгра завершена.\n"))
+            container.add_item(TextDisplay[Self]("\n**Игра завершена**\n"))
 
         container.add_item(Separator[Self]())
 
@@ -93,7 +93,8 @@ class MultiplayerRouletteViewV2(LayoutView):
                     style=ButtonStyle.grey,
                     label="Присоединиться к игре",
                     custom_id="casino:roulette:multiplayer",
-                    emoji=None,
+                    emoji="<:2988copylink:1442925607620055071>",
+                    disabled=disable_buttons,
                 )
             )
         )

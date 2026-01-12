@@ -110,4 +110,4 @@ class CasinoBetAnnot(TypedDict):
     user_id: int
     bet: int
     selected_color: str
-    result_type: CasinoBetResultTypeEnum
+    result_coins: int | None

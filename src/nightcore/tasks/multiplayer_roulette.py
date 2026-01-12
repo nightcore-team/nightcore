@@ -69,17 +69,11 @@ class MultiplayerRouletteTask(Cog):
                         initiator_id = 0
                         initiator_bet = 0
                         initiator_selected_color = ""
-                        initiator_result: CasinoBetResultTypeEnum | None = None
+                        initiator_result_coins: int | None = None
 
                         num, color = spin_roulette()
 
                         for bet in game.bets:
-                            if bet.user.user_id == game.initiator_id:
-                                initiator_id = bet.user.user_id
-                                initiator_bet = bet.amount
-                                initiator_selected_color = bet.color
-                                initiator_result = bet.result_type
-
                             result = RouletteResult(
                                 num, color, bet.amount, bet.color
                             )
@@ -93,14 +87,20 @@ class MultiplayerRouletteTask(Cog):
                             bet.result_type = result_type
                             bet.user.coins += result.coins_change
 
-                            bets_annot.append(
-                                {
-                                    "user_id": bet.user.user_id,
-                                    "bet": bet.amount,
-                                    "result_type": result_type,
-                                    "selected_color": bet.color,
-                                }
-                            )
+                            if bet.user.user_id == game.initiator_id:
+                                initiator_id = bet.user.user_id
+                                initiator_bet = bet.amount
+                                initiator_selected_color = bet.color
+                                initiator_result_coins = result.coins_change
+                            else:
+                                bets_annot.append(
+                                    {
+                                        "user_id": bet.user.user_id,
+                                        "bet": bet.amount,
+                                        "result_coins": result.coins_change,
+                                        "selected_color": bet.color,
+                                    }
+                                )
 
                         game.state = CasinoGameStateEnum.FINISHED
 
@@ -112,9 +112,10 @@ class MultiplayerRouletteTask(Cog):
                             initiator_id=initiator_id,
                             initiator_bet=initiator_bet,
                             initiator_selected_color=initiator_selected_color,
-                            initiator_result=initiator_result,
+                            initiator_result_coins=initiator_result_coins,
                             state=CasinoGameStateEnum.FINISHED,
                             bets=bets_annot,
+                            disable_buttons=True,
                         )
 
                         asyncio.create_task(
