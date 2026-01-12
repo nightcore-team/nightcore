@@ -12,6 +12,7 @@ import discord
 from aiohttp import TCPConnector
 from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
+from sqlalchemy import text
 
 from src.config.config import config
 from src.infra.api.forum.client import ForumAPIClient
@@ -282,3 +283,10 @@ class Nightcore(Bot):
         logger.info("🚀 Nightcore bot started successfully!")
 
         await self._warmup_discord()
+
+        async with self.uow.start() as session:
+            await session.execute(
+                text("delete from casinogame;")
+            )  # simple query to test DB connection
+            await session.execute(text("select * from casinobet;"))
+            logger.info("Database connection established successfully.")
