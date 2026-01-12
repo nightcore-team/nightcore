@@ -1129,7 +1129,9 @@ async def get_casino_game_by_message_id(
         CasinoGame.message_id == message_id,
     )
     if with_bets:
-        stmt = stmt.options(selectinload(CasinoGame.bets))
+        stmt = stmt.options(
+            selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
+        )
 
     result = await session.execute(stmt)
 

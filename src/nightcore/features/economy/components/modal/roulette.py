@@ -75,7 +75,7 @@ class JoinMultiplayerRouletteModal(
         """Handles the submission of the join multiplayer roulette modal."""
 
         # create bet for specified game and user
-        selected_color: str = self.color.values[0]  # type: ignore
+        selected_color: str = self.color.component.values[0]  # type: ignore
 
         try:
             amount = int(self.short.value)

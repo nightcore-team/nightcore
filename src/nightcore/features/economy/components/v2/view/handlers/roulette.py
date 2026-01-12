@@ -43,7 +43,7 @@ async def handle_roulette_multiplayer_join_button_callback(
                 outcome = "game_finished"
             else:
                 for bet in casino_game.bets:
-                    if bet.user_id == interaction.user.id:
+                    if bet.user.user_id == interaction.user.id:
                         await session.delete(bet)
                         outcome = "leave_success"
                         break
