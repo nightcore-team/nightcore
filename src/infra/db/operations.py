@@ -49,6 +49,7 @@ from src.infra.db.models._annot import (
     Rules,
 )
 from src.infra.db.models._enums import (
+    CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
     MultiplierTypeEnum,
@@ -1145,3 +1146,19 @@ async def get_user_casino_bet_by_game_id(
     )
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
+
+
+async def get_active_casino_games(
+    session: AsyncSession, *, guild_id: int, dt: datetime
+) -> Sequence[CasinoGame]:
+    """Get all active casino games for a guild."""
+    stmt = select(CasinoGame).where(
+        CasinoGame.guild_id == guild_id,
+        CasinoGame.state == CasinoGameStateEnum.PENDING,
+        CasinoGame.end_time <= dt,
+    )
+    stmt = stmt.options(
+        selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
