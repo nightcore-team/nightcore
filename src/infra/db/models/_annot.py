@@ -103,3 +103,10 @@ class BattlepassLevelAnnot(TypedDict):
     level: int
     exp_required: int
     reward: BattlepassRewardAnnot
+
+
+class CasinoBetAnnot(TypedDict):
+    user_id: int
+    bet: int
+    selected_color: str
+    result_coins: int | None

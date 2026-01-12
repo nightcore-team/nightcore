@@ -119,6 +119,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.compbuilder",
         # === tasks
         "src.nightcore.tasks.unpunish",
+        "src.nightcore.tasks.multiplayer_roulette",
         "src.nightcore.tasks.delete_ticket",
         "src.nightcore.tasks.delete_role_request",
         "src.nightcore.tasks.expired_notify",

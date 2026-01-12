@@ -17,6 +17,9 @@ from src.nightcore.features.battlepass.components.v2.view.handlers.info import (
 from src.nightcore.features.battlepass.components.v2.view.info import (
     BattlepassInfoViewV2,
 )
+from src.nightcore.features.economy.components.v2.view.handlers.roulette import (  # noqa: E501
+    handle_roulette_multiplayer_join_button_callback,
+)
 from src.nightcore.features.faq.components.v2.view.faq import (
     FAQPageViewV2,
     FAQViewV2,
@@ -77,6 +80,7 @@ async def setup(bot: "Nightcore") -> None:
                             )
                         case _:
                             ...
+
                 case str() if custom_id.startswith("role_request:select_"):
                     await handle_role_select_button_callback(
                         interaction=interaction,
@@ -84,6 +88,15 @@ async def setup(bot: "Nightcore") -> None:
                     )
                 case str() if custom_id.startswith("role_selector:"):
                     await handle_role_selector_select(interaction=interaction)
+
+                case str() if custom_id.startswith("casino:"):
+                    match custom_id:
+                        case "casino:roulette:multiplayer":
+                            await handle_roulette_multiplayer_join_button_callback(  # noqa: E501
+                                interaction=interaction,
+                            )
+                        case _:
+                            ...
 
                 case _:  # type: ignore
                     logger.debug(
