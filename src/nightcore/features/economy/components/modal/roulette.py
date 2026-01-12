@@ -180,12 +180,14 @@ class JoinMultiplayerRouletteModal(
                     {
                         "bet": bet.amount,
                         "selected_color": bet.color,
+                        "result_type": bet.result_type,  # type: ignore
                         "user_id": bet.user_id,
                     }
                 )
 
             view = MultiplayerRouletteViewV2(
                 bot=bot,
+                state=casino_game.state,  # type: ignore
                 coin_name=coin_name,
                 initiator_id=initiator_id,
                 initiator_bet=initiator_bet,
