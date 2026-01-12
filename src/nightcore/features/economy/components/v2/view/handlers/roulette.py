@@ -42,13 +42,16 @@ async def handle_roulette_multiplayer_join_button_callback(
             if casino_game.state == CasinoGameStateEnum.FINISHED:
                 outcome = "game_finished"
             else:
-                for bet in casino_game.bets:
-                    if bet.user.user_id == interaction.user.id:
-                        await session.delete(bet)
-                        outcome = "leave_success"
-                        break
+                if interaction.user.id == casino_game.initiator_id:
+                    outcome = "initiator_cannot_leave"
                 else:
-                    outcome = "join_success"
+                    for bet in casino_game.bets:
+                        if bet.user.user_id == interaction.user.id:
+                            await session.delete(bet)
+                            outcome = "leave_success"
+                            break
+                    else:
+                        outcome = "join_success"
 
     if outcome == "game_not_found":
         return await interaction.response.send_message(
@@ -66,6 +69,17 @@ async def handle_roulette_multiplayer_join_button_callback(
             embed=ErrorEmbed(
                 "Ошибка присоединения",
                 "Игра уже завершена.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "initiator_cannot_leave":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выхода",
+                "Инициатор игры не может покинуть/присоединиться к игре.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

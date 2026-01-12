@@ -121,7 +121,7 @@ class JoinMultiplayerRouletteModal(
                         outcome = "game_finished"
                     else:
                         bet = CasinoBet(
-                            user_id=interaction.user.id,
+                            user_id=user_record.id,
                             amount=amount,
                             color=selected_color,
                             game_id=casino_game.id,
