@@ -1,6 +1,7 @@
 """Casino model for the Nightcore bot database."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -12,12 +13,16 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._enums import (
+    CasinoBetResultTypeEnum,
     CasinoGameStateEnum,
     CasinoGameTypeEnum,
     CasinoPlayersTypeEnum,
 )
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+
+if TYPE_CHECKING:
+    from src.infra.db.models.user import User
 
 
 class CasinoGame(IdIntegerMixin, Base):
@@ -30,6 +35,7 @@ class CasinoGame(IdIntegerMixin, Base):
     # discord message id with game component
     message_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     # type of the casino game
+    channel_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     game_type: Mapped[CasinoGameTypeEnum] = mapped_column(
         Enum(
             CasinoGameTypeEnum,
@@ -74,17 +80,32 @@ class CasinoGame(IdIntegerMixin, Base):
 
 
 class CasinoBet(IdIntegerMixin, Base):
-    # discord user id who placed the bet
-    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # amount of coins bet
     amount: Mapped[int] = mapped_column(nullable=False)
     # chosen color for the bet
     color: Mapped[str] = mapped_column(nullable=False)
     # foreign key to the casino game
+    result_type: Mapped[CasinoBetResultTypeEnum | None] = mapped_column(
+        Enum(
+            CasinoBetResultTypeEnum,
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in x],  # type: ignore
+            validate_strings=True,
+        ),
+        default=None,
+        nullable=True,
+    )
     game_id: Mapped[int] = mapped_column(
-        ForeignKey("casino_game.id", ondelete="CASCADE"),
+        ForeignKey("casinogame.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # discord user id who placed the bet
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.user_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     # relationship to the casino game
+    user: Mapped["User"] = relationship(back_populates="casino_bets")
     game: Mapped["CasinoGame"] = relationship(back_populates="bets")

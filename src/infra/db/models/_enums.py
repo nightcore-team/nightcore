@@ -176,3 +176,8 @@ class CasinoPlayersTypeEnum(Enum):
 class CasinoGameStateEnum(Enum):
     PENDING = "pending"
     FINISHED = "finished"
+
+
+class CasinoBetResultTypeEnum(Enum):
+    WIN = "win"
+    LOSE = "lose"
