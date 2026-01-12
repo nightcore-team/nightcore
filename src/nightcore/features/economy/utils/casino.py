@@ -21,9 +21,9 @@ class RouletteResult:
     def __init__(
         self,
         number: int,
-        color: RouletteColor,
+        color: str,
         bet: int,
-        selected_color: RouletteColor,
+        selected_color: str,
     ):
         self.number = number
         self.color = color
