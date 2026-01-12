@@ -1,7 +1,7 @@
 """Command to play casino roulette game."""
 
 import logging
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, TextChannel, app_commands
@@ -119,6 +119,7 @@ async def roulette(
                     guild_id=guild.id,
                     initiator_id=member.id,
                     game_type=CasinoGameTypeEnum.ROULETTE,
+                    end_time=datetime.now(UTC),
                 )
 
                 if type.value == "single":
