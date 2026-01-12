@@ -42,7 +42,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['game_id'], ['casinogame.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_casinobet_game_id'), 'casinobet', ['game_id'], unique=False)
