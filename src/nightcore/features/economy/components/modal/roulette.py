@@ -91,6 +91,17 @@ class JoinMultiplayerRouletteModal(
                 ephemeral=True,
             )
 
+        if amount < 5:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Ошибка присоединения",
+                    "Ставка должна быть не менее 5 коинов.",
+                    self.bot.user.display_name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
         bot = self.bot
         guild = cast(Guild, interaction.guild)
         outcome = ""
