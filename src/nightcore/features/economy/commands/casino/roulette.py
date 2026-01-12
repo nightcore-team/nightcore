@@ -253,6 +253,7 @@ async def roulette(
                 coin_name=coin_name,
                 initiator_id=member.id,
                 initiator_bet=bet,
+                state=CasinoGameStateEnum.PENDING,
                 initiator_selected_color=selected_color,
             )
 
@@ -263,6 +264,7 @@ async def roulette(
                 async with bot.uow.start() as session:
                     casino_game = await session.merge(casino_game)  # type: ignore
                     casino_game.message_id = message.id
+                    casino_game.channel_id = message.channel.id
 
                 return await interaction.response.send_message(
                     embed=SuccessMoveEmbed(
