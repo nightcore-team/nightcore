@@ -114,6 +114,7 @@ class MultiplayerRouletteTask(Cog):
                             initiator_selected_color=initiator_selected_color,
                             initiator_result_coins=initiator_result_coins,
                             state=CasinoGameStateEnum.FINISHED,
+                            result_color=color,
                             bets=bets_annot,
                             disable_buttons=True,
                         )

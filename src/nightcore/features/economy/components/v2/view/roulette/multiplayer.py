@@ -39,6 +39,7 @@ class MultiplayerRouletteViewV2(LayoutView):
         initiator_selected_color: str,
         state: CasinoGameStateEnum,
         initiator_result_coins: int | None = None,
+        result_color: str | None = None,
         bets: list["CasinoBetAnnot"] | None = None,
         disable_buttons: bool = False,
     ) -> None:
@@ -57,8 +58,8 @@ class MultiplayerRouletteViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"### Пользователь <@{initiator_id}> запустил игру\n"
-                f"> **Его ставка:** {initiator_bet} {coin_name_display} - {COLORS[initiator_selected_color]}\n"  # noqa: E501
-                f"> **Результат:** {initiator_result_coins if initiator_result_coins is not None else 'Ожидание...'}\n"  # noqa: E501
+                f"> **Его ставка:** {initiator_bet} {coin_name_display} | {COLORS[initiator_selected_color]}\n"  # noqa: E501
+                f"> **Его результат:** {initiator_result_coins if initiator_result_coins is not None else 'Ожидание...'}\n"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -67,9 +68,9 @@ class MultiplayerRouletteViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self](
                     "### Список остальных участников:\n"
-                    "-# цвет - пользователь - ставка | результат\n"
+                    "-# цвет | пользователь | ставка | результат\n"
                     + "\n".join(
-                        f"> {COLORS[bet['selected_color']]} <:42920arrowrightalt:1442924551880314921> <@{bet['user_id']}> - {bet['bet']} {coin_name_display} | {bet['result_coins'] if bet['result_coins'] is not None else 'Ожидание...'}"  # noqa: E501
+                        f"> {COLORS[bet['selected_color']]} <:42920arrowrightalt:1442924551880314921> <@{bet['user_id']}>, {bet['bet']} {coin_name_display} | {bet['result_coins'] if bet['result_coins'] is not None else 'Ожидание...'}"  # noqa: E501
                         for bet in bets
                     )
                 )
@@ -83,7 +84,11 @@ class MultiplayerRouletteViewV2(LayoutView):
                 )
             )
         else:
-            container.add_item(TextDisplay[Self]("\n**Игра завершена**\n"))
+            container.add_item(
+                TextDisplay[Self](
+                    f"\n**Игра завершена, выпал цвет: {COLORS[result_color] if result_color else 'Неизвестно'}**\n"  # noqa: E501
+                )
+            )
 
         container.add_item(Separator[Self]())
 
