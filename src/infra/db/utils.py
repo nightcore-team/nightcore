@@ -32,7 +32,15 @@ T = TypeVar(
 )
 
 
-def build_base_filters(
+def build_base_filters[
+    T: (
+        "ChangeStat",
+        "ModerationMessage",
+        "Punish",
+        "RoleRequestState",
+        "TicketState",
+    )
+](
     model: type[T],
     guild_id: int,
     moderator_ids: list[int],

@@ -11,7 +11,6 @@ if TYPE_CHECKING:
         RoleRequestState,
         TicketState,
     )
-    from src.infra.db.models._enums import CasinoBetResultTypeEnum
 
 
 class OrgRoleWithoutTagAnnot(TypedDict):

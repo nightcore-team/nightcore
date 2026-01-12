@@ -310,6 +310,7 @@ async def roulette(
                 async with bot.uow.start() as session:
                     casino_game = await session.merge(casino_game)  # type: ignore
                     casino_game.message_id = message.id
+                    casino_game.channel_id = message.channel.id
 
                 return await interaction.response.send_message(
                     embed=SuccessMoveEmbed(
