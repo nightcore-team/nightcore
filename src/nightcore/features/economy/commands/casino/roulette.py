@@ -97,7 +97,7 @@ async def roulette(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
     ) as (guild_config, session):
         try:
-            user, _ = await get_or_create_user(
+            user_record, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
@@ -112,7 +112,7 @@ async def roulette(
                 guild_config.casino_multiplayer_channel_id
             )
 
-            if user.coins < bet:
+            if user_record.coins < bet:
                 outcome = "insufficient_balance"
             else:
                 casino_game = CasinoGame(
@@ -130,8 +130,8 @@ async def roulette(
                     casino_game.state = CasinoGameStateEnum.FINISHED
 
                     # Update user balance
-                    user.coins += result.coins_change
-                    new_balance = user.coins
+                    user_record.coins += result.coins_change
+                    new_balance = user_record.coins
 
                     logger.info(
                         "[roulette] User %s bet %d on %s, got %d (%s), "
@@ -160,7 +160,7 @@ async def roulette(
 
                 session.add(
                     CasinoBet(
-                        user_id=member.id,
+                        user_id=user_record.id,
                         amount=bet,
                         color=selected_color,
                         game_id=casino_game_id,
