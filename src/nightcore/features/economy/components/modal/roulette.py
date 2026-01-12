@@ -171,19 +171,19 @@ class JoinMultiplayerRouletteModal(
             bets: list[CasinoBetAnnot] = []
 
             for bet in casino_game.bets:  # type: ignore casino_name is verified above
-                if casino_game.initiator_id == bet.user_id:  # type: ignore
-                    initiator_id = bet.user_id
+                if casino_game.initiator_id == bet.user.user_id:  # type: ignore
+                    initiator_id = bet.user.user_id
                     initiator_bet = bet.amount
                     initiator_selected_color = bet.color
-
-                bets.append(
-                    {
-                        "bet": bet.amount,
-                        "selected_color": bet.color,
-                        "result_coins": None,
-                        "user_id": bet.user_id,
-                    }
-                )
+                else:
+                    bets.append(
+                        {
+                            "bet": bet.amount,
+                            "selected_color": bet.color,
+                            "result_coins": None,
+                            "user_id": bet.user.user_id,
+                        }
+                    )
 
             view = MultiplayerRouletteViewV2(
                 bot=bot,
