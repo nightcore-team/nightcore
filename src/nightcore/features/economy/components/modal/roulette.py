@@ -131,6 +131,8 @@ class JoinMultiplayerRouletteModal(
 
                         outcome = "success"
 
+                        await session.flush()
+
         if outcome == "insufficient_funds":
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
@@ -171,17 +173,17 @@ class JoinMultiplayerRouletteModal(
             bets: list[CasinoBetAnnot] = []
 
             for bet in casino_game.bets:  # type: ignore casino_name is verified above
-                if casino_game.initiator_id == bet.user.user_id:  # type: ignore
+                if bet.user.user_id == casino_game.initiator_id:  # type: ignore
                     initiator_id = bet.user.user_id
                     initiator_bet = bet.amount
                     initiator_selected_color = bet.color
                 else:
                     bets.append(
                         {
-                            "bet": bet.amount,
-                            "selected_color": bet.color,
-                            "result_coins": None,
                             "user_id": bet.user.user_id,
+                            "bet": bet.amount,
+                            "result_coins": None,
+                            "selected_color": bet.color,
                         }
                     )
 

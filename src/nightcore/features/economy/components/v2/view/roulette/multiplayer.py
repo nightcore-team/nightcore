@@ -67,9 +67,9 @@ class MultiplayerRouletteViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self](
                     "### Список остальных участников:\n"
-                    "-# цвет - пользователь - ставка - результат\n"
+                    "-# цвет - пользователь - ставка | результат\n"
                     + "\n".join(
-                        f"> {COLORS[bet['selected_color']]} <:42920arrowrightalt:1442924551880314921> <@{bet['user_id']}> - {bet['bet']} {coin_name_display} - {bet['result_coins'] if bet['result_coins'] is not None else 'Ожидание...'}"  # noqa: E501
+                        f"> {COLORS[bet['selected_color']]} <:42920arrowrightalt:1442924551880314921> <@{bet['user_id']}> - {bet['bet']} {coin_name_display} | {bet['result_coins'] if bet['result_coins'] is not None else 'Ожидание...'}"  # noqa: E501
                         for bet in bets
                     )
                 )
