@@ -17,12 +17,11 @@ if TYPE_CHECKING:
     from src.nightcore.features.economy.utils.casino import RouletteResult
 
 
-class RouletteViewV2(LayoutView):
+class SingleRouletteViewV2(LayoutView):
     def __init__(
         self,
         bot: "Nightcore",
         coin_name: str | None,
-        last_roulette_games: list[str],
         result: "RouletteResult",
         new_balance: int,
     ) -> None:
@@ -34,23 +33,6 @@ class RouletteViewV2(LayoutView):
             TextDisplay[Self](
                 "## <:Casino_Chip:1403530383013842994> Рулетка",
             )
-        )
-        container.add_item(Separator[Self]())
-
-        last_roulette_games_colors: list[str] = []
-        for color in last_roulette_games:
-            if color == "red":
-                last_roulette_games_colors.append("🔴")
-            elif color == "black":
-                last_roulette_games_colors.append("⚫")
-            elif color == "green":
-                last_roulette_games_colors.append("🟢")
-
-        container.add_item(
-            TextDisplay[Self]("### Последние 10 игр на сервере:")
-        )
-        container.add_item(
-            TextDisplay[Self](" ".join(last_roulette_games_colors[::-1]))
         )
         container.add_item(Separator[Self]())
 

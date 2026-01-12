@@ -1,4 +1,5 @@
-from .changestat import Base, ChangeStat
+from .casino import Base, CasinoBet, CasinoGame  # noqa: F811
+from .changestat import Base, ChangeStat  # noqa: F811
 from .clan import Base, Clan, ClanMember  # noqa: F811
 from .custom_component import Base, CustomComponent  # noqa: F811  # noqa: F811
 from .guild import (
@@ -30,6 +31,8 @@ from .user import Base, User  # noqa: F811
 
 __all__ = (
     "Base",
+    "CasinoBet",
+    "CasinoGame",
     "ChangeStat",
     "Clan",
     "ClanMember",

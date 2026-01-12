@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 @economy_group.command(name="setup", description="Настроить систему экономики")  # type: ignore
 @app_commands.describe(
+    casino_channel="Канал для отправки мультиплеерных игр в казино",
     shop_buy_ping_roles="Роли для упоминания при покупке в магазине",
     economy_access_roles="Роли с доступом к командам экономики",
     shop_items="Конфигурация предметов в магазине. Формат: название, цена | название, цена | ...",  # noqa: E501
@@ -49,6 +50,7 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def setup(
     interaction: Interaction,
+    casino_channel: discord.TextChannel | None = None,
     shop_buy_ping_roles: str | None = None,
     economy_access_roles: str | None = None,
     shop_items: str | None = None,
@@ -60,6 +62,7 @@ async def setup(
     """Configure economy settings."""
 
     specs: list[FieldSpec | None] = [
+        int_id_value("casino_multiplayer_channel_id", casino_channel),
         list_csv("economy_shop_buy_ping_roles_ids", shop_buy_ping_roles),
         list_csv("economy_access_roles_ids", economy_access_roles),
         shop_items_dict_value("economy_shop_items", shop_items),

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
         RoleRequestState,
         TicketState,
     )
+    from src.infra.db.models._enums import CasinoBetResultTypeEnum
 
 
 class OrgRoleWithoutTagAnnot(TypedDict):
@@ -103,3 +104,10 @@ class BattlepassLevelAnnot(TypedDict):
     level: int
     exp_required: int
     reward: BattlepassRewardAnnot
+
+
+class CasinoBetAnnot(TypedDict):
+    user_id: int
+    bet: int
+    selected_color: str
+    result_type: CasinoBetResultTypeEnum

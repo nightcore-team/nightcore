@@ -1,6 +1,7 @@
 """User model for the Nightcore bot database."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     JSON,
@@ -10,11 +11,14 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._annot import UserInventoryAnnot
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+
+if TYPE_CHECKING:
+    from src.infra.db.models.casino import CasinoBet
 
 
 class User(IdIntegerMixin, Base):
@@ -57,4 +61,10 @@ class User(IdIntegerMixin, Base):
         nullable=False,
         default=lambda: {"cases": {}, "colors": []},  # type: ignore
         server_default=text('\'{"cases": {}, "colors": []}\'::json'),
+    )
+    casino_bets: Mapped[list["CasinoBet"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
