@@ -70,10 +70,12 @@ class MultiplayerRouletteTask(Cog):
                         initiator_bet = 0
                         initiator_selected_color = ""
                         initiator_result: CasinoBetResultTypeEnum | None = None
+
                         num, color = spin_roulette()
+
                         for bet in game.bets:
-                            if bet.user_id == game.initiator_id:
-                                initiator_id = bet.user_id
+                            if bet.user.user_id == game.initiator_id:
+                                initiator_id = bet.user.user_id
                                 initiator_bet = bet.amount
                                 initiator_selected_color = bet.color
                                 initiator_result = bet.result_type
@@ -87,12 +89,13 @@ class MultiplayerRouletteTask(Cog):
                                 result_type = CasinoBetResultTypeEnum.WIN
                             else:
                                 result_type = CasinoBetResultTypeEnum.LOSE
+
                             bet.result_type = result_type
                             bet.user.coins += result.coins_change
 
                             bets_annot.append(
                                 {
-                                    "user_id": bet.user_id,
+                                    "user_id": bet.user.user_id,
                                     "bet": bet.amount,
                                     "result_type": result_type,
                                     "selected_color": bet.color,
