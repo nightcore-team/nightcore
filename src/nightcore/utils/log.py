@@ -29,7 +29,7 @@ async def send_log_message(
 
     channel = await ensure_messageable_channel_exists(
         dto.guild, dto.logging_channel_id
-    )
+    )  # type: ignore
     if not channel:
         logger.error(
             "[%s/log] Logging channel with ID %s not found in guild %s",
