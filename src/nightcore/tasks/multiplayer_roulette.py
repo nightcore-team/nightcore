@@ -79,6 +79,15 @@ class MultiplayerRouletteTask(Cog):
                                 initiator_bet = bet.amount
                                 initiator_selected_color = bet.color
                                 initiator_result = bet.result_type
+                                logger.info(
+                                    "[task] - Game %s:  initiator_id=%s, bets=%s",
+                                    game.id,
+                                    game.initiator_id,
+                                    [
+                                        (bet.user.user_id, bet.color)
+                                        for bet in game.bets
+                                    ],
+                                )
 
                             result = RouletteResult(
                                 num, color, bet.amount, bet.color
