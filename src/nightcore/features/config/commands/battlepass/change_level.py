@@ -13,9 +13,6 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.features.battlepass.utils.types import (
-    BATTLEPASS_REWARDS_CHOICES,
-)
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )

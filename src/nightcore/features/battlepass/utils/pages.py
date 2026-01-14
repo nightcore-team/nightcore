@@ -2,8 +2,7 @@
 
 from src.config.config import config
 from src.infra.db.models._annot import BattlepassLevelAnnot
-
-from .types import BATTLEPASS_REWARDS
+from src.infra.db.models._enums import CaseDropTypeEnum
 
 
 def build_battlepass_levels_pages(
@@ -41,11 +40,11 @@ def build_battlepass_levels_pages(
         level = level_data["level"]
         exp_required = level_data["exp_required"]
 
-        reward_type = BATTLEPASS_REWARDS[level_data["reward"]["name"]]
+        reward_name = level_data["reward"]["name"]
         reward_amount = level_data["reward"]["amount"]
 
-        if reward_type == "коины":
-            reward_type = coin_name or "коины"
+        if level_data["reward"]["type"] == CaseDropTypeEnum.COINS:
+            reward_name = coin_name or "коины"
 
         arrow = (
             "<:48765whitearrow:1442918703367983225> "
@@ -53,7 +52,7 @@ def build_battlepass_levels_pages(
             else ""
         )
 
-        line = f"**{arrow}Уровень {level}** - `{exp_required} BP points` - **Награда**: {reward_type}, {reward_amount}\n"  # noqa: E501
+        line = f"**{arrow}Уровень {level}** - `{exp_required} BP points` - **Награда**: {reward_name}, {reward_amount}\n"  # noqa: E501
 
         if (len(current) + len(line) >= limit) or (
             levels_in_current_page >= levels_per_page

@@ -14,7 +14,10 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.battlepass.utils.types import BATTLEPASS_REWARDS
+from src.nightcore.features.economy.utils.case import (
+    RewardOutcomeEnum,
+    give_reward_by_type,
+)
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -38,8 +41,6 @@ async def handle_battlepass_claim_reward_button(
     new_level = 0
     new_points = 0
     reward_name = ""
-    reward_amount = 0
-    coin_name = "коинов"
     disable_button = False
     claimed_level = 0
 
@@ -49,8 +50,6 @@ async def handle_battlepass_claim_reward_button(
         guild_config,
         session,
     ):
-        coin_name = guild_config.coin_name or "коинов"
-
         user_record, _ = await get_or_create_user(
             session, guild_id=guild.id, user_id=interaction.user.id
         )
@@ -75,32 +74,13 @@ async def handle_battlepass_claim_reward_button(
                     outcome = "not_enough_points"
                 else:
                     reward = current_level_data["reward"]
-                    reward_type = reward["name"]
-                    reward_amount = reward["amount"]
 
-                    match reward_type:
-                        case "coins":
-                            user_record.coins += reward_amount
-                            reward_name = f"{reward_amount} {coin_name}"
+                    result = await give_reward_by_type(
+                        session, reward=reward, user=user_record
+                    )
 
-                        case "coins_case" | "colors_case":
-                            if reward_type in user_record.inventory["cases"]:
-                                user_record.inventory["cases"][  # type: ignore
-                                    reward_type  # type: ignore
-                                ] += reward_amount
-                            else:
-                                user_record.inventory["cases"][reward_type] = (  # type: ignore
-                                    reward_amount
-                                )
-
-                            reward_name = f"{reward_amount} кейсов с коинами"
-
-                        case "exp":
-                            user_record.current_exp += reward_amount
-                            reward_name = f"{reward_amount} опыта"
-
-                        case _:
-                            outcome = "unknown_reward_type"
+                    if result != RewardOutcomeEnum.SUCCESS:
+                        outcome = "error: " + result.name
 
                     if not outcome:
                         overflow_points = (
@@ -182,11 +162,11 @@ async def handle_battlepass_claim_reward_button(
         )
         return
 
-    if outcome == "unknown_reward_type":
+    if outcome.startswith("error"):
         await interaction.followup.send(
             embed=ErrorEmbed(
-                "Ошибка получения награды",
-                "Неизвестный тип награды. Обратитесь к администрации.",
+                "Ошибка при получении награды",
+                f"Произошла ошибка при получении награды. {outcome}",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -202,7 +182,7 @@ async def handle_battlepass_claim_reward_button(
             total_levels=len(battlepass_rewards),
             current_points=new_points,
             required_points=new_level_data["exp_required"],  # type: ignore
-            reward_type=BATTLEPASS_REWARDS[new_level_data["reward"]["name"]],  # type: ignore
+            reward_type=new_level_data["reward"]["type"].name,  # type: ignore
             reward_amount=new_level_data["reward"]["amount"],  # type: ignore
             avatar_url=interaction.user.display_avatar.url,
             disable_button=disable_button,

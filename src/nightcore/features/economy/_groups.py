@@ -18,6 +18,12 @@ case = app_commands.Group(
     guild_only=True,
 )
 
+color = app_commands.Group(
+    name="color",
+    description="Команды связанные с цветами.",
+    guild_only=True,
+)
+
 casino = app_commands.Group(
     name="casino",
     description="Команды связанные с казино.",

@@ -21,7 +21,10 @@ from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils import user_cases_autocomplete
-from src.nightcore.features.economy.utils.case import give_reward_by_type
+from src.nightcore.features.economy.utils.case import (
+    RewardOutcomeEnum,
+    give_reward_by_type,
+)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -63,6 +66,7 @@ async def open_case(
         )
 
     outcome = ""
+    reward_text = ""
     logging_channel_id = None
 
     async with specified_guild_config(
@@ -99,11 +103,17 @@ async def open_case(
 
                     reward = user_case.item.open()
 
-                    await give_reward_by_type(
+                    result = await give_reward_by_type(
                         session, reward=reward, user=user
                     )
 
-                    outcome = "success"
+                    reward_text = reward["name"]
+
+                    outcome = (
+                        "success"
+                        if result == RewardOutcomeEnum.SUCCESS
+                        else "error: " + result.name
+                    )
 
         except Exception as e:
             logger.exception(
@@ -135,11 +145,11 @@ async def open_case(
             ephemeral=True,
         )
 
-    if outcome == "error":
+    if outcome.startswith("error"):
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка открытия кейса",
-                "Произошла ошибка при открытии кейса.",
+                f"Произошла ошибка при открытии кейса. {outcome}",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -150,8 +160,8 @@ async def open_case(
         view = CaseOpenViewV2(
             bot=bot,
             case_name=case_name.name,
-            reward=reward["type"],
-            chance=reward["chance"],
+            reward=reward["name"],  # type: ignore
+            chance=reward["chance"],  # type: ignore
         )
         await interaction.response.send_message(
             view=view,
@@ -166,8 +176,8 @@ async def open_case(
                 logging_channel_id=logging_channel_id,
                 user_id=member.id,
                 moderator_id=bot.user.id,  # type: ignore
-                item_name=reward["type"],
-                amount=reward["amount"],
+                item_name=reward["name"],  # type: ignore
+                amount=reward["amount"],  # type: ignore
                 reason="открытие кейса",
             ),
         )

@@ -4,6 +4,7 @@ V2 views components related to cases.
 Used for displaying case opening results and help information about cases.
 """
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
@@ -58,7 +59,7 @@ class CaseOpenViewV2(LayoutView):
 
 class CaseHelpViewV2(LayoutView):
     def __init__(
-        self, bot: "Nightcore", coin_name: str | None, cases: list[Case]
+        self, bot: "Nightcore", coin_name: str | None, cases: Sequence[Case]
     ):
         super().__init__()
 
@@ -72,50 +73,32 @@ class CaseHelpViewV2(LayoutView):
         container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](
-                "**Доступные виды кейсов: кейс с коинами, кейс с цветами.**\n"
+                "**Доступные виды кейсов.**\n"
                 "> Чтобы открыть кейс, используйте команду **`/case open`**"
             )
         )
         container.add_item(Separator[Self]())
 
-        container.add_item(
-            TextDisplay[Self]("### Кейс с коинами"),
-        )
-        if not coins_drops:
+        for case in cases:
             container.add_item(
-                TextDisplay[Self](
-                    "> В данный момент кейс с монетами не настроен."
-                )
+                TextDisplay[Self](f"### {case.name}"),
             )
-        else:
-            container.add_item(
-                TextDisplay[Self](
-                    "\n".join(
-                        f"> {drop['amount']} {coin_name or 'коинов'} "
-                        f"- шанс **`{drop['chance']}%`**"
-                        for drop in coins_drops
+            if not case.drop:
+                container.add_item(
+                    TextDisplay[Self](
+                        f"> В данный момент кейс {case.name} не настроен."
                     )
-                ),
-            )
-
-        container.add_item(Separator[Self]())
-        container.add_item(TextDisplay[Self]("### Кейс с цветами"))
-        if not colors_drops:
-            container.add_item(
-                TextDisplay[Self](
-                    "> В данный момент кейс с цветами не настроен."
                 )
-            )
-        else:
-            container.add_item(
-                TextDisplay[Self](
-                    "\n".join(
-                        f"> цвет: **<@&{drop['role_id']}>** "
-                        f"- шанс **`{drop['chance']}%`**"
-                        for drop in colors_drops.values()
-                    )
-                ),
-            )
+            else:
+                container.add_item(
+                    TextDisplay[Self](
+                        "\n".join(
+                            f"> {drop['amount']} {drop['name']} "
+                            f"- шанс **`{drop['chance']}%`**"
+                            for drop in case.drop
+                        )
+                    ),
+                )
 
         container.add_item(Separator[Self]())
 

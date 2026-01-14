@@ -69,7 +69,7 @@ async def open_case(
         view = CaseHelpViewV2(
             bot=bot,
             coin_name=coin_name,
-            cases=cases,
+            cases=cases,  # type: ignore
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)

@@ -63,6 +63,7 @@ class CaseDropAnnot(TypedDict):
 
     type: CaseDropTypeEnum
     drop_id: int | None
+    name: str
     amount: int
     chance: int
 
@@ -77,6 +78,8 @@ class FAQPageAnnot(TypedDict):
 class BattlepassRewardAnnot(TypedDict):
     """Battlepass reward configuration."""
 
+    type: int
+    drop_id: int | None
     name: str
     amount: int
 

@@ -1,6 +1,6 @@
 """Enumeration for types."""
 
-from enum import Enum
+from enum import Enum, StrEnum
 
 
 class ChannelType(Enum):
@@ -170,3 +170,12 @@ class CaseDropTypeEnum(Enum):
     COLOR = 3
     CASE = 4
     CUSTOM = 5
+
+
+class ItemChangeActionEnum(StrEnum):
+    CREATE = "0"
+    COLOR_UPDATE = "1"
+    UPDATE_REWARD = "2"
+    DELETE_REWARD = "3"
+    ADD_REWARD = "4"
+    CASE_UPDATE = "5"

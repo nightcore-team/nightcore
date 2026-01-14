@@ -8,12 +8,10 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
-    Index,
     Integer,
     PrimaryKeyConstraint,
     Table,
     UniqueConstraint,
-    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,10 +23,12 @@ from src.infra.db.models.color import Color
 user_colors = Table(
     "user_colors",
     Base.metadata,
+    Column(
+        "guild_id", Integer, ForeignKey("user.guild_id", ondelete="CASCADE")
+    ),
     Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
     Column("color_id", Integer, ForeignKey("color.id", ondelete="CASCADE")),
-    Index("idx_user_cases_user_id", "user_id"),
-    PrimaryKeyConstraint("user_id", "color_id"),
+    PrimaryKeyConstraint("user_id", "color_id", "guild_id"),
 )
 
 
@@ -42,7 +42,7 @@ class User(IdIntegerMixin, Base):
     coins: Mapped[int] = mapped_column(nullable=False, default=0)
     level: Mapped[int] = mapped_column(nullable=False, default=0)
     messages_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default=text("0")
+        Integer, nullable=False, default=0
     )
     current_exp: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
@@ -64,7 +64,7 @@ class User(IdIntegerMixin, Base):
         nullable=False, default=False
     )
     battle_pass_level: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=1, server_default=text("1")
+        Integer, nullable=False, default=1
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
     cases: Mapped[list["UserCase"]] = relationship(
@@ -95,16 +95,18 @@ class User(IdIntegerMixin, Base):
 
 class UserCase(Base):
     __table_args__ = (
-        UniqueConstraint("case_id", "user_id", name="ux_user_case_user"),
+        UniqueConstraint(
+            "case_id", "user_id", "guild_id", name="ux_user_case_guild_user"
+        ),
     )
-
+    guild_id: Mapped[int] = mapped_column(
+        ForeignKey("user.guild_id", ondelete="CASCADE"), primary_key=True
+    )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("user.id", ondelete="CASCADE"), primary_key=True
     )
     case_id: Mapped[int] = mapped_column(
-        ForeignKey("cases.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("case.id", ondelete="CASCADE"), primary_key=True
     )
     amount: Mapped[int] = mapped_column(default=1)
     item: Mapped["Case"] = relationship()
-
-    Index("idx_user_cases_user_id", "user_id")

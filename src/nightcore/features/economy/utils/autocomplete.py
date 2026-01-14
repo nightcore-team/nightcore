@@ -125,7 +125,7 @@ async def guild_colors_autocomplete(
     ) as (_, session):
         guild_colors = await get_guild_colors(
             session,
-            guild_id=interaction.guild.id,  # type: ignore
+            guild_id=guild.id,
         )
 
         for color in guild_colors:
@@ -163,7 +163,7 @@ async def guild_cases_autocomplete(
     ) as (_, session):
         guild_cases = await get_guild_cases(
             session,
-            guild_id=interaction.guild.id,  # type: ignore
+            guild_id=guild.id,
         )
 
         for case in guild_cases:
