@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from src.infra.db.models import (
         ChangeStat,
+        NotifyState,
         Punish,
         RoleRequestState,
         TicketState,
@@ -25,6 +26,7 @@ class ModerationInfractionsDataAnnot:
     tickets: list[TicketState]
     role_requests: list[RoleRequestState]
     changestats: list[ChangeStat]
+    notifications: list[NotifyState]
     total_messages: int = 0
 
 
@@ -34,6 +36,7 @@ class ModerationStatsResultAnnot(TypedDict):
     tickets: Sequence[TicketState]
     role_requests: Sequence[RoleRequestState]
     changestats: Sequence[ChangeStat]
+    notifications: Sequence[NotifyState]
     messages: dict[int, int]
 
 

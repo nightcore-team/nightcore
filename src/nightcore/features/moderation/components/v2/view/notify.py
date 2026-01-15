@@ -65,7 +65,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
         super().__init__(
             placeholder="Выберите части профиля",
             min_values=1,
-            max_values=8,
+            max_values=10,
             custom_id="preparenotify:select",
             options=[
                 SelectOption(label="Аватар", value="аватар"),
@@ -76,6 +76,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 SelectOption(label="Никнейм", value="никнейм"),
                 SelectOption(label="Тег гильдии", value="тег гильдии"),
                 SelectOption(label="Персональная роль", value="перс. роль"),
+                SelectOption(label="Местоимение", value="местоимение"),
+                SelectOption(label="Интеграции", value="интеграции"),
             ],
         )
 

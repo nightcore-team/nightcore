@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
     role_request="Role request score",  #
     role_remove="Role remove score",  #
     message="Message score",  #
+    notification="Notification score",  #
     role="Роль для отслеживания статистики модерации",  #
     channel="Канал для подсчета сообщений модераторов",  #
 )
@@ -59,6 +60,7 @@ async def moderstats(
     role_request: float | None = None,
     role_remove: float | None = None,
     message: float | None = None,
+    notification: float | None = None,
     role: discord.Role | None = None,
     channel: discord.TextChannel | None = None,
 ):
@@ -75,6 +77,7 @@ async def moderstats(
         float_value("role_request_score", role_request),
         float_value("role_remove_score", role_remove),
         float_value("message_score", message),
+        float_value("notification_score", notification),
         int_id_value("trackable_moderation_role_id", role),
         int_id_value("count_moderator_messages_channel_id", channel),
     ]

@@ -281,6 +281,9 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
     message_score: Mapped[float | None] = mapped_column(
         Float, nullable=False, default=0.0, server_default=text("0.0")
     )
+    notification_score: Mapped[float | None] = mapped_column(
+        Float, nullable=False, default=0.0, server_default=text("0.0")
+    )
 
     trackable_moderation_role_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
