@@ -146,6 +146,7 @@ class GetModerationStats(Cog):
             role_requests=clear_stats["role_requests"],
             changestats=clear_stats["changestats"],
             messages=clear_stats["messages"],
+            notifications=clear_stats["notifications"],
         )
 
         mod_scores = ModerationScores.from_dict(scores)

@@ -68,6 +68,7 @@ def format_moderstats_page_components(
             f"> **Снятые роли:** {mod_stats.removed_roles_count}\n"
             f"> **Закрытые тикеты:** {mod_stats.closed_tickets_count}\n"
             f"> **Одобренные запросы ролей:** {mod_stats.approved_role_requests_count}\n"  # noqa: E501
+            f"> **Отправленные уведомления:** {mod_stats.sended_notifications_count}\n"  # noqa: E501
             f"> **Всего сообщений:** {mod_stats.total_messages}\n"
             f"> **Количество баллов:** **`{total_points}`**\n"
             f"> **Количество {'добавленных' if mod_stats.deducted_points >= 0 else 'снятых'} баллов:** {mod_stats.deducted_points}"  # noqa: E501

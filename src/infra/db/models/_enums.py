@@ -94,6 +94,7 @@ class ChangeStatTypeEnum(Enum):
     TICKET = "ticket"
     ROLE_REMOVE = "role_remove"
     ROLE_ACCEPT = "role_accept"
+    NOTIFY = "notify"
 
 
 class ComponentTypeEnum(Enum):
