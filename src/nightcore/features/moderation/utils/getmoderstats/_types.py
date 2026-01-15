@@ -106,7 +106,7 @@ class ModeratorStats:
                 + self.total_messages * scores.message
                 + self.approved_role_requests_count
                 * scores.approved_role_requests
-                * scores.sended_notifications
+                + self.sended_notifications_count * scores.sended_notifications
                 + self.deducted_points
             ):.5f}"
 
