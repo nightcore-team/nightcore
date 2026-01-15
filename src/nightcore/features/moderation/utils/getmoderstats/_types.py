@@ -25,6 +25,7 @@ class ModerationScores:
     approved_role_requests: float
     removed_roles: float
     message: float
+    sended_notifications: float
 
     @classmethod
     def from_dict(cls, data: dict[str, float]) -> Self:
@@ -54,6 +55,7 @@ class ModerationScores:
             approved_role_requests=data.get("role_request_score", 0),
             removed_roles=data.get("role_remove_score", 0),
             message=data.get("message_score", 0),
+            sended_notifications=data.get("notification_score", 0),
         )
 
 
@@ -75,6 +77,7 @@ class ModeratorStats:
     closed_tickets_count: int = 0
     approved_role_requests_count: int = 0
     total_messages: int = 0
+    sended_notifications_count: int = 0
 
     deducted_points: float = 0.0
 
@@ -103,6 +106,7 @@ class ModeratorStats:
                 + self.total_messages * scores.message
                 + self.approved_role_requests_count
                 * scores.approved_role_requests
+                * scores.sended_notifications
                 + self.deducted_points
             ):.5f}"
 
@@ -128,6 +132,7 @@ class ModeratorStats:
             f"> **Снятые роли:** {self.removed_roles_count}\n"
             f"> **Закрытые тикеты:** {self.closed_tickets_count}\n"
             f"> **Одобренные запросы ролей:** {self.approved_role_requests_count}\n"  # noqa: E501
+            f"> **Отправленные оповещения:** {self.sended_notifications_count}\n"  # noqa: E501
             f"> **Всего сообщений:** {self.total_messages}\n"
         )
 

@@ -11,6 +11,7 @@ from sqlalchemy.sql.elements import (
     ColumnElement,
 )
 
+from src.infra.db.models import NotifyState
 from src.infra.db.models._annot import ModerationInfractionsDataAnnot
 
 if TYPE_CHECKING:
@@ -39,6 +40,7 @@ def build_base_filters[
         "Punish",
         "RoleRequestState",
         "TicketState",
+        "NotifyState",
     )
 ](
     model: type[T],
@@ -66,6 +68,7 @@ def group_infractions_by_moderator(
     role_requests: Sequence[RoleRequestState],
     changestats: Sequence[ChangeStat],
     messages: dict[int, int] | None,
+    notifications: Sequence[NotifyState],
 ) -> dict[int, ModerationInfractionsDataAnnot]:
     """Group infractions by moderator_id."""
 
@@ -76,6 +79,7 @@ def group_infractions_by_moderator(
             tickets=[],
             role_requests=[],
             changestats=[],
+            notifications=[],
         )
         for mod_id, mod_name in moderators.items()
     }
@@ -95,6 +99,10 @@ def group_infractions_by_moderator(
     for cs in changestats:
         if cs.moderator_id in grouped:
             grouped[cs.moderator_id].changestats.append(cs)
+
+    for n in notifications:
+        if n.moderator_id in grouped:
+            grouped[n.moderator_id].notifications.append(n)
 
     if messages:
         for mod_id, msg_count in messages.items():

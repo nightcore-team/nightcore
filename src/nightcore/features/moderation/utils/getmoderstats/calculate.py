@@ -35,6 +35,7 @@ def calculate_moderator_stats(
         mpmute_count=punishment_counts.get("mpmute", 0),
         ticketban_count=punishment_counts.get("ticketban", 0),
         removed_roles_count=punishment_counts.get("role_remove", 0),
+        sended_notifications_count=len(data.notifications),
         total_messages=total_messages,
         closed_tickets_count=len(data.tickets),
         approved_role_requests_count=len(data.role_requests),

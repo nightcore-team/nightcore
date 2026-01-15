@@ -716,6 +716,21 @@ async def get_moderation_stats(
         .group_by(ModerationMessage.moderator_id)
     )
 
+    notifications = await session.scalars(
+        select(NotifyState).where(
+            *_build_base_moderstats_filters(
+                NotifyState,
+                guild_id,
+                moderator_ids,
+                from_date,
+                to_date,
+                "end_time",
+            ),
+            NotifyState.state == NotifyStateEnum.TIMED_OUT,
+        )
+    )
+    notifications = notifications.all()
+
     result = await session.execute(stmt)
     messages_data = dict(result.all())  # type: ignore
 
@@ -726,6 +741,7 @@ async def get_moderation_stats(
         "role_requests": role_requests,
         "changestats": changestats,
         "messages": messages_data,  # type: ignore
+        "notifications": notifications,
     }
 
 
