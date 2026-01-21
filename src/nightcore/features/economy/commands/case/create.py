@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
 from src.infra.db.models.case import Case
 from src.infra.db.operations import get_specified_channel
@@ -19,7 +19,6 @@ from src.nightcore.features.economy.events.dto.item_change import (
     ChangedCase,
     ItemChangeNotifyEventDTO,
 )
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -46,9 +45,7 @@ async def create_case(
     outcome = ""
     logging_channel_id = None
 
-    async with specified_guild_config(
-        bot, guild_id=guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
+    async with bot.uow.start() as session:
         try:
             new_case = Case(
                 name=case_name,

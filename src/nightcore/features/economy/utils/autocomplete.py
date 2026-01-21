@@ -11,13 +11,12 @@ from typing import TYPE_CHECKING, Final, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.operations import (
     get_guild_cases,
     get_guild_colors,
     get_or_create_user,
 )
-from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -72,9 +71,7 @@ async def user_colors_autocomplete(
     guild = cast(Guild, interaction.guild)
     result: list[app_commands.Choice[str]] = []
 
-    async with specified_guild_config(
-        interaction.client, guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
+    async with interaction.client.uow.start() as session:
         user, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
@@ -120,9 +117,7 @@ async def guild_colors_autocomplete(
     guild = cast(Guild, interaction.guild)
     result: list[app_commands.Choice[str]] = []
 
-    async with specified_guild_config(
-        interaction.client, guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
+    async with interaction.client.uow.start() as session:
         guild_colors = await get_guild_colors(
             session,
             guild_id=guild.id,
@@ -158,9 +153,7 @@ async def guild_cases_autocomplete(
     guild = cast(Guild, interaction.guild)
     result: list[app_commands.Choice[str]] = []
 
-    async with specified_guild_config(
-        interaction.client, guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
+    async with interaction.client.uow.start() as session:
         guild_cases = await get_guild_cases(
             session,
             guild_id=guild.id,

@@ -16,7 +16,6 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )
-from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

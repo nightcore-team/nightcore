@@ -23,7 +23,6 @@ from src.nightcore.features.config._groups import (
 from src.nightcore.features.config.utils.autocomplete import (
     reward_depends_on_type_autocomplete,
 )
-from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

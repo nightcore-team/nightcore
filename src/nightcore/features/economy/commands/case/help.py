@@ -6,14 +6,13 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_guild_cases
 from src.nightcore.components.embed import (
     ErrorEmbed,
 )
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseHelpViewV2
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.economy.utils.pages import build_cases_help_pages
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -39,9 +38,7 @@ async def open_case(
     outcome = ""
     coin_name = ""
 
-    async with specified_guild_config(
-        bot, guild_id=guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
+    async with bot.uow.start() as session:
         try:
             cases = await get_guild_cases(session, guild_id=guild.id)
         except Exception as e:
