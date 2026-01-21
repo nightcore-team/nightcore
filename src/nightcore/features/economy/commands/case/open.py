@@ -30,6 +30,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -40,30 +41,18 @@ logger = logging.getLogger(__name__)
 
 @case_group.command(name="open", description="Открыть кейс")  # type: ignore
 @app_commands.describe(case="Кейс для открытия.")
+@app_commands.rename(case_id="case_name")
 @app_commands.autocomplete(case=user_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)
 async def open_case(
     interaction: Interaction["Nightcore"],
-    case_name: app_commands.Choice[str],
+    case_id: app_commands.Transform[int, StrToIntTransformer],
 ):
     """Open case and get reward."""
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
     member = cast(Member, interaction.user)
-
-    try:
-        case_id = int(case_name.value)
-    except Exception as _:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка",
-                "Был введен неверный id кейса",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
 
     outcome = ""
     reward_text = ""
@@ -185,7 +174,7 @@ async def open_case(
     logger.info(
         "[command] - invoked user=%s guild=%s case=%s reward=%s",
         member.id,
-        case_name.value,
+        case_id,
         guild.id,
         reward_text,
     )
