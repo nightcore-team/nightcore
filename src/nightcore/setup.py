@@ -75,19 +75,21 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.economy.commands.reward",
         "src.nightcore.features.economy.commands.profile",
         "src.nightcore.features.economy.commands.paint",
+        "src.nightcore.features.economy.commands.battlepass",
+        # === economy events
         "src.nightcore.features.economy.events.award_notify",
         "src.nightcore.features.economy.events.transfer_notify",
         "src.nightcore.features.economy.events.order_notify",
         "src.nightcore.features.economy.events.count_message",
         "src.nightcore.features.economy.events.count_voice_activity",
-        # === battlepass
-        "src.nightcore.features.battlepass.commands.battlepass",
+        "src.nightcore.features.economy.events.item_change_notify",
         # === tickets
         "src.nightcore.features.tickets.commands.ticketmessage",
+        # === tickets events
         "src.nightcore.features.tickets.events.ticket_changed",
         # === role requests
         "src.nightcore.features.role_requests.commands.rrmessage",
-        # === proposals
+        # === proposals events
         "src.nightcore.features.proposals.events.proposal",
         # === global events
         "src.nightcore.events.reaction.add",
@@ -112,7 +114,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.role.create",
         "src.nightcore.events.role.delete",
         "src.nightcore.events.role.update",
-        # === private rooms
+        # === private rooms events
         "src.nightcore.features.private_rooms.events.create",
         "src.nightcore.features.private_rooms.events.delete",
         # === compbuilder

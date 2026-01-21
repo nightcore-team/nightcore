@@ -11,14 +11,15 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.operations import (
+    get_guild_battlepass_levels,
+    get_or_create_user,
+)
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.economy.utils.case import (
     RewardOutcomeEnum,
     give_reward_by_type,
 )
-from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -46,34 +47,31 @@ async def handle_battlepass_claim_reward_button(
 
     await interaction.response.defer(ephemeral=True)
 
-    async with specified_guild_config(bot, guild.id, GuildEconomyConfig) as (
-        guild_config,
-        session,
-    ):
+    async with bot.uow.start() as session:
         user_record, _ = await get_or_create_user(
             session, guild_id=guild.id, user_id=interaction.user.id
         )
 
-        battlepass_rewards = guild_config.battlepass_rewards or []
+        battlepass_levels = await get_guild_battlepass_levels(
+            session, guild_id=guild.id
+        )
 
-        if not battlepass_rewards:
+        if len(battlepass_levels) < 1:
             outcome = "battlepass_not_configured"
         else:
-            current_level_data = None
-            for bp_level in battlepass_rewards:
-                if bp_level["level"] == user_record.battle_pass_level:
-                    current_level_data = bp_level
-                    break
-
-            if current_level_data is None:
+            if len(battlepass_levels) >= user_record.battle_pass_level:
                 outcome = "level_not_found"
             else:
-                required_points = current_level_data["exp_required"]
+                current_level_data = battlepass_levels[
+                    user_record.battle_pass_level - 1
+                ]
+
+                required_points = current_level_data.exp_required
 
                 if user_record.battle_pass_points < required_points:
                     outcome = "not_enough_points"
                 else:
-                    reward = current_level_data["reward"]
+                    reward = current_level_data.reward
 
                     result = await give_reward_by_type(
                         session, reward=reward, user=user_record
@@ -93,29 +91,20 @@ async def handle_battlepass_claim_reward_button(
                         new_level = user_record.battle_pass_level
                         new_points = overflow_points
 
-                        # Check if new level exists in config
-                        new_level_data = None
-                        for bp_level in battlepass_rewards:
-                            if bp_level["level"] == new_level:
-                                new_level_data = bp_level
-                                break
-
-                        if new_level_data is None:
+                        if (
+                            len(battlepass_levels)
+                            >= user_record.battle_pass_level
+                        ):
                             # New level not found, show previous level
                             # with disabled button
                             outcome = "success_no_next_level"
-                            previous_levels = [
-                                bp
-                                for bp in battlepass_rewards
-                                if bp["level"] < new_level
-                            ]
-                            if previous_levels:
-                                new_level_data = max(
-                                    previous_levels,
-                                    key=lambda x: x["level"],
-                                )
-                                disable_button = True
+
+                            disable_button = True
                         else:
+                            new_level_data = battlepass_levels[
+                                user_record.battle_pass_level - 1
+                            ]
+
                             outcome = "success"
 
                         logger.info(
@@ -179,11 +168,11 @@ async def handle_battlepass_claim_reward_button(
         updated_view = view_to_update(
             bot=bot,
             level=new_level,
-            total_levels=len(battlepass_rewards),
+            total_levels=len(battlepass_levels),
             current_points=new_points,
-            required_points=new_level_data["exp_required"],  # type: ignore
-            reward_type=new_level_data["reward"]["type"].name,  # type: ignore
-            reward_amount=new_level_data["reward"]["amount"],  # type: ignore
+            required_points=new_level_data.exp_required,  # type: ignore
+            reward_type=new_level_data.reward["type"],  # type: ignore
+            reward_amount=new_level_data.reward["amount"],  # type: ignore
             avatar_url=interaction.user.display_avatar.url,
             disable_button=disable_button,
         )

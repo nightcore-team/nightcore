@@ -9,13 +9,16 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models._annot import BattlepassLevelAnnot
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.models._enums import CaseDropTypeEnum
+from src.infra.db.models.battlepass_level import BattlepassLevel
+from src.infra.db.operations import (
+    get_guild_battlepass_levels,
+    get_or_create_user,
+)
 from src.nightcore.components.embed import ErrorEmbed
-from src.nightcore.features.battlepass.components.v2 import (
+from src.nightcore.features.economy.components.v2 import (
     BattlepassClaimViewV2,
 )
-from src.nightcore.features.battlepass.utils.types import BATTLEPASS_REWARDS
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -44,8 +47,7 @@ class Battlepass(Cog):
         bot = self.bot
         guild = cast(Guild, interaction.guild)
 
-        outcome = ""
-        current_level: BattlepassLevelAnnot | None = None
+        current_level: BattlepassLevel | None = None
         coin_name: str = "коинов"
         user_level: int = 0
         user_points: int = 0
@@ -68,28 +70,11 @@ class Battlepass(Cog):
             user_level = user_record.battle_pass_level
             user_points = user_record.battle_pass_points
 
-        battlepass_rewards = guild_config.battlepass_rewards or []
+            battlepass_levels = await get_guild_battlepass_levels(
+                session, guild_id=guild.id
+            )
 
-        if not battlepass_rewards:
-            outcome = "battlepass_not_configured"
-        else:
-            for bp_level in battlepass_rewards:
-                if int(bp_level["level"]) == user_level:
-                    current_level = bp_level
-                    break
-            else:
-                previous_levels = [
-                    bp
-                    for bp in battlepass_rewards
-                    if int(bp["level"]) < user_level
-                ]
-                if previous_levels:
-                    current_level = max(
-                        previous_levels, key=lambda x: x["level"]
-                    )
-                    disable_button = True
-
-        if outcome == "battlepass_not_configured":
+        if len(battlepass_levels) < 1:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения уровня баттлпаса",
@@ -100,8 +85,7 @@ class Battlepass(Cog):
                 ephemeral=True,
             )
 
-        # If level not found and no previous levels available
-        if current_level is None:
+        if user_level >= len(battlepass_levels):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения уровня баттлпаса",
@@ -113,19 +97,22 @@ class Battlepass(Cog):
                 ephemeral=True,
             )
 
-        reward_type = BATTLEPASS_REWARDS[current_level["reward"]["name"]]
-        reward_amount = current_level["reward"]["amount"]
+        current_level = battlepass_levels[user_level - 1]
 
-        if reward_type == "коины":
-            reward_type = coin_name or "коины"
+        reward_name = current_level.reward["name"]
+        reward_type = current_level.reward["type"]
+        reward_amount = current_level.reward["amount"]
+
+        if reward_type == CaseDropTypeEnum.COINS:
+            reward_name = coin_name or "коины"
 
         view = BattlepassClaimViewV2(
             bot=bot,
             level=user_level,
-            total_levels=len(battlepass_rewards),
+            total_levels=len(battlepass_levels),
             current_points=user_points,
-            required_points=current_level["exp_required"],
-            reward_type=reward_type,
+            required_points=current_level.exp_required,
+            reward_type=reward_name,
             reward_amount=reward_amount,
             avatar_url=interaction.user.display_avatar.url,
             disable_button=disable_button,
