@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any, TypeVar, cast
 
-from async_lru import alru_cache
 from sqlalchemy import exists, extract, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -291,7 +290,6 @@ async def create_punish(
         original_duration=original_duration,
     )
     session.add(punish)
-    alru_invalidator(get_user_infractions, guild_id=guild_id, user_id=user_id)
     return punish
 
 
@@ -613,7 +611,6 @@ async def get_fraction_roles(
     return list(result.keys()) if result else []
 
 
-@alru_cache()
 async def get_user_infractions(
     session: AsyncSession, *, guild_id: int, user_id: int
 ) -> Sequence[Punish]:
