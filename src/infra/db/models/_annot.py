@@ -4,8 +4,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypedDict
 
-from src.infra.db.models._enums import CaseDropTypeEnum
-
 if TYPE_CHECKING:
     from src.infra.db.models import (
         ChangeStat,
@@ -61,7 +59,7 @@ class Rule:
 class CaseDropAnnot(TypedDict):
     """Single drop configuration."""
 
-    type: CaseDropTypeEnum
+    type: int
     drop_id: int | None
     name: str
     amount: int
@@ -82,11 +80,3 @@ class BattlepassRewardAnnot(TypedDict):
     drop_id: int | None
     name: str
     amount: int
-
-
-class BattlepassLevelAnnot(TypedDict):
-    """Battlepass level configuration."""
-
-    level: int
-    exp_required: int
-    reward: BattlepassRewardAnnot
