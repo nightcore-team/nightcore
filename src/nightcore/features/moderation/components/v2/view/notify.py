@@ -461,7 +461,7 @@ class NotifyViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         profile_parts = (
-            ",".join(self.profile_parts)
+            ", ".join(self.profile_parts)
             if isinstance(self.profile_parts, list)
             else self.profile_parts
         )
