@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.config.config import config
-from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
     ChangeStat,
     Clan,
