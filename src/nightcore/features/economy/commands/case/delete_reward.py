@@ -1,21 +1,28 @@
-"""Command to change case."""
+"""Command to delete case reward."""
 
 import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
 from discord.interactions import Interaction
+from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
-from src.infra.db.operations import get_case_by_id, get_specified_channel
+from src.infra.db.models._enums import (
+    ChannelType,
+    ItemChangeActionEnum,
+)
+from src.infra.db.operations import (
+    get_case_by_id,
+    get_specified_channel,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
 )
 from src.nightcore.components.embed.success import SuccessMoveEmbed
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.events.dto.item_change import (
-    ChangedCase,
+    ChangedReward,
     ItemChangeNotifyEventDTO,
 )
 from src.nightcore.utils.permissions import (
@@ -31,21 +38,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@case_group.command(name="change", description="Изменить кейс")  # type: ignore
+@case_group.command(
+    name="delete_reward", description="Удалить награду из кейса"
+)  # type: ignore
+@app_commands.describe(num="порядковый номер награды")
 @app_commands.rename(case_id="case")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
-async def change_case(
+async def delete_case_reward(
     interaction: Interaction["Nightcore"],
     case_id: app_commands.Transform[int, StrToIntTransformer],
-    new_case_name: app_commands.Range[str, 100],
+    num: app_commands.Range[int, 1, 1000000],
 ):
-    """Change case."""
+    """Delete reward of case."""
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
     outcome = ""
-    old_name = ""
     logging_channel_id = None
 
     async with bot.uow.start() as session:
@@ -57,22 +66,25 @@ async def change_case(
             if case is None:
                 outcome = "case_not_found"
             else:
-                old_name = case.name
+                if len(case.drop) >= num:
+                    outcome = "unknown_reward_index"
+                else:
+                    reward = case.drop.pop(num - 1)
 
-                case.name = new_case_name
+                    attributes.flag_modified(case, "drop")
 
-                logging_channel_id = await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildLoggingConfig,
-                    channel_type=ChannelType.LOGGING_ECONOMY,
-                )
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_ECONOMY,
+                    )
 
         except Exception as e:
-            outcome = "case_create_error"
+            outcome = "case_change_error"
 
             logger.exception(
-                "[case/change] Error creating case in guild %s: %s",
+                "[case/delete_reward] Error delete reward in guild %s: %s",
                 guild.id,
                 e,
             )
@@ -88,7 +100,7 @@ async def change_case(
             ephemeral=True,
         )
 
-    if outcome == "case_create_error":
+    if outcome == "case_change_error":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка изменения кейса",
@@ -99,14 +111,22 @@ async def change_case(
             ephemeral=True,
         )
 
-    item = ChangedCase(
-        before_name=old_name,
-        after_name=case.name,  # type: ignore
-    )
+    if outcome == "unknown_reward_index":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка добавления награды",
+                "Награда с данным порядковым номером не существует.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    item = ChangedReward(after=reward)  # type: ignore
 
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
-        event_type=ItemChangeActionEnum.CASE_UPDATE,
+        event_type=ItemChangeActionEnum.DELETE_REWARD,
         logging_channel_id=logging_channel_id,
         moderator_id=interaction.user.id,
         item_name=case.name,  # type: ignore
@@ -117,8 +137,8 @@ async def change_case(
 
     await interaction.response.send_message(
         embed=SuccessMoveEmbed(
-            "Создание кейса успешно",
-            f"Вы успешно изменили название кейса {case.name} ",  # type: ignore
+            "Удаление награды успешно",
+            f"Вы удалили награду из кейса {case.name} ",  # type: ignore
             bot.user.display_name,  # type: ignore
             bot.user.display_avatar.url,  # type: ignore
         ),
