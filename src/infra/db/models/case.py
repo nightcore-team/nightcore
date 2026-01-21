@@ -18,14 +18,17 @@ class Case(IdIntegerMixin, Base):
     name: Mapped[str] = mapped_column(nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     drop: Mapped[list[CaseDropAnnot]] = mapped_column(
-        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
+        JSON,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'::json"),
     )
 
-    def open(self) -> CaseDropAnnot:
+    def open(self) -> CaseDropAnnot | None:
         """Open case and get reward."""
 
         if not self.drop:
-            raise ValueError("Case has no drops configured")
+            return None
 
         chances = [drop["chance"] for drop in self.drop]
 

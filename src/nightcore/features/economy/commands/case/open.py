@@ -85,26 +85,29 @@ async def open_case(
                 if user_case is None:
                     outcome = "no_case"
                 else:
-                    user_case.amount -= 1
-
                     reward = user_case.item.open()
 
-                    result = await give_reward_by_type(
-                        session, reward=reward, user=user
-                    )
+                    if reward is None:
+                        outcome = "no_case_reward_configured"
+                    else:
+                        user_case.amount -= 1
 
-                    reward_text = reward["name"]
+                        result = await give_reward_by_type(
+                            session, reward=reward, user=user
+                        )
 
-                    outcome = (
-                        "success"
-                        if result == RewardOutcomeEnum.SUCCESS
-                        else "error: " + result.name
-                    )
+                        reward_text = reward["name"]
+
+                        outcome = (
+                            "success"
+                            if result == RewardOutcomeEnum.SUCCESS
+                            else "error: " + result.name
+                        )
 
         except Exception as e:
             logger.exception(
                 "[case/open] Error opening case %s for user %s in guild %s: %s",  # noqa: E501
-                case_name.value,
+                case_id,
                 member.id,
                 guild.id,
                 e,
@@ -131,6 +134,17 @@ async def open_case(
             ephemeral=True,
         )
 
+    if outcome == "no_case_reward_configured":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка открытия кейса",
+                "Награды не настроены для выбранного кейса.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
     if outcome.startswith("error"):
         return await interaction.response.send_message(
             embed=ErrorEmbed(
@@ -145,7 +159,7 @@ async def open_case(
     if outcome == "success":
         view = CaseOpenViewV2(
             bot=bot,
-            case_name=case_name.name,
+            case_name=case.name,  # type: ignore
             reward=reward["name"],  # type: ignore
             chance=reward["chance"],  # type: ignore
         )
