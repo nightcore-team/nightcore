@@ -7,10 +7,13 @@ import discord
 from discord import Guild, Member
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
 from src.infra.db.models.color import Color
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import (
+    get_color_by_role_id,
+    get_specified_channel,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
 )
@@ -20,7 +23,6 @@ from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
     ItemChangeNotifyEventDTO,
 )
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.object import compare_top_roles
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -40,7 +42,7 @@ async def create_color(
     interaction: Interaction["Nightcore"],
     role: discord.Role,
 ):
-    """Create case."""
+    """Create color."""
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
@@ -82,23 +84,28 @@ async def create_color(
             ephemeral=True,
         )
 
-    async with specified_guild_config(
-        bot, guild_id=guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
+    async with bot.uow.start() as session:
         try:
-            new_color = Color(
-                guild_id=guild.id,
-                role_id=role.id,
+            color = await get_color_by_role_id(
+                session, guild_id=guild.id, role_id=role.id
             )
 
-            session.add(new_color)
+            if color is not None:
+                outcome = "color_exists"
+            else:
+                new_color = Color(
+                    guild_id=guild.id,
+                    role_id=role.id,
+                )
 
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_ECONOMY,
-            )
+                session.add(new_color)
+
+                logging_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_ECONOMY,
+                )
 
         except Exception as e:
             outcome = "color_create_error"
@@ -108,6 +115,17 @@ async def create_color(
                 guild.id,
                 e,
             )
+
+    if outcome == "color_exists":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка создания цвета",
+                "К данной роли уже привязан цвет.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     if outcome == "color_create_error":
         return await interaction.response.send_message(
@@ -120,7 +138,7 @@ async def create_color(
             ephemeral=True,
         )
 
-    item = ChangedRole(after=role)
+    item = ChangedRole(after_id=role.id)
 
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
