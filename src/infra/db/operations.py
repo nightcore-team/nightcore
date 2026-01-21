@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any, TypeVar, cast
 
-from sqlalchemy import exists, extract, func, select, update
+from sqlalchemy import asc, exists, extract, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -52,6 +52,7 @@ from src.infra.db.models._enums import (
     RoleRequestStateEnum,
     TicketStateEnum,
 )
+from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
 from src.infra.db.utils import (
@@ -1132,6 +1133,19 @@ async def get_color_by_id(
     return result.scalar_one_or_none()
 
 
+async def get_color_by_role_id(
+    session: AsyncSession, *, guild_id: int, role_id: int
+) -> Color | None:
+    """Get a color by id for a guild."""
+    stmt = select(Color).where(
+        Color.guild_id == guild_id, Color.role_id == role_id
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
 async def get_guild_colors(
     session: AsyncSession, *, guild_id: int
 ) -> Sequence[Color]:
@@ -1162,3 +1176,33 @@ async def get_case_by_id(
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
+
+
+async def get_battlepass_level(
+    session: AsyncSession, *, guild_id: int, level: int
+) -> BattlepassLevel | None:
+    """Get a battlepass level by level num for a guild."""
+    stmt = select(BattlepassLevel).where(
+        BattlepassLevel.guild_id == guild_id, BattlepassLevel.level == level
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_guild_battlepass_levels(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+) -> Sequence[BattlepassLevel]:
+    """Get battlepass levels for a guild."""
+
+    stmt = (
+        select(BattlepassLevel)
+        .where(BattlepassLevel.guild_id == guild_id)
+        .order_by(asc(BattlepassLevel.level))
+    )
+    result = await session.execute(stmt)
+
+    return result.scalars().all()

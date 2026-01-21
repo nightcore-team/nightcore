@@ -4,7 +4,6 @@ from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._annot import (
-    BattlepassLevelAnnot,
     FAQPageAnnot,
     Rules,
 )
@@ -125,12 +124,6 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         nullable=False,
         default=list,
         server_default=text("'{}'::text[]"),
-    )
-    battlepass_rewards: Mapped[list[BattlepassLevelAnnot]] = mapped_column(
-        JSON,
-        nullable=False,
-        default=list,
-        server_default=text("'[]'::json"),
     )
 
 
