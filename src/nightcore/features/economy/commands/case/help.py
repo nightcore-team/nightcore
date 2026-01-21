@@ -43,7 +43,7 @@ async def open_case(
             cases = await get_guild_cases(session, guild_id=guild.id)
         except Exception as e:
             logger.error(
-                "[case/help] Failed to get guild economy config for guild %s: %s",  # noqa: E501
+                "[case/help] Failed to get cases for guild %s: %s",
                 guild.id,
                 e,
             )
@@ -63,10 +63,11 @@ async def open_case(
         )
 
     if outcome == "success":
+        pages = build_cases_help_pages(cases, coin_name)  # type: ignore
+
         view = CaseHelpViewV2(
             bot=bot,
-            coin_name=coin_name,
-            cases=cases,  # type: ignore
+            pages=pages,
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)
