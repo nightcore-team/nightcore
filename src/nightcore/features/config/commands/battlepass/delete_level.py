@@ -5,14 +5,9 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
 from discord.interactions import Interaction
-from sqlalchemy.orm import attributes
 
-from src.infra.db.models import GuildEconomyConfig
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
-)
+from src.infra.db.operations import get_battlepass_level
+from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )
@@ -37,53 +32,24 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def delete_level(
     interaction: Interaction["Nightcore"],
-    level: int,
+    level: app_commands.Range[int, 1, 1000000],
 ):
     """Delete battlepass level and shift others down."""
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    try:
-        int_level = int(level)
-    except ValueError:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
-                "Пожалуйста, введите действительный номер уровня.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
     outcome = ""
 
-    async with specified_guild_config(
-        bot, guild.id, GuildEconomyConfig, _create=True
-    ) as (
-        guild_config,
-        _,
-    ):
-        battlepass_rewards = guild_config.battlepass_rewards or []
+    async with bot.uow.start() as session:
+        battlepass_level = await get_battlepass_level(
+            session, guild_id=guild.id, level=level
+        )
 
-        # found index of level to delete
-        level_index = None
-        for i, bp_level in enumerate(battlepass_rewards):
-            if bp_level.get("level") == int_level:
-                level_index = i
-                break
-
-        if level_index is None:
+        if battlepass_level is None:
             outcome = "level_not_found"
         else:
-            battlepass_rewards.pop(level_index)
-
-            # moving down subsequent levels
-            for i in range(level_index, len(battlepass_rewards)):
-                battlepass_rewards[i]["level"] = i + 1
-
-            guild_config.battlepass_rewards = battlepass_rewards
-            attributes.flag_modified(guild_config, "battlepass_rewards")
+            await session.delete(battlepass_level)
 
             outcome = "success"
 
@@ -91,7 +57,7 @@ async def delete_level(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка удаления уровня",
-                f"Уровень {int_level} не найден в боевом пропуске.",
+                f"Уровень {level} не найден в боевом пропуске.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -102,7 +68,7 @@ async def delete_level(
         return await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Уровень удален",
-                f"Уровень {int_level} успешно удален из боевого пропуска.\n"
+                f"Уровень {level} успешно удален из боевого пропуска.\n"
                 f"Последующие уровни автоматически сдвинуты вниз.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
