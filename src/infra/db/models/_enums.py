@@ -170,6 +170,17 @@ class CaseDropTypeEnum(Enum):
     COLOR = 3
     CASE = 4
     CUSTOM = 5
+    BATTLEPASS_POINTS = 6
+
+    def requires_id(self) -> bool:
+        return self == CaseDropTypeEnum.COLOR or self == CaseDropTypeEnum.CASE
+
+    def requires_id_or_custom(self) -> bool:
+        return (
+            self == CaseDropTypeEnum.COLOR
+            or self == CaseDropTypeEnum.CASE
+            or self == CaseDropTypeEnum.CUSTOM
+        )
 
 
 class ItemChangeActionEnum(StrEnum):

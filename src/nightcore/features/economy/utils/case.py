@@ -32,6 +32,8 @@ async def give_reward_by_type(
             user.current_exp += amount
         case CaseDropTypeEnum.COINS:
             user.coins += amount
+        case CaseDropTypeEnum.BATTLEPASS_POINTS:
+            user.battle_pass_points += amount
         case CaseDropTypeEnum.COLOR:
             if drop_id is None:
                 return RewardOutcomeEnum.REWARD_NOT_FOUND
