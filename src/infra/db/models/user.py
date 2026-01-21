@@ -80,7 +80,7 @@ class User(IdIntegerMixin, Base):
     )
 
     def get_case(self, case_id: int) -> Optional["UserCase"]:
-        """Retrieves a case from the user's collection by its name."""
+        """Retrieves a case from the user's collection by its id."""
 
         for case in self.cases:
             if case.item.id == case_id:
