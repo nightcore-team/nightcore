@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from discord import Guild, app_commands
 from discord.interactions import Interaction
@@ -19,21 +19,27 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_commands: Final[dict[str, int]] = {"add_level": 1, "change_level": 2}
+
 
 async def reward_depends_on_type_autocomplete(
     interaction: Interaction["Nightcore"],
     current: str,
 ) -> list[app_commands.Choice[str]]:
-    """Autocomplete function to get all colors for guild."""
+    """Autocomplete function to get colors or cases depends on reward type for guild."""  # noqa: E501
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
     result: list[app_commands.Choice[str]] = []
 
-    match interaction.namespace.reward:
+    index = _commands[interaction.command.name]  # type: ignore
+
+    match interaction.data["options"][index]["value"]:  # type: ignore
         case CaseDropTypeEnum.CASE.value:
             result = await _cases_autocomplete(interaction, current)
         case CaseDropTypeEnum.COLOR.value:
             result = await _colors_autocomplete(interaction, current)
+        case CaseDropTypeEnum.CUSTOM.value:
+            result = await _custom_reward_autocomplete()
         case _:  # type: ignore
             result.append(
                 app_commands.Choice(
@@ -50,6 +56,15 @@ async def reward_depends_on_type_autocomplete(
     )
 
     return result
+
+
+async def _custom_reward_autocomplete() -> list[app_commands.Choice[str]]:
+    return [
+        app_commands.Choice(
+            name="Введите название вашей кастомной награды",
+            value="Введите название вашей кастомной награды",
+        )
+    ]
 
 
 async def _cases_autocomplete(

@@ -26,6 +26,44 @@ logger = logging.getLogger(__name__)
 
 CLEAR_COLOR_ID: Final[int] = -1
 
+_commands: Final[dict[str, int]] = {"add_reward": 1}
+
+
+async def reward_depends_on_type_autocomplete(
+    interaction: Interaction["Nightcore"],
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get colors or cases depends on reward type for guild."""  # noqa: E501
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+    result: list[app_commands.Choice[str]] = []
+
+    index = _commands[interaction.command.name]  # type: ignore
+
+    match interaction.data["options"][index]["value"]:  # type: ignore
+        case CaseDropTypeEnum.CASE.value:
+            result = await guild_cases_autocomplete(interaction, current)
+        case CaseDropTypeEnum.COLOR.value:
+            result = await guild_colors_autocomplete(interaction, current)
+        case CaseDropTypeEnum.CUSTOM.value:
+            result = await _custom_reward_autocomplete()
+        case _:  # type: ignore
+            result.append(
+                app_commands.Choice(
+                    name="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
+                    value="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[config_reward/autocomplete] Autocomplete for guild %s took %.4f seconds",  # noqa: E501
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
 
 async def user_cases_autocomplete(
     interaction: Interaction["Nightcore"],
@@ -175,3 +213,12 @@ async def guild_cases_autocomplete(
     )
 
     return result
+
+
+async def _custom_reward_autocomplete() -> list[app_commands.Choice[str]]:
+    return [
+        app_commands.Choice(
+            name="Введите название вашей кастомной награды",
+            value="Введите название вашей кастомной награды",
+        )
+    ]
