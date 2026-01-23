@@ -113,6 +113,8 @@ class CaseHelpViewV2(LayoutView):
 
         self.pagination: CaseHelpPaginationActionRow | None = None
 
+        self.make_component()
+
     def _update_buttons(self):
         """Update button states based on current page."""
         if not self.pagination:
