@@ -1,5 +1,7 @@
 """Utilities for handling cases opening in the economy feature."""
 
+from __future__ import annotations
+
 from enum import Enum
 from typing import TYPE_CHECKING
 
