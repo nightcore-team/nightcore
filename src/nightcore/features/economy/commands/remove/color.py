@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     get_color_by_id,
@@ -21,12 +21,14 @@ from src.nightcore.features.economy._groups import remove as remove_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
-from src.nightcore.features.economy.utils import guild_colors_autocomplete
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.economy.utils.autocomplete import (
+    user_colors_autocomplete,
+)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -41,31 +43,19 @@ logger = logging.getLogger(__name__)
     color="Цвет для удаления",
     reason="Причина удаления цвета (необязательно)",
 )
-@app_commands.autocomplete(color=guild_colors_autocomplete)
+@app_commands.autocomplete(color=user_colors_autocomplete)
+@app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def remove_color(
     interaction: Interaction["Nightcore"],
     user: User,
-    color_name: app_commands.Choice[str],
+    color_id: app_commands.Transform[int, StrToIntTransformer],
     reason: str | None = None,
 ):
     """Give a color to user."""
 
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
-
-    try:
-        color_id = int(color_name.value)
-    except Exception as _:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка",
-                "Был введен неверный id цвета",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
 
     outcome = ""
 
@@ -80,10 +70,7 @@ async def remove_color(
             ephemeral=True,
         )
 
-    async with specified_guild_config(bot, guild.id, GuildEconomyConfig) as (
-        _,
-        session,
-    ):
+    async with bot.uow.start() as session:
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,
@@ -152,7 +139,7 @@ async def remove_color(
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=f"{color_name.name} ({color.role_id})",  # type: ignore
+                item_name=f"<@&{color.role_id}> ({color.role_id})",  # type: ignore
                 amount=-1,
                 reason=reason,
             ),

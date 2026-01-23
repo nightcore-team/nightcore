@@ -57,8 +57,8 @@ async def open_case(
     reward_text = ""
     logging_channel_id = None
 
-    async with bot.uow.start() as session:
-        try:
+    try:
+        async with bot.uow.start() as session:
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
@@ -104,15 +104,15 @@ async def open_case(
                             else "error: " + result.name
                         )
 
-        except Exception as e:
-            logger.exception(
-                "[case/open] Error opening case %s for user %s in guild %s: %s",  # noqa: E501
-                case_id,
-                member.id,
-                guild.id,
-                e,
-            )
-            outcome = "error"
+    except Exception as e:
+        logger.exception(
+            "[case/open] Error opening case %s for user %s in guild %s: %s",
+            case_id,
+            member.id,
+            guild.id,
+            e,
+        )
+        outcome = "error"
 
     if outcome == "no_case":
         return await interaction.response.send_message(

@@ -1133,19 +1133,6 @@ async def get_color_by_id(
     return result.scalar_one_or_none()
 
 
-async def get_color_by_role_id(
-    session: AsyncSession, *, guild_id: int, role_id: int
-) -> Color | None:
-    """Get a color by id for a guild."""
-    stmt = select(Color).where(
-        Color.guild_id == guild_id, Color.role_id == role_id
-    )
-
-    result = await session.execute(stmt)
-
-    return result.scalar_one_or_none()
-
-
 async def get_guild_colors(
     session: AsyncSession, *, guild_id: int
 ) -> Sequence[Color]:
@@ -1161,7 +1148,7 @@ async def get_guild_cases(
     session: AsyncSession, *, guild_id: int
 ) -> Sequence[Case]:
     """Get cases by guild id."""
-    stmt = select(Case).where(Case.guild_id == guild_id)
+    stmt = select(Case).where(Case.guild_id == guild_id).order_by(asc(Case.id))
     result = await session.execute(stmt)
 
     return result.scalars().all()

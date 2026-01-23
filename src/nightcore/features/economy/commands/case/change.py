@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
 from discord.interactions import Interaction
+from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
@@ -48,8 +49,8 @@ async def change_case(
     old_name = ""
     logging_channel_id = None
 
-    async with bot.uow.start() as session:
-        try:
+    try:
+        async with bot.uow.start() as session:
             case = await get_case_by_id(
                 session, guild_id=guild.id, case_id=case_id
             )
@@ -68,14 +69,23 @@ async def change_case(
                     channel_type=ChannelType.LOGGING_ECONOMY,
                 )
 
-        except Exception as e:
-            outcome = "case_create_error"
+    except IntegrityError:
+        outcome = "case_name_exists"
 
-            logger.exception(
-                "[case/change] Error creating case in guild %s: %s",
-                guild.id,
-                e,
-            )
+        logger.warning(
+            "[case/change] Error changing case in guild %s, name exists %s",
+            guild.id,
+            new_case_name,
+        )
+
+    except Exception as e:
+        outcome = "case_change_error"
+
+        logger.exception(
+            "[case/change] Error creating case in guild %s: %s",
+            guild.id,
+            e,
+        )
 
     if outcome == "case_not_found":
         return await interaction.response.send_message(
@@ -88,7 +98,18 @@ async def change_case(
             ephemeral=True,
         )
 
-    if outcome == "case_create_error":
+    if outcome == "case_name_exists":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка создания кейса",
+                "Кейс с данным названием уже существует.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "case_change_error":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка изменения кейса",

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
@@ -25,11 +25,11 @@ from src.nightcore.features.economy.events.dto import (
 from src.nightcore.features.economy.utils.autocomplete import (
     guild_cases_autocomplete,
 )
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -46,11 +46,12 @@ logger = logging.getLogger(__name__)
     reason="Причина выдачи кейса (необязательно).",
 )
 @app_commands.autocomplete(case_name=guild_cases_autocomplete)
+@app_commands.rename(case_id="case")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_case(
     interaction: Interaction["Nightcore"],
     user: User,
-    case_name: app_commands.Choice[str],
+    case_id: app_commands.Transform[int, StrToIntTransformer],
     amount: int,
     reason: str | None = None,
 ):
@@ -58,19 +59,6 @@ async def give_case(
 
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
-
-    try:
-        case_id = int(case_name.value)
-    except Exception as _:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка",
-                "Был введен неверный id цвета",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
 
     if user == bot.user:
         return await interaction.response.send_message(
@@ -84,18 +72,17 @@ async def give_case(
         )
 
     outcome = ""
-    async with specified_guild_config(
-        bot, guild_id=guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
-        logging_channel_id = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildLoggingConfig,
-            channel_type=ChannelType.LOGGING_ECONOMY,
-        )
 
-        if not outcome:
-            try:
+    try:
+        async with bot.uow.start() as session:
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
+            )
+
+            if not outcome:
                 user_record, _ = await get_or_create_user(
                     session,
                     guild_id=guild.id,
@@ -121,15 +108,26 @@ async def give_case(
 
                     outcome = "success"
 
-            except Exception as e:
-                logger.exception(
-                    "[give/case] Error giving case %s to user %s in guild %s: %s",  # noqa: E501
-                    case_name,
-                    user.id,
-                    guild.id,
-                    e,
-                )
-                outcome = "give_case_error"
+    except Exception as e:
+        logger.exception(
+            "[give/case] Error giving case %s to user %s in guild %s: %s",
+            case_id,
+            user.id,
+            guild.id,
+            e,
+        )
+        outcome = "give_case_error"
+
+    if outcome == "unknown_case":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи кейса",
+                "Кейс не найден.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     if outcome == "give_case_error":
         return await interaction.response.send_message(
@@ -147,7 +145,7 @@ async def give_case(
             embed=SuccessMoveEmbed(
                 "Выдача кейса успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
-                f"**{case_name.name}** в количестве **{amount}**.",
+                f"**{case.name}** в количестве **{amount}**.",  # type: ignore
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -159,10 +157,10 @@ async def give_case(
             dto=AwardNotificationEventDTO(
                 guild=guild,
                 event_type="give/case",
-                logging_channel_id=logging_channel_id,
+                logging_channel_id=logging_channel_id,  # type: ignore
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=case_name.name,
+                item_name=case.name,  # type: ignore
                 amount=amount,
                 reason=reason,
             ),

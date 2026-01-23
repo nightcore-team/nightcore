@@ -14,6 +14,9 @@ from src.infra.db.operations import (
     get_guild_battlepass_levels,
     get_or_create_user,
 )
+from src.nightcore.features.economy.utils.case import (
+    format_battlepass_levels_rewards,
+)
 from src.nightcore.features.economy.utils.pages import (
     build_battlepass_levels_pages,
 )
@@ -43,11 +46,17 @@ async def handle_battlepass_info_button(
             user_id=interaction.user.id,
         )
 
-        coin_name = guild_config.coin_name
+        coin_name = (
+            guild_config.coin_name if guild_config.coin_name else "коины"
+        )
         user_level = user_record.battle_pass_level
 
         battlepass_levels = await get_guild_battlepass_levels(
             session, guild_id=guild.id
+        )
+
+        await format_battlepass_levels_rewards(
+            session, levels=battlepass_levels, coin_name=coin_name, guild=guild
         )
 
         total_bp_points = sum(

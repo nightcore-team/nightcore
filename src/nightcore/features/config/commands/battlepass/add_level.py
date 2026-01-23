@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.models._annot import BattlepassRewardAnnot
 from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.operations import (
@@ -90,8 +91,12 @@ async def add_level(
         guild_id=guild.id, exp_required=exp_required
     )
 
-    battlepass_level.reward["amount"] = reward_amount
-    battlepass_level.reward["type"] = reward_type.value
+    battlepass_level.reward = BattlepassRewardAnnot(
+        type=reward_type.value,
+        drop_id=-1,
+        name=reward_type.to_str(),
+        amount=reward_amount,
+    )
 
     if not outcome:
         async with bot.uow.start() as session:
@@ -116,7 +121,6 @@ async def add_level(
                         outcome = "unknown_case_id"
                     else:
                         battlepass_level.reward["drop_id"] = case.id
-                        battlepass_level.reward["name"] = case.name
 
                 case CaseDropTypeEnum.COLOR:
                     color = await get_color_by_id(
@@ -129,13 +133,10 @@ async def add_level(
                         outcome = "unknown_color_id"
                     else:
                         battlepass_level.reward["drop_id"] = color.id
-                        battlepass_level.reward["name"] = str(color.role_id)
                 case CaseDropTypeEnum.CUSTOM:
-                    battlepass_level.reward["drop_id"] = None
                     battlepass_level.reward["name"] = reward  # type: ignore
                 case _:
-                    battlepass_level.reward["drop_id"] = None
-                    battlepass_level.reward["name"] = reward_type.name
+                    ...
 
             if not outcome:
                 if before_level and before_level_exists:

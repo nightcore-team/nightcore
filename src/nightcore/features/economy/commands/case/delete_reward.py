@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 @case_group.command(
     name="delete_reward", description="Удалить награду из кейса"
 )  # type: ignore
-@app_commands.describe(num="порядковый номер награды")
+@app_commands.describe(num="Порядковый номер награды")
 @app_commands.rename(case_id="case")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def delete_case_reward(
@@ -57,8 +57,8 @@ async def delete_case_reward(
     outcome = ""
     logging_channel_id = None
 
-    async with bot.uow.start() as session:
-        try:
+    try:
+        async with bot.uow.start() as session:
             case = await get_case_by_id(
                 session, guild_id=guild.id, case_id=case_id
             )
@@ -80,14 +80,14 @@ async def delete_case_reward(
                         channel_type=ChannelType.LOGGING_ECONOMY,
                     )
 
-        except Exception as e:
-            outcome = "case_change_error"
+    except Exception as e:
+        outcome = "case_change_error"
 
-            logger.exception(
-                "[case/delete_reward] Error delete reward in guild %s: %s",
-                guild.id,
-                e,
-            )
+        logger.exception(
+            "[case/delete_reward] Error delete reward in guild %s: %s",
+            guild.id,
+            e,
+        )
 
     if outcome == "case_not_found":
         return await interaction.response.send_message(

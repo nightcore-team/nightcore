@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
 from discord.interactions import Interaction
+from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
@@ -45,8 +46,8 @@ async def create_case(
     outcome = ""
     logging_channel_id = None
 
-    async with bot.uow.start() as session:
-        try:
+    try:
+        async with bot.uow.start() as session:
             new_case = Case(
                 name=case_name,
                 guild_id=guild.id,
@@ -60,15 +61,34 @@ async def create_case(
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_ECONOMY,
             )
+    except IntegrityError:
+        outcome = "case_name_exists"
 
-        except Exception as e:
-            outcome = "case_create_error"
+        logger.warning(
+            "[case/create] Error creating case in guild %s, name exists %s",
+            guild.id,
+            case_name,
+        )
 
-            logger.exception(
-                "[case/create] Error creating case in guild %s: %s",
-                guild.id,
-                e,
-            )
+    except Exception as e:
+        outcome = "case_create_error"
+
+        logger.exception(
+            "[case/create] Error creating case in guild %s: %s",
+            guild.id,
+            e,
+        )
+
+    if outcome == "case_name_exists":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка создания кейса",
+                "Кейс с данным названием уже существует.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     if outcome == "case_create_error":
         return await interaction.response.send_message(

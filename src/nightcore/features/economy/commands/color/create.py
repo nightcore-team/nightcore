@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import Guild, Member
 from discord.interactions import Interaction
+from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
 from src.infra.db.models.color import Color
 from src.infra.db.operations import (
-    get_color_by_role_id,
     get_specified_channel,
 )
 from src.nightcore.components.embed import (
@@ -49,7 +49,7 @@ async def create_color(
     member = cast(Member, interaction.user)
 
     logging_channel_id = None
-    outcome = None
+    outcome = ""
 
     if role.position >= member.top_role.position:
         return await interaction.response.send_message(
@@ -84,37 +84,39 @@ async def create_color(
             ephemeral=True,
         )
 
-    async with bot.uow.start() as session:
-        try:
-            color = await get_color_by_role_id(
-                session, guild_id=guild.id, role_id=role.id
+    try:
+        async with bot.uow.start() as session:
+            new_color = Color(
+                guild_id=guild.id,
+                role_id=role.id,
             )
 
-            if color is not None:
-                outcome = "color_exists"
-            else:
-                new_color = Color(
-                    guild_id=guild.id,
-                    role_id=role.id,
-                )
+            session.add(new_color)
 
-                session.add(new_color)
-
-                logging_channel_id = await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildLoggingConfig,
-                    channel_type=ChannelType.LOGGING_ECONOMY,
-                )
-
-        except Exception as e:
-            outcome = "color_create_error"
-
-            logger.exception(
-                "[color/create] Error creating color in guild %s: %s",
-                guild.id,
-                e,
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
             )
+
+    except IntegrityError:
+        outcome = "color_exists"
+
+        logger.warning(
+            "[color/create] Error creating color in guild %s with existing role %s",  # noqa: E501
+            guild.id,
+            role.id,
+        )
+
+    except Exception as e:
+        outcome = "color_create_error"
+
+        logger.exception(
+            "[color/create] Error creating color in guild %s: %s",
+            guild.id,
+            e,
+        )
 
     if outcome == "color_exists":
         return await interaction.response.send_message(

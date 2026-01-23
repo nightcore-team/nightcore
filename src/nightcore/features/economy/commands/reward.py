@@ -9,6 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models.user import User
 from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.services.config import specified_guild_config
@@ -65,7 +66,7 @@ class Reward(Cog):
                 else:
                     coin_name = guild_config.coin_name
 
-                    user.coins += reward_coins
+                    user.coins = User.coins + reward_coins
                     user.reward_time = now
 
                     outcome = "success"

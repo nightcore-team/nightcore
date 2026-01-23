@@ -172,6 +172,15 @@ class CaseDropTypeEnum(Enum):
     CUSTOM = 5
     BATTLEPASS_POINTS = 6
 
+    def to_str(self):
+        match self:
+            case CaseDropTypeEnum.BATTLEPASS_POINTS:
+                return "BP points"
+            case CaseDropTypeEnum.EXP:
+                return "опыт"
+            case _:
+                return self.name
+
     def requires_id(self) -> bool:
         return self == CaseDropTypeEnum.COLOR or self == CaseDropTypeEnum.CASE
 

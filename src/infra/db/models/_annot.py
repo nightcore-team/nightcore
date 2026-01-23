@@ -60,7 +60,7 @@ class CaseDropAnnot(TypedDict):
     """Single drop configuration."""
 
     type: int
-    drop_id: int | None
+    drop_id: int
     name: str
     amount: int
     chance: int
@@ -77,6 +77,6 @@ class BattlepassRewardAnnot(TypedDict):
     """Battlepass reward configuration."""
 
     type: int
-    drop_id: int | None
+    drop_id: int
     name: str
     amount: int

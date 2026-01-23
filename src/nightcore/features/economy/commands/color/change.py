@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
+from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
@@ -87,8 +88,8 @@ async def change_color(
             ephemeral=True,
         )
 
-    async with bot.uow.start() as session:
-        try:
+    try:
+        async with bot.uow.start() as session:
             color = await get_color_by_id(
                 session, guild_id=guild.id, color_id=color_id
             )
@@ -105,20 +106,40 @@ async def change_color(
                 channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
-        except Exception as e:
-            outcome = "color_change_error"
+    except IntegrityError:
+        outcome = "color_exists"
 
-            logger.exception(
-                "[color/change] Error changing color in guild %s: %s",
-                guild.id,
-                e,
-            )
+        logger.warning(
+            "[color/change] Error changing color in guild %s with existing role %s",  # noqa: E501
+            guild.id,
+            new_role.id,
+        )
+
+    except Exception as e:
+        outcome = "color_change_error"
+
+        logger.exception(
+            "[color/change] Error changing color in guild %s: %s",
+            guild.id,
+            e,
+        )
 
     if outcome == "color_not_found":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка изменения цвета",
                 "Выбранный цвет не найден в базе данных.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "color_exists":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка изменения цвета",
+                "К данной роли уже привязан цвет.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

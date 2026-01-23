@@ -7,6 +7,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
+from src.config.config import config
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._annot import CaseDropAnnot
 from src.infra.db.models._enums import (
@@ -93,9 +94,8 @@ async def add_case_reward(
                 ),
                 ephemeral=True,
             )
-
-    async with bot.uow.start() as session:
-        try:
+    try:
+        async with bot.uow.start() as session:
             case = await get_case_by_id(
                 session, guild_id=guild.id, case_id=case_id
             )
@@ -103,12 +103,16 @@ async def add_case_reward(
             if case is None:
                 outcome = "case_not_found"
             else:
-                if len(case.drop) >= 30:
+                if len(case.drop) >= config.bot.CASE_REWARDS_LIMIT:
                     outcome = "max_rewards_achieved"
                 else:
                     new_reward = CaseDropAnnot(
-                        type=reward_type, amount=amount, chance=weight
-                    )  # type: ignore
+                        type=reward_type.value,
+                        drop_id=-1,
+                        amount=amount,
+                        chance=weight,
+                        name=reward_type.to_str(),
+                    )
 
                     match reward_type:
                         case CaseDropTypeEnum.CASE:
@@ -122,7 +126,6 @@ async def add_case_reward(
                                 outcome = "unknown_reward_case_id"
                             else:
                                 new_reward["drop_id"] = case.id
-                                new_reward["name"] = case.name
 
                         case CaseDropTypeEnum.COLOR:
                             color = await get_color_by_id(
@@ -135,13 +138,11 @@ async def add_case_reward(
                                 outcome = "unknown_color_id"
                             else:
                                 new_reward["drop_id"] = color.id
-                                new_reward["name"] = str(color.role_id)
+
                         case CaseDropTypeEnum.CUSTOM:
-                            new_reward["drop_id"] = None
                             new_reward["name"] = reward  # type: ignore
                         case _:
-                            new_reward["drop_id"] = None
-                            new_reward["name"] = reward_type.name
+                            ...
 
                     if not outcome:
                         case.drop.append(new_reward)
@@ -155,14 +156,14 @@ async def add_case_reward(
                             channel_type=ChannelType.LOGGING_ECONOMY,
                         )
 
-        except Exception as e:
-            outcome = "case_change_error"
+    except Exception as e:
+        outcome = "case_change_error"
 
-            logger.exception(
-                "[case/add_reward] Error creating reward in guild %s: %s",
-                guild.id,
-                e,
-            )
+        logger.exception(
+            "[case/add_reward] Error creating reward in guild %s: %s",
+            guild.id,
+            e,
+        )
 
     if outcome == "case_not_found":
         return await interaction.response.send_message(

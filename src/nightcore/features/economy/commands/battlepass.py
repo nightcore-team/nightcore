@@ -12,6 +12,8 @@ from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.operations import (
+    get_case_by_id,
+    get_color_by_id,
     get_guild_battlepass_levels,
     get_or_create_user,
 )
@@ -101,10 +103,32 @@ class Battlepass(Cog):
 
         reward_name = current_level.reward["name"]
         reward_type = current_level.reward["type"]
+        reward_id = current_level.reward["drop_id"]
         reward_amount = current_level.reward["amount"]
 
-        if reward_type == CaseDropTypeEnum.COINS:
-            reward_name = coin_name or "коины"
+        match reward_type:
+            case CaseDropTypeEnum.COINS:
+                reward_name = coin_name or "коины"
+            case CaseDropTypeEnum.CASE:
+                case = await get_case_by_id(
+                    session, guild_id=guild.id, case_id=reward_id
+                )
+
+                reward_name = case.name if case else "unknown"
+            case CaseDropTypeEnum.COLOR:
+                color = await get_color_by_id(
+                    session, guild_id=guild.id, color_id=reward_id
+                )
+
+                if color is None:
+                    reward_name = "unknown"
+                else:
+                    role = guild.get_role(color.role_id)
+
+                    reward_name = role.name if role else "unknown"
+
+            case _:
+                ...
 
         view = BattlepassClaimViewV2(
             bot=bot,

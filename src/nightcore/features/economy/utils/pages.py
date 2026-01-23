@@ -69,7 +69,6 @@ def build_transfer_history_pages(
 
 def build_cases_help_pages(
     cases: Sequence[Case],
-    coin_name: str | None = None,
 ) -> list[list[TextDisplay[Any]]]:
     """Build paginated pages for case help command."""
 
@@ -87,7 +86,7 @@ def build_cases_help_pages(
             page.append(
                 TextDisplay(
                     "\n".join(
-                        f"> {drop['amount']} {coin_name if drop['type'] == CaseDropTypeEnum.COINS else drop['name']} "  # noqa: E501
+                        f"> {drop['amount']} {drop['name']} "
                         f"- шанс **`{drop['chance']}%`**"
                         for drop in case.drop
                     )
