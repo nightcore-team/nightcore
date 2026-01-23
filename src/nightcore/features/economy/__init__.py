@@ -11,19 +11,38 @@ from ._groups import remove as remove_group
 from ._groups import temp as temp_group
 
 # SIDE-EFFECT IMPORTS
-from .commands.case import help, open
+from .commands.case import (
+    add_reward,
+    delete_reward,
+    help,
+    open,
+)
+from .commands.case import (
+    change as case_change,
+)
+from .commands.case import (
+    create as case_create,
+)
 from .commands.casino import roulette
+from .commands.color import change as color_change
+from .commands.color import create as color_create
 from .commands.give import bp_exp, case, clanexp, clanrep, coins, color, exp
 from .commands.remove import color as remove_color
 from .commands.temp import multiplier, role
 
 __all__ = (
+    "add_reward",
     "bp_exp",
     "case",
+    "case_change",
+    "case_create",
     "clanexp",
     "clanrep",
     "coins",
     "color",
+    "color_change",
+    "color_create",
+    "delete_reward",
     "exp",
     "help",
     "multiplier",
