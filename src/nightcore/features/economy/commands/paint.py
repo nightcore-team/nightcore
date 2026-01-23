@@ -35,8 +35,8 @@ class Paint(Cog):
         self.bot = bot
 
     @app_commands.command(name="paint", description="Применить на себя цвет")  # type: ignore
-    @app_commands.autocomplete(color=user_colors_autocomplete)
-    @app_commands.describe(color="Цвет, который вы хотите применить")
+    @app_commands.autocomplete(color_id=user_colors_autocomplete)
+    @app_commands.describe(color_id="Цвет, который вы хотите применить")
     @app_commands.rename(color_id="color")
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     @app_commands.guild_only()
