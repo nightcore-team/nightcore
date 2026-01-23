@@ -220,7 +220,7 @@ async def get_or_create_user(
 
     if with_relations:
         get_stmt = get_stmt.options(
-            selectinload(User.cases).selectinload(User.colors)
+            selectinload(User.cases), selectinload(User.colors)
         )
 
     user = await session.scalar(get_stmt)
@@ -1146,10 +1146,11 @@ async def get_color_by_id(
     stmt = select(Color).where(
         Color.guild_id == guild_id, Color.id == color_id
     )
-    
+
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
+
 
 async def get_casino_game_by_message_id(
     session: AsyncSession,
