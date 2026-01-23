@@ -159,10 +159,6 @@ class CaseHelpViewV2(LayoutView):
             for item in self.pages[0]:
                 container.add_item(item)
 
-            container.add_item(Separator[Self]())
-
-        self._update_buttons()
-
         container.add_item(Separator())
 
         now = datetime.now(UTC)
@@ -173,6 +169,8 @@ class CaseHelpViewV2(LayoutView):
                 f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
             )
         )
+
+        self._update_buttons()
 
         self.add_item(container)
 
