@@ -119,12 +119,6 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     economy_shop_items: Mapped[dict[str, int]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
-    last_roulette_games: Mapped[list[str]] = mapped_column(
-        ARRAY(String),
-        nullable=False,
-        default=list,
-        server_default=text("'{}'::text[]"),
-    )
     casino_multiplayer_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )

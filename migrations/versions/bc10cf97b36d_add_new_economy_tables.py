@@ -54,7 +54,14 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('guild_id', 'user_id', 'case_id'),
         sa.UniqueConstraint('case_id', 'user_id', 'guild_id', name='ux_user_case_guild_user')
     )
-    op.add_column('guildeconomyconfig', sa.Column('last_roulette_games', sa.ARRAY(sa.String()), server_default=sa.text("'{}'::text[]"), nullable=False))
+    op.create_table("battlepasslevel",
+        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column('guild_id', sa.BigInteger(), nullable=False),
+        sa.Column('level', sa.Integer(), nullable=False),
+        sa.Column('exp_required', sa.Integer(), nullable=False),
+        sa.Column('reward', sa.JSON(), server_default=sa.text("'[]'::json"), nullable=False),
+        sa.UniqueConstraint("level", "guild_id",  name='ux_level_guild_battlepasslevel')
+    )
     op.drop_column('guildeconomyconfig', 'drop_from_coins_case')
     op.drop_column('guildeconomyconfig', 'battlepass_rewards')
     op.drop_column('guildeconomyconfig', 'colors')
@@ -71,7 +78,6 @@ def downgrade() -> None:
     op.add_column('guildeconomyconfig', sa.Column('colors', postgresql.JSON(astext_type=sa.Text()), server_default=sa.text("'{}'::json"), autoincrement=False, nullable=False))
     op.add_column('guildeconomyconfig', sa.Column('battlepass_rewards', postgresql.JSON(astext_type=sa.Text()), server_default=sa.text("'[]'::json"), autoincrement=False, nullable=False))
     op.add_column('guildeconomyconfig', sa.Column('drop_from_coins_case', postgresql.JSON(astext_type=sa.Text()), server_default=sa.text("'{}'::json"), autoincrement=False, nullable=False))
-    op.drop_column('guildeconomyconfig', 'last_roulette_games')
     op.drop_table('usercase')
     op.drop_table('user_colors')
     op.drop_table('color')

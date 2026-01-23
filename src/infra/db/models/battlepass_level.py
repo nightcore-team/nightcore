@@ -3,9 +3,9 @@
 from sqlalchemy import JSON, BigInteger, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models import Base
 from src.infra.db.models._annot import BattlepassRewardAnnot
 from src.infra.db.models._mixins import IdIntegerMixin
+from src.infra.db.models.base import Base
 
 
 class BattlepassLevel(IdIntegerMixin, Base):
