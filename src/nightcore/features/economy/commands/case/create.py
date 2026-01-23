@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def create_case(
     interaction: Interaction["Nightcore"],
-    case_name: app_commands.Range[str, 100],
+    case_name: app_commands.Range[str, 5, 100],
 ):
     """Create case."""
 
@@ -102,7 +102,7 @@ async def create_case(
         )
 
     item = ChangedCase(
-        after=new_case,  # type: ignore
+        after_name=new_case.name,  # type: ignore
     )
 
     dto = ItemChangeNotifyEventDTO(

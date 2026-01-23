@@ -12,18 +12,11 @@ class StrToIntTransformer(Transformer):
     ) -> int:
         """Converts a string parameter to integer for Discord slash command."""
 
-        param_name = ""
-
-        if interaction.data is not None:
-            for option in interaction.data.get("options", []):
-                if option["value"] == value:  # type: ignore
-                    param_name = option["name"]
-
         try:
             res = int(value)
         except ValueError as e:
             raise TransformStrToIntError(
-                f"Ожидался тип int в параметре {param_name}"
+                "Ожидалось число в параметре с автокомплитом"
             ) from e
 
         return res
