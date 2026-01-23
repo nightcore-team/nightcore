@@ -90,16 +90,16 @@ async def format_cases_rewards(
     for case in cases:
         for drop in case.drop:
             match drop["type"]:
-                case CaseDropTypeEnum.COINS:
+                case CaseDropTypeEnum.COINS.value:
                     drop["name"] = coin_name
-                case CaseDropTypeEnum.CASE:
+                case CaseDropTypeEnum.CASE.value:
                     index = drop["drop_id"]
 
                     if len(cases) >= index:
                         drop["name"] = "unknown"
                     else:
                         drop["name"] = cases[index]  # type: ignore
-                case CaseDropTypeEnum.COLOR:
+                case CaseDropTypeEnum.COLOR.value:
                     color = await get_color_by_id(
                         session, guild_id=guild.id, color_id=drop["drop_id"]
                     )
@@ -124,7 +124,7 @@ async def format_battlepass_levels_rewards(
 
     for level in levels:
         match level.reward["type"]:
-            case CaseDropTypeEnum.COINS:
+            case CaseDropTypeEnum.COINS.value:
                 level.reward["name"] = coin_name
             case CaseDropTypeEnum.CASE:
                 case = await get_case_by_id(
@@ -132,7 +132,7 @@ async def format_battlepass_levels_rewards(
                 )
 
                 level.reward["name"] = case.name if case else "unknown"
-            case CaseDropTypeEnum.COLOR:
+            case CaseDropTypeEnum.COLOR.value:
                 color = await get_color_by_id(
                     session,
                     guild_id=guild.id,

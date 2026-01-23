@@ -107,15 +107,15 @@ class Battlepass(Cog):
         reward_amount = current_level.reward["amount"]
 
         match reward_type:
-            case CaseDropTypeEnum.COINS:
+            case CaseDropTypeEnum.COINS.value:
                 reward_name = coin_name or "коины"
-            case CaseDropTypeEnum.CASE:
+            case CaseDropTypeEnum.CASE.value:
                 case = await get_case_by_id(
                     session, guild_id=guild.id, case_id=reward_id
                 )
 
                 reward_name = case.name if case else "unknown"
-            case CaseDropTypeEnum.COLOR:
+            case CaseDropTypeEnum.COLOR.value:
                 color = await get_color_by_id(
                     session, guild_id=guild.id, color_id=reward_id
                 )

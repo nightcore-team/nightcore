@@ -7,9 +7,11 @@ from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
+from src.infra.db.models._enums import CaseDropTypeEnum, ChannelType
+from src.infra.db.models.guild import GuildEconomyConfig
 from src.infra.db.operations import (
     get_case_by_id,
+    get_color_by_id,
     get_or_create_user,
     get_specified_channel,
 )
@@ -25,6 +27,7 @@ from src.nightcore.features.economy.utils.case import (
     RewardOutcomeEnum,
     give_reward_by_type,
 )
+from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -58,7 +61,9 @@ async def open_case(
     logging_channel_id = None
 
     try:
-        async with bot.uow.start() as session:
+        async with specified_guild_config(
+            bot, guild.id, config_type=GuildEconomyConfig
+        ) as (guild_config, session):
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
@@ -95,6 +100,40 @@ async def open_case(
                         result = await give_reward_by_type(
                             session, reward=reward, user=user
                         )
+
+                        match reward["type"]:
+                            case CaseDropTypeEnum.COINS.value:
+                                reward["name"] = (
+                                    guild_config.coin_name or "коины"
+                                )
+                            case CaseDropTypeEnum.CASE.value:
+                                case = await get_case_by_id(
+                                    session,
+                                    guild_id=guild.id,
+                                    case_id=reward["drop_id"],
+                                )
+
+                                reward["name"] = (
+                                    case.name if case else "unknown"
+                                )
+                            case CaseDropTypeEnum.COLOR.value:
+                                color = await get_color_by_id(
+                                    session,
+                                    guild_id=guild.id,
+                                    color_id=reward["drop_id"],
+                                )
+
+                                if color is None:
+                                    reward["name"] = "unknown"
+                                else:
+                                    role = guild.get_role(color.role_id)
+
+                                    reward["name"] = (
+                                        role.name if role else "unknown"
+                                    )
+
+                            case _:
+                                ...
 
                         reward_text = reward["name"]
 
