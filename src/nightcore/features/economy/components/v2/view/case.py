@@ -154,7 +154,7 @@ class CaseHelpViewV2(LayoutView):
             container.add_item(Separator[Self]())
 
             self.pagination = CaseHelpPaginationActionRow()
-            self.add_item(self.pagination)
+            container.add_item(self.pagination)
         else:
             for item in self.pages[0]:
                 container.add_item(item)
