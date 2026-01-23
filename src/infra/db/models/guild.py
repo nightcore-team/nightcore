@@ -124,6 +124,7 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         nullable=False,
         default=list,
         server_default=text("'{}'::text[]"),
+    )
     casino_multiplayer_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
