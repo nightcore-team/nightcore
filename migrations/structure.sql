@@ -1,0 +1,55 @@
+CREATE OR REPLACE FUNCTION handle_battlepass_level_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE battlepass_level
+    SET level = level - 1
+    WHERE guild_id = OLD.guild_id AND level > OLD.level FOR UPDATE;
+    
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION handle_battlepass_level_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.level IS NULL THEN
+
+        SELECT COALESCE(MAX(level), 0) INTO max_level 
+        FROM battlepass_level 
+        WHERE guild_id = NEW.guild_id FOR UPDATE;
+
+       NEW.level := max_level + 1
+    ELSE
+       UPDATE battlepass_level
+       SET level = level + 1
+       WHERE guild_id = NEW.guild_id AND level >= NEW.level;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION handle_user_case_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.amount < 1 THEN
+        DELETE FROM usercase WHERE id = NEW.id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER user_case_update
+BEFORE UPDATE ON usercase
+FOR EACH ROW
+EXECUTE FUNCTION handle_user_case_update();
+
+CREATE TRIGGER battlepass_level_delete
+AFTER DELETE ON battlepass_level
+FOR EACH ROW
+EXECUTE FUNCTION handle_battlepass_level_delete();
+
+CREATE TRIGGER battlepass_level_insert
+BEFORE INSERT ON battlepass_level
+FOR EACH ROW
+EXECUTE FUNCTION handle_battlepass_level_insert();

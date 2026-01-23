@@ -5,11 +5,14 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
-from sqlalchemy.orm import attributes
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.operations import (
+    get_color_by_id,
+    get_or_create_user,
+    get_specified_channel,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -18,12 +21,14 @@ from src.nightcore.features.economy._groups import remove as remove_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
-from src.nightcore.features.economy.utils import all_colors_autocomplete
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.economy.utils.autocomplete import (
+    user_colors_autocomplete,
+)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -38,33 +43,19 @@ logger = logging.getLogger(__name__)
     color="Цвет для удаления",
     reason="Причина удаления цвета (необязательно)",
 )
-@app_commands.autocomplete(color=all_colors_autocomplete)
+@app_commands.autocomplete(color=user_colors_autocomplete)
+@app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def remove_color(
     interaction: Interaction["Nightcore"],
     user: User,
-    color: str,
+    color_id: app_commands.Transform[int, StrToIntTransformer],
     reason: str | None = None,
 ):
     """Give a color to user."""
 
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
-
-    try:
-        role_name, role_id, _color = color.split(",")
-        role_id = int(role_id)
-    except Exception as e:
-        logger.error("[remove/color] Error parsing color: %s", e)
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка удаления цвета",
-                "Не удалось определить цвет.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
 
     outcome = ""
 
@@ -79,10 +70,7 @@ async def remove_color(
             ephemeral=True,
         )
 
-    async with specified_guild_config(bot, guild.id, GuildEconomyConfig) as (
-        guild_config,
-        session,
-    ):
+    async with bot.uow.start() as session:
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,
@@ -96,15 +84,15 @@ async def remove_color(
                 guild_id=guild.id,
                 user_id=user.id,
             )
-            drop_from_colors = guild_config.drop_from_colors_case or {}
-            color_drop = drop_from_colors.get(_color)
+            color = await get_color_by_id(
+                session, guild_id=guild.id, color_id=color_id
+            )
 
-            if not color_drop:
+            if color is None:
                 outcome = "unknown_color"
             else:
-                if _color in user_record.inventory["colors"]:
-                    user_record.inventory["colors"].remove(_color)
-                    attributes.flag_modified(user_record, "inventory")
+                if color in user_record.colors:
+                    user_record.colors.remove(color)
 
                     outcome = "success"
                 else:
@@ -136,7 +124,7 @@ async def remove_color(
         await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Удаление цвета успешно",
-                f"Вы успешно удалили пользователю <@{user.id}> цвет <@&{role_id}>.",  # noqa: E501
+                f"Вы успешно удалили пользователю <@{user.id}> цвет <@&{color.role_id}>.",  # noqa: E501 # type: ignore
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -151,7 +139,7 @@ async def remove_color(
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=f"{role_name} ({role_id})",
+                item_name=f"<@&{color.role_id}> ({color.role_id})",  # type: ignore
                 amount=-1,
                 reason=reason,
             ),

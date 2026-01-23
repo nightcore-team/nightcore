@@ -4,14 +4,12 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any, TypeVar, cast
 
-from async_lru import alru_cache
-from sqlalchemy import exists, extract, func, select, update
+from sqlalchemy import asc, exists, extract, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.config.config import config
-from src.infra.cache.async_lru import alru_invalidator
 from src.infra.db.models import (
     CasinoBet,
     CasinoGame,
@@ -57,6 +55,9 @@ from src.infra.db.models._enums import (
     RoleRequestStateEnum,
     TicketStateEnum,
 )
+from src.infra.db.models.battlepass_level import BattlepassLevel
+from src.infra.db.models.case import Case
+from src.infra.db.models.color import Color
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
@@ -206,32 +207,40 @@ async def is_user_ticketbanned(
 
 
 async def get_or_create_user(
-    session: AsyncSession, *, guild_id: int, user_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    with_relations: bool = False,
 ) -> tuple[User, bool]:
     """Get or create a user in the database."""
-    user = await session.scalar(
-        select(User).where(User.guild_id == guild_id, User.user_id == user_id)
+    get_stmt = select(User).where(
+        User.guild_id == guild_id, User.user_id == user_id
     )
+
+    if with_relations:
+        get_stmt = get_stmt.options(
+            selectinload(User.cases).selectinload(User.colors)
+        )
+
+    user = await session.scalar(get_stmt)
 
     if user is not None:
         return user, False
 
-    stmt = (
+    insert_stmt = (
         insert(User)
         .values(guild_id=guild_id, user_id=user_id)
         .on_conflict_do_nothing(constraint="ux_user_guild_user")
         .returning(User)
     )
-    result = await session.execute(stmt)
+
+    result = await session.execute(insert_stmt)
     user = result.scalar_one_or_none()
 
     # race condition: between select and insert
     if user is None:
-        user = await session.scalar(
-            select(User).where(
-                User.guild_id == guild_id, User.user_id == user_id
-            )
-        )
+        user = await session.scalar(get_stmt)
         return user, False  # type: ignore
 
     return user, True
@@ -285,7 +294,6 @@ async def create_punish(
         original_duration=original_duration,
     )
     session.add(punish)
-    alru_invalidator(get_user_infractions, guild_id=guild_id, user_id=user_id)
     return punish
 
 
@@ -607,7 +615,6 @@ async def get_fraction_roles(
     return list(result.keys()) if result else []
 
 
-@alru_cache()
 async def get_user_infractions(
     session: AsyncSession, *, guild_id: int, user_id: int
 ) -> Sequence[Punish]:
@@ -1132,6 +1139,18 @@ async def get_custom_component_by_id(
     return result.scalar_one_or_none()
 
 
+async def get_color_by_id(
+    session: AsyncSession, *, guild_id: int, color_id: int
+) -> Color | None:
+    """Get a color by id for a guild."""
+    stmt = select(Color).where(
+        Color.guild_id == guild_id, Color.id == color_id
+    )
+    
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
 async def get_casino_game_by_message_id(
     session: AsyncSession,
     *,
@@ -1152,6 +1171,68 @@ async def get_casino_game_by_message_id(
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
+
+
+async def get_guild_colors(
+    session: AsyncSession, *, guild_id: int
+) -> Sequence[Color]:
+    """Get colors by guild id."""
+
+    stmt = select(Color).where(Color.guild_id == guild_id)
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_guild_cases(
+    session: AsyncSession, *, guild_id: int
+) -> Sequence[Case]:
+    """Get cases by guild id."""
+    stmt = select(Case).where(Case.guild_id == guild_id).order_by(asc(Case.id))
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_case_by_id(
+    session: AsyncSession, *, guild_id: int, case_id: int
+) -> Case | None:
+    """Get a color by id for a guild."""
+    stmt = select(Case).where(Case.guild_id == guild_id, Case.id == case_id)
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_battlepass_level(
+    session: AsyncSession, *, guild_id: int, level: int
+) -> BattlepassLevel | None:
+    """Get a battlepass level by level num for a guild."""
+    stmt = select(BattlepassLevel).where(
+        BattlepassLevel.guild_id == guild_id, BattlepassLevel.level == level
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_guild_battlepass_levels(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+) -> Sequence[BattlepassLevel]:
+    """Get battlepass levels for a guild."""
+
+    stmt = (
+        select(BattlepassLevel)
+        .where(BattlepassLevel.guild_id == guild_id)
+        .order_by(asc(BattlepassLevel.level))
+    )
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
 
 
 async def get_user_casino_bet_by_game_id(

@@ -25,3 +25,9 @@ class CommandDontHavePermissionsFlagError(Exception):
     def __init__(self, command_name: str):
         self.command_name = command_name
         super().__init__(f"{command_name}")
+
+
+class TransformStrToIntError(Exception):
+    def __init__(self, msg: str) -> None:
+        self.msg = msg
+        super().__init__(msg)

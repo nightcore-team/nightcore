@@ -10,8 +10,14 @@ from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_user
-from src.nightcore.features.battlepass.utils.pages import (
+from src.infra.db.operations import (
+    get_guild_battlepass_levels,
+    get_or_create_user,
+)
+from src.nightcore.features.economy.utils.case import (
+    format_battlepass_levels_rewards,
+)
+from src.nightcore.features.economy.utils.pages import (
     build_battlepass_levels_pages,
 )
 from src.nightcore.services.config import specified_guild_config
@@ -40,16 +46,25 @@ async def handle_battlepass_info_button(
             user_id=interaction.user.id,
         )
 
-        coin_name = guild_config.coin_name
+        coin_name = (
+            guild_config.coin_name if guild_config.coin_name else "коины"
+        )
         user_level = user_record.battle_pass_level
 
-        battlepass_rewards = guild_config.battlepass_rewards or []
+        battlepass_levels = await get_guild_battlepass_levels(
+            session, guild_id=guild.id
+        )
+
+        await format_battlepass_levels_rewards(
+            session, levels=battlepass_levels, coin_name=coin_name, guild=guild
+        )
+
         total_bp_points = sum(
-            [level["exp_required"] for level in battlepass_rewards]
+            [level.exp_required for level in battlepass_levels]
         )
 
     pages = build_battlepass_levels_pages(
-        levels=battlepass_rewards,
+        levels=battlepass_levels,
         coin_name=coin_name,
         current_user_level=user_level,
         is_v2=True,
@@ -58,7 +73,7 @@ async def handle_battlepass_info_button(
     _view = view(
         bot=bot,
         user_level=user_level,
-        total_bp_levels=len(battlepass_rewards),
+        total_bp_levels=len(battlepass_levels),
         total_bp_points=total_bp_points,
         pages=pages,
     )

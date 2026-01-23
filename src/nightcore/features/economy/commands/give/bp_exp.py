@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_or_create_user, get_specified_channel
 from src.nightcore.components.embed import (
@@ -17,7 +17,6 @@ from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -63,9 +62,7 @@ async def give_bp_exp(
             ephemeral=True,
         )
 
-    async with specified_guild_config(
-        bot, guild_id=guild.id, config_type=GuildEconomyConfig
-    ) as (_, session):
+    async with bot.uow.start() as session:
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,

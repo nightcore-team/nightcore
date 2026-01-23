@@ -5,16 +5,16 @@ from typing import TYPE_CHECKING
 
 from discord.interactions import Interaction
 
-from src.nightcore.features.battlepass.components.v2.view.claim import (
+from src.nightcore.features.economy.components.v2.view.battlepass.claim import (  # noqa: E501
     BattlepassClaimViewV2,
 )
-from src.nightcore.features.battlepass.components.v2.view.handlers.claim import (  # noqa: E501
+from src.nightcore.features.economy.components.v2.view.battlepass.handlers.claim import (  # noqa: E501
     handle_battlepass_claim_reward_button,
 )
-from src.nightcore.features.battlepass.components.v2.view.handlers.info import (  # noqa: E501
+from src.nightcore.features.economy.components.v2.view.battlepass.handlers.info import (  # noqa: E501
     handle_battlepass_info_button,
 )
-from src.nightcore.features.battlepass.components.v2.view.info import (
+from src.nightcore.features.economy.components.v2.view.battlepass.info import (
     BattlepassInfoViewV2,
 )
 from src.nightcore.features.economy.components.v2.view.handlers.roulette import (  # noqa: E501

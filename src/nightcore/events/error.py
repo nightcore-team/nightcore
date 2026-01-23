@@ -21,6 +21,7 @@ from src.nightcore.exceptions import (
     ConfigMissingButCreatingError,
     ConfigMissingError,
     FieldNotConfiguredError,
+    TransformStrToIntError,
 )
 from src.nightcore.features.config.exceptions import (
     LevelRolesParsingError,
@@ -286,6 +287,34 @@ async def setup(bot: "Nightcore") -> None:
                     embed=ErrorEmbed(
                         "Нужный параметр не настроен.",
                         f"{original}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            return
+
+        if isinstance(original, TransformStrToIntError):
+            logger.warning(
+                "%s handled guild=%s user=%s msg=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+                original.msg,
+            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    embed=ValidationErrorEmbed(
+                        f"{original.__class__.__name__}: {original.msg}",
+                        interaction.client.user.name,  # type: ignore
+                        interaction.client.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.followup.send(
+                    embed=ValidationErrorEmbed(
+                        f"{original.__class__.__name__}: {original.msg}",
                         interaction.client.user.name,  # type: ignore
                         interaction.client.user.display_avatar.url,  # type: ignore
                     ),

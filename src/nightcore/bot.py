@@ -12,12 +12,9 @@ import discord
 from aiohttp import TCPConnector
 from discord import Guild, app_commands
 from discord.ext.commands import Bot  # type: ignore
+from nightforo import Client as XenforoClient
 
 from src.config.config import config
-from src.infra.api.forum.client import ForumAPIClient
-from src.infra.api.httpx_client import HttpxAPIClient
-from src.infra.api.unsplash.client import UnsplashAPIClient
-from src.infra.cache.photo import PhotoCache
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
@@ -47,28 +44,9 @@ class CustomAPICollection:
         pass
 
     @property
-    def forum(self) -> ForumAPIClient:
+    def forum(self) -> XenforoClient:
         """Get the Forum API client."""
-        return ForumAPIClient(
-            client=HttpxAPIClient(
-                base_url=config.forum.FORUM_API_URL,
-                default_headers={
-                    "XF-Api-Key": config.forum.FORUM_API_KEY,
-                },
-            )
-        )
-
-    @property
-    def unsplash(self) -> UnsplashAPIClient:
-        """Get the Unsplash API client."""
-        return UnsplashAPIClient(
-            HttpxAPIClient(
-                base_url=config.unsplash.UNSPLASH_API_URL,
-                default_headers={
-                    "Authorization": f"Client-ID {config.unsplash.UNSPLASH_ACCESS_KEY}",  # noqa: E501
-                },
-            )
-        )
+        return XenforoClient(api_key=config.forum.FORUM_API_KEY)
 
 
 class GuildOnlyTree(app_commands.CommandTree):
@@ -96,7 +74,6 @@ class Nightcore(Bot):
         self.cog_modules = cog_modules
         self.uow = uow
         self.apis = CustomAPICollection()
-        self.photo_cache = PhotoCache(default_ttl_seconds=300)
 
         super().__init__(
             command_prefix=".",
