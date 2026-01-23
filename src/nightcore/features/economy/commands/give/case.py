@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
     amount="Количество кейсов для выдачи.",
     reason="Причина выдачи кейса (необязательно).",
 )
-@app_commands.autocomplete(case_name=guild_cases_autocomplete)
+@app_commands.autocomplete(case_id=guild_cases_autocomplete)
 @app_commands.rename(case_id="case")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_case(

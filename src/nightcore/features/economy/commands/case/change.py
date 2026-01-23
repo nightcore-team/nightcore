@@ -19,6 +19,9 @@ from src.nightcore.features.economy.events.dto.item_change import (
     ChangedCase,
     ItemChangeNotifyEventDTO,
 )
+from src.nightcore.features.economy.utils.autocomplete import (
+    guild_cases_autocomplete,
+)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -34,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 @case_group.command(name="change", description="Изменить кейс")  # type: ignore
 @app_commands.rename(case_id="case")
+@app_commands.autocomplete(case_id=guild_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def change_case(
     interaction: Interaction["Nightcore"],

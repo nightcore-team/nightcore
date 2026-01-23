@@ -25,6 +25,9 @@ from src.nightcore.features.economy.events.dto.item_change import (
     ChangedReward,
     ItemChangeNotifyEventDTO,
 )
+from src.nightcore.features.economy.utils.autocomplete import (
+    guild_cases_autocomplete,
+)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -43,6 +46,7 @@ logger = logging.getLogger(__name__)
 )  # type: ignore
 @app_commands.describe(num="Порядковый номер награды")
 @app_commands.rename(case_id="case")
+@app_commands.autocomplete(case_id=guild_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def delete_case_reward(
     interaction: Interaction["Nightcore"],

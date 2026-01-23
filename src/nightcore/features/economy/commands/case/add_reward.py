@@ -31,6 +31,7 @@ from src.nightcore.features.economy.events.dto.item_change import (
     ItemChangeNotifyEventDTO,
 )
 from src.nightcore.features.economy.utils.autocomplete import (
+    guild_cases_autocomplete,
     reward_depends_on_type_autocomplete,
 )
 from src.nightcore.utils.permissions import (
@@ -54,7 +55,10 @@ logger = logging.getLogger(__name__)
     reward="Выбор кейса / цвета / ввод текста, в зависимости от типа награды",
 )
 @app_commands.rename(case_id="case")
-@app_commands.autocomplete(reward=reward_depends_on_type_autocomplete)
+@app_commands.autocomplete(
+    reward=reward_depends_on_type_autocomplete,
+    case_id=guild_cases_autocomplete,
+)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def add_case_reward(
     interaction: Interaction["Nightcore"],

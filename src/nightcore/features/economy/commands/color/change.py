@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 @color_group.command(name="change", description="Изменить цвет")  # type: ignore
-@app_commands.autocomplete(color=guild_colors_autocomplete)
+@app_commands.autocomplete(color_id=guild_colors_autocomplete)
 @app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def change_color(
