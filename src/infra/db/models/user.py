@@ -1,8 +1,7 @@
 """User model for the Nightcore bot database."""
 
 from datetime import datetime
-
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -27,7 +26,7 @@ user_colors = Table(
     Column(
         "guild_id", Integer, ForeignKey("user.guild_id", ondelete="CASCADE")
     ),
-    Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("user_id", Integer, ForeignKey("user.user_id", ondelete="CASCADE")),
     Column("color_id", Integer, ForeignKey("color.id", ondelete="CASCADE")),
     PrimaryKeyConstraint("user_id", "color_id", "guild_id"),
 )
@@ -113,7 +112,7 @@ class UserCase(Base):
         ForeignKey("user.guild_id", ondelete="CASCADE"), primary_key=True
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("user.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("user.user_id", ondelete="CASCADE"), primary_key=True
     )
     case_id: Mapped[int] = mapped_column(
         ForeignKey("case.id", ondelete="CASCADE"), primary_key=True

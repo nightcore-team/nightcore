@@ -42,7 +42,7 @@ def upgrade() -> None:
     sa.Column('color_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['color_id'], ['color.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['guild_id'], ['user.guild_id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'color_id', 'guild_id')
     )
     op.create_table('usercase',
@@ -52,7 +52,7 @@ def upgrade() -> None:
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['case_id'], ['case.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['guild_id'], ['user.guild_id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('guild_id', 'user_id', 'case_id'),
     sa.UniqueConstraint('case_id', 'user_id', 'guild_id', name='ux_user_case_guild_user')
     )
