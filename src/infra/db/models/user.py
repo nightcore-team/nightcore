@@ -82,7 +82,7 @@ class User(IdIntegerMixin, Base):
     colors: Mapped[list[Color]] = relationship(
         lazy="selectin",
         secondary=user_colors,
-        cascade="all, delete-orphan",
+        cascade="save-update, merge",
         passive_deletes=True,
     )
     casino_bets: Mapped[list["CasinoBet"]] = relationship(
