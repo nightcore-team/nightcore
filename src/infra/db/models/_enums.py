@@ -94,6 +94,7 @@ class ChangeStatTypeEnum(Enum):
     TICKET = "ticket"
     ROLE_REMOVE = "role_remove"
     ROLE_ACCEPT = "role_accept"
+    NOTIFY = "notify"
 
 
 class ComponentTypeEnum(Enum):
@@ -199,3 +200,21 @@ class ItemChangeActionEnum(StrEnum):
     DELETE_REWARD = "3"
     ADD_REWARD = "4"
     CASE_UPDATE = "5"
+
+class CasinoGameTypeEnum(Enum):
+    ROULETTE = "roulette"
+
+
+class CasinoPlayersTypeEnum(Enum):
+    SINGLE = "single"
+    MULTIPLAYER = "multiplayer"
+
+
+class CasinoGameStateEnum(Enum):
+    PENDING = "pending"
+    FINISHED = "finished"
+
+
+class CasinoBetResultTypeEnum(Enum):
+    WIN = "win"
+    LOSE = "lose"

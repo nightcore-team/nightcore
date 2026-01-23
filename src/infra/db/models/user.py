@@ -1,7 +1,8 @@
 """User model for the Nightcore bot database."""
 
 from datetime import datetime
-from typing import Optional
+
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -30,6 +31,9 @@ user_colors = Table(
     Column("color_id", Integer, ForeignKey("color.id", ondelete="CASCADE")),
     PrimaryKeyConstraint("user_id", "color_id", "guild_id"),
 )
+
+if TYPE_CHECKING:
+    from src.infra.db.models.casino import CasinoBet
 
 
 class User(IdIntegerMixin, Base):
@@ -77,6 +81,12 @@ class User(IdIntegerMixin, Base):
         secondary=user_colors,
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+    casino_bets: Mapped[list["CasinoBet"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
 
     def get_case(self, case_id: int) -> Optional["UserCase"]:

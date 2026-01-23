@@ -8,6 +8,11 @@ import random
 from typing import Literal
 
 RouletteColor = Literal["red", "black", "green"]
+COLORS = {
+    "red": "🔴",
+    "black": "⚫",
+    "green": "🟢",
+}
 
 
 class RouletteResult:
@@ -16,9 +21,9 @@ class RouletteResult:
     def __init__(
         self,
         number: int,
-        color: RouletteColor,
+        color: str,
         bet: int,
-        selected_color: RouletteColor,
+        selected_color: str,
     ):
         self.number = number
         self.color = color
@@ -47,20 +52,12 @@ class RouletteResult:
     @property
     def color_emoji(self) -> str:
         """Get color emoji."""
-        if self.color == "green":
-            return "🟢"
-        elif self.color == "red":
-            return "🔴"
-        return "⚫"
+        return COLORS[self.color]
 
     @property
     def selected_color_emoji(self) -> str:
         """Get selected color emoji."""
-        if self.selected_color == "green":
-            return "🟢"
-        elif self.selected_color == "red":
-            return "🔴"
-        return "⚫"
+        return COLORS[self.selected_color]
 
     def __str__(self) -> str:
         """String representation."""

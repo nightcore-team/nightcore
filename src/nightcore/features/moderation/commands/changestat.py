@@ -60,6 +60,7 @@ class ChangeStat(Cog):
             app_commands.Choice(name="Ticketban", value="ticketban"),
             app_commands.Choice(name="Role Remove", value="role_remove"),
             app_commands.Choice(name="Role Accept", value="role_accept"),
+            app_commands.Choice(name="Notify", value="notify"),
         ]
     )
     @app_commands.guild_only()

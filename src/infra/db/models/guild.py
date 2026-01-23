@@ -124,6 +124,8 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         nullable=False,
         default=list,
         server_default=text("'{}'::text[]"),
+    casino_multiplayer_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
     )
 
 
@@ -264,6 +266,9 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
         Float, nullable=False, default=0.0, server_default=text("0.0")
     )
     message_score: Mapped[float | None] = mapped_column(
+        Float, nullable=False, default=0.0, server_default=text("0.0")
+    )
+    notification_score: Mapped[float | None] = mapped_column(
         Float, nullable=False, default=0.0, server_default=text("0.0")
     )
 

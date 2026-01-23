@@ -65,7 +65,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
         super().__init__(
             placeholder="Выберите части профиля",
             min_values=1,
-            max_values=8,
+            max_values=10,
             custom_id="preparenotify:select",
             options=[
                 SelectOption(label="Аватар", value="аватар"),
@@ -76,6 +76,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 SelectOption(label="Никнейм", value="никнейм"),
                 SelectOption(label="Тег гильдии", value="тег гильдии"),
                 SelectOption(label="Персональная роль", value="перс. роль"),
+                SelectOption(label="Местоимение", value="местоимение"),
+                SelectOption(label="Интеграции", value="интеграции"),
             ],
         )
 
@@ -161,7 +163,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
             rules_channel_id=rules_channel,
             create_ticket_channel_id=create_ticket_channel_id,
             content=view.content,
-            profile_part=values[0],
+            profile_parts=values,
             end_time=view.end_time,
             _build=True,
         )
@@ -333,7 +335,7 @@ class NotifyViewV2(LayoutView):
         rules_channel_id: int | None = None,
         create_ticket_channel_id: int | None = None,
         content: str | None = None,
-        profile_part: str | None = None,
+        profile_parts: list[str] | None = None,
         end_time: datetime | None = None,
         _build: bool = False,
     ) -> None:
@@ -345,7 +347,7 @@ class NotifyViewV2(LayoutView):
         self.moderator_id = moderator_id
         self.rules_channel_id = rules_channel_id
         self.content = content
-        self.profile_part = profile_part
+        self.profile_parts = profile_parts
         self.end_time = end_time
         self.create_ticket_channel_id = create_ticket_channel_id
 
@@ -413,7 +415,7 @@ class NotifyViewV2(LayoutView):
                             self.moderator_id = extract_str_by_pattern(
                                 item.content, r"<@!?(\d+)>"
                             )
-                            self.profile_part = extract_str_by_pattern(
+                            self.profile_parts = extract_str_by_pattern(
                                 item.content, r"\*\*`(.*?)`\*\*"
                             )
                         case 6:
@@ -457,10 +459,17 @@ class NotifyViewV2(LayoutView):
             )
         )
         container.add_item(Separator[Self]())
+
+        profile_parts = (
+            ", ".join(self.profile_parts)
+            if isinstance(self.profile_parts, list)
+            else self.profile_parts
+        )
+
         container.add_item(
             TextDisplay[Self](
                 f"**Модератор** <@{self.moderator_id}> обнаружил нарушение в персонализации вашего профиля Discord.\n"  # noqa: E501
-                f"Пожалуйста, смените **`{self.profile_part}`** в соответствии с правилами сервера.\n"  # noqa: E501
+                f"Пожалуйста, смените **`{profile_parts}`** в соответствии с правилами сервера.\n"  # noqa: E501
                 "\n**В случае отказа или игнорирования требования — будет применено наказание.**"  # noqa: E501
             )
         )

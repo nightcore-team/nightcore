@@ -11,6 +11,8 @@ from sqlalchemy.orm import selectinload
 
 from src.config.config import config
 from src.infra.db.models import (
+    CasinoBet,
+    CasinoGame,
     ChangeStat,
     Clan,
     ClanMember,
@@ -45,6 +47,7 @@ from src.infra.db.models._annot import (
     Rules,
 )
 from src.infra.db.models._enums import (
+    CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
     MultiplierTypeEnum,
@@ -720,6 +723,21 @@ async def get_moderation_stats(
         .group_by(ModerationMessage.moderator_id)
     )
 
+    notifications = await session.scalars(
+        select(NotifyState).where(
+            *_build_base_moderstats_filters(
+                NotifyState,
+                guild_id,
+                moderator_ids,
+                from_date,
+                to_date,
+                "end_time",
+            ),
+            NotifyState.state == NotifyStateEnum.TIMED_OUT,
+        )
+    )
+    notifications = notifications.all()
+
     result = await session.execute(stmt)
     messages_data = dict(result.all())  # type: ignore
 
@@ -730,6 +748,7 @@ async def get_moderation_stats(
         "role_requests": role_requests,
         "changestats": changestats,
         "messages": messages_data,  # type: ignore
+        "notifications": notifications,
     }
 
 
@@ -1127,6 +1146,27 @@ async def get_color_by_id(
     stmt = select(Color).where(
         Color.guild_id == guild_id, Color.id == color_id
     )
+    
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+async def get_casino_game_by_message_id(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    message_id: int,
+    with_bets: bool = False,
+) -> CasinoGame | None:
+    """Get a casino game by message ID for a guild."""
+    stmt = select(CasinoGame).where(
+        CasinoGame.guild_id == guild_id,
+        CasinoGame.message_id == message_id,
+    )
+    if with_bets:
+        stmt = stmt.options(
+            selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
+        )
 
     result = await session.execute(stmt)
 
@@ -1192,4 +1232,32 @@ async def get_guild_battlepass_levels(
     )
     result = await session.execute(stmt)
 
+    return result.scalars().all()
+
+
+async def get_user_casino_bet_by_game_id(
+    session: AsyncSession, *, user_id: int, game_id: int
+) -> Any:
+    """Get a user's casino bet by game ID."""
+    stmt = select(CasinoBet).where(
+        CasinoBet.user_id == user_id,
+        CasinoBet.game_id == game_id,
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_active_casino_games(
+    session: AsyncSession, *, guild_id: int, dt: datetime
+) -> Sequence[CasinoGame]:
+    """Get all active casino games for a guild."""
+    stmt = select(CasinoGame).where(
+        CasinoGame.guild_id == guild_id,
+        CasinoGame.state == CasinoGameStateEnum.PENDING,
+        CasinoGame.end_time <= dt,
+    )
+    stmt = stmt.options(
+        selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
+    )
+    result = await session.execute(stmt)
     return result.scalars().all()
