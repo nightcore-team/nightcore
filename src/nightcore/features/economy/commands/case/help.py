@@ -49,7 +49,9 @@ async def open_case(
         pages=pages,
     )
 
-    await interaction.response.send_message(view=view, ephemeral=True)
+    await interaction.response.send_message(
+        view=view.make_component(), ephemeral=True
+    )
 
     logger.info(
         "[command] - invoked user=%s guild=%s",
