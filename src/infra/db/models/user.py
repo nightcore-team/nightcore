@@ -24,8 +24,8 @@ from src.infra.db.models.color import Color
 user_colors = Table(
     "user_colors",
     Base.metadata,
-    Column("guild_id", Integer, nullable=False),
-    Column("user_id", Integer, nullable=False),
+    Column("guild_id", BigInteger, nullable=False),
+    Column("user_id", BigInteger, nullable=False),
     Column("color_id", Integer, ForeignKey("color.id", ondelete="CASCADE")),
     ForeignKeyConstraint(
         ["guild_id", "user_id"],
@@ -118,8 +118,8 @@ class UserCase(Base):
         ),
     )
 
-    guild_id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(primary_key=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     case_id: Mapped[int] = mapped_column(
         ForeignKey("case.id", ondelete="CASCADE"), primary_key=True
     )
