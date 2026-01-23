@@ -111,6 +111,19 @@ class CaseHelpViewV2(LayoutView):
         self.current_page = 0
         self.bot = bot
 
+        self.pagination: CaseHelpPaginationActionRow | None = None
+
+    def _update_buttons(self):
+        """Update button states based on current page."""
+        if not self.pagination:
+            return
+        for child in self.pagination.children:
+            if isinstance(child, Button):
+                if child.custom_id == "case:help:prev":
+                    child.disabled = self.current_page == 0  # type: ignore
+                elif child.custom_id == "case:help:next":
+                    child.disabled = self.current_page == len(self.pages) - 1  # type: ignore
+
     def make_component(self) -> Self:
         """Create a new component for the current page."""
 
@@ -132,19 +145,21 @@ class CaseHelpViewV2(LayoutView):
         )
         container.add_item(Separator())
 
-        self.pagination = CaseHelpPaginationActionRow()
-
         if len(self.pages) > 1:
             for item in self.pages[self.current_page]:
                 container.add_item(item)
 
             container.add_item(Separator[Self]())
+
+            self.pagination = CaseHelpPaginationActionRow()
             self.add_item(self.pagination)
         else:
             for item in self.pages[0]:
                 container.add_item(item)
 
             container.add_item(Separator[Self]())
+
+        self._update_buttons()
 
         container.add_item(Separator())
 
