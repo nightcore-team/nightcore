@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION handle_battlepass_level_delete()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE battlepass_level
+    UPDATE battlepasslevel
     SET level = level - 1
     WHERE guild_id = OLD.guild_id AND level > OLD.level;
     RETURN OLD;
@@ -15,12 +15,12 @@ DECLARE
 BEGIN
     IF NEW.level IS NULL THEN
         SELECT COALESCE(MAX(level), 0) INTO max_level 
-        FROM battlepass_level 
+        FROM battlepasslevel 
         WHERE guild_id = NEW.guild_id 
         FOR UPDATE;
         NEW.level := max_level + 1;
     ELSE
-       UPDATE battlepass_level
+       UPDATE battlepasslevel
        SET level = level + 1
        WHERE guild_id = NEW.guild_id AND level >= NEW.level;
     END IF;
