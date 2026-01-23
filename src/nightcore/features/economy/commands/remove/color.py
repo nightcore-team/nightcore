@@ -40,10 +40,10 @@ logger = logging.getLogger(__name__)
 @remove_group.command(name="color", description="Удалить у пользователя цвет")  # type: ignore
 @app_commands.describe(
     user="Пользователь,  у которого удаляется цвет",
-    color="Цвет для удаления",
+    color_id="Цвет для удаления",
     reason="Причина удаления цвета (необязательно)",
 )
-@app_commands.autocomplete(color=user_colors_autocomplete)
+@app_commands.autocomplete(color_id=user_colors_autocomplete)
 @app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def remove_color(
