@@ -44,11 +44,11 @@ FOR EACH ROW
 EXECUTE FUNCTION handle_user_case_update();
 
 CREATE TRIGGER battlepass_level_delete
-AFTER DELETE ON battlepass_level
+AFTER DELETE ON battlepasslevel
 FOR EACH ROW
 EXECUTE FUNCTION handle_battlepass_level_delete();
 
 CREATE TRIGGER battlepass_level_insert
-BEFORE INSERT ON battlepass_level
+BEFORE INSERT ON battlepasslevel
 FOR EACH ROW
 EXECUTE FUNCTION handle_battlepass_level_insert();
