@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 @give_group.command(name="case", description="Выдать пользователю кейс")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается кейс.",
-    case="Кейс для выдачи.",
+    case_id="Кейс для выдачи.",
     amount="Количество кейсов для выдачи.",
     reason="Причина выдачи кейса (необязательно).",
 )
