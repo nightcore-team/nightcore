@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 @case_group.command(name="add_reward", description="Добавить награду в кейс")  # type: ignore
 @app_commands.describe(
     reward_type="Тип награды",
-    reward_amount="Количество",
+    amount="Количество",
     weight="Вес награды (не является шансом выпадения)",
     reward="Выбор кейса / цвета / ввод текста, в зависимости от типа награды",
 )

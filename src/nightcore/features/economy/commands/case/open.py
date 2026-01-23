@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 @case_group.command(name="open", description="Открыть кейс")  # type: ignore
-@app_commands.describe(case="Кейс для открытия.")
+@app_commands.describe(case_id="Кейс для открытия.")
 @app_commands.rename(case_id="case")
 @app_commands.autocomplete(case_id=user_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)

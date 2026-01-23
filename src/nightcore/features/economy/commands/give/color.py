@@ -38,10 +38,10 @@ logger = logging.getLogger(__name__)
 @give_group.command(name="color", description="Выдать пользователю цвет")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается цвет",
-    color="Цвет для выдачи",
+    color_id="Цвет для выдачи",
     reason="Причина выдачи цвета (необязательно)",
 )
-@app_commands.autocomplete(color=guild_colors_autocomplete)
+@app_commands.autocomplete(color_id=guild_colors_autocomplete)
 @app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_color(
