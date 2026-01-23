@@ -8,6 +8,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Integer,
     PrimaryKeyConstraint,
     Table,
@@ -23,11 +24,14 @@ from src.infra.db.models.color import Color
 user_colors = Table(
     "user_colors",
     Base.metadata,
-    Column(
-        "guild_id", Integer, ForeignKey("user.guild_id", ondelete="CASCADE")
-    ),
-    Column("user_id", Integer, ForeignKey("user.user_id", ondelete="CASCADE")),
+    Column("guild_id", Integer, nullable=False),
+    Column("user_id", Integer, nullable=False),
     Column("color_id", Integer, ForeignKey("color.id", ondelete="CASCADE")),
+    ForeignKeyConstraint(
+        ["guild_id", "user_id"],
+        ["user.guild_id", "user.user_id"],
+        ondelete="CASCADE",
+    ),
     PrimaryKeyConstraint("user_id", "color_id", "guild_id"),
 )
 
@@ -107,13 +111,15 @@ class UserCase(Base):
         UniqueConstraint(
             "case_id", "user_id", "guild_id", name="ux_user_case_guild_user"
         ),
+        ForeignKeyConstraint(
+            ["guild_id", "user_id"],
+            ["user.guild_id", "user.user_id"],
+            ondelete="CASCADE",
+        ),
     )
-    guild_id: Mapped[int] = mapped_column(
-        ForeignKey("user.guild_id", ondelete="CASCADE"), primary_key=True
-    )
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("user.user_id", ondelete="CASCADE"), primary_key=True
-    )
+
+    guild_id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(primary_key=True)
     case_id: Mapped[int] = mapped_column(
         ForeignKey("case.id", ondelete="CASCADE"), primary_key=True
     )
