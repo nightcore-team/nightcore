@@ -37,24 +37,22 @@ def upgrade() -> None:
     sa.UniqueConstraint('guild_id', 'role_id', name='ux_role_guild_color')
     )
     op.create_table('user_colors',
-    sa.Column('guild_id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('color_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['color_id'], ['color.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['guild_id'], ['user.guild_id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('user_id', 'color_id', 'guild_id')
+        sa.Column('guild_id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('color_id', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(['color_id'], ['color.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['guild_id', 'user_id'], ['user.guild_id', 'user.user_id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('user_id', 'color_id', 'guild_id')
     )
     op.create_table('usercase',
-    sa.Column('guild_id', sa.BigInteger(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('case_id', sa.Integer(), nullable=False),
-    sa.Column('amount', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['case_id'], ['case.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['guild_id'], ['user.guild_id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('guild_id', 'user_id', 'case_id'),
-    sa.UniqueConstraint('case_id', 'user_id', 'guild_id', name='ux_user_case_guild_user')
+        sa.Column('guild_id', sa.BigInteger(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('case_id', sa.Integer(), nullable=False),
+        sa.Column('amount', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(['case_id'], ['case.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['guild_id', 'user_id'], ['user.guild_id', 'user.user_id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('guild_id', 'user_id', 'case_id'),
+        sa.UniqueConstraint('case_id', 'user_id', 'guild_id', name='ux_user_case_guild_user')
     )
     op.add_column('guildeconomyconfig', sa.Column('last_roulette_games', sa.ARRAY(sa.String()), server_default=sa.text("'{}'::text[]"), nullable=False))
     op.drop_column('guildeconomyconfig', 'drop_from_coins_case')
