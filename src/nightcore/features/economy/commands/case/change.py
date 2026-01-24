@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 async def change_case(
     interaction: Interaction["Nightcore"],
     case_id: app_commands.Transform[int, StrToIntTransformer],
-    new_case_name: app_commands.Range[str, 100],
+    new_case_name: app_commands.Range[str, 5, 100],
 ):
     """Change case."""
 
