@@ -97,10 +97,10 @@ async def format_cases_rewards(
                 case CaseDropTypeEnum.CASE.value:
                     index = drop["drop_id"]
 
-                    if len(cases) >= index:
+                    if len(cases) >= index - 1:
                         drop["name"] = "unknown"
                     else:
-                        drop["name"] = cases[index]  # type: ignore
+                        drop["name"] = cases[index - 1]  # type: ignore
                 case CaseDropTypeEnum.COLOR.value:
                     color = await get_color_by_id(
                         session, guild_id=guild.id, color_id=drop["drop_id"]
