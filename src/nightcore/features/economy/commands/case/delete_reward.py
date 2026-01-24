@@ -70,7 +70,7 @@ async def delete_case_reward(
             if case is None:
                 outcome = "case_not_found"
             else:
-                if len(case.drop) >= num:
+                if len(case.drop) < num:
                     outcome = "unknown_reward_index"
                 else:
                     reward = case.drop.pop(num - 1)
