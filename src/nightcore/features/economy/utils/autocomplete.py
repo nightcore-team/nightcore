@@ -78,6 +78,7 @@ async def user_cases_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
+            with_relations=True,
         )
 
     result: list[app_commands.Choice[str]] = []
@@ -114,6 +115,7 @@ async def user_colors_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
+            with_relations=True,
         )
 
     for color in user.colors:
