@@ -106,7 +106,7 @@ class User(IdIntegerMixin, Base):
                 return color
 
 
-class UserCase(IdIntegerMixin, Base):
+class UserCase(Base):
     __table_args__ = (
         UniqueConstraint(
             "case_id", "user_id", "guild_id", name="ux_user_case_guild_user"
@@ -117,7 +117,7 @@ class UserCase(IdIntegerMixin, Base):
             ondelete="CASCADE",
         ),
     )
-
+    id: Mapped[int] = mapped_column(autoincrement=True, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     case_id: Mapped[int] = mapped_column(
