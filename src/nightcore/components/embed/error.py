@@ -1,5 +1,7 @@
 """Error embeds for the Nightcore bot."""
 
+from typing import Any
+
 from discord import Color, Embed
 
 
@@ -65,6 +67,16 @@ class EntityNotFoundEmbed(Embed):
         super().__init__(
             title="Сущность не найдена",
             description=f"Указанная сущность `{entity}` не найдена на сервере.",  # noqa: E501
+            color=Color.red(),
+        )
+        self.set_footer(text=footer_text, icon_url=footer_icon_url)
+
+
+class StrToIntTransformFailedEmbed(Embed):
+    def __init__(self, value: Any, footer_text: str, footer_icon_url: str):
+        super().__init__(
+            title="Сущность не найдена",
+            description=f"Ожидалось число в параметре с автокомплитом, получено {value}",  # noqa: E501
             color=Color.red(),
         )
         self.set_footer(text=footer_text, icon_url=footer_icon_url)

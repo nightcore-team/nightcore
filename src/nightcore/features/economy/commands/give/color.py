@@ -130,6 +130,10 @@ async def give_color(
             ephemeral=True,
         )
 
+        color_role = guild.get_role(color.role_id)  # type: ignore
+
+        color_name = color_role.name if color_role else "unknown"
+
         bot.dispatch(
             "user_items_changed",
             dto=AwardNotificationEventDTO(
@@ -138,7 +142,7 @@ async def give_color(
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=f"<@&{color.role_id}> ({color.role_id})",  # type: ignore
+                item_name=f"{color_name} ({color.role_id})",  # type: ignore
                 amount=1,
                 reason=reason,
             ),

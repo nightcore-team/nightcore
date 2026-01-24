@@ -86,8 +86,8 @@ def build_cases_help_pages(
             page.append(
                 TextDisplay(
                     "\n".join(
-                        f"> {drop['amount']} {drop['name']} "
-                        f"- шанс **`{drop['chance']}%`**"
+                        f"> {drop['amount'] if drop['type'] != CaseDropTypeEnum.COLOR else ''} {drop['name']} "  # noqa: E501
+                        f"- шанс **`{drop['chance']}`**"
                         for drop in case.drop
                     )
                 ),
