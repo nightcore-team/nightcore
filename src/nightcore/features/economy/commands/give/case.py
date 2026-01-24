@@ -101,7 +101,10 @@ async def give_case(
                         user_case.amount += amount
                     else:
                         new_case = UserCase(
-                            case_id=case.id, amount=amount, user_id=user.id
+                            case_id=case.id,
+                            amount=amount,
+                            user_id=user.id,
+                            guild_id=guild.id,
                         )
 
                         session.add(new_case)
