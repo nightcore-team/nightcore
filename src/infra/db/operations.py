@@ -58,6 +58,7 @@ from src.infra.db.models._enums import (
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
+from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
@@ -220,7 +221,8 @@ async def get_or_create_user(
 
     if with_relations:
         get_stmt = get_stmt.options(
-            selectinload(User.cases), selectinload(User.colors)
+            selectinload(User.cases).selectinload(UserCase.item),
+            selectinload(User.colors),
         )
 
     user = await session.scalar(get_stmt)
