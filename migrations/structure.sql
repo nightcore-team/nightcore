@@ -16,8 +16,7 @@ BEGIN
     IF NEW.level IS NULL THEN
         SELECT COALESCE(MAX(level), 0) INTO max_level 
         FROM battlepasslevel 
-        WHERE guild_id = NEW.guild_id 
-        FOR UPDATE;
+        WHERE guild_id = NEW.guild_id;
         NEW.level := max_level + 1;
     ELSE
        UPDATE battlepasslevel

@@ -106,7 +106,7 @@ class User(IdIntegerMixin, Base):
                 return color
 
 
-class UserCase(Base):
+class UserCase(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint(
             "case_id", "user_id", "guild_id", name="ux_user_case_guild_user"

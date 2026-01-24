@@ -45,6 +45,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('user_id', 'color_id', 'guild_id')
     )
     op.create_table('usercase',
+        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('guild_id', sa.BigInteger(), nullable=False),
         sa.Column('user_id', sa.BigInteger(), nullable=False),
         sa.Column('case_id', sa.Integer(), nullable=False),
