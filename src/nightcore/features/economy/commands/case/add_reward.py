@@ -142,6 +142,7 @@ async def add_case_reward(
                                 outcome = "unknown_color_id"
                             else:
                                 new_reward["drop_id"] = color.id
+                                new_reward["amount"] = 1
 
                         case CaseDropTypeEnum.CUSTOM:
                             new_reward["name"] = reward  # type: ignore
