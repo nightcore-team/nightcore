@@ -33,7 +33,9 @@ async def reward_depends_on_type_autocomplete(
 
     index = _commands[interaction.command.name]  # type: ignore
 
-    match interaction.data["options"][0]["options"][index]["value"]:  # type: ignore
+    match interaction.data["options"][0]["options"][0]["options"][index][  # type: ignore
+        "value"
+    ]:
         case CaseDropTypeEnum.CASE.value:
             result = await _cases_autocomplete(interaction, current)
         case CaseDropTypeEnum.COLOR.value:
