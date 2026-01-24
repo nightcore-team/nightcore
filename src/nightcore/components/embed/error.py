@@ -75,7 +75,7 @@ class EntityNotFoundEmbed(Embed):
 class StrToIntTransformFailedEmbed(Embed):
     def __init__(self, value: Any, footer_text: str, footer_icon_url: str):
         super().__init__(
-            title="Сущность не найдена",
+            title="Ошибка валидации данных",
             description=f"Ожидалось число в параметре с автокомплитом, получено {value}",  # noqa: E501
             color=Color.red(),
         )
