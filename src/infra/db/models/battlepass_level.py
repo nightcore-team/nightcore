@@ -11,7 +11,11 @@ from src.infra.db.models.base import Base
 class BattlepassLevel(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint(
-            "level", "guild_id", name="ux_level_guild_battlepasslevel"
+            "level",
+            "guild_id",
+            deferrable=True,
+            initially="DEFERRED",
+            name="ux_level_guild_battlepasslevel",
         ),
     )
 

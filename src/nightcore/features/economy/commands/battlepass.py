@@ -87,7 +87,7 @@ class Battlepass(Cog):
                 ephemeral=True,
             )
 
-        if user_level >= len(battlepass_levels):
+        if user_level > len(battlepass_levels):
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения уровня баттлпаса",

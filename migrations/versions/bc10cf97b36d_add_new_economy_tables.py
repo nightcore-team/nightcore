@@ -63,7 +63,7 @@ def upgrade() -> None:
         sa.Column('exp_required', sa.Integer(), nullable=False),
         sa.Column('reward', sa.JSON(), server_default=sa.text("'[]'::json"), nullable=False),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint("level", "guild_id",  name='ux_level_guild_battlepasslevel')
+        sa.UniqueConstraint("level", "guild_id",  name='ux_level_guild_battlepasslevel', deferrable=True, initially="DEFERRED")
     )
     op.drop_column('guildeconomyconfig', 'drop_from_coins_case')
     op.drop_column('guildeconomyconfig', 'battlepass_rewards')

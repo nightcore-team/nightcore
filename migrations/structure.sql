@@ -38,7 +38,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER user_case_update
-BEFORE UPDATE ON usercase
+AFTER UPDATE ON usercase
 FOR EACH ROW
 EXECUTE FUNCTION handle_user_case_update();
 
