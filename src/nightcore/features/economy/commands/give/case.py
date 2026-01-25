@@ -100,16 +100,20 @@ async def give_case(
                     if user_case := user_record.get_case(case.id):
                         user_case.amount += amount
                     else:
-                        new_case = UserCase(
-                            case_id=case.id,
-                            amount=amount,
-                            user_id=user.id,
-                            guild_id=guild.id,
-                        )
+                        if amount < 1:
+                            outcome = "cannot_give_negative_amount"
+                        else:
+                            new_case = UserCase(
+                                case_id=case.id,
+                                amount=amount,
+                                user_id=user.id,
+                                guild_id=guild.id,
+                            )
 
-                        session.add(new_case)
+                            session.add(new_case)
 
-                    outcome = "success"
+                    if not outcome:
+                        outcome = "success"
 
     except Exception as e:
         logger.exception(
@@ -126,6 +130,18 @@ async def give_case(
             embed=ErrorEmbed(
                 "Ошибка выдачи кейса",
                 "Кейс не найден.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "cannot_give_negative_amount":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи кейса",
+                "Невозможно выдать отрицательное количество.\n"
+                "(Отрицательное количество может использоваться только для снятия кейсов)",  # noqa: E501
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

@@ -39,13 +39,13 @@ async def give_reward_by_type(
     amount = reward["amount"]
 
     match reward["type"]:
-        case CaseDropTypeEnum.EXP:
+        case CaseDropTypeEnum.EXP.value:
             user.current_exp += amount
-        case CaseDropTypeEnum.COINS:
+        case CaseDropTypeEnum.COINS.value:
             user.coins += amount
-        case CaseDropTypeEnum.BATTLEPASS_POINTS:
+        case CaseDropTypeEnum.BATTLEPASS_POINTS.value:
             user.battle_pass_points += amount
-        case CaseDropTypeEnum.COLOR:
+        case CaseDropTypeEnum.COLOR.value:
             color = await get_color_by_id(
                 session, guild_id=user.guild_id, color_id=drop_id
             )
@@ -56,7 +56,7 @@ async def give_reward_by_type(
             if user.get_color(color.id) is None:
                 user.colors.append(color)
 
-        case CaseDropTypeEnum.CASE:
+        case CaseDropTypeEnum.CASE.value:
             case = await get_case_by_id(
                 session, guild_id=user.guild_id, case_id=drop_id
             )
@@ -72,7 +72,7 @@ async def give_reward_by_type(
                 )
                 session.add(new_case)
 
-        case CaseDropTypeEnum.CUSTOM:
+        case CaseDropTypeEnum.CUSTOM.value:
             ...
         case _:
             return RewardOutcomeEnum.UNKNOWN_REWARD

@@ -51,7 +51,7 @@ async def change_level(
     level: app_commands.Range[int, 1, 1000000],
     new_required_exp: app_commands.Range[int, 1, 1000000] | None = None,
     new_reward_type: CaseDropTypeEnum | None = None,
-    new_reward_amount: int | None = None,
+    new_reward_amount: app_commands.Range[int, 1, 1000000] | None = None,
     new_reward: str | None = None,
 ):
     """Change battle pass level."""
