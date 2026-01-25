@@ -117,7 +117,9 @@ class UserCase(Base):
             ondelete="CASCADE",
         ),
     )
-    id: Mapped[int] = mapped_column(autoincrement=True, nullable=False)
+    id: Mapped[int] = mapped_column(
+        autoincrement=True, nullable=False, primary_key=True
+    )
     guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     case_id: Mapped[int] = mapped_column(

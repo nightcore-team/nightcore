@@ -53,6 +53,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['case_id'], ['case.id'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['guild_id', 'user_id'], ['user.guild_id', 'user.user_id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('guild_id', 'user_id', 'case_id'),
+        sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('case_id', 'user_id', 'guild_id', name='ux_user_case_guild_user')
     )
     op.create_table("battlepasslevel",
@@ -61,6 +62,7 @@ def upgrade() -> None:
         sa.Column('level', sa.Integer(), nullable=False),
         sa.Column('exp_required', sa.Integer(), nullable=False),
         sa.Column('reward', sa.JSON(), server_default=sa.text("'[]'::json"), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint("level", "guild_id",  name='ux_level_guild_battlepasslevel')
     )
     op.drop_column('guildeconomyconfig', 'drop_from_coins_case')
