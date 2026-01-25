@@ -87,7 +87,7 @@ async def user_cases_autocomplete(
         result.append(
             app_commands.Choice(
                 name=f"{case.item.name}, количество: {case.amount}",
-                value=case.item.name,
+                value=str(case.item.id),
             )
         )
 
