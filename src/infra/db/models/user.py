@@ -1,9 +1,10 @@
 """User model for the Nightcore bot database."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Column,
     DateTime,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     Table,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -90,6 +92,12 @@ class User(IdIntegerMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="selectin",
+    )
+    inventory: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=lambda: {"cases": {}, "colors": []},  # type: ignore
+        server_default=text('\'{"cases": {}, "colors": []}\'::json'),
     )
 
     def get_case(self, case_id: int) -> Optional["UserCase"]:
