@@ -5,22 +5,27 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, app_commands
 from discord.interactions import Interaction
-from sqlalchemy.orm import attributes
 
-from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models._annot import BattlepassLevelAnnot
+from src.config.config import config
+from src.infra.db.models._annot import BattlepassRewardAnnot
+from src.infra.db.models._enums import CaseDropTypeEnum
+from src.infra.db.models.battlepass_level import BattlepassLevel
+from src.infra.db.operations import (
+    get_battlepass_level,
+    get_case_by_id,
+    get_color_by_id,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
-    ValidationErrorEmbed,
 )
-from src.nightcore.features.battlepass.utils.types import (
-    BATTLEPASS_REWARDS_CHOICES,
-)
+from src.nightcore.components.embed.error import ValidationErrorEmbed
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.config.utils.autocomplete import (
+    reward_depends_on_type_autocomplete,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -37,96 +42,154 @@ logger = logging.getLogger(__name__)
     name="add_level", description="Добавить уровень боевого пропуска"
 )  # type: ignore
 @app_commands.describe(
-    required_exp="Количество EXP для этого уровня",
+    exp_required="Количество EXP для этого уровня",
     reward_type="Тип награды",
     reward_amount="Количество",
+    reward="Выбор кейса / цвета / ввод текста, в зависимости от типа награды",
+    before_level="Номер уровня для добавления нового перед ним",
 )
-@app_commands.choices(
-    reward_type=BATTLEPASS_REWARDS_CHOICES,
-)
+@app_commands.autocomplete(reward=reward_depends_on_type_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def add_level(
     interaction: Interaction["Nightcore"],
-    required_exp: app_commands.Range[int, 1, 1000000],
-    reward_type: app_commands.Choice[str],
-    reward_amount: int,
+    exp_required: app_commands.Range[int, 1, 1000000],
+    reward_type: CaseDropTypeEnum,
+    reward_amount: app_commands.Range[int, 1, 1000000],
+    reward: str | None = None,
+    before_level: app_commands.Range[int, 1, 10000] | None = None,
 ):
     """Add new battle pass level."""
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    try:
-        reward_amount = int(reward_amount)
-        if reward_amount <= 0:
-            raise ValueError("Amount must be positive.")
-    except ValueError:
+    outcome = ""
+
+    if reward is None and reward_type.requires_id_or_custom():
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
-                "Пожалуйста, введите положительное целое число.",
+                "Для типов CASE, COLOR, CUSTOM ввод награды обязателен.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
 
-    outcome = ""
+    if reward is not None and len(reward) > config.bot.MAX_CUSTOM_REWARD_SIZE:
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "Максимальная длина награды - 100 символов.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
-    battlepass_level: BattlepassLevelAnnot = {
-        "exp_required": required_exp,
-    }  # type: ignore
-
-    match reward_type.value:
-        case "coins":
-            battlepass_level["reward"] = {
-                "name": "coins",
-                "amount": reward_amount,
-            }
-        case "coins_case":
-            battlepass_level["reward"] = {
-                "name": "coins_case",
-                "amount": reward_amount,
-            }
-        case "colors_case":
-            battlepass_level["reward"] = {
-                "name": "colors_case",
-                "amount": reward_amount,
-            }
-        case "exp":
-            battlepass_level["reward"] = {
-                "name": "exp",
-                "amount": reward_amount,
-            }
-        case _:
-            outcome = "invalid_reward_type"
-
-    if not outcome:
-        async with specified_guild_config(
-            bot, guild.id, GuildEconomyConfig, _create=True
-        ) as (
-            guild_config,
-            _,
-        ):
-            level = len(guild_config.battlepass_rewards) + 1
-            battlepass_level["level"] = level
-
-            # append
-            guild_config.battlepass_rewards.append(battlepass_level)
-
-            # sort by level number
-            guild_config.battlepass_rewards.sort(
-                key=lambda x: x.get("level", 0)
+    if reward_type.requires_id():
+        try:
+            reward_id = int(reward)  # type: ignore
+        except ValueError as _:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Введен неверный id кейса или цвета.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
 
-            attributes.flag_modified(guild_config, "battlepass_rewards")
+    battlepass_level = BattlepassLevel(
+        guild_id=guild.id, exp_required=exp_required
+    )
 
-            outcome = "success"
+    battlepass_level.reward = BattlepassRewardAnnot(
+        type=reward_type.value,
+        drop_id=-1,
+        name=reward_type.to_str(),
+        amount=reward_amount,
+    )
 
-    if outcome == "invalid_reward_type":
+    if not outcome:
+        async with bot.uow.start() as session:
+            before_level_exists = (
+                await get_battlepass_level(
+                    session, guild_id=guild.id, level=before_level
+                )
+                is not None
+                if before_level is not None
+                else False
+            )
+
+            match reward_type:
+                case CaseDropTypeEnum.CASE:
+                    case = await get_case_by_id(
+                        session,
+                        guild_id=guild.id,
+                        case_id=reward_id,  # type: ignore
+                    )
+
+                    if case is None:
+                        outcome = "unknown_case_id"
+                    else:
+                        battlepass_level.reward["drop_id"] = case.id
+
+                case CaseDropTypeEnum.COLOR:
+                    color = await get_color_by_id(
+                        session,
+                        guild_id=guild.id,
+                        color_id=reward_id,  # type: ignore
+                    )
+
+                    if color is None:
+                        outcome = "unknown_color_id"
+                    else:
+                        battlepass_level.reward["drop_id"] = color.id
+                case CaseDropTypeEnum.CUSTOM:
+                    battlepass_level.reward["name"] = reward  # type: ignore
+                case _:
+                    ...
+
+            if not outcome:
+                if before_level and before_level_exists:
+                    battlepass_level.level = before_level
+
+                    session.add(battlepass_level)
+
+                    outcome = "success"
+                elif before_level is None:
+                    session.add(battlepass_level)
+
+                    outcome = "success"
+                else:
+                    outcome = "before_level_not_found"
+
+    if outcome == "before_level_not_found":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка добавления уровня",
-                "Неверный тип награды.",
+                "Предыдущий уровень для добавления не найден.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "unknown_case_id":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка добавления уровня",
+                "Кейс с данным id не найден.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "unknown_color_id":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка добавления уровня",
+                "Цвет с данным id не найден.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -137,7 +200,7 @@ async def add_level(
         await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Уровень добавлен",
-                f"Уровень {level} успешно добавлен в боевой пропуск.",  # type: ignore
+                "Уровень успешно добавлен в боевой пропуск.",  # type: ignore
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -145,11 +208,10 @@ async def add_level(
         )
 
     logger.info(
-        "[command] - invoked user=%s guild=%s add_level=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501
+        "[command] - invoked user=%s guild=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501
         interaction.user.id,
         guild.id,
-        level,  # type: ignore
-        required_exp,
+        exp_required,
         reward_type.value,
         reward_amount,
     )

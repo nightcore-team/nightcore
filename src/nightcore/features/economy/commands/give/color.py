@@ -5,11 +5,14 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
-from sqlalchemy.orm import attributes
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.operations import (
+    get_color_by_id,
+    get_or_create_user,
+    get_specified_channel,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -18,12 +21,12 @@ from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
-from src.nightcore.features.economy.utils import all_colors_autocomplete
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.economy.utils import guild_colors_autocomplete
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -35,36 +38,22 @@ logger = logging.getLogger(__name__)
 @give_group.command(name="color", description="Выдать пользователю цвет")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается цвет",
-    color="Цвет для выдачи",
+    color_id="Цвет для выдачи",
     reason="Причина выдачи цвета (необязательно)",
 )
-@app_commands.autocomplete(color=all_colors_autocomplete)
+@app_commands.autocomplete(color_id=guild_colors_autocomplete)
+@app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_color(
     interaction: Interaction["Nightcore"],
     user: User,
-    color: str,
+    color_id: app_commands.Transform[int, StrToIntTransformer],
     reason: str | None = None,
 ):
     """Give a color to user."""
 
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
-
-    try:
-        role_name, role_id, _color = color.split(",")
-        role_id = int(role_id)
-    except Exception as e:
-        logger.error("[give/color] Error parsing color: %s", e)
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка выдачи цвета",
-                "Не удалось определить цвет.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
 
     outcome = ""
 
@@ -79,10 +68,7 @@ async def give_color(
             ephemeral=True,
         )
 
-    async with specified_guild_config(bot, guild.id, GuildEconomyConfig) as (
-        guild_config,
-        session,
-    ):
+    async with bot.uow.start() as session:
         logging_channel_id = await get_specified_channel(
             session,
             guild_id=guild.id,
@@ -95,16 +81,17 @@ async def give_color(
                 session,
                 guild_id=guild.id,
                 user_id=user.id,
+                with_relations=True,
             )
-            drop_from_colors = guild_config.drop_from_colors_case or {}
-            color_drop = drop_from_colors.get(_color)
+            color = await get_color_by_id(
+                session, guild_id=guild.id, color_id=color_id
+            )
 
-            if not color_drop:
+            if color is None:
                 outcome = "unknown_color"
             else:
-                if _color not in user_record.inventory["colors"]:
-                    user_record.inventory["colors"].append(_color)
-                    attributes.flag_modified(user_record, "inventory")
+                if color not in user_record.colors:
+                    user_record.colors.append(color)
 
                     outcome = "success"
                 else:
@@ -136,12 +123,16 @@ async def give_color(
         await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Выдача цвета успешна",
-                f"Вы успешно выдали пользователю <@{user.id}> цвет <@&{role_id}>.",  # noqa: E501
+                f"Вы успешно выдали пользователю <@{user.id}> цвет <@&{color.role_id}>.",  # noqa: E501 # type: ignore
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+
+        color_role = guild.get_role(color.role_id)  # type: ignore
+
+        color_name = color_role.name if color_role else "unknown"
 
         bot.dispatch(
             "user_items_changed",
@@ -151,7 +142,7 @@ async def give_color(
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=f"{role_name} ({role_id})",
+                item_name=f"{color_name} ({color.role_id})",  # type: ignore
                 amount=1,
                 reason=reason,
             ),

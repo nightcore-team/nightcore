@@ -59,30 +59,13 @@ class Rule:
     subrules: list[Rule]
 
 
-class CasesAnnot(TypedDict):
-    """{"case_name": amount}."""
+class CaseDropAnnot(TypedDict):
+    """Single drop configuration."""
 
-
-class ColorsAnnot(TypedDict):
-    """["color_name"]."""
-
-
-class UserInventoryAnnot(TypedDict):
-    cases: CasesAnnot
-    colors: list[str]
-
-
-class CoinDropAnnot(TypedDict):
-    """Single coin drop configuration."""
-
+    type: int
+    drop_id: int
+    name: str
     amount: int
-    chance: int
-
-
-class ColorDropAnnot(TypedDict):
-    """Single color drop configuration."""
-
-    role_id: int
     chance: int
 
 
@@ -96,6 +79,8 @@ class FAQPageAnnot(TypedDict):
 class BattlepassRewardAnnot(TypedDict):
     """Battlepass reward configuration."""
 
+    type: int
+    drop_id: int
     name: str
     amount: int
 

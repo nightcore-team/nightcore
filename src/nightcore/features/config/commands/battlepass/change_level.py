@@ -7,19 +7,24 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
-from src.infra.db.models import GuildEconomyConfig
+from src.config.config import config
+from src.infra.db.models._enums import CaseDropTypeEnum
+from src.infra.db.operations import (
+    get_battlepass_level,
+    get_case_by_id,
+    get_color_by_id,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
-from src.nightcore.features.battlepass.utils.types import (
-    BATTLEPASS_REWARDS_CHOICES,
-)
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.config.utils.autocomplete import (
+    reward_depends_on_type_autocomplete,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -40,94 +45,123 @@ logger = logging.getLogger(__name__)
     new_reward_type="Новый тип награды",
     new_reward_amount="Новое количество",
 )
-@app_commands.choices(
-    new_reward_type=BATTLEPASS_REWARDS_CHOICES,
-)
+@app_commands.autocomplete(new_reward=reward_depends_on_type_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
 async def change_level(
     interaction: Interaction["Nightcore"],
-    level: int,
+    level: app_commands.Range[int, 1, 1000000],
     new_required_exp: app_commands.Range[int, 1, 1000000] | None = None,
-    new_reward_type: app_commands.Choice[str] | None = None,
-    new_reward_amount: int | None = None,
+    new_reward_type: CaseDropTypeEnum | None = None,
+    new_reward_amount: app_commands.Range[int, 1, 1000000] | None = None,
+    new_reward: str | None = None,
 ):
     """Change battle pass level."""
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    if new_reward_amount:
-        try:
-            reward_amount = int(new_reward_amount)
-            if reward_amount <= 0:
-                raise ValueError("Amount must be positive.")
-        except ValueError:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Пожалуйста, введите положительное целое число.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-    try:
-        int_level = int(level)
-    except ValueError:
+    if (
+        new_required_exp is None
+        and new_reward_type is None
+        and new_reward_amount is None
+    ):
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
-                "Пожалуйста, введите действительный номер уровня.",
+                "Вы не выбрали ни одного параметра для изменения.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
 
+    if (
+        new_reward is None
+        and new_reward_type is not None
+        and new_reward_type.requires_id_or_custom()
+    ):
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "Для типов CASE, COLOR, CUSTOM ввод новой награды обязателен.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if (
+        new_reward is not None
+        and len(new_reward) > config.bot.MAX_CUSTOM_REWARD_SIZE
+    ):
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "Максимальная длина награды - 100 символов.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if new_reward_type is not None and new_reward_type.requires_id():
+        try:
+            new_reward_id = int(new_reward)  # type: ignore
+        except ValueError as _:
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Введен неверный id кейса или цвета.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
     outcome = ""
 
-    async with specified_guild_config(
-        bot, guild.id, GuildEconomyConfig, _create=True
-    ) as (
-        guild_config,
-        _,
-    ):
-        for bp_level in guild_config.battlepass_rewards or []:
-            if bp_level["level"] == int_level:
-                if new_required_exp is not None:
-                    bp_level["exp_required"] = new_required_exp
-
-                if new_reward_type is not None:
-                    if new_reward_amount is None:
-                        outcome = "new_reward_without_amount"
-                        break
-
-                    match new_reward_type.value:
-                        case "coins":
-                            bp_level["reward"] = {
-                                "name": "coins",
-                                "amount": new_reward_amount,
-                            }
-                        case "coins_case":
-                            bp_level["reward"] = {
-                                "name": "coins_case",
-                                "amount": new_reward_amount,
-                            }
-                        case "colors_case":
-                            bp_level["reward"] = {
-                                "name": "colors_case",
-                                "amount": new_reward_amount,
-                            }
-                        case _:
-                            outcome = "invalid_reward_type"
-                            break
-
-                break
-        else:
+    async with bot.uow.start() as session:
+        battlepass_level = await get_battlepass_level(
+            session, guild_id=guild.id, level=level
+        )
+        if battlepass_level is None:
             outcome = "level_not_found"
+        else:
+            if new_required_exp is not None:
+                battlepass_level.exp_required = new_required_exp
 
-        if not outcome:
-            attributes.flag_modified(guild_config, "battlepass_rewards")
-            outcome = "success"
+            if new_reward_type is not None:
+                battlepass_level.reward["type"] = new_reward_type.value
+
+                match new_reward_type:
+                    case CaseDropTypeEnum.CUSTOM:
+                        battlepass_level.reward["name"] = new_reward  # type: ignore
+                    case CaseDropTypeEnum.COLOR:
+                        color = await get_color_by_id(
+                            session,
+                            guild_id=guild.id,
+                            color_id=new_reward_id,  # type: ignore
+                        )
+
+                        if color is None:
+                            outcome = "drop_with_entered_id_not_found"
+                        else:
+                            battlepass_level.reward["drop_id"] = color.id
+
+                    case CaseDropTypeEnum.CASE:
+                        case = await get_case_by_id(
+                            session,
+                            guild_id=guild.id,
+                            case_id=new_reward_id,  # type: ignore
+                        )
+
+                        if case is None:
+                            outcome = "drop_with_entered_id_not_found"
+                        else:
+                            battlepass_level.reward["drop_id"] = case.id
+                    case _:
+                        pass
+
+            if new_reward_amount is not None:
+                battlepass_level.reward["amount"] = new_reward_amount
+
+            attributes.flag_modified(battlepass_level, "reward")
 
     if outcome == "level_not_found":
         return await interaction.response.send_message(
@@ -140,38 +174,26 @@ async def change_level(
             ephemeral=True,
         )
 
-    if outcome == "invalid_reward_type":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка добавления уровня.",
-                "Неверный тип награды.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
-    if outcome == "new_reward_without_amount":
+    if outcome == "drop_with_entered_id_not_found":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка изменения уровня.",
-                "Для изменения награды необходимо указать новое количество.",
+                f"Награда с id {new_reward} не найдена.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
 
-    if outcome == "success":
-        return await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
-                "Уровень изменен.",
-                f"Уровень {level} успешно изменен в боевой пропуск.",  # type: ignore
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
+    await interaction.response.send_message(
+        embed=SuccessMoveEmbed(
+            "Уровень изменен.",
+            f"Уровень {level} успешно изменен в боевой пропуск.",  # type: ignore
+            bot.user.display_name,  # type: ignore
+            bot.user.display_avatar.url,  # type: ignore
+        ),
+        ephemeral=True,
+    )
 
     logger.info(
         "[command] - invoked user=%s guild=%s change_level=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501

@@ -3,8 +3,16 @@
 import logging
 from typing import TYPE_CHECKING
 
-from src.infra.api.forum.client import ForumAPIClient
-from src.infra.api.forum.dto import Server, Thread
+from nightforo import (
+    Client as XenforoClient,
+)
+from nightforo import (
+    PostCreateParams,
+    Thread,
+    ThreadUpdateParams,
+)
+
+from src.infra.api.forum.dto import Server
 from src.infra.api.forum.utils import extract_discord_id
 from src.nightcore.features.forum.components.v2 import ComplaintViewV2
 from src.nightcore.features.tickets.utils import extract_str_by_pattern
@@ -20,16 +28,14 @@ logger = logging.getLogger(__name__)
 
 
 class ForumComplaintProcessor:
-    def __init__(self, bot: "Nightcore", forum_api: ForumAPIClient) -> None:
+    def __init__(self, bot: "Nightcore", forum_api: XenforoClient) -> None:
         self.bot = bot
         self._api = forum_api
 
     async def process_server(self, server: Server) -> None:
         """Process complaints for a given server."""
         try:
-            threads = await self._api.get_threads_from_section(
-                server.section_id
-            )
+            threads_resp = await self._api.get_threads()
         except Exception as e:
             logger.exception(
                 "[forum] Failed to fetch threads for section %s: %s",
@@ -38,7 +44,7 @@ class ForumComplaintProcessor:
             )
             return
 
-        threads = self._filter_threads(threads, server.section_id)
+        threads = self._filter_threads(threads_resp.threads, server.section_id)
 
         if not threads:
             logger.info(
@@ -90,8 +96,12 @@ class ForumComplaintProcessor:
             "[/CENTER]"
         )
 
+        post_create_params = PostCreateParams(
+            thread_id=thread.thread_id, message=message
+        )
+
         try:
-            await self._api.create_post_in_thread(thread.thread_id, message)
+            await self._api.create_post(post_create_params)
         except Exception as e:
             logger.exception(
                 "[forum] Failed to create post in thread %s: %s",
@@ -100,9 +110,14 @@ class ForumComplaintProcessor:
             )
             return
 
+        update_thread_params = ThreadUpdateParams(
+            prefix_id=6,
+            sticky=True,
+        )
+
         try:
             await self._api.update_thread(
-                thread.thread_id, prefix_id=6, sticky=1
+                thread.thread_id, update_thread_params
             )
         except Exception as e:
             logger.exception(
@@ -124,7 +139,7 @@ class ForumComplaintProcessor:
             await channel.send(  # type: ignore
                 view=ComplaintViewV2(
                     self.bot,
-                    url=f"{self._api.client.base_url.replace('/api', '')}{thread.url}",  # noqa: E501
+                    url=thread.view_url if thread.view_url else "",
                     moderator_id=discord_id if discord_id else 0,
                     ping_role_id=server.role_id,
                     reason=reason if reason else "Не указана",

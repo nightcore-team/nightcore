@@ -1,6 +1,6 @@
 """Enumeration for types."""
 
-from enum import Enum
+from enum import Enum, StrEnum
 
 
 class ChannelType(Enum):
@@ -163,6 +163,44 @@ class MetaConfigAccessTypeEnum(Enum):
             ("Другое", "other"),
             ("Инфомейкер", "infomaker"),
         ]
+
+
+class CaseDropTypeEnum(Enum):
+    EXP = 0
+    COINS = 1
+    COLOR = 3
+    CASE = 4
+    CUSTOM = 5
+    BATTLEPASS_POINTS = 6
+
+    def to_str(self):
+        match self:
+            case CaseDropTypeEnum.BATTLEPASS_POINTS:
+                return "BP points"
+            case CaseDropTypeEnum.EXP:
+                return "опыт"
+            case _:
+                return self.name
+
+    def requires_id(self) -> bool:
+        return self == CaseDropTypeEnum.COLOR or self == CaseDropTypeEnum.CASE
+
+    def requires_id_or_custom(self) -> bool:
+        return (
+            self == CaseDropTypeEnum.COLOR
+            or self == CaseDropTypeEnum.CASE
+            or self == CaseDropTypeEnum.CUSTOM
+        )
+
+
+class ItemChangeActionEnum(StrEnum):
+    CREATE = "0"
+    COLOR_UPDATE = "1"
+    UPDATE_REWARD = "2"
+    DELETE_REWARD = "3"
+    ADD_REWARD = "4"
+    CASE_UPDATE = "5"
+    DELETE = "6"
 
 
 class CasinoGameTypeEnum(Enum):

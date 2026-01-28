@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, cast
 import discord
 from discord import AppCommandOptionType, Guild, app_commands
 
+from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -15,6 +17,7 @@ from src.nightcore.components.embed.error import (
     MissingPermissionsEmbed,
     NoConfigFoundButCreatedEmbed,
     NoConfigFoundEmbed,
+    StrToIntTransformFailedEmbed,
     ValidationErrorEmbed,
 )
 from src.nightcore.exceptions import (
@@ -75,6 +78,28 @@ async def setup(bot: "Nightcore") -> None:
                 cast(Guild, interaction.guild).id,
                 interaction.user.id,
             )
+
+            if isinstance(original.transformer, StrToIntTransformer):
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        embed=StrToIntTransformFailedEmbed(
+                            original.value,
+                            interaction.client.user.name,  # type: ignore
+                            interaction.client.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
+                else:
+                    await interaction.followup.send(
+                        embed=StrToIntTransformFailedEmbed(
+                            original.value,
+                            interaction.client.user.name,  # type: ignore
+                            interaction.client.user.display_avatar.url,  # type: ignore
+                        ),
+                        ephemeral=True,
+                    )
+                return
+
             if original.type == AppCommandOptionType.user:
                 if not interaction.response.is_done():
                     await interaction.response.send_message(

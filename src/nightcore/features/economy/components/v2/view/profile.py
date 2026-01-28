@@ -7,7 +7,7 @@ Used for displaying a user's profile with their stats, cases, and colors.
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
-from discord import Color
+import discord
 from discord.ui import (
     Container,
     LayoutView,
@@ -17,11 +17,14 @@ from discord.ui import (
     Thumbnail,
 )
 
+from src.infra.db.models.color import Color
+from src.infra.db.models.user import UserCase
+
+# from src.infra.db.models.color import Color
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models._annot import CasesAnnot
-from src.nightcore.features.economy.utils.case import CASES_NAMES
 from src.nightcore.utils import discord_ts
 
 from .transfer import TransferHistoryActionRow
@@ -42,12 +45,14 @@ class UserProfileViewV2(LayoutView):
         voice_activity: str,
         messages_count: int,
         avatar_url: str,
-        cases: CasesAnnot,
-        colors: list[int],
+        cases: list[UserCase],
+        colors: list[Color],
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](
+            accent_color=discord.Color.from_str("#ffffff")
+        )
 
         container.add_item(
             TextDisplay[Self](
@@ -71,13 +76,7 @@ class UserProfileViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        cases_with_items = {
-            case_name: count
-            for case_name, count in cases.items()
-            if isinstance(count, int) and count > 0
-        }
-
-        if cases_with_items:
+        if len(cases) > 0:
             container.add_item(
                 TextDisplay[Self](
                     "### <a:68842universebox:1442920870996742275> Кейсы: "
@@ -86,20 +85,20 @@ class UserProfileViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self](
                     "\n".join(
-                        f"> {CASES_NAMES.get(case_name, case_name)}, количество: {count}"  # noqa: E501
-                        for case_name, count in cases_with_items.items()
+                        f"> {case.item.name}, количество: {case.amount}"
+                        for case in cases
                     )
                 )
             )
             container.add_item(Separator[Self]())
 
-        if colors:
+        if len(colors) > 0:
             container.add_item(
                 TextDisplay[Self]("### <:palette:1442915900666679527> Цвета: ")
             )
             container.add_item(
                 TextDisplay[Self](
-                    "\n".join(f"> <@&{role_id}>" for role_id in colors)
+                    "\n".join(f"> <@&{color.role_id}>" for color in colors)
                 )
             )
             container.add_item(Separator[Self]())

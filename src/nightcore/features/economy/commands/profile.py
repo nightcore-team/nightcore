@@ -57,15 +57,13 @@ class Profile(Cog):
             coin_name = guild_config.coin_name
 
             user_record, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=member.id
+                session,
+                guild_id=guild.id,
+                user_id=member.id,
+                with_relations=True,
             )
 
-            drop_from_colors = guild_config.drop_from_colors_case or {}
-            users_colors = [
-                drop_from_colors[color_key]["role_id"]
-                for color_key in user_record.inventory.get("colors", [])
-                if color_key in drop_from_colors
-            ]
+            user_colors = user_record.colors
 
         view = UserProfileViewV2(
             bot=self.bot,
@@ -80,8 +78,8 @@ class Profile(Cog):
             voice_activity=format_voice_time(user_record.voice_activity),
             messages_count=user_record.messages_count,
             avatar_url=member.display_avatar.url,
-            cases=user_record.inventory.get("cases", {}),
-            colors=users_colors,
+            cases=user_record.cases,
+            colors=user_colors,
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)
