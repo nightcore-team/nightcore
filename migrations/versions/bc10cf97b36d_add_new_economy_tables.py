@@ -68,7 +68,7 @@ def upgrade() -> None:
     op.drop_column('guildeconomyconfig', 'drop_from_coins_case')
     op.drop_column('guildeconomyconfig', 'battlepass_rewards')
     op.drop_column('guildeconomyconfig', 'colors')
-    op.drop_column('guildeconomyconfig', 'drop_from_colors_case')
+    # op.drop_column('guildeconomyconfig', 'drop_from_colors_case')
     # op.drop_column('user', 'inventory')
     # ### end Alembic commands ###
 
