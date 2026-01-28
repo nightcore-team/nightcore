@@ -1,5 +1,7 @@
 """Guild model for the Nightcore bot database."""
 
+from typing import Any
+
 from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
