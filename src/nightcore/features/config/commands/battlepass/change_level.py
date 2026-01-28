@@ -7,6 +7,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
+from src.config.config import config
 from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.operations import (
     get_battlepass_level,
@@ -81,6 +82,19 @@ async def change_level(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Для типов CASE, COLOR, CUSTOM ввод новой награды обязателен.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if (
+        new_reward is not None
+        and len(new_reward) > config.bot.MAX_CUSTOM_REWARD_SIZE
+    ):
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "Максимальная длина награды - 100 символов.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

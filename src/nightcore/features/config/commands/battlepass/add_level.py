@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.config.config import config
 from src.infra.db.models._annot import BattlepassRewardAnnot
 from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.battlepass_level import BattlepassLevel
@@ -68,6 +69,16 @@ async def add_level(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Для типов CASE, COLOR, CUSTOM ввод награды обязателен.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if reward is not None and len(reward) > config.bot.MAX_CUSTOM_REWARD_SIZE:
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "Максимальная длина награды - 100 символов.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

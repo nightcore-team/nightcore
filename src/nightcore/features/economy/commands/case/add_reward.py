@@ -86,6 +86,16 @@ async def add_case_reward(
             ephemeral=True,
         )
 
+    if reward is not None and len(reward) > config.bot.MAX_CUSTOM_REWARD_SIZE:
+        return await interaction.response.send_message(
+            embed=ValidationErrorEmbed(
+                "Максимальная длина награды - 100 символов.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
     if reward_type.requires_id():
         try:
             reward_id = int(reward)  # type: ignore

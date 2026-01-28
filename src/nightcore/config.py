@@ -13,6 +13,7 @@ class Config(BaseEnvConfig):
     CLOSED_TICKET_ALIVE_HOURS: int = 48
     ROLE_REQUESTS_ALIVE_HOURS: int = 2
     CASE_REWARDS_LIMIT: int = 30
+    MAX_CUSTOM_REWARD_SIZE: int = 100
     BUG_REPORT_CHANNEL_ID: int = 1442803332233171088
     DISABLE_FORUM_TASK: bool = False
     DEVELOPER_IDS: list[int] = [  # noqa: RUF012
