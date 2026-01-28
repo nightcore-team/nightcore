@@ -1,7 +1,5 @@
 """Guild model for the Nightcore bot database."""
 
-from typing import Any
-
 from sqlalchemy import ARRAY, JSON, BigInteger, Float, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -119,9 +117,6 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         ARRAY(BigInteger), nullable=True
     )
     economy_shop_items: Mapped[dict[str, int]] = mapped_column(
-        JSON, nullable=False, default=dict, server_default=text("'{}'::json")
-    )
-    drop_from_colors_case: Mapped[dict[str, Any]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'::json")
     )
     casino_multiplayer_channel_id: Mapped[int | None] = mapped_column(
