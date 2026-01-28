@@ -1191,7 +1191,7 @@ async def get_guild_cases(
     session: AsyncSession, *, guild_id: int
 ) -> Sequence[Case]:
     """Get cases by guild id."""
-    stmt = select(Case).where(Case.guild_id == guild_id).order_by(asc(Case.id))
+    stmt = select(Case).where(Case.guild_id == guild_id)
     result = await session.execute(stmt)
 
     return result.scalars().all()

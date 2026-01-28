@@ -78,7 +78,7 @@ def build_cases_help_pages(
         page: list[TextDisplay[Any]] = []
 
         page.append(
-            TextDisplay(f"### Кейс {case.name}"),
+            TextDisplay(f"### {case.name}"),
         )
         if len(case.drop) < 1:
             page.append(TextDisplay("> В данный момент кейс не настроен."))

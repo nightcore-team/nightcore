@@ -54,6 +54,9 @@ class ItemChangeNotifyEventDTO:
             case ItemChangeActionEnum.CREATE.value:
                 color = Color.green()
                 title = "Создание предмета"
+            case ItemChangeActionEnum.DELETE.value:
+                color = Color.green()
+                title = "Удаление предмета"
 
             case ItemChangeActionEnum.COLOR_UPDATE.value:
                 if isinstance(self.item, ChangedRole) and self.item.before_id:

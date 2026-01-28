@@ -200,6 +200,8 @@ class ItemChangeActionEnum(StrEnum):
     DELETE_REWARD = "3"
     ADD_REWARD = "4"
     CASE_UPDATE = "5"
+    DELETE = "6"
+
 
 class CasinoGameTypeEnum(Enum):
     ROULETTE = "roulette"
