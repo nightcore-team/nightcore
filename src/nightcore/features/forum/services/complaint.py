@@ -1,7 +1,7 @@
 """Service for processing forum complaints."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nightforo import (
     Client as XenforoClient,
@@ -11,6 +11,13 @@ from nightforo import (
     Thread,
     ThreadUpdateParams,
 )
+
+# WORKAROUND: NightForo library bug
+# The library calls model_dump(by_alias=True) without exclude_none=True
+# This causes XenForo API to reject requests with null optional fields
+# We need to bypass the client and call HTTP layer directly
+from nightforo.endpoint import HTTPMethod
+from nightforo.endpoints import endpoint_posts
 
 from src.infra.api.forum.dto import Server
 from src.infra.api.forum.utils import extract_discord_id
@@ -23,6 +30,15 @@ from src.nightcore.utils import (
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
+
+
+class CleanParamsWrapper:
+    def __init__(self, params_dict: dict[Any, Any]):
+        self._dict = params_dict
+
+    def model_dump(self, **kwargs: Any):
+        return self._dict
+
 
 logger = logging.getLogger(__name__)
 
@@ -145,11 +161,23 @@ class ForumComplaintProcessor:
             post_create_params.message[:100]
             if post_create_params.message
             else None,
-            post_create_params.model_dump(),
+            post_create_params.model_dump(exclude_none=True),
         )
 
         try:
-            response = await self._api.create_post(post_create_params)
+            clean_dict = post_create_params.model_dump(
+                by_alias=True, exclude_none=True
+            )
+            logger.info(
+                "[forum] Sending cleaned params to API (no None values): %s",
+                clean_dict,
+            )
+
+            response = await self._api._http._request(
+                endpoint=endpoint_posts,
+                method=HTTPMethod.POST,
+                params=CleanParamsWrapper(clean_dict),
+            )
             logger.info(
                 "[forum] Successfully created post in thread %s %s",
                 thread.thread_id,
