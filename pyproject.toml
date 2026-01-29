@@ -11,7 +11,7 @@ dependencies = [
     "chat-exporter>=2.8.4",
     "colorlog>=6.10.1",
     "discord-py",
-    "nightforo>=1.1.1",
+    "nightforo>=1.1.2",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",

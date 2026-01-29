@@ -165,19 +165,10 @@ class ForumComplaintProcessor:
         )
 
         try:
-            clean_dict = post_create_params.model_dump(
-                by_alias=True, exclude_none=True
-            )
-            logger.info(
-                "[forum] Sending cleaned params to API (no None values): %s",
-                clean_dict,
-            )
-
-            response = await self._api._http._request(
-                endpoint=endpoint_posts,
-                method=HTTPMethod.POST,
-                params=CleanParamsWrapper(clean_dict),
-            )
+            # NOTE: Fixed in venv's nightforo/http.py:
+            # 1. Added exclude_none=True to model_dump()
+            # 2. Changed content_type to "multipart/form-data" for create_post
+            response = await self._api.create_post(post_create_params)
             logger.info(
                 "[forum] Successfully created post in thread %s %s",
                 thread.thread_id,
