@@ -60,7 +60,7 @@ class ForumComplaintProcessor:
         self, server: Server, thread: Thread
     ) -> None:
         """Process a single complaint thread."""
-        discord_id = extract_discord_id(thread.title)  # "" якщо не знайдено
+        discord_id = extract_discord_id(thread.title)
         reason = extract_str_by_pattern(thread.title, r"Причина:\s*(.+)$")
 
         moderator_name = "модератору"

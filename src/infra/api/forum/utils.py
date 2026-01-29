@@ -1,15 +1,15 @@
 """Utility functions for forum operations."""
 
+import re
+
 
 def extract_discord_id(title: str) -> int | None:
-    """Extract the first sequence of digits from the title as a Discord ID."""
-    i = 0
-    n = len(title)
-    while i < n:
-        if title[i].isdigit():
-            start = i
-            while i < n and title[i].isdigit():
-                i += 1
-            return int(title[start:i])
-        i += 1
+    """Extract Discord ID from title after 'Жалоба' pattern.
+
+    Expects format: '... | Жалоба на [role] [discord_id]. Причина: ...'
+    """
+    pattern = r"Жалоба\s+на\s+(?:модератора|руководство)\s+(\d+)"
+    match = re.search(pattern, title)
+    if match:
+        return int(match.group(1))
     return None
