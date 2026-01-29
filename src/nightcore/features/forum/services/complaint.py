@@ -34,8 +34,19 @@ class ForumComplaintProcessor:
 
     async def process_server(self, server: Server) -> None:
         """Process complaints for a given server."""
+        logger.info(
+            "[forum] Starting complaint processing for section_id=%s, guild_id=%s, channel_id=%s",  # noqa: E501
+            server.section_id,
+            server.guild_id,
+            server.channel_id,
+        )
         try:
             threads_resp = await self._api.get_threads()
+            logger.info(
+                "[forum] Fetched %s total threads from API for section_id=%s",
+                len(threads_resp.threads),
+                server.section_id,
+            )
         except Exception as e:
             logger.exception(
                 "[forum] Failed to fetch threads for section %s: %s",
@@ -45,9 +56,14 @@ class ForumComplaintProcessor:
             return
 
         threads = self._filter_threads(threads_resp.threads, server.section_id)
+        logger.info(
+            "[forum] After filtering: %s complaint threads to process (section_id=%s, prefix_id=0, sticky=0)",  # noqa: E501
+            len(threads),
+            server.section_id,
+        )
 
         if not threads:
-            logger.info(
+            logger.warning(
                 "[forum] No new complaint threads found in section %s",
                 server.section_id,
             )
@@ -60,8 +76,23 @@ class ForumComplaintProcessor:
         self, server: Server, thread: Thread
     ) -> None:
         """Process a single complaint thread."""
+        logger.info(
+            "[forum] Processing thread_id=%s, node_id=%s, prefix_id=%s, sticky=%s, title='%s', url=%s",  # noqa: E501
+            thread.thread_id,
+            thread.node_id,
+            thread.prefix_id,
+            thread.sticky,
+            thread.title,
+            thread.view_url,
+        )
         discord_id = extract_discord_id(thread.title)
         reason = extract_str_by_pattern(thread.title, r"Причина:\s*(.+)$")
+        logger.info(
+            "[forum] Extracted from thread %s: discord_id=%s, reason='%s'",
+            thread.thread_id,
+            discord_id,
+            reason,
+        )
 
         moderator_name = "модератору"
 
@@ -101,7 +132,12 @@ class ForumComplaintProcessor:
         )
 
         try:
-            await self._api.create_post(post_create_params)
+            response = await self._api.create_post(post_create_params)
+            logger.info(
+                "[forum] Successfully created post in thread %s %s",
+                thread.thread_id,
+                str(response),
+            )
         except Exception as e:
             logger.exception(
                 "[forum] Failed to create post in thread %s: %s",
@@ -119,10 +155,15 @@ class ForumComplaintProcessor:
             await self._api.update_thread(
                 thread.thread_id, update_thread_params
             )
+            logger.info(
+                "[forum] Successfully updated thread %s (prefix_id=6, sticky=True)",  # noqa: E501
+                thread.thread_id,
+            )
         except Exception as e:
             logger.exception(
                 "[forum] Failed to update thread %s: %s", thread.thread_id, e
             )
+            return
 
         try:
             channel = await ensure_messageable_channel_exists(
@@ -144,6 +185,11 @@ class ForumComplaintProcessor:
                     ping_role_id=server.role_id,
                     reason=reason if reason else "Не указана",
                 )
+            )
+            logger.info(
+                "[forum] Successfully sent Discord message for thread %s to channel %s",  # noqa: E501
+                thread.thread_id,
+                server.channel_id,
             )
 
         except Exception as e:
