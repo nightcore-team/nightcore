@@ -150,9 +150,6 @@ class ForumComplaintProcessor:
         )
 
         try:
-            # NOTE: Fixed in venv's nightforo/http.py:
-            # 1. Added exclude_none=True to model_dump()
-            # 2. Changed content_type to "multipart/form-data" for create_post
             response = await self._api.create_post(post_create_params)
             logger.info(
                 "[forum] Successfully created post in thread %s %s",

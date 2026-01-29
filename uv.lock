@@ -500,15 +500,15 @@ dev = [{ name = "ruff", specifier = ">=0.12.7" }]
 
 [[package]]
 name = "nightforo"
-version = "1.1.2"
+version = "1.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/6f/3e03cdaea15caba8b25bfd6dd273b6514d7ef092b34e4d9692e9ea4ea10e/nightforo-1.1.2.tar.gz", hash = "sha256:3c3b715b218c3d2a880fc2fafb4658cd4a85c6488f7bb24d99477f7e646ae2a7", size = 28975, upload-time = "2026-01-29T17:06:29.323Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/e9/dfbdd1810cd26b0bcf73783abbbfb8a35245543319bb292d0646e5ea62ec/nightforo-1.1.3.tar.gz", hash = "sha256:01f5c353e27998d6e8452dd890eaa8bc6a4353910e909c7e1a179a0ee1e615fc", size = 29012, upload-time = "2026-01-29T17:25:37.527Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/b0/860671bfa98af3f8ad1022740593e0dab455d3a45128818c6708cf61fdb1/nightforo-1.1.2-py3-none-any.whl", hash = "sha256:1af068b60cffc2107c25fc8d136c830f1b91a7ee292b2b749e814e065090d56a", size = 44698, upload-time = "2026-01-29T17:06:27.965Z" },
+    { url = "https://files.pythonhosted.org/packages/92/88/16389f9900efa135d0d04b378a9625657dc33c84e0464c1facccd2a477e0/nightforo-1.1.3-py3-none-any.whl", hash = "sha256:9b2c0b049670f063e699506209cc76958893a2426689e09c1ff6bc70310f4b19", size = 44742, upload-time = "2026-01-29T17:25:36.078Z" },
 ]
 
 [[package]]
