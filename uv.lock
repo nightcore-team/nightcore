@@ -487,7 +487,7 @@ requires-dist = [
     { name = "chat-exporter", specifier = ">=2.8.4" },
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "discord-py", git = "https://github.com/Rapptz/discord.py.git" },
-    { name = "nightforo", specifier = ">=1.1.0" },
+    { name = "nightforo", specifier = ">=1.1.1" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
@@ -500,15 +500,15 @@ dev = [{ name = "ruff", specifier = ">=0.12.7" }]
 
 [[package]]
 name = "nightforo"
-version = "1.1.0"
+version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/a0/88db1aada74efade6389ab5b4dcdf91831f71bb5af1104ce02cf6f055d35/nightforo-1.1.0.tar.gz", hash = "sha256:44d8f80be45bd6c0d2849c383400b85691abd1ef1b0abea0da32b80f7f972651", size = 28966, upload-time = "2026-01-11T14:39:57.31Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/4c/cbe1d2ac6b24a46d5d7f6e3f68b2fe5f70605ac84e9feab1e2baacd7bfc3/nightforo-1.1.1.tar.gz", hash = "sha256:5dbe6195daf276a0990cc3e902448366584c4631d9633db8a4d4da4aecd5c063", size = 28967, upload-time = "2026-01-29T16:45:47.449Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d6/fb/64a31976d8db852e51afd24ab379cb470481466d70b47bc16da7ecb9e5fa/nightforo-1.1.0-py3-none-any.whl", hash = "sha256:18e0411074ba67790ab9190325e9ebddf5ce68e74bda6b146acdf603bef70aa9", size = 44674, upload-time = "2026-01-11T14:39:55.833Z" },
+    { url = "https://files.pythonhosted.org/packages/56/81/b47bfdfeb112457cbf31fd9a693c8eb041104d3f43b531641bf69b8d7edc/nightforo-1.1.1-py3-none-any.whl", hash = "sha256:e353dc3212f24ddc9352256a90a8da249076cc42c007b58b093d4e6335120c26", size = 44684, upload-time = "2026-01-29T16:45:45.228Z" },
 ]
 
 [[package]]
