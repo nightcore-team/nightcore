@@ -127,8 +127,25 @@ class ForumComplaintProcessor:
             "[/CENTER]"
         )
 
+        logger.info(
+            "[forum] Prepared post data for thread %s: thread_id=%s (type=%s), message_length=%s",  # noqa: E501
+            thread.thread_id,
+            thread.thread_id,
+            type(thread.thread_id).__name__,
+            len(message) if message else 0,
+        )
+
         post_create_params = PostCreateParams(
             thread_id=thread.thread_id, message=message
+        )
+
+        logger.info(
+            "[forum] PostCreateParams created: thread_id=%s, message=%s, dict=%s",  # noqa: E501
+            post_create_params.thread_id,
+            post_create_params.message[:100]
+            if post_create_params.message
+            else None,
+            post_create_params.model_dump(),
         )
 
         try:
