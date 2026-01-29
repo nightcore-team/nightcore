@@ -1,7 +1,7 @@
 """Service for processing forum complaints."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from nightforo import (
     Client as XenforoClient,
@@ -11,13 +11,6 @@ from nightforo import (
     Thread,
     ThreadUpdateParams,
 )
-
-# WORKAROUND: NightForo library bug
-# The library calls model_dump(by_alias=True) without exclude_none=True
-# This causes XenForo API to reject requests with null optional fields
-# We need to bypass the client and call HTTP layer directly
-from nightforo.endpoint import HTTPMethod
-from nightforo.endpoints import endpoint_posts
 
 from src.infra.api.forum.dto import Server
 from src.infra.api.forum.utils import extract_discord_id
@@ -30,14 +23,6 @@ from src.nightcore.utils import (
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-
-
-class CleanParamsWrapper:
-    def __init__(self, params_dict: dict[Any, Any]):
-        self._dict = params_dict
-
-    def model_dump(self, **kwargs: Any):
-        return self._dict
 
 
 logger = logging.getLogger(__name__)
