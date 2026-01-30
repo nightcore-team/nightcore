@@ -201,7 +201,9 @@ class FAQPageViewV2(LayoutView):
         container.add_item(TextDisplay[Self](f"{page['content']}"))
         container.add_item(Separator[Self]())
 
-        if (image_url := page.get("image_url", None)) is not None:
+        if (
+            image_url := page.get("image_url", None)
+        ) is not None and image_url:
             media_gallery = MediaGalleryItem(image_url)
             container.add_item(MediaGallery[Self](media_gallery))
 
