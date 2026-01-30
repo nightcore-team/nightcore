@@ -20,6 +20,7 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
 )
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils.content import is_image_url
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -96,6 +97,9 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
                         outcome = "modified"
 
                     if image_url:
+                        if not is_image_url(image_url):
+                            image_url = None
+
                         faq_page["image_url"] = image_url
                         outcome = "modified"
 

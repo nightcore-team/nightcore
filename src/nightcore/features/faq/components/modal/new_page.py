@@ -15,6 +15,7 @@ from sqlalchemy.orm import attributes
 from src.infra.db.models import MainGuildConfig
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils.content import is_image_url
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -68,6 +69,9 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
         description = self.little_description.value
         content = self.content.value
         image_url = self.image_url.value or None
+
+        if image_url and not is_image_url(image_url):
+            image_url = None
 
         outcome = ""
         async with specified_guild_config(
