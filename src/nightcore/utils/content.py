@@ -12,7 +12,7 @@ def has_url_in_content(content: str) -> bool:
     return bool(url_pattern.search(content))
 
 
-def is_image_url(url: str) -> bool:
+def is_image_url(url: str | None) -> bool:
     """Check if the URL points to an image based on file extension."""
     image_extensions = (
         ".jpg",
@@ -26,6 +26,9 @@ def is_image_url(url: str) -> bool:
         ".tiff",
         ".tif",
     )
-    # Remove query parameters and fragments
+
+    if url is None:
+        return False
+
     url_without_params = url.split("?")[0].split("#")[0]
     return url_without_params.lower().endswith(image_extensions)
