@@ -67,7 +67,7 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
         title = self.page_title.value
         description = self.little_description.value
         content = self.content.value
-        image_url = self.image_url.value
+        image_url = self.image_url.value or None
 
         outcome = ""
         async with specified_guild_config(
