@@ -86,9 +86,9 @@ def build_cases_help_pages(
             page.append(
                 TextDisplay(
                     "\n".join(
-                        f"> {drop['amount'] if drop['type'] != CaseDropTypeEnum.COLOR else ''} {drop['name']} "  # noqa: E501
+                        f"> {i}. {drop['amount'] if drop['type'] != CaseDropTypeEnum.COLOR.value else ''} {drop['name']} "  # noqa: E501
                         f"- шанс **`{drop['chance']}`**"
-                        for drop in case.drop
+                        for i, drop in enumerate(case.drop, start=1)
                     )
                 ),
             )
