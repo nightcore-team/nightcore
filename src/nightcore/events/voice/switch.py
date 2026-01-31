@@ -50,59 +50,9 @@ class VoiceStateSwitchEvent(Cog):
             )
             return
 
-        now = datetime.now(UTC)
-
-        mover = None
-        try:
-            async for entry in guild.audit_logs(
-                limit=5, action=discord.AuditLogAction.member_move
-            ):
-                created_at = getattr(entry, "created_at", None)
-                if isinstance(created_at, datetime) and (
-                    abs((now - created_at).total_seconds()) > 5
-                ):
-                    continue
-
-                # check channel
-                extra = getattr(entry, "extra", None)
-                extra_channel = getattr(extra, "channel", None)
-                if (
-                    extra_channel
-                    and getattr(extra_channel, "id", None) != after_channel.id
-                ):
-                    continue
-
-                executor = entry.user
-                if executor and executor.id != member.id:
-                    mover = executor
-                    break
-
-        except discord.Forbidden:
-            logger.error(
-                "[voice/switch] Missing permissions to access audit logs in guild %s",  # noqa: E501
-                guild.id,
-            )
-        except Exception as e:
-            logger.exception(
-                "[voice/switch] Error fetching audit logs in guild %s: %s",
-                guild.id,
-                e,
-            )
-
-        if mover:
-            description = (
-                f"Участника {member.mention} переместил {mover.mention}"
-            )
-            color = discord.Color.orange()
-        else:
-            description = (
-                f"Участник {member.mention} перешел в другой голосовой канал"
-            )
-            color = discord.Color.yellow()
-
         embed = Embed(
-            description=description,
-            color=color,
+            description=f"Участник {member.mention} перешел в другой голосовой канал",
+            color=discord.Color.yellow(),
             timestamp=datetime.now(UTC),
         )
 
