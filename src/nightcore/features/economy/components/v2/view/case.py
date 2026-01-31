@@ -26,13 +26,14 @@ if TYPE_CHECKING:
 
 class CaseOpenViewV2(LayoutView):
     def __init__(
-        self, bot: "Nightcore", case_name: str, reward: str | int, chance: int
+        self, bot: "Nightcore", case_name: str, reward: str, amount:int, chance: int
     ):
         super().__init__()
 
         self.bot = bot
         self.case_name = case_name
         self.reward = reward
+        self.amount = amount
         self.chance = chance
 
         container = Container[Self](accent_color=Color.from_str("#1441ac"))
@@ -47,7 +48,7 @@ class CaseOpenViewV2(LayoutView):
         container.add_item(
             TextDisplay(
                 f"Вы успешно открыли **{self.case_name}**\n"
-                f"> **Ваш приз:** {self.reward}\n"
+                f"> **Ваш приз:**{self.amount} {self.reward}\n"
                 f"> **Шанс выпадения:** **`{self.chance}%`**"
             )
         )

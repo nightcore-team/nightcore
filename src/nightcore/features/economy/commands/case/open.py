@@ -201,6 +201,7 @@ async def open_case(
             case_name=case.name,  # type: ignore
             reward=reward["name"],  # type: ignore
             chance=reward["chance"],  # type: ignore
+            amount=reward["amount"] # type: ignore
         )
         await interaction.response.send_message(
             view=view,
