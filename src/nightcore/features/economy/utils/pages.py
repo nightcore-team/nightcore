@@ -136,9 +136,6 @@ def build_battlepass_levels_pages(
         reward_name = level_data.reward["name"]
         reward_amount = level_data.reward["amount"]
 
-        if level_data.reward["type"] == CaseDropTypeEnum.COINS:
-            reward_name = coin_name or "коины"
-
         arrow = (
             "<:48765whitearrow:1442918703367983225> "
             if level == current_user_level

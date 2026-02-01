@@ -150,12 +150,12 @@ async def format_battlepass_levels_rewards(
         match level.reward["type"]:
             case CaseDropTypeEnum.COINS.value:
                 level.reward["name"] = coin_name
-            case CaseDropTypeEnum.CASE:
+            case CaseDropTypeEnum.CASE.value:
                 case = await get_case_by_id(
                     session, guild_id=guild.id, case_id=level.reward["drop_id"]
                 )
 
-                level.reward["name"] = case.name if case else "unknown"
+                level.reward["name"] = case.name if case else "unknown case"
             case CaseDropTypeEnum.COLOR.value:
                 color = await get_color_by_id(
                     session,
@@ -167,6 +167,8 @@ async def format_battlepass_levels_rewards(
                     level.reward["name"] = "unknown"
                 else:
                     role = guild.get_role(color.role_id)
-                    level.reward["name"] = role.name if role else "unknown"
+                    level.reward["name"] = (
+                        role.name if role else "unknown role"
+                    )
             case _:
                 ...
