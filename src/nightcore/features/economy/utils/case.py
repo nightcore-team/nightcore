@@ -77,6 +77,8 @@ async def give_reward_by_type(
                 reward["type"] = CaseDropTypeEnum.COINS.value
                 reward["amount"] = compensation
 
+                return RewardOutcomeEnum.COLOR_WITH_COMPENSATION
+
         case CaseDropTypeEnum.CASE.value:
             case = await get_case_by_id(
                 session, guild_id=user.guild_id, case_id=drop_id
