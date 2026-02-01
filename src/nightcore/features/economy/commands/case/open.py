@@ -111,7 +111,7 @@ async def open_case(
                                     result
                                     == RewardOutcomeEnum.COLOR_WITH_COMPENSATION  # noqa: E501
                                 ):
-                                    reward["name"] += "(Компенсация за цвет)"
+                                    reward["name"] += " (Компенсация за цвет)"
 
                             case CaseDropTypeEnum.CASE.value:
                                 case = await get_case_by_id(
