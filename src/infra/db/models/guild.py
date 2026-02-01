@@ -122,6 +122,9 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     casino_multiplayer_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+    color_drop_compensation: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
 
 
 class GuildLevelsConfig(IdIntegerMixin, Base):  #

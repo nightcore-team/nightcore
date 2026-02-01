@@ -106,6 +106,13 @@ async def open_case(
                                 reward["name"] = (
                                     guild_config.coin_name or "коины"
                                 )
+
+                                if (
+                                    result
+                                    == RewardOutcomeEnum.COLOR_WITH_COMPENSATION  # noqa: E501
+                                ):
+                                    reward["name"] += " (Компенсация за цвет)"
+
                             case CaseDropTypeEnum.CASE.value:
                                 case = await get_case_by_id(
                                     session,
@@ -114,7 +121,7 @@ async def open_case(
                                 )
 
                                 reward["name"] = (
-                                    case.name if case else "unknown"
+                                    case.name if case else "unknown case"
                                 )
                             case CaseDropTypeEnum.COLOR.value:
                                 color = await get_color_by_id(
@@ -129,7 +136,7 @@ async def open_case(
                                     role = guild.get_role(color.role_id)
 
                                     reward["name"] = (
-                                        role.name if role else "unknown"
+                                        role.name if role else "unknown role"
                                     )
 
                             case _:
@@ -140,6 +147,8 @@ async def open_case(
                         outcome = (
                             "success"
                             if result == RewardOutcomeEnum.SUCCESS
+                            or result
+                            == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
                             else "error: " + result.name
                         )
 
@@ -201,7 +210,7 @@ async def open_case(
             case_name=case.name,  # type: ignore
             reward=reward["name"],  # type: ignore
             chance=reward["chance"],  # type: ignore
-            amount=reward["amount"] # type: ignore
+            amount=reward["amount"],  # type: ignore
         )
         await interaction.response.send_message(
             view=view,
