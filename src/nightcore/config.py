@@ -6,7 +6,7 @@ from src.config.env import BaseEnvConfig
 class Config(BaseEnvConfig):
     BOT_TOKEN: str
     EMBED_DESCRIPTION_LIMIT: int = 4096
-    VIEW_V2_DESCRIPTION_LIMIT: int = 3000
+    VIEW_V2_DESCRIPTION_LIMIT: int = 4000
     VIEW_V2_COMPONENTS_LIMIT: int = 40
     DELETE_MESSAGES_SECONDS: int = 604800
     VOTEBAN_ATTACHMENTS_LIMIT: int = 7

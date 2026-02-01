@@ -7,16 +7,12 @@ from src.config.config import config
 
 def build_rolemembers_pages(
     members: list[Member],
-    is_v2: bool = False,
 ) -> list[str]:
     """Build paginated description pages for role members."""
     pages: list[str] = []
     current = ""
 
-    limit = config.bot.EMBED_DESCRIPTION_LIMIT
-
-    if is_v2:
-        limit = config.bot.VIEW_V2_DESCRIPTION_LIMIT
+    limit = config.bot.VIEW_V2_DESCRIPTION_LIMIT
 
     for member in members:
         line = f" {member.mention}"
