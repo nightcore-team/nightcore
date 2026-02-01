@@ -7,8 +7,13 @@ from typing import TYPE_CHECKING
 
 from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.battlepass_level import BattlepassLevel
+from src.infra.db.models.guild import GuildEconomyConfig
 from src.infra.db.models.user import UserCase
-from src.infra.db.operations import get_case_by_id, get_color_by_id
+from src.infra.db.operations import (
+    get_case_by_id,
+    get_color_by_id,
+    get_specified_guild_config,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -25,6 +30,7 @@ class RewardOutcomeEnum(Enum):
     SUCCESS = 0
     UNKNOWN_REWARD = 1
     REWARD_NOT_FOUND = 2
+    COLOR_WITH_COMPENSATION = 3
 
 
 async def give_reward_by_type(
@@ -55,6 +61,21 @@ async def give_reward_by_type(
 
             if user.get_color(color.id) is None:
                 user.colors.append(color)
+            else:
+                guild_config = await get_specified_guild_config(
+                    session,
+                    config_type=GuildEconomyConfig,
+                    guild_id=user.guild_id,
+                )
+
+                compensation = (
+                    guild_config.color_drop_compensation if guild_config else 0
+                )
+
+                user.coins += compensation
+
+                reward["type"] = CaseDropTypeEnum.COINS.value
+                reward["amount"] = compensation
 
         case CaseDropTypeEnum.CASE.value:
             case = await get_case_by_id(
@@ -87,7 +108,7 @@ async def format_cases_rewards(
     coin_name: str,
     guild: Guild,
 ):
-    """Do something..."""
+    """Resolve and format case drop names (modifies objects in-place)."""
 
     for case in cases:
         for drop in case.drop:
@@ -121,7 +142,7 @@ async def format_battlepass_levels_rewards(
     coin_name: str,
     guild: Guild,
 ):
-    """Do something..."""
+    """Resolve and format battlepass reward names (modifies objects in-place)."""  # noqa: E501
 
     for level in levels:
         match level.reward["type"]:
