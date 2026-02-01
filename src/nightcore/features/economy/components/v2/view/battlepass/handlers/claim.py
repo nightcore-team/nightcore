@@ -59,7 +59,7 @@ async def handle_battlepass_claim_reward_button(
         if len(battlepass_levels) < 1:
             outcome = "battlepass_not_configured"
         else:
-            if len(battlepass_levels) >= user_record.battle_pass_level:
+            if len(battlepass_levels) < user_record.battle_pass_level:
                 outcome = "level_not_found"
             else:
                 current_level_data = battlepass_levels[
