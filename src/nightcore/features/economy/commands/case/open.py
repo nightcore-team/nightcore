@@ -147,6 +147,8 @@ async def open_case(
                         outcome = (
                             "success"
                             if result == RewardOutcomeEnum.SUCCESS
+                            or result
+                            == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
                             else "error: " + result.name
                         )
 
