@@ -83,11 +83,14 @@ def build_cases_help_pages(
         if len(case.drop) < 1:
             page.append(TextDisplay("> В данный момент кейс не настроен."))
         else:
+            # Calculate total weight to convert weights to percentages
+            total_weight = sum(drop["chance"] for drop in case.drop)
+
             page.append(
                 TextDisplay(
                     "\n".join(
                         f"> {i}. {drop['amount'] if drop['type'] != CaseDropTypeEnum.COLOR.value else ''} {drop['name']} "  # noqa: E501
-                        f"- шанс **`{drop['chance']}`**"
+                        f"- шанс **`{drop['chance'] / total_weight * 100:.2f}%`**"  # noqa: E501
                         for i, drop in enumerate(case.drop, start=1)
                     )
                 ),
