@@ -59,7 +59,7 @@ class MultiplayerRouletteViewV2(LayoutView):
             TextDisplay[Self](
                 f"### Пользователь <@{initiator_id}> запустил игру\n"
                 f"> **Его ставка:** {initiator_bet // 2} {coin_name_display} | {COLORS[initiator_selected_color]}\n"  # noqa: E501
-                f"> **Его результат:** {initiator_result_coins if initiator_result_coins is not None else 'Ожидание...'}\n"  # noqa: E501
+                f"> **Его результат:** {initiator_result_coins // 2 if initiator_result_coins is not None else 'Ожидание...'}\n"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
