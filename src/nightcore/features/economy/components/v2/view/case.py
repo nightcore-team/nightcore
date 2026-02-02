@@ -32,6 +32,7 @@ class CaseOpenViewV2(LayoutView):
         reward: str,
         amount: int,
         chance: int,
+        total_weight: int,
     ):
         super().__init__()
 
@@ -40,6 +41,7 @@ class CaseOpenViewV2(LayoutView):
         self.reward = reward
         self.amount = amount
         self.chance = chance
+        self.total_weight = total_weight
 
         container = Container[Self](accent_color=Color.from_str("#1441ac"))
 
@@ -54,7 +56,7 @@ class CaseOpenViewV2(LayoutView):
             TextDisplay(
                 f"Вы успешно открыли **{self.case_name}**\n"
                 f"> **Ваш приз:** {self.amount} {self.reward}\n"
-                f"> **Шанс выпадения:** **`{self.chance}`**"
+                f"> **Шанс выпадения:** **`{self.chance / total_weight * 100:.2f}%`**"  # noqa: E501
             )
         )
         container.add_item(Separator())

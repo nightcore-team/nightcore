@@ -211,6 +211,7 @@ async def open_case(
             reward=reward["name"],  # type: ignore
             chance=reward["chance"],  # type: ignore
             amount=reward["amount"],  # type: ignore
+            total_weight=sum(drop["chance"] for drop in case.drop),  # type: ignore
         )
         await interaction.response.send_message(
             view=view,
