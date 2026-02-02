@@ -156,13 +156,14 @@ async def roulette(
                     )
 
                 session.add(casino_game)
+                user_record.coins -= bet
                 await session.flush()
                 casino_game_id = casino_game.id
 
                 session.add(
                     CasinoBet(
                         user_id=user_record.id,
-                        amount=bet,
+                        amount=bet * 2,
                         color=selected_color,
                         game_id=casino_game_id,
                     )
@@ -253,7 +254,7 @@ async def roulette(
                 bot=bot,
                 coin_name=coin_name,
                 initiator_id=member.id,
-                initiator_bet=bet,
+                initiator_bet=bet * 2,
                 state=CasinoGameStateEnum.PENDING,
                 initiator_selected_color=selected_color,
             )
