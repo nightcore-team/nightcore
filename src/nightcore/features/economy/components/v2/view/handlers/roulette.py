@@ -82,6 +82,7 @@ async def handle_roulette_multiplayer_join_button_callback(
                                 initiator_id = bet.user.user_id
                                 initiator_bet = bet.amount // 2
                                 initiator_selected_color = bet.color
+
                             elif bet.user.user_id != interaction.user.id:
                                 bets.append(
                                     {

@@ -75,7 +75,7 @@ class MultiplayerRouletteTask(Cog):
 
                         for bet in game.bets:
                             result = RouletteResult(
-                                num, color, bet.amount, bet.color
+                                num, color, bet.amount // 2, bet.color
                             )
                             result_type: CasinoBetResultTypeEnum
 
@@ -89,14 +89,14 @@ class MultiplayerRouletteTask(Cog):
 
                             if bet.user.user_id == game.initiator_id:
                                 initiator_id = bet.user.user_id
-                                initiator_bet = bet.amount
+                                initiator_bet = bet.amount // 2
                                 initiator_selected_color = bet.color
                                 initiator_result_coins = result.coins_change
                             else:
                                 bets_annot.append(
                                     {
                                         "user_id": bet.user.user_id,
-                                        "bet": bet.amount,
+                                        "bet": bet.amount // 2,
                                         "result_coins": result.coins_change,
                                         "selected_color": bet.color,
                                     }
