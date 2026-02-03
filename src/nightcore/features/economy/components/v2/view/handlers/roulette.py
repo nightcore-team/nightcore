@@ -67,14 +67,23 @@ async def handle_roulette_multiplayer_join_button_callback(
                     outcome = "initiator_cannot_leave"
                 else:
                     user_in_game = False
+                    bet_to_delete = None
                     for bet in casino_game.bets:
                         if bet.user.user_id == interaction.user.id:
                             user_in_game = True
+                            bet.user.coins += bet.amount // 2
+                            bet_to_delete = bet
+
                             break
 
                     if user_in_game:
                         # User wants to leave
                         outcome = "leave_success"
+
+                        # delete bet from casino_game.bets and refresh game
+                        await session.delete(bet_to_delete)
+                        await session.flush()
+                        await session.refresh(casino_game, ["bets"])
 
                         # Collect bets excluding the leaving user
                         for bet in casino_game.bets:
@@ -83,7 +92,7 @@ async def handle_roulette_multiplayer_join_button_callback(
                                 initiator_bet = bet.amount // 2
                                 initiator_selected_color = bet.color
 
-                            elif bet.user.user_id != interaction.user.id:
+                            else:
                                 bets.append(
                                     {
                                         "user_id": bet.user.user_id,

@@ -81,11 +81,11 @@ class MultiplayerRouletteTask(Cog):
 
                             if result.is_win:
                                 result_type = CasinoBetResultTypeEnum.WIN
+                                bet.user.coins += result.coins_change * 2
                             else:
                                 result_type = CasinoBetResultTypeEnum.LOSE
 
                             bet.result_type = result_type
-                            bet.user.coins += result.coins_change
 
                             if bet.user.user_id == game.initiator_id:
                                 initiator_id = bet.user.user_id
