@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Message, SelectOption, TextStyle
@@ -144,8 +144,8 @@ class JoinMultiplayerRouletteModal(
                             game_id=casino_game.id,
                         )
 
-                        casino_game.end_time = (
-                            casino_game.end_time + timedelta(minutes=1)
+                        casino_game.end_time = datetime.now(UTC) + timedelta(
+                            minutes=1
                         )
 
                         session.add(bet)
