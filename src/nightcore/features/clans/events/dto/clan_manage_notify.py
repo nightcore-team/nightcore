@@ -69,6 +69,8 @@ class ClanManageNotifyDTO(BaseEventDTO):
                         else f"{action.before} -> {action.after}"
                     )
 
-                    embed.add_field(name=action.type.value, value=value, inline=True)
+                    embed.add_field(
+                        name=action.type.value, value=value, inline=True
+                    )
 
         return embed

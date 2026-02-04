@@ -83,9 +83,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
                     moderator=interaction.user,  # type: ignore
                     user=self.member,
                     roles_ids=[role.id for role in roles],
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=UTC
-                    ),
+                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
                     reason=self.reason,
                 ),
                 _send_to_rr_channel=True,

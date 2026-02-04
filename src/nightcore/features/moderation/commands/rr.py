@@ -169,9 +169,7 @@ class Rr(Cog):
                         moderator=interaction.user,  # type: ignore
                         user=member,
                         roles_ids=[role.id],
-                        created_at=discord.utils.utcnow().astimezone(
-                            tz=UTC
-                        ),
+                        created_at=discord.utils.utcnow().astimezone(tz=UTC),
                         reason=reason,
                     ),
                     _send_to_rr_channel=True,

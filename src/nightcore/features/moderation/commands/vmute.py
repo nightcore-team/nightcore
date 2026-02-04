@@ -232,9 +232,7 @@ class VMute(Cog):
                     moderator=interaction.user,  # type: ignore
                     user=member,
                     reason=reason,
-                    created_at=discord.utils.utcnow().astimezone(
-                        tz=UTC
-                    ),
+                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
                     guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,

@@ -252,9 +252,7 @@ async def shop(
 
         view.custom_id = state.custom_id
 
-        asyncio.create_task(
-            message.edit(view=view.make_component())
-        )
+        asyncio.create_task(message.edit(view=view.make_component()))
 
         logger.info(
             "[command] - invoked user=%s guild=%s clan_name=%s item=%s clan_balance_before=%s clan_balance_after=%s",  # noqa: E501

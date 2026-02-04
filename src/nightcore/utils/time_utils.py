@@ -358,9 +358,7 @@ def compare_date_range(from_date: str | None, to_date: str | None):
     else:
         now = datetime.now(UTC)
         monday = now.date() - timedelta(days=now.weekday())
-        from_dt = datetime(
-            monday.year, monday.month, monday.day, tzinfo=UTC
-        )
+        from_dt = datetime(monday.year, monday.month, monday.day, tzinfo=UTC)
 
     if to_date:
         to_dt = parse_date_utc(to_date)
