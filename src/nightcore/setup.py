@@ -11,6 +11,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # system
         "src.nightcore.features.system",
         # meta
+        "src.nightcore.features.meta.commands.copy",
         "src.nightcore.features.meta.commands.say",
         "src.nightcore.features.meta.commands.join",
         "src.nightcore.features.meta.commands.ping",
