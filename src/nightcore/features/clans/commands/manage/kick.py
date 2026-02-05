@@ -113,6 +113,30 @@ async def kick(
         )
         return
 
+    if kicked_user_clan_member.role == ClanMemberRoleEnum.LEADER:
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка кика пользователя",
+                "Вы не можете кикнуть лидера клана.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if interaction_clan_member.role == kicked_user_clan_member.role:
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка кика пользователя",
+                "У вас нет прав для кика пользователя с ролью заместителя",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
+
     async with bot.uow.start() as session:
         try:
             await session.delete(kicked_user_clan_member)
