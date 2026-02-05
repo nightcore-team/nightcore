@@ -85,25 +85,32 @@ async def handle_battlepass_claim_reward_button(
                             user_record.battle_pass_points - required_points
                         )
                         claimed_level = user_record.battle_pass_level
-                        user_record.battle_pass_level += 1
                         user_record.battle_pass_points = overflow_points
+
+                        user_record.battle_pass_level += 1
 
                         new_level = user_record.battle_pass_level
                         new_points = overflow_points
 
                         if (
                             len(battlepass_levels)
-                            <= user_record.battle_pass_level
+                            == user_record.battle_pass_level
                         ):
                             # New level not found, show previous level
                             # with disabled button
                             outcome = "success_no_next_level"
 
                             disable_button = True
+
+                            new_level_data = battlepass_levels[
+                                user_record.battle_pass_level - 2
+                            ]
                         else:
                             new_level_data = battlepass_levels[
                                 user_record.battle_pass_level - 1
                             ]
+
+                            new_level = user_record.battle_pass_level
 
                             outcome = "success"
 
