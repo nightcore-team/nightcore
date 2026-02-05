@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import discord
-from discord.ui import Modal, TextInput
+from discord.ui import FileUpload, Label, Modal, TextInput
 
 from src.config.config import config
 from src.nightcore.components.embed import (
@@ -43,6 +43,11 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
         placeholder="Пример: 1m, 1h, 1d, 7d",
         required=False,
         max_length=20,
+    )
+
+    attachment = Label["BanFormModal"](
+        text="Вставьте скриншот(ы) доказательств",
+        component=FileUpload(required=False, min_values=1, max_values=10),
     )
 
     def __init__(
@@ -85,6 +90,7 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
 
         delete_seconds = 0
         original_delete_seconds = ""
+
         if self.delete_messages_for_last.value:
             delete_seconds = parse_duration(
                 self.delete_messages_for_last.value
@@ -109,6 +115,9 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
 
             original_delete_seconds = self.delete_messages_for_last.value
 
+        if attachments := self.attachment.component.values:  # type: ignore (list[Attachment])
+            attachment_urls = [attachment.url for attachment in attachments]  # type: ignore
+
         view = BanRequestViewV2(
             author_id=self.moderator.id,
             reason=reason,
@@ -121,6 +130,7 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
             delete_seconds=delete_seconds,
             ban_access_roles_ids=self.ban_access_roles_ids,
             moderation_access_roles_ids=self.moderation_access_roles_ids,
+            attachments=attachment_urls if attachments else None,  # type: ignore
         )
 
         try:

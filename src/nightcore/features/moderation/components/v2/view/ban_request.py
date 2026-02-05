@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Self, cast
 import discord
 from discord import (
     ButtonStyle,
-    File,
     Guild,
     MediaGalleryItem,
     Member,
@@ -253,7 +252,7 @@ class BanRequestViewV2(LayoutView):
         ban_access_roles_ids: list[int],
         original_delete_seconds: str | None = None,
         ping_role: Role | None = None,
-        attachments: list[File] | None = None,
+        attachments: list[str] | None = None,
     ):
         super().__init__(timeout=None)
         self.author_id = author_id
@@ -331,13 +330,12 @@ class BanRequestViewV2(LayoutView):
 
         # Main page text
         if self.attachments:
-            attachments_text = TextDisplay[Self]("### Вложения:")
-            container.add_item(attachments_text)
-            attachments: list[MediaGalleryItem] = []
-            for att in self.attachments:
-                attachments.append(MediaGalleryItem(att))  # type: ignore
-
-            container.add_item(MediaGallery[Self](*attachments))
+            container.add_item(TextDisplay[Self]("### Вложения:"))
+            container.add_item(
+                MediaGallery[Self](
+                    *[MediaGalleryItem(url) for url in self.attachments]
+                )
+            )  # type: ignore
             container.add_item(Separator[Self]())
 
         # Action buttons
