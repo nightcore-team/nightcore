@@ -17,12 +17,10 @@ from discord.ui import (
     Thumbnail,
 )
 
-from src.infra.db.models.color import Color
-from src.infra.db.models.user import UserCase
-
-# from src.infra.db.models.color import Color
-
 if TYPE_CHECKING:
+    from src.infra.db.models.clan import Clan
+    from src.infra.db.models.color import Color
+    from src.infra.db.models.user import UserCase
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.utils import discord_ts
@@ -45,8 +43,9 @@ class UserProfileViewV2(LayoutView):
         voice_activity: str,
         messages_count: int,
         avatar_url: str,
-        cases: list[UserCase],
-        colors: list[Color],
+        cases: list["UserCase"],
+        colors: list["Color"],
+        clan: "Clan | None" = None,
     ):
         super().__init__(timeout=None)
 
@@ -69,7 +68,8 @@ class UserProfileViewV2(LayoutView):
                     f"**Баланс:** {balance} {coin_name if coin_name else ''}\n"
                     f"**Количество сообщений на сервере:** {messages_count}\n"
                     f"**Голосовая активность:** {voice_activity}"
-                    f"\n**Уровень баттлпаса:** {battlepass_level}",
+                    f"\n**Уровень баттлпаса:** {battlepass_level}"
+                    + (f"\n\n> **Клан:** {clan.name}" if clan else "")
                 ),
                 accessory=Thumbnail[Self](avatar_url),
             )

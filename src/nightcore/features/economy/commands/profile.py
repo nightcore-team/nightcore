@@ -8,7 +8,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.operations import get_clan_member, get_or_create_user
 from src.nightcore.features.economy.components.v2 import UserProfileViewV2
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import format_voice_time
@@ -63,6 +63,13 @@ class Profile(Cog):
                 with_relations=True,
             )
 
+            user_clan_member = await get_clan_member(
+                session,
+                guild_id=guild.id,
+                user_id=member.id,
+                with_relations=True,
+            )
+
             user_colors = user_record.colors
 
         view = UserProfileViewV2(
@@ -80,6 +87,7 @@ class Profile(Cog):
             avatar_url=member.display_avatar.url,
             cases=user_record.cases,
             colors=user_colors,
+            clan=user_clan_member.clan if user_clan_member else None,
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)
