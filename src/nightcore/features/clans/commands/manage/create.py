@@ -9,6 +9,7 @@ from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.exc import IntegrityError
 
+from src.config.config import config
 from src.infra.db.models._enums import (
     ChannelType,
     ClanManageActionEnum,
@@ -82,6 +83,16 @@ async def create(
                 bot.user.name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
                 "У меня нет прав на управление ролями в этом сервере.",
+            ),
+        )
+
+    if len(guild.roles) == config.bot.MAX_GUILD_ROLES_COUNT:
+        return await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка создания клана",
+                "Достигнуто максимальное количество ролей в гильдии.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
         )
 
