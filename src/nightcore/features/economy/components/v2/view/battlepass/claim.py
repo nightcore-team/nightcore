@@ -7,10 +7,11 @@ Used for displaying user's battlepass information with info/claim buttons.
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
-from discord import ButtonStyle, Color
+from discord import ButtonStyle, Color, Interaction
 from discord.ui import (
     Button,
     Container,
+    Item,
     LayoutView,
     Section,
     Separator,
@@ -95,3 +96,13 @@ class BattlepassClaimViewV2(LayoutView):
         )
 
         self.add_item(container)
+
+    async def on_error(
+        self,
+        interaction: Interaction,
+        error: Exception,
+        item: Item[Self],
+    ):
+        """Handle errors for button interactions."""
+
+        raise error

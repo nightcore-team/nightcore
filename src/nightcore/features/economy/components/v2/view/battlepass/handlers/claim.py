@@ -90,7 +90,10 @@ async def handle_battlepass_claim_reward_button(
                         session, reward=reward, user=user_record
                     )
 
-                    if result != RewardOutcomeEnum.SUCCESS:
+                    if (
+                        result != RewardOutcomeEnum.SUCCESS
+                        and result != RewardOutcomeEnum.COLOR_WITH_COMPENSATION
+                    ):
                         outcome = "error: " + result.name
 
                     if not outcome:
