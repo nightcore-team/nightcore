@@ -107,7 +107,7 @@ async def handle_battlepass_claim_reward_button(
 
                         if (
                             len(battlepass_levels)
-                            <= user_record.battle_pass_level
+                            < user_record.battle_pass_level
                         ):
                             # New level not found, show previous level
                             # with disabled button
