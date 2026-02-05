@@ -1,6 +1,5 @@
 """Command to leave from clan."""
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -32,6 +31,8 @@ async def leave(interaction: Interaction["Nightcore"]):
     guild = cast(Guild, interaction.guild)
     user = cast(Member, interaction.user)
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     outcome = ""
     clan_name = ""
     clan_role_id = 0
@@ -55,7 +56,6 @@ async def leave(interaction: Interaction["Nightcore"]):
             try:
                 await session.delete(db_clan_member)
                 await session.flush()
-                outcome = "success"
             except Exception as e:
                 logger.error(
                     "[clans] Failed to remove clan member %s from clan %s in guild %s: %s",  # noqa: E501
@@ -67,7 +67,7 @@ async def leave(interaction: Interaction["Nightcore"]):
                 outcome = "database_error"
 
     if outcome == "not_in_clan":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выхода из клана",
                 "Вы не состоите в клане на этом сервере.",
@@ -78,7 +78,7 @@ async def leave(interaction: Interaction["Nightcore"]):
         )
 
     if outcome == "is_leader":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выхода из клана",
                 "Лидер клана не может покинуть его. Передайте лидерство другому участнику или удалите клан.",  # noqa: E501
@@ -89,7 +89,7 @@ async def leave(interaction: Interaction["Nightcore"]):
         )
 
     if outcome == "database_error":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выхода из клана",
                 "Не удалось покинуть клан из-за внутренней ошибки.",
@@ -99,41 +99,34 @@ async def leave(interaction: Interaction["Nightcore"]):
             ephemeral=True,
         )
 
-    if outcome == "success":
-        role = await ensure_role_exists(guild, clan_role_id)
+    role = await ensure_role_exists(guild, clan_role_id)
 
-        if not role:
-            logger.error(
-                "[clans] Clan role %s not found in guild %s",
-                clan_role_id,
-                guild.id,
-            )
-            return await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
-                    "Выход из клана",
-                    f"Вы успешно покинули клан **{clan_name}**.",
+    if role and role in user.roles:
+        try:
+            await user.remove_roles(role, reason="Покинул клан")
+        except Exception:
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка выхода из клана",
+                    "Вы покинули клан, но произошла ошибка при снятии роли",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
+                )
             )
 
-        await asyncio.gather(
-            interaction.response.send_message(
-                embed=SuccessMoveEmbed(
-                    "Выход из клана",
-                    f"Вы успешно покинули клан **{clan_name}**.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            ),
-            user.remove_roles(role, reason="Покинул клан"),
-        )
+    await interaction.followup.send(
+        embed=SuccessMoveEmbed(
+            "Выход из клана",
+            f"Вы успешно покинули клан **{clan_name}**.",
+            bot.user.display_name,  # type: ignore
+            bot.user.display_avatar.url,  # type: ignore
+        ),
+        ephemeral=True,
+    )
 
-        logger.info(
-            "[command] - invoked user=%s guild=%s clan=%s",
-            user.id,
-            guild.id,
-            clan_name,
-        )
+    logger.info(
+        "[command] - invoked user=%s guild=%s clan=%s",
+        user.id,
+        guild.id,
+        clan_name,
+    )

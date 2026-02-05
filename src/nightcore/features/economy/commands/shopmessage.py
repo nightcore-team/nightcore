@@ -10,6 +10,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
 from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.embed.success import SuccessMoveEmbed
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
@@ -105,9 +106,18 @@ class ShopMessage(Cog):
             )
 
             start_time = time.perf_counter()
+            await interaction.channel.send(view=view)  # type: ignore
+
             await interaction.response.send_message(
-                view=view,
+                embed=SuccessMoveEmbed(
+                    "Отправка магазина",
+                    "Сообщение магазина успешно отправлено.",
+                    self.bot.user.display_name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
             )
+
             end_time = time.perf_counter()
             logger.info(
                 "[shopmessage] Sending info response shop message message took %.4f seconds",  # noqa: E501

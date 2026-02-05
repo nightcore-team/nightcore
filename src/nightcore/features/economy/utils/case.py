@@ -91,7 +91,10 @@ async def give_reward_by_type(
                 user_case.amount += amount
             else:
                 new_case = UserCase(
-                    user_id=user.user_id, case_id=case.id, amount=amount
+                    user_id=user.user_id,
+                    case_id=case.id,
+                    amount=amount,
+                    guild_id=user.guild_id,
                 )
                 session.add(new_case)
 

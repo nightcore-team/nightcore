@@ -87,19 +87,13 @@ class Battlepass(Cog):
                 ephemeral=True,
             )
 
-        if user_level > len(battlepass_levels):
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка получения уровня баттлпаса",
-                    "Ваш уровень превышает все настроенные уровни баттлпаса, "
-                    "или у вас еще нет доступных уровней.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
+        level_index = user_level - 1
 
-        current_level = battlepass_levels[user_level - 1]
+        if user_level > len(battlepass_levels):
+            disable_button = True
+            level_index = len(battlepass_levels) - 1
+
+        current_level = battlepass_levels[level_index]
 
         reward_name = current_level.reward["name"]
         reward_type = current_level.reward["type"]

@@ -1,9 +1,8 @@
 """Command to kick a member from a clan."""
 
-import asyncio
+import contextlib
 import logging
-from collections.abc import Awaitable
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
@@ -51,6 +50,8 @@ async def kick(
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     async with bot.uow.start() as session:
         # get clanmember
         interaction_clan_member = await get_clan_member(
@@ -65,7 +66,7 @@ async def kick(
         )
 
     if not interaction_clan_member:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка кика пользователя",
                 "Вы не состоите в клане.",
@@ -77,7 +78,7 @@ async def kick(
         return
 
     if not kicked_user_clan_member:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка кика пользователя",
                 f"{user.mention} не состоит ни в одном из кланов.",
@@ -92,7 +93,7 @@ async def kick(
         interaction_clan_member.role != ClanMemberRoleEnum.LEADER
         and interaction_clan_member.role != ClanMemberRoleEnum.DEPUTY
     ):
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=MissingPermissionsEmbed(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
@@ -102,7 +103,7 @@ async def kick(
         return
 
     if interaction_clan_member.clan_id != kicked_user_clan_member.clan_id:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка кика пользователя",
                 f"{user.mention} не состоит в вашем клане.",
@@ -113,23 +114,78 @@ async def kick(
         )
         return
 
-    async with bot.uow.start() as session:
-        try:
+    if kicked_user_clan_member.role == ClanMemberRoleEnum.LEADER:
+        await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка кика пользователя",
+                "Вы не можете кикнуть лидера клана.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if interaction_clan_member.role == kicked_user_clan_member.role:
+        await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка кика пользователя",
+                "У вас нет прав для кика пользователя с ролью заместителя",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
+
+    outcome = ""
+
+    try:
+        async with bot.uow.start() as session:
+            clans_logging_channel = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_CLANS,
+            )
+
             await session.delete(kicked_user_clan_member)
-        except Exception as e:
-            logger.exception(
-                "[clans] Failed to delete clanmember in guild %s: %s",
-                guild.id,
-                e,
+    except Exception as e:
+        logger.exception(
+            "[clans] Failed to delete clanmember in guild %s: %s",
+            guild.id,
+            e,
+        )
+
+        outcome = "db_error"
+
+    if outcome == "db_error":
+        return await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка кика пользователя",
+                "Ошибка удаления пользователя из базе данных.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             )
-            await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка кика пользователя",
-                    "Ошибка удаления пользователя в базе данных.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
+        )
+
+    if member := await ensure_member_exists(guild, user.id):
+        role = await ensure_role_exists(
+            guild=guild, role_id=interaction_clan_member.clan.role_id
+        )
+
+        if role and role in member.roles:
+            try:
+                await member.remove_roles(role, reason="Кик из клана.")
+            except Exception:
+                return await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка кика пользователя",
+                        "Участник кикнут из клана, но произошла ошибка при снятии роли",  # noqa: E501
+                        bot.user.display_name,  # type: ignore
+                        bot.user.display_avatar.url,  # type: ignore
+                    )
                 )
-            )
 
     embed = SuccessMoveEmbed(
         "Кик пользователя из клана",
@@ -138,41 +194,8 @@ async def kick(
         bot.user.display_avatar.url,  # type: ignore
     )
 
-    to_gather: list[Awaitable[Any]] = [
-        interaction.response.send_message(embed=embed, ephemeral=True),
-    ]
-
-    if member := await ensure_member_exists(guild, user.id):
-        role = await ensure_role_exists(
-            guild=guild, role_id=interaction_clan_member.clan.role_id
-        )
-
-        if not role:
-            await interaction.response.send_message(
-                embed=embed, ephemeral=True
-            )
-            logger.error(
-                "[clans] Clan role %s not found in guild %s",
-                interaction_clan_member.clan.role_id,
-                guild.id,
-            )
-            return
-
-        to_gather.append(
-            member.remove_roles(role, reason="Кик из клана."),
-        )
-
-    await asyncio.gather(
-        *to_gather,
-    )
-
-    async with bot.uow.start() as session:
-        clans_logging_channel = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildLoggingConfig,
-            channel_type=ChannelType.LOGGING_CLANS,
-        )
+    with contextlib.suppress(Exception):
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     clan_kick_member_action = ClanManageAction(
         type=ClanManageActionEnum.KICK_MEMBER, after=user.mention
@@ -184,7 +207,7 @@ async def kick(
         actor_id=interaction.user.id,
         clan_name=interaction_clan_member.clan.name,
         actions=[clan_kick_member_action],
-        logging_channel_id=clans_logging_channel,
+        logging_channel_id=clans_logging_channel,  # type: ignore
     )
 
     bot.dispatch("clan_manage_notify", dto)
