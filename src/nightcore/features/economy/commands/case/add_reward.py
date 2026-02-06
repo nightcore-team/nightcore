@@ -139,7 +139,7 @@ async def add_case_reward(
                             if reward_case is None:
                                 outcome = "unknown_reward_case_id"
                             else:
-                                new_reward["drop_id"] = case.id
+                                new_reward["drop_id"] = reward_case.id
 
                         case CaseDropTypeEnum.COLOR:
                             color = await get_color_by_id(

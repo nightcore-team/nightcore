@@ -26,7 +26,10 @@ from src.infra.db.models._enums import (
     ClanMemberRoleEnum,
 )
 from src.infra.db.models.guild import GuildLoggingConfig
-from src.infra.db.operations import create_clan_member, get_specified_channel
+from src.infra.db.operations import (
+    create_clan_member,
+    get_specified_channel,
+)
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
     ClanManageNotifyDTO,
@@ -65,6 +68,8 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
             )
             return
 
+        outcome = ""
+
         async with view.bot.uow.start() as session:
             try:
                 await create_clan_member(
@@ -76,16 +81,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
                 )
                 await session.flush()
             except IntegrityError:
-                await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Ошибка принятия приглашения в клан",
-                        "Вы уже состоите в клане.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-                return
+                outcome = "clan_member_exists"
             except Exception as e:
                 logger.exception(
                     "[clans] Error occurred while accepting clan invite in guild %s for user %s: %s",  # noqa: E501
@@ -93,20 +89,37 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
                     view.invited_member.id,
                     e,
                 )
-                await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Ошибка принятия приглашения в клан",
-                        "Произошла ошибка при обработке вашего запроса.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
-                return
+
+                outcome = "database_error"
+
+        if outcome == "clan_member_exists":
+            await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка принятия приглашения в клан",
+                    "Произошла ошибка при обработке вашего запроса.",
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+            return
+
+        if outcome == "database_error":
+            await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка принятия приглашения в клан",
+                    "Произошла ошибка при обработке вашего запроса.",
+                    view.bot.user.display_name,  # type: ignore
+                    view.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+            return
 
         role = await ensure_role_exists(
             guild=view.invited_member.guild, role_id=view.inviter.clan.role_id
         )
+
         if not role:
             logger.error(
                 "[clans] Clan role %s not found in guild %s",
