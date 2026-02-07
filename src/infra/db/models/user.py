@@ -126,4 +126,4 @@ class UserCase(Base):
         ForeignKey("case.id", ondelete="CASCADE"), primary_key=True
     )
     amount: Mapped[int] = mapped_column(default=1)
-    item: Mapped["Case"] = relationship()
+    item: Mapped["Case"] = relationship(lazy="selectin")
