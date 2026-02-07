@@ -62,7 +62,10 @@ async def handle_battlepass_claim_reward_button(
         coin_name = guild_config.coin_name if guild_config else "коины"
 
         user_record, _ = await get_or_create_user(
-            session, guild_id=guild.id, user_id=interaction.user.id
+            session,
+            guild_id=guild.id,
+            user_id=interaction.user.id,
+            with_relations=True,
         )
 
         battlepass_levels = await get_guild_battlepass_levels(
