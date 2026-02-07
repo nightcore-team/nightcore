@@ -13,6 +13,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     Table,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -50,6 +51,12 @@ class User(IdIntegerMixin, Base):
     level: Mapped[int] = mapped_column(nullable=False, default=0)
     messages_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
+    )
+    sended_valentines: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    received_valentines: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     current_exp: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
