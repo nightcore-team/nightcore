@@ -6,15 +6,23 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.models._enums import ChannelType
+from src.infra.db.models.guild import GuildLoggingConfig
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.special_events.valentine.commands._groups import (
     valentine as valentine_group,
+)
+from src.nightcore.features.special_events.valentine.events.dto.valentine_send import (
+    ValentineSendEventDTO,
+)
+from src.nightcore.features.special_events.valentine.utils.valentine_image import (  # noqa: E501
+    generate_valentine_image,
 )
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.operations import get_or_create_user
+from src.infra.db.operations import get_or_create_user, get_specified_channel
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -24,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 
 @valentine_group.command(name="send", description="Отправить валентинку")  # type: ignore
+@app_commands.checks.cooldown(
+    1,
+    20 * 60,
+    key=lambda i: (i.guild.id, i.user.id),  # type: ignore
+)
 @app_commands.describe(
     user="Пользователь, которому вы хотите отправить валентинку",
     where_to_send="Куда вы хотите отправить валентинку",
@@ -46,7 +59,7 @@ async def send_valentine(
     interaction: Interaction["Nightcore"],
     user: Member,
     where_to_send: app_commands.Choice[str],
-    text: app_commands.Range[str, 1, 20],
+    text: app_commands.Range[str, 5, 450],
     is_anonymous: bool = False,
 ):
     """Send a valentine."""
@@ -56,7 +69,7 @@ async def send_valentine(
     bot = interaction.client
 
     # generate valentine image
-    # image = generate_valentine_image(text)
+    image = await generate_valentine_image(text)
 
     # build view with the image and checking if the user wants to send it anonymously  # noqa: E501
     # view = ValentineView(image, is_anonymous, bot, user)
@@ -79,21 +92,35 @@ async def send_valentine(
             )
         )
 
-    try:
-        async with bot.uow.start() as session:
-            sender, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=interaction.user.id
-            )
+    async with bot.uow.start() as session:
+        sender, _ = await get_or_create_user(
+            session, guild_id=guild.id, user_id=interaction.user.id
+        )
 
-            sender.sended_valentines += sender.sended_valentines + 1
+        sender.sended_valentines += sender.sended_valentines + 1
 
-            recipient, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=member.id
-            )
-            recipient.received_valentines += recipient.received_valentines + 1
+        recipient, _ = await get_or_create_user(
+            session, guild_id=guild.id, user_id=member.id
+        )
+        recipient.received_valentines += recipient.received_valentines + 1
 
-    except Exception as e:
-        logger.exception("Failed to send valentine: %s", e)
+        logging_channel_id = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildLoggingConfig,
+            channel_type=ChannelType.LOGGING_ECONOMY,
+        )
+
+    dto = ValentineSendEventDTO(
+        guild=guild,
+        event_type="send",
+        logging_channel_id=logging_channel_id,  # type: ignore
+        user_id=interaction.user.id,
+        reciever_id=user.id,
+        text=text,
+    )
+
+    bot.dispatch("valentine_send", dto=dto)
 
     logger.info(
         "Valentine sent successfully to user %s in guild %s by user %s (anonymous: %s)",  # noqa: E501
