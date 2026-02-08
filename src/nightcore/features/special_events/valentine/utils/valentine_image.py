@@ -5,6 +5,7 @@ from typing import Final
 import discord
 
 from src.nightcore.utils.image_builder.builder import ImageBuilder
+from src.nightcore.utils.image_builder.cache import ImageCache
 
 FONT_SIZE: Final[int] = 45
 
@@ -20,7 +21,10 @@ CENTER_LINES_COUNT = 3
 LINE_INTERVAL_PIXELS: Final[int] = 55
 
 
-async def generate_valentine_image(text: str) -> discord.File:
+async def generate_valentine_image(
+    text: str,
+    cache: ImageCache | None = None,
+) -> discord.File:
     """Create a Valentine-themed image with wrapped text and return as Discord file."""  # noqa: E501
 
     image_path, center_coords, upper_coords = VALENTINE_IMAGE
@@ -28,7 +32,7 @@ async def generate_valentine_image(text: str) -> discord.File:
     coords = upper_coords
     align = "left"
 
-    image_builder = ImageBuilder()
+    image_builder = ImageBuilder(cache=cache)
 
     await image_builder.load_image(image_path)
     await image_builder.load_font(VALENTINE_FONT_PATH, FONT_SIZE)

@@ -69,7 +69,7 @@ async def send_valentine(
     bot = interaction.client
 
     # generate valentine image
-    image = await generate_valentine_image(text)
+    image = await generate_valentine_image(text, cache=bot.images_cache)
 
     # build view with the image and checking if the user wants to send it anonymously  # noqa: E501
     # view = ValentineView(image, is_anonymous, bot, user)

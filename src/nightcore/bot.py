@@ -35,6 +35,7 @@ from src.nightcore.features.tickets.components.v2 import (
     ManageTicketViewV2,
 )
 from src.nightcore.utils import log_tree_summary
+from src.nightcore.utils.image_builder.cache import ImageCache
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class Nightcore(Bot):
         self.cog_modules = cog_modules
         self.uow = uow
         self.apis = CustomAPICollection()
+        self.images_cache = ImageCache()
 
         super().__init__(
             command_prefix=".",
