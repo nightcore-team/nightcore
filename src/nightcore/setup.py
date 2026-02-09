@@ -130,6 +130,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.tasks.clan_reputation",
         "src.nightcore.tasks.temp_role",
         "src.nightcore.tasks.temp_multiplier",
+        # special events
+        "src.nightcore.features.special_events.valentine",
     ]
 
     return Nightcore(

@@ -53,6 +53,20 @@ class UsersListViewV2(LayoutView):
             voice_activity_str = format_voice_time(user.voice_activity)
 
             match sort_by:
+                case "sent":
+                    container.add_item(
+                        TextDisplay[Self](
+                            f"{prefix} <@{user.user_id}> — "
+                            f"**{user.sended_valentines}** отправленных валентинок"  # noqa: E501
+                        )
+                    )
+                case "received":
+                    container.add_item(
+                        TextDisplay[Self](
+                            f"{prefix} <@{user.user_id}> — "
+                            f"**{user.received_valentines}** полученных валентинок"  # noqa: E501
+                        )
+                    )
                 case "voice":
                     container.add_item(
                         TextDisplay[Self](

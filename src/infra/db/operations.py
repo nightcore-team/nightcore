@@ -325,6 +325,12 @@ async def get_users_by_spec(
         case "battlepass":
             stmt = stmt.order_by(User.battle_pass_level.desc())
 
+        case "sent":
+            stmt = stmt.order_by(User.sended_valentines.desc())
+
+        case "received":
+            stmt = stmt.order_by(User.received_valentines.desc())
+
         case _:
             stmt = stmt.order_by(User.level.desc(), User.current_exp.desc())
 
