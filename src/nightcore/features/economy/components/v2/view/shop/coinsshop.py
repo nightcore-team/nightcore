@@ -167,7 +167,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 thread = await cast(
                     TextChannel, interaction.channel
                 ).create_thread(
-                    name=f"{item} | {interaction.user.id}",
+                    name=f"Покупка от пользователя {interaction.user.id}",
                 )
             except Exception as e:
                 logger.exception(
