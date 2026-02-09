@@ -1,5 +1,6 @@
 """Task cog for resetting temporary economy multipliers."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -33,57 +34,68 @@ class ResetTempMultiplierTask(Cog):
     @tasks.loop(minutes=1)
     async def reset_temp_multiplier_task(self):
         """Task to reset temporary multipliers when their duration ends."""
-        logger.info("[task] - Running reset temp multiplier task")
+        try:
+            logger.info("[task] - Running reset temp multiplier task")
 
-        async with self.bot.uow.start() as session:
-            temp_multipliers = await get_all_expired_temp_multipliers(session)
-
-            if not temp_multipliers:
-                logger.info("[task] - No expired temp multipliers found")
-                return
-
-            for temp_multiplier in temp_multipliers:
-                guild_id = temp_multiplier.guild_id
-                multiplier_type = temp_multiplier.multiplier_type
-
-                guild_config = await get_specified_guild_config(
-                    session, guild_id=guild_id, config_type=GuildLevelsConfig
+            async with self.bot.uow.start() as session:
+                temp_multipliers = await get_all_expired_temp_multipliers(
+                    session
                 )
-                if guild_config is None:
-                    logger.error(
-                        "[task] - GuildLevelsConfig not found for guild %s",
+
+                if not temp_multipliers:
+                    logger.info("[task] - No expired temp multipliers found")
+                    return
+
+                for temp_multiplier in temp_multipliers:
+                    guild_id = temp_multiplier.guild_id
+                    multiplier_type = temp_multiplier.multiplier_type
+
+                    guild_config = await get_specified_guild_config(
+                        session,
+                        guild_id=guild_id,
+                        config_type=GuildLevelsConfig,
+                    )
+                    if guild_config is None:
+                        logger.error(
+                            "[task] - GuildLevelsConfig not found for guild %s",  # noqa: E501
+                            guild_id,
+                        )
+                        continue
+
+                    match multiplier_type:
+                        case MultiplierTypeEnum.EXP:
+                            guild_config.temp_exp_multiplier = None
+                            logger.info(
+                                "[task] - Reset EXP multiplier for guild %s",
+                                guild_id,
+                            )
+                        case MultiplierTypeEnum.COINS:
+                            guild_config.temp_coins_multiplier = None
+                            logger.info(
+                                "[task] - Reset COINS multiplier for guild %s",
+                                guild_id,
+                            )
+                        case MultiplierTypeEnum.BATTLEPASS:
+                            guild_config.temp_battlepass_multiplier = None
+                            logger.info(
+                                "[task] - Reset BATTLEPASS multiplier for guild %s",  # noqa: E501
+                                guild_id,
+                            )
+
+                    await session.delete(temp_multiplier)
+
+                    logger.info(
+                        "[task] - Removed expired %s multiplier (x%s) for guild %s",  # noqa: E501
+                        multiplier_type.value,
+                        temp_multiplier.multiplier,
                         guild_id,
                     )
-                    continue
-
-                match multiplier_type:
-                    case MultiplierTypeEnum.EXP:
-                        guild_config.temp_exp_multiplier = None
-                        logger.info(
-                            "[task] - Reset EXP multiplier for guild %s",
-                            guild_id,
-                        )
-                    case MultiplierTypeEnum.COINS:
-                        guild_config.temp_coins_multiplier = None
-                        logger.info(
-                            "[task] - Reset COINS multiplier for guild %s",
-                            guild_id,
-                        )
-                    case MultiplierTypeEnum.BATTLEPASS:
-                        guild_config.temp_battlepass_multiplier = None
-                        logger.info(
-                            "[task] - Reset BATTLEPASS multiplier for guild %s",  # noqa: E501
-                            guild_id,
-                        )
-
-                await session.delete(temp_multiplier)
-
-                logger.info(
-                    "[task] - Removed expired %s multiplier (x%s) for guild %s",  # noqa: E501
-                    multiplier_type.value,
-                    temp_multiplier.multiplier,
-                    guild_id,
-                )
+        except Exception as e:
+            logger.exception(
+                "[task] - Error in reset temp multiplier task iteration: %s",
+                e,
+                exc_info=True,
+            )
 
     @reset_temp_multiplier_task.before_loop
     async def before_reset_temp_multiplier_task(self):
@@ -98,7 +110,13 @@ class ResetTempMultiplierTask(Cog):
             "[task] - Reset temp multiplier task crashed:",
             exc_info=exc,
         )
-        raise exc
+
+        # Wait before restarting to avoid rapid restart loops
+        await asyncio.sleep(60)
+
+        if not self.reset_temp_multiplier_task.is_running():
+            logger.info("[task] - Restarting reset temp multiplier task...")
+            self.reset_temp_multiplier_task.restart()
 
 
 async def setup(bot: "Nightcore"):

@@ -33,62 +33,72 @@ class ClansPayDayTask(Cog):
     @tasks.loop(hours=1)
     async def add_clan_reputation_task(self):
         """Task to add reputation points to clans."""
-        logger.info("[task] - Running add clan reputation task")
+        try:
+            logger.info("[task] - Running add clan reputation task")
 
-        view = ClansPaydayViewV2(bot=self.bot)
+            view = ClansPaydayViewV2(bot=self.bot)
 
-        async with self.bot.uow.start() as session:
-            guilds = self.bot.guilds
+            async with self.bot.uow.start() as session:
+                guilds = self.bot.guilds
 
-            for guild in guilds:
-                clans = await get_clans_by_spec(session, guild_id=guild.id)
+                for guild in guilds:
+                    clans = await get_clans_by_spec(session, guild_id=guild.id)
 
-                guild_config = await get_specified_guild_config(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildClansConfig,
-                )
-
-                for clan in clans:
-                    # add reputation
-                    added = clan.payday_multipler * len(clan.members)
-                    clan.coins += added
-
-                    logger.info(
-                        "[task] - Added %s reputation to clan %s in guild %s",
-                        added,
-                        clan.name,
-                        guild.id,
+                    guild_config = await get_specified_guild_config(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildClansConfig,
                     )
 
-                if not guild_config or not guild_config.clan_payday_channel_id:
-                    logger.warning(
-                        "[task] - Guild %s does not have clan payday channel configured.",  # noqa: E501
-                        guild.id,
-                    )
-                    continue
+                    for clan in clans:
+                        # add reputation
+                        added = clan.payday_multipler * len(clan.members)
+                        clan.coins += added
 
-                channel = await ensure_messageable_channel_exists(
-                    guild, guild_config.clan_payday_channel_id
-                )
-                if not channel:
-                    logger.error(
-                        "[task] - Clan payday channel %s not found in guild %s",  # noqa: E501
-                        guild_config.clan_payday_channel_id,
-                        guild.id,
-                    )
-                    continue
+                        logger.info(
+                            "[task] - Added %s reputation to clan %s in guild %s",  # noqa: E501
+                            added,
+                            clan.name,
+                            guild.id,
+                        )
 
-                try:
-                    asyncio.create_task(channel.send(view=view))  # type: ignore
-                except Exception as e:
-                    logger.error(
-                        "[task] - Error sending clan payday message to channel %s in guild %s: %s",  # noqa: E501
-                        channel.id,
-                        guild.id,
-                        e,
+                    if (
+                        not guild_config
+                        or not guild_config.clan_payday_channel_id
+                    ):
+                        logger.warning(
+                            "[task] - Guild %s does not have clan payday channel configured.",  # noqa: E501
+                            guild.id,
+                        )
+                        continue
+
+                    channel = await ensure_messageable_channel_exists(
+                        guild, guild_config.clan_payday_channel_id
                     )
-                    continue
+                    if not channel:
+                        logger.error(
+                            "[task] - Clan payday channel %s not found in guild %s",  # noqa: E501
+                            guild_config.clan_payday_channel_id,
+                            guild.id,
+                        )
+                        continue
+
+                    try:
+                        asyncio.create_task(channel.send(view=view))  # type: ignore
+                    except Exception as e:
+                        logger.error(
+                            "[task] - Error sending clan payday message to channel %s in guild %s: %s",  # noqa: E501
+                            channel.id,
+                            guild.id,
+                            e,
+                        )
+                        continue
+        except Exception as e:
+            logger.exception(
+                "[task] - Error in add clan reputation task iteration: %s",
+                e,
+                exc_info=True,
+            )
 
     @add_clan_reputation_task.before_loop
     async def before_add_clan_reputation_task(self):
@@ -103,7 +113,13 @@ class ClansPayDayTask(Cog):
             "[task] - Add clan reputation task crashed:",
             exc_info=exc,
         )
-        raise exc
+
+        # Wait before restarting to avoid rapid restart loops
+        await asyncio.sleep(60)
+
+        if not self.add_clan_reputation_task.is_running():
+            logger.info("[task] - Restarting add clan reputation task...")
+            self.add_clan_reputation_task.restart()
 
 
 async def setup(bot: Nightcore):

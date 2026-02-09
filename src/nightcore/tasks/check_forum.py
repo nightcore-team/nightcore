@@ -1,5 +1,6 @@
 """Check the forum for new posts and updates."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -35,13 +36,20 @@ class CheckForumTask(Cog):
     @tasks.loop(seconds=60)
     async def check_forum_task(self):
         """Task to check the forum for new posts and updates."""
-        logger.info("[task] - Running check forum task")
+        try:
+            logger.info("[task] - Running check forum task")
 
-        for server in config.forum.SERVERS:
-            logger.info(
-                "[task] - Processing forum server: %s", server.guild_id
+            for server in config.forum.SERVERS:
+                logger.info(
+                    "[task] - Processing forum server: %s", server.guild_id
+                )
+                await self.service.process_server(server)
+        except Exception as e:
+            logger.exception(
+                "[task] - Error in check forum task iteration: %s",
+                e,
+                exc_info=True,
             )
-            await self.service.process_server(server)
 
     @check_forum_task.before_loop
     async def before_check_forum_task(self):
@@ -53,7 +61,13 @@ class CheckForumTask(Cog):
     async def check_forum_task_error(self, exc):  # type: ignore
         """Handle errors in the check forum task."""
         logger.exception("[task] - Check forum task crashed:", exc_info=exc)  # type: ignore
-        raise exc
+
+        # Wait before restarting to avoid rapid restart loops
+        await asyncio.sleep(60)
+
+        if not self.check_forum_task.is_running():
+            logger.info("[task] - Restarting check forum task...")
+            self.check_forum_task.restart()
 
 
 async def setup(bot: "Nightcore"):
