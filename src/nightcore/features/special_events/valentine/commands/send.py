@@ -12,7 +12,10 @@ from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.special_events.valentine.commands._groups import (
     valentine as valentine_group,
 )
-from src.nightcore.features.special_events.valentine.events.dto.valentine_send import (
+from src.nightcore.features.special_events.valentine.components.v2 import (
+    ValentineViewV2,
+)
+from src.nightcore.features.special_events.valentine.events.dto.valentine_send import (  # noqa: E501
     ValentineSendEventDTO,
 )
 from src.nightcore.features.special_events.valentine.utils.valentine_image import (  # noqa: E501
@@ -71,45 +74,78 @@ async def send_valentine(
     # generate valentine image
     image = await generate_valentine_image(text, cache=bot.images_cache)
 
-    # build view with the image and checking if the user wants to send it anonymously  # noqa: E501
-    # view = ValentineView(image, is_anonymous, bot, user)
-
+    to_user_valentine_count = 0
     try:
-        if where_to_send.value == "channel":
-            await interaction.response.send_message()
-        else:
-            await member.send()
+        async with bot.uow.start() as session:
+            sender, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=interaction.user.id
+            )
+
+            sender.sended_valentines += sender.sended_valentines + 1
+
+            recipient, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=member.id
+            )
+            recipient.received_valentines += recipient.received_valentines + 1
+            to_user_valentine_count = recipient.received_valentines
+
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
+            )
 
     except Exception as e:
-        logger.exception("Failed to send valentine: %s", e)
-
-        return await interaction.response.send_message(
+        logger.exception("Error while sending valentine: %s", e)
+        await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
                 "Произошла ошибка при отправке валентинки.",
-                bot.user.name,  # type: ignore
+                bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+        return
+
+    # build view with the image and checking if the user wants to send it anonymously  # noqa: E501
+    view = ValentineViewV2(
+        bot=bot,
+        image_uri=image.uri,
+        from_user=interaction.user,
+        to_user=member,
+        to_user_valentine_count=to_user_valentine_count,
+        is_anonymous=is_anonymous,
+    )
+
+    try:
+        if where_to_send.value == "channel":
+            await interaction.channel.send(view=view)  # type: ignore
+            await interaction.response.send_message(
+                "Валентинка успешно отправлена в этот чат! ❤️",
+                ephemeral=True,
             )
+        else:
+            await member.send(
+                view=view,
+            )
+            await interaction.response.send_message(
+                "Валентинка успешно отправлена в личные сообщения получателя! ❤️",  # noqa: E501
+                ephemeral=True,
+            )
+    except Exception as e:
+        logger.exception("Error while sending valentine: %s", e)
+        await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка отправки валентинки",
+                "Произошла ошибка при отправке валентинки.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
         )
-
-    async with bot.uow.start() as session:
-        sender, _ = await get_or_create_user(
-            session, guild_id=guild.id, user_id=interaction.user.id
-        )
-
-        sender.sended_valentines += sender.sended_valentines + 1
-
-        recipient, _ = await get_or_create_user(
-            session, guild_id=guild.id, user_id=member.id
-        )
-        recipient.received_valentines += recipient.received_valentines + 1
-
-        logging_channel_id = await get_specified_channel(
-            session,
-            guild_id=guild.id,
-            config_type=GuildLoggingConfig,
-            channel_type=ChannelType.LOGGING_ECONOMY,
-        )
+        return
 
     dto = ValentineSendEventDTO(
         guild=guild,
