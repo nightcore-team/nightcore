@@ -85,4 +85,5 @@ def downgrade() -> None:
     op.drop_table('user_colors')
     op.drop_table('color')
     op.drop_table('case')
+    op.drop_table('battlepasslevel')
     # ### end Alembic commands ###
