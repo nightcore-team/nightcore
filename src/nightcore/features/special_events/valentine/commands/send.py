@@ -72,6 +72,28 @@ async def send_valentine(
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
 
+    if member.bot:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка отправки валентинки",
+                "Очень приятно, но Вы не можете отправить валентинку мне.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if member.id == interaction.user.id:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка отправки валентинки",
+                "Вы не можете отправить валентинку самому себе.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
     # generate valentine image
     image = await generate_valentine_image(text, cache=bot.images_cache)
     image_bytes = image.fp.read()

@@ -52,6 +52,16 @@ class ShowValetineActionRow(ActionRow["ValentineViewV2"]):
 
         self.image_bytes = image_bytes
 
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        """Check if the user can interact with the button."""
+        if interaction.user.id != self.view.to_user.id:  # type: ignore
+            await interaction.response.send_message(
+                "Извините, но вы не можете взаимодействовать с этой кнопкой, так как она предназначена для другого пользователя.",  # noqa: E501
+                ephemeral=True,
+            )
+            return False
+        return True
+
     @button(
         label="Посмотреть валентинку",
         style=ButtonStyle.grey,
@@ -85,18 +95,24 @@ class ValentineViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
+        self.to_user = to_user
+
         container = Container[Self](accent_color=Color.from_str("#fed8df"))
 
         header_text = (
-            f"{to_user.mention}, Вы получити валентинку от пользователя **{from_user}**"  # noqa: E501
+            f"{to_user.mention}, для вас есть валентинка <:heart1:1470356474525122613>\n"  # noqa: E501
+            f"От **{from_user}**, с теплом и симпатией"
             if not is_anonymous
-            else f"{to_user.mention}, Вы получили анонимную валентинку"
+            else f"{to_user.mention}, для вас есть валентинка <:heart1:1470356474525122613>\n"  # noqa: E501
+            "От кого-то, кто решил остаться инкогнито..."
         )
 
         valentine_text = (
-            "> Это ваша первая валентинка <:heart2:1470360578316046426>"
+            "> Это ваша самая первая валентинка <:heart1:1470356474525122613>\n"  # noqa: E501
+            "> Пусть она поднимет вам настроение"
             if to_user_valentine_count == 0
-            else "> Это уже не первая валентинка, которую вы получаете <:heart2:1470360578316046426>"  # noqa: E501
+            else "> Любовь снова нашла вас <:heart1:1470356474525122613>\n"
+            "> Вы уже не в первый раз получаете валентинку"
         )
 
         container.add_item(
