@@ -54,9 +54,10 @@ logger = logging.getLogger(__name__)
     ]
 )
 @app_commands.rename(
-    where_to_send="место отправки",
+    user="пользователь",
+    where_to_send="место_отправки",
     text="текст",
-    anonymous="анонимно",
+    is_anonymous="анонимно",
 )
 async def send_valentine(
     interaction: Interaction["Nightcore"],
