@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Self
 from discord import (
     ButtonStyle,
     Color,
+    File,
     Interaction,
     MediaGalleryItem,
     Member,
@@ -31,12 +32,10 @@ from src.nightcore.utils import discord_ts
 
 
 class ValentineMediaView(LayoutView):
-    def __init__(self, image_uri: str) -> None:
+    def __init__(self, image: File) -> None:
         super().__init__(timeout=None)
 
-        media_gallery_item = MediaGalleryItem(
-            image_uri,
-        )
+        media_gallery_item = MediaGalleryItem(image)
 
         container = Container[Self](accent_color=Color.from_str("#fed8df"))
 
@@ -46,10 +45,10 @@ class ValentineMediaView(LayoutView):
 
 
 class ShowValetineActionRow(ActionRow["ValentineViewV2"]):
-    def __init__(self, image_uri: str) -> None:
+    def __init__(self, image: File) -> None:
         super().__init__()
 
-        self.image_uri = image_uri
+        self.image = image
 
     @button(
         label="Посмотреть валентинку",
@@ -63,7 +62,7 @@ class ShowValetineActionRow(ActionRow["ValentineViewV2"]):
         """Show valentine button callback."""
 
         return await interaction.response.send_message(
-            view=ValentineMediaView(image_uri=self.image_uri), ephemeral=True
+            view=ValentineMediaView(image=self.image), ephemeral=True
         )
 
 
@@ -71,7 +70,7 @@ class ValentineViewV2(LayoutView):
     def __init__(
         self,
         bot: "Nightcore",
-        image_uri: str,
+        image: File,
         from_user: User | Member,
         to_user: User | Member,
         to_user_valentine_count: int,
@@ -104,7 +103,7 @@ class ValentineViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        container.add_item(ShowValetineActionRow(image_uri))
+        container.add_item(ShowValetineActionRow(image))
         container.add_item(Separator[Self]())
 
         now = datetime.now(UTC)

@@ -113,7 +113,7 @@ async def send_valentine(
     # build view with the image and checking if the user wants to send it anonymously  # noqa: E501
     view = ValentineViewV2(
         bot=bot,
-        image_uri=image.uri,
+        image=image,
         from_user=interaction.user,
         to_user=member,
         to_user_valentine_count=to_user_valentine_count,
