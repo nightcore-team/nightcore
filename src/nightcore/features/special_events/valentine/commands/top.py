@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_specified_field, get_users_by_spec
 from src.nightcore.features.economy.components.v2 import UsersListViewV2
-from src.nightcore.features.special_events.valentine.commands._groups import (
+from src.nightcore.features.special_events.valentine._groups import (
     valentine as valentine_group,
 )
 

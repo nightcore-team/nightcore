@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.models.guild import GuildLoggingConfig
 from src.nightcore.components.embed import ErrorEmbed
-from src.nightcore.features.special_events.valentine.commands._groups import (
+from src.nightcore.features.special_events.valentine._groups import (
     valentine as valentine_group,
 )
 from src.nightcore.features.special_events.valentine.components.v2 import (
