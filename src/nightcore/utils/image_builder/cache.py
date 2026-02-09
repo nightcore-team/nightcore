@@ -23,6 +23,8 @@ class ImageCache:
     def set_font(self, path: str, font: FreeTypeFont, size: int):
         """Caches a font object with the specified path and size."""
 
+        if path not in self._fonts:
+            self._fonts[path] = {}
         self._fonts[path][size] = font
 
     def set_image(self, path: str, image: ImageFile):
