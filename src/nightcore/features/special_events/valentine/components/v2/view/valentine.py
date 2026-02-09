@@ -1,5 +1,6 @@
 """1."""
 
+import io
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
@@ -32,10 +33,11 @@ from src.nightcore.utils import discord_ts
 
 
 class ValentineMediaView(LayoutView):
-    def __init__(self, image: File) -> None:
+    def __init__(self, image_bytes: bytes) -> None:
         super().__init__(timeout=None)
 
-        media_gallery_item = MediaGalleryItem(image)
+        image_file = File(fp=io.BytesIO(image_bytes), filename="image.png")
+        media_gallery_item = MediaGalleryItem(image_file)
 
         container = Container[Self](accent_color=Color.from_str("#fed8df"))
 
@@ -45,10 +47,10 @@ class ValentineMediaView(LayoutView):
 
 
 class ShowValetineActionRow(ActionRow["ValentineViewV2"]):
-    def __init__(self, image: File) -> None:
+    def __init__(self, image_bytes: bytes) -> None:
         super().__init__()
 
-        self.image = image
+        self.image_bytes = image_bytes
 
     @button(
         label="Посмотреть валентинку",
@@ -61,8 +63,13 @@ class ShowValetineActionRow(ActionRow["ValentineViewV2"]):
     ):
         """Show valentine button callback."""
 
+        image_file = File(
+            fp=io.BytesIO(self.image_bytes), filename="image.png"
+        )
         return await interaction.response.send_message(
-            view=ValentineMediaView(image=self.image), ephemeral=True
+            view=ValentineMediaView(image_bytes=self.image_bytes),
+            files=[image_file],
+            ephemeral=True,
         )
 
 
@@ -70,7 +77,7 @@ class ValentineViewV2(LayoutView):
     def __init__(
         self,
         bot: "Nightcore",
-        image: File,
+        image_bytes: bytes,
         from_user: User | Member,
         to_user: User | Member,
         to_user_valentine_count: int,
@@ -103,7 +110,7 @@ class ValentineViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        container.add_item(ShowValetineActionRow(image))
+        container.add_item(ShowValetineActionRow(image_bytes))
         container.add_item(Separator[Self]())
 
         now = datetime.now(UTC)

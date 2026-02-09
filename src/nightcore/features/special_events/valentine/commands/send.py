@@ -74,6 +74,8 @@ async def send_valentine(
 
     # generate valentine image
     image = await generate_valentine_image(text, cache=bot.images_cache)
+    image_bytes = image.fp.read()
+    image.fp.seek(0)
 
     to_user_valentine_count = 0
     try:
@@ -113,7 +115,7 @@ async def send_valentine(
     # build view with the image and checking if the user wants to send it anonymously  # noqa: E501
     view = ValentineViewV2(
         bot=bot,
-        image=image,
+        image_bytes=image_bytes,
         from_user=interaction.user,
         to_user=member,
         to_user_valentine_count=to_user_valentine_count,

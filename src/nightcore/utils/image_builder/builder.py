@@ -60,11 +60,11 @@ class ImageBuilder:
         if self.image is None:
             raise ImageNotLoadedError()
 
-        with io.BytesIO() as image_buffer:
-            self.image.save(image_buffer, "png")
-            image_buffer.seek(0)
+        image_buffer = io.BytesIO()
+        self.image.save(image_buffer, "png")
+        image_buffer.seek(0)
 
-            return discord.File(fp=image_buffer, filename="image.png")
+        return discord.File(fp=image_buffer, filename="image.png")
 
     async def _load_image(self, path: str) -> LoadedImage:
         async with aiofiles.open(path, "rb") as f:
