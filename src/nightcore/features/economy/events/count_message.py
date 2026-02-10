@@ -238,12 +238,12 @@ class CountMessageEvent(Cog):
             new_current_exp = user.current_exp + exp_multiplier
             exp_to_level = 0
 
+            # keep total exp; exp_to_level is the threshold for next level
             while new_current_exp >= user.exp_to_level:
                 is_level_up = True
                 new_level = user.level + 1
                 user.level = new_level
 
-                new_current_exp -= user.exp_to_level
                 user.exp_to_level = calculate_user_exp_to_level(new_level + 1)
                 user.coins += coins_multiplier
                 user.battle_pass_points += 100
