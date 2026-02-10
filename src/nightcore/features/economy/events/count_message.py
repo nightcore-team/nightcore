@@ -237,19 +237,21 @@ class CountMessageEvent(Cog):
             # count user exp and coins
             new_current_exp = user.current_exp + exp_multiplier
             exp_to_level = 0
-            if new_current_exp >= user.exp_to_level:
+
+            while new_current_exp >= user.exp_to_level:
                 is_level_up = True
                 new_level = user.level + 1
                 user.level = new_level
 
-                new_exp_to_level = calculate_user_exp_to_level(new_level + 1)
-
-                user.exp_to_level = new_exp_to_level
+                new_current_exp -= user.exp_to_level
+                user.exp_to_level = calculate_user_exp_to_level(new_level + 1)
                 user.coins += coins_multiplier
                 user.battle_pass_points += 100
-                exp_to_level = +(new_exp_to_level - new_current_exp)
+
+            user.current_exp = new_current_exp
+            if is_level_up:
+                exp_to_level = user.exp_to_level - user.current_exp
             else:
-                user.current_exp = new_current_exp
                 user.coins += coins_multiplier
                 user.battle_pass_points += battlepass_multiplier
 
