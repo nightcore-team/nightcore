@@ -1,7 +1,5 @@
 """Command to copy permissions from one channel to another."""
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -42,7 +40,7 @@ logger = logging.getLogger(__name__)
 @app_commands.guild_only()
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
 async def copy_permissions(
-    interaction: Interaction[Nightcore],
+    interaction: Interaction["Nightcore"],
     from_channel: GuildChannel,
     role_or_user: Member | Role,
     to_channel: GuildChannel,

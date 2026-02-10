@@ -70,6 +70,35 @@ class InfomakerUpdateMemberEvent(Cog):
             logger.info("[infomaker] No role changes detected.")
             return
 
+        executor_id: int | None = None
+        try:
+            async for entry in after.guild.audit_logs(
+                action=discord.AuditLogAction.member_role_update,
+                limit=10,
+            ):
+                if entry.target.id == after.id:  # type: ignore
+                    executor_id = entry.user.id  # type: ignore
+                    break
+
+        except discord.Forbidden as e:
+            logger.warning(
+                "[infomaker] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
+                guild.id,
+                e,
+            )
+        except discord.HTTPException as e:
+            logger.warning(
+                "[infomaker] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+                guild.id,
+                e,
+            )
+        except Exception as e:
+            logger.exception(
+                "[infomaker] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
+                guild.id,
+                e,
+            )
+
         added_leader_roles_string = "".join(
             f"<@&{r}>" for r in added_roles if r in leader_roles_ids
         )
@@ -96,6 +125,12 @@ class InfomakerUpdateMemberEvent(Cog):
                 name="Никнейм пользователя",
                 value=after.display_name,
             )
+            if executor_id:
+                leader_embed.add_field(
+                    name="Изменил",
+                    value=f"<@{executor_id}>",
+                    inline=False,
+                )
 
             if added_leader_roles_string:
                 leader_embed.add_field(
@@ -130,6 +165,12 @@ class InfomakerUpdateMemberEvent(Cog):
                 name="Никнейм пользователя",
                 value=after.display_name,
             )
+            if executor_id:
+                admin_embed.add_field(
+                    name="Изменил",
+                    value=f"<@{executor_id}>",
+                    inline=False,
+                )
 
             if added_admin_roles_string:
                 admin_embed.add_field(
