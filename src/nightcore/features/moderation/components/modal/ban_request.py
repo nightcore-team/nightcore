@@ -13,6 +13,7 @@ from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.components.v2 import BanRequestViewV2
+from src.nightcore.utils.content import is_image_url
 from src.nightcore.utils.time_utils import parse_duration
 
 if TYPE_CHECKING:
@@ -115,8 +116,13 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
 
             original_delete_seconds = self.delete_messages_for_last.value
 
+        attachment_urls: list[str] = []
         if attachments := self.attachment.component.values:  # type: ignore (list[Attachment])
-            attachment_urls = [attachment.url for attachment in attachments]  # type: ignore
+            for attachment in attachments:  # type: ignore
+                if not is_image_url(attachment.url):  # type: ignore
+                    continue
+                else:
+                    attachment_urls.append(attachment.url)  # type: ignore
 
         view = BanRequestViewV2(
             author_id=self.moderator.id,
@@ -130,7 +136,7 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
             delete_seconds=delete_seconds,
             ban_access_roles_ids=self.ban_access_roles_ids,
             moderation_access_roles_ids=self.moderation_access_roles_ids,
-            attachments=attachment_urls if attachments else None,  # type: ignore
+            attachments=attachment_urls,
         )
 
         try:
