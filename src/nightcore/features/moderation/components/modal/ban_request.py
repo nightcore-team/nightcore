@@ -119,10 +119,18 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
         attachment_urls: list[str] = []
         if attachments := self.attachment.component.values:  # type: ignore (list[Attachment])
             for attachment in attachments:  # type: ignore
+                content_type = getattr(attachment, "content_type", None)  # type: ignore
+                if content_type and not content_type.startswith("image/"):
+                    continue
+
+                filename = getattr(attachment, "filename", "")  # type: ignore
+                if filename and not is_image_url(filename):
+                    continue
+
                 if not is_image_url(attachment.url):  # type: ignore
                     continue
-                else:
-                    attachment_urls.append(attachment.url)  # type: ignore
+
+                attachment_urls.append(attachment.url)  # type: ignore
 
         view = BanRequestViewV2(
             author_id=self.moderator.id,
