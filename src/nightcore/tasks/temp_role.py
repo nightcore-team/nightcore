@@ -37,51 +37,64 @@ class DeleteTempRoleTask(Cog):
     @tasks.loop(seconds=60.0)
     async def delete_temp_role_task(self):
         """Task to delete temporary roles when their duration ends."""
-        logger.info("[task] - Running delete temp role task")
-        async with self.bot.uow.start() as session:
-            temp_roles = await get_all_temp_roles(session)
+        try:
+            logger.info("[task] - Running delete temp role task")
+            async with self.bot.uow.start() as session:
+                temp_roles = await get_all_temp_roles(session)
 
-            for temp_role in temp_roles:
-                if not temp_role.end_time <= datetime.now(UTC):
-                    continue
+                for temp_role in temp_roles:
+                    if not temp_role.end_time <= datetime.now(UTC):
+                        continue
 
-                guild = await ensure_guild_exists(self.bot, temp_role.guild_id)
-                if guild is None:
-                    logger.warning(
-                        "[task] - Guild %s not found",
-                        temp_role.guild_id,
+                    guild = await ensure_guild_exists(
+                        self.bot, temp_role.guild_id
                     )
-                    continue
+                    if guild is None:
+                        logger.warning(
+                            "[task] - Guild %s not found",
+                            temp_role.guild_id,
+                        )
+                        continue
 
-                role = await ensure_role_exists(guild, temp_role.role_id)
-                if role is None:
-                    logger.warning(
-                        "[task] - Role %s not found in guild %s",
+                    role = await ensure_role_exists(guild, temp_role.role_id)
+                    if role is None:
+                        logger.warning(
+                            "[task] - Role %s not found in guild %s",
+                            temp_role.role_id,
+                            guild.id,
+                        )
+                        continue
+
+                    member = await ensure_member_exists(
+                        guild, temp_role.user_id
+                    )
+                    if member is None:
+                        logger.warning(
+                            "[task] - Member %s not found in guild %s",
+                            temp_role.user_id,
+                            guild.id,
+                        )
+                        continue
+
+                    await asyncio.gather(
+                        member.remove_roles(
+                            role, reason="Temporary role expired"
+                        ),
+                        session.delete(temp_role),
+                    )
+
+                    logger.info(
+                        "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
                         temp_role.role_id,
+                        member.id,
                         guild.id,
                     )
-                    continue
-
-                member = await ensure_member_exists(guild, temp_role.user_id)
-                if member is None:
-                    logger.warning(
-                        "[task] - Member %s not found in guild %s",
-                        temp_role.user_id,
-                        guild.id,
-                    )
-                    continue
-
-                await asyncio.gather(
-                    member.remove_roles(role, reason="Temporary role expired"),
-                    session.delete(temp_role),
-                )
-
-                logger.info(
-                    "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
-                    temp_role.role_id,
-                    member.id,
-                    guild.id,
-                )
+        except Exception as e:
+            logger.exception(
+                "[task] - Error in delete temp role task iteration: %s",
+                e,
+                exc_info=True,
+            )
 
     @delete_temp_role_task.before_loop
     async def before_delete_temp_role_task(self):
@@ -96,7 +109,13 @@ class DeleteTempRoleTask(Cog):
             "[task] - Delete temp role task crashed:",
             exc_info=exc,  # type: ignore
         )
-        raise exc
+
+        # Wait before restarting to avoid rapid restart loops
+        await asyncio.sleep(60)
+
+        if not self.delete_temp_role_task.is_running():
+            logger.info("[task] - Restarting delete temp role task...")
+            self.delete_temp_role_task.restart()
 
 
 async def setup(bot: "Nightcore"):

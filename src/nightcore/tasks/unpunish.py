@@ -1,5 +1,6 @@
 """Task cog for unpunishing users."""
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 
@@ -28,19 +29,26 @@ class UnPunishTask(Cog):
     @tasks.loop(seconds=15)
     async def un_punish_task(self):
         """Task to unpunish users when their punishment duration ends."""
-        logger.info("[task] - Running unpunish task")
-        async with self.bot.uow.start() as session:
-            active_infractions = await get_temp_infractions(session)
+        try:
+            logger.info("[task] - Running unpunish task")
+            async with self.bot.uow.start() as session:
+                active_infractions = await get_temp_infractions(session)
 
-            for infraction in active_infractions:
-                if infraction.end_time <= datetime.now(UTC):
-                    await session.delete(infraction)
-                    handle_infraction_type_event(
-                        active_punish=infraction, bot=self.bot
-                    )
-                    logger.info(
-                        "[task] - Unpunished user: %s", infraction.user_id
-                    )
+                for infraction in active_infractions:
+                    if infraction.end_time <= datetime.now(UTC):
+                        await session.delete(infraction)
+                        handle_infraction_type_event(
+                            active_punish=infraction, bot=self.bot
+                        )
+                        logger.info(
+                            "[task] - Unpunished user: %s", infraction.user_id
+                        )
+        except Exception as e:
+            logger.exception(
+                "[task] - Error in unpunish task iteration: %s",
+                e,
+                exc_info=True,
+            )
 
     @un_punish_task.before_loop
     async def before_un_punish_task(self):
@@ -52,7 +60,13 @@ class UnPunishTask(Cog):
     async def un_punish_task_error(self, exc):  # type: ignore
         """Handle errors in the unpunish task."""
         logger.exception("[task] - Unpunish task crashed:", exc_info=exc)  # type: ignore
-        raise exc
+
+        # Wait before restarting to avoid rapid restart loops
+        await asyncio.sleep(60)
+
+        if not self.un_punish_task.is_running():
+            logger.info("[task] - Restarting unpunish task...")
+            self.un_punish_task.restart()
 
 
 async def setup(bot: Nightcore):

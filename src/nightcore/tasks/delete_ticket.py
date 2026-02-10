@@ -1,5 +1,6 @@
 """Task cog for unpunishing users."""
 
+import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
@@ -37,51 +38,60 @@ class DeleteTicketTask(Cog):
     @tasks.loop(minutes=30)
     async def delete_ticket_task(self):
         """Task to delete tickets when their duration ends."""
-        logger.info("[task] - Running delete ticket task")
-        async with self.bot.uow.start() as session:
-            closed_tickets = await get_all_closed_tickets(session)
+        try:
+            logger.info("[task] - Running delete ticket task")
+            async with self.bot.uow.start() as session:
+                closed_tickets = await get_all_closed_tickets(session)
 
-            for ticket in closed_tickets:
-                if ticket.is_deleted:
-                    continue
-                if not ticket.updated_at + timedelta(
-                    hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
-                ) <= datetime.now(UTC):
-                    continue
+                for ticket in closed_tickets:
+                    if ticket.is_deleted:
+                        continue
+                    if not ticket.updated_at + timedelta(
+                        hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
+                    ) <= datetime.now(UTC):
+                        continue
 
-                guild = await ensure_guild_exists(self.bot, ticket.guild_id)
-                if guild is None:
-                    logger.error(
-                        "[task] - Guild %s not found",
+                    guild = await ensure_guild_exists(
+                        self.bot, ticket.guild_id
+                    )
+                    if guild is None:
+                        logger.error(
+                            "[task] - Guild %s not found",
+                            ticket.guild_id,
+                        )
+                        continue
+
+                    logging_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildLoggingConfig,
+                        channel_type=ChannelType.LOGGING_TICKETS,
+                    )
+
+                    self.bot.dispatch(
+                        "ticket_deleted",
+                        data=TicketChangeEventData(
+                            guild=guild,
+                            channel_id=ticket.channel_id,
+                            author_id=ticket.author_id,
+                            moderator_id=ticket.moderator_id,
+                            logging_channel_id=logging_channel_id,
+                            state=TicketStateEnum.DELETED,
+                        ),
+                    )
+
+                    ticket.is_deleted = True
+
+                    logger.info(
+                        "[task] - Deleted ticket in guild %s",
                         ticket.guild_id,
                     )
-                    continue
-
-                logging_channel_id = await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildLoggingConfig,
-                    channel_type=ChannelType.LOGGING_TICKETS,
-                )
-
-                self.bot.dispatch(
-                    "ticket_deleted",
-                    data=TicketChangeEventData(
-                        guild=guild,
-                        channel_id=ticket.channel_id,
-                        author_id=ticket.author_id,
-                        moderator_id=ticket.moderator_id,
-                        logging_channel_id=logging_channel_id,
-                        state=TicketStateEnum.DELETED,
-                    ),
-                )
-
-                ticket.is_deleted = True
-
-                logger.info(
-                    "[task] - Deleted ticket in guild %s",
-                    ticket.guild_id,
-                )
+        except Exception as e:
+            logger.exception(
+                "[task] - Error in delete ticket task iteration: %s",
+                e,
+                exc_info=True,
+            )
 
     @delete_ticket_task.before_loop
     async def before_delete_ticket_task(self):
@@ -93,7 +103,13 @@ class DeleteTicketTask(Cog):
     async def delete_ticket_task_error(self, exc):  # type: ignore
         """Handle errors in the delete ticket task."""
         logger.exception("[task] - Delete ticket task crashed:", exc_info=exc)  # type: ignore
-        raise exc
+
+        # Wait before restarting to avoid rapid restart loops
+        await asyncio.sleep(60)
+
+        if not self.delete_ticket_task.is_running():
+            logger.info("[task] - Restarting delete ticket task...")
+            self.delete_ticket_task.restart()
 
 
 async def setup(bot: Nightcore):
