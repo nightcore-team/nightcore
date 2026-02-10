@@ -106,12 +106,12 @@ async def send_valentine(
                 session, guild_id=guild.id, user_id=interaction.user.id
             )
 
-            sender.sended_valentines += sender.sended_valentines + 1
+            sender.sended_valentines += 1
 
             recipient, _ = await get_or_create_user(
                 session, guild_id=guild.id, user_id=member.id
             )
-            recipient.received_valentines += recipient.received_valentines + 1
+            recipient.received_valentines += 1
             to_user_valentine_count = recipient.received_valentines
 
             logging_channel_id = await get_specified_channel(
