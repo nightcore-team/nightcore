@@ -32,7 +32,9 @@ async def components_autocomplete(
 
     result: list[app_commands.Choice[str]] = []
     for cmp in components:
-        result.append(app_commands.Choice(name=cmp.name, value=str(cmp.id)))
+        result.append(
+            app_commands.Choice(name=f"{cmp.name[:20]}...", value=str(cmp.id))
+        )
 
     end_autocomplete = time.perf_counter()
     logger.info(
