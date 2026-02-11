@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
+from discord.app_commands.checks import Cooldown
 from discord.interactions import Interaction
 
 from src.infra.db.models._enums import ChannelType
@@ -33,12 +34,49 @@ from src.nightcore.utils.permissions import (
 
 logger = logging.getLogger(__name__)
 
+# Cooldown mapping that tracks buckets
+_valentine_cooldowns: dict[tuple[int, int], Cooldown] = {}
+
+
+def _get_cooldown_key(
+    interaction: Interaction["Nightcore"],
+) -> tuple[int, int]:
+    """Get the cooldown key for interaction."""
+    guild_id = interaction.guild.id if interaction.guild else 0
+    return (guild_id, interaction.user.id)  # type: ignore
+
+
+def _reset_cooldown_for_interaction(
+    interaction: Interaction["Nightcore"],
+) -> None:
+    """Reset cooldown for the given interaction."""
+    key = _get_cooldown_key(interaction)
+    if key in _valentine_cooldowns:
+        _valentine_cooldowns[key].reset()
+        logger.debug(
+            "Reset cooldown for user %s in guild %s",
+            interaction.user.id,
+            key[0],
+        )
+
+
+# Custom cooldown implementation using dynamic_cooldown
+def _get_valentine_cooldown(
+    interaction: Interaction["Nightcore"],
+) -> Cooldown | None:
+    """Get or create cooldown for interaction."""
+    key = _get_cooldown_key(interaction)
+
+    if key not in _valentine_cooldowns:
+        _valentine_cooldowns[key] = Cooldown(1, 20 * 60)
+
+    return _valentine_cooldowns[key]
+
 
 @valentine_group.command(name="send", description="Отправить валентинку")  # type: ignore
-@app_commands.checks.cooldown(
-    1,
-    20 * 60,
-    key=lambda i: (i.guild.id, i.user.id),  # type: ignore
+@app_commands.checks.dynamic_cooldown(
+    _get_valentine_cooldown,
+    key=_get_cooldown_key,
 )
 @app_commands.describe(
     user="Пользователь, которому вы хотите отправить валентинку",
@@ -73,6 +111,7 @@ async def send_valentine(
     bot = interaction.client
 
     if member.bot:
+        _reset_cooldown_for_interaction(interaction)
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
@@ -84,6 +123,7 @@ async def send_valentine(
         )
 
     if member.id == interaction.user.id:
+        _reset_cooldown_for_interaction(interaction)
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
@@ -123,6 +163,7 @@ async def send_valentine(
 
     except Exception as e:
         logger.exception("Error while sending valentine: %s", e)
+        _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
@@ -161,6 +202,7 @@ async def send_valentine(
             )
     except Exception as e:
         logger.exception("Error while sending valentine: %s", e)
+        _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
