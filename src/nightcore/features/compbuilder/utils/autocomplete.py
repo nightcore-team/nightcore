@@ -32,6 +32,13 @@ async def components_autocomplete(
 
     result: list[app_commands.Choice[str]] = []
     for cmp in components:
+        logger.info(
+            "[components/autocomplete] Found component with name %s (len: %d) and id %s for guild %s",  # noqa: E501
+            cmp.name,
+            len(cmp.name),
+            cmp.id,
+            guild.id,
+        )
         result.append(
             app_commands.Choice(name=f"{cmp.name[:20]}...", value=str(cmp.id))
         )
