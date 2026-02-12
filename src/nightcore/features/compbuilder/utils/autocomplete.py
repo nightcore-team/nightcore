@@ -31,7 +31,7 @@ async def components_autocomplete(
         components = await get_custom_components(session, guild_id=guild.id)
 
     result: list[app_commands.Choice[str]] = []
-    for cmp in components:
+    for cmp in components[:25]:
         logger.info(
             "[components/autocomplete] Found component with name %s (len: %d) and id %s for guild %s",  # noqa: E501
             cmp.name,
@@ -39,9 +39,7 @@ async def components_autocomplete(
             cmp.id,
             guild.id,
         )
-        result.append(
-            app_commands.Choice(name=f"{cmp.name[:20]}...", value=str(cmp.id))
-        )
+        result.append(app_commands.Choice(name=cmp.name, value=str(cmp.id)))
 
     end_autocomplete = time.perf_counter()
     logger.info(
