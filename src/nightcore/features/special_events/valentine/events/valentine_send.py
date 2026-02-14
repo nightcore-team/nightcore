@@ -30,7 +30,7 @@ class ValentineSendEvent(Cog):
         await send_log_message(self.bot, dto)
 
         logger.info(
-            "[%s/log] - invoked user=%s guild=%s item_name=%s amount=%s",
+            "[%s/log] - invoked user=%s guild=%s",
             dto.event_type,
             dto.user_id,
             dto.guild.id,
