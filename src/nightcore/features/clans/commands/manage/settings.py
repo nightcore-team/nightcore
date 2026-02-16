@@ -37,11 +37,9 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageNotifyDTO,
 )
 from src.nightcore.features.clans.utils import clans_autocomplete
-from src.nightcore.tasks.clan_reputation import (
-    ensure_messageable_channel_exists,
-)
 from src.nightcore.utils import (
     compare_top_roles,
+    ensure_messageable_channel_exists,
     ensure_role_exists,
 )
 from src.nightcore.utils.object import safe_delete_channel
