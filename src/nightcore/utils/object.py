@@ -118,6 +118,8 @@ async def ensure_category_exists(
             )
             return None
 
+    return category  # type: ignore
+
 
 async def ensure_messageable_channel_exists(
     guild: Guild, channel_id: int
@@ -184,7 +186,7 @@ async def ensure_member_exists(
                 guild.id,
                 e,
             )
-        return None
+            return None
 
     return member
 
