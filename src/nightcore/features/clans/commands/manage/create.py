@@ -136,9 +136,23 @@ async def create(
                 user_id=leader.id,
                 role=ClanMemberRoleEnum.LEADER,
             )
+            await session.commit()
 
-        except IntegrityError:
+        except IntegrityError as e:
             await session.rollback()
+            error_msg = str(e)
+
+            # Check if it's a clan name conflict or member already in clan
+            if "uq_member_guild_user" in error_msg:
+                user_message = f"Пользователь {leader.mention} уже состоит в другом клане."  # noqa: E501
+            elif (
+                "uq_clan_guild_name" in error_msg
+                or "clan_name" in error_msg.lower()
+            ):  # noqa: E501
+                user_message = f"Клан с таким именем ({name}) уже существует."
+            else:
+                user_message = "Произошла ошибка при создании клана. Возможно, клан с таким именем уже существует или пользователь уже в другом клане."  # noqa: E501
+
             try:
                 asyncio.create_task(
                     safe_delete_role(
@@ -152,16 +166,18 @@ async def create(
                     guild.id,
                     delete_error,
                 )
+
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка создания клана",
-                    f"Клан с таким именем ({name}) уже существует.",
+                    user_message,
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
             )
 
         except Exception as e:
+            await session.rollback()
             logger.error(
                 "[clans] Error creating clan in database for guild %s: %s",
                 guild.id,
@@ -279,6 +295,7 @@ async def create(
                 async with bot.uow.start() as session:
                     clan = await session.merge(clan)
                     clan.clan_channel_id = channel.id
+                    await session.commit()
 
                 await interaction.followup.send(
                     embed=SuccessMoveEmbed(
