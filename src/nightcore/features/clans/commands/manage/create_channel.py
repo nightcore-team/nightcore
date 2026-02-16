@@ -99,27 +99,41 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             clan_name = dbclan.name
             clan_role_id = dbclan.role_id
 
-            # Get category for clan channels
-            create_clan_channel_category_id = await get_specified_field(
-                session,
-                guild_id=guild.id,
-                config_type=GuildClansConfig,
-                field_name="create_clan_channel_category_id",
-            )
+            if dbclan.clan_channel_id:
+                outcome = "channel_exists"
+            else:
+                # Get category for clan channels
+                create_clan_channel_category_id = await get_specified_field(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildClansConfig,
+                    field_name="create_clan_channel_category_id",
+                )
 
-            # Get logging channel
-            clans_logging_channel = await get_specified_channel(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_CLANS,
-            )
+                # Get logging channel
+                clans_logging_channel = await get_specified_channel(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_CLANS,
+                )
 
     if outcome == "clan_not_found":
         return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "channel_exists":
+        return await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка создания канала клана",
+                "Для данного клана уже существует канал.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

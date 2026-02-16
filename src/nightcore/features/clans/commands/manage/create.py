@@ -137,20 +137,8 @@ async def create(
                 role=ClanMemberRoleEnum.LEADER,
             )
 
-        except IntegrityError as e:
+        except IntegrityError:
             await session.rollback()
-            error_msg = str(e)
-
-            # Check if it's a clan name conflict or member already in clan
-            if (
-                "clan_name" in error_msg.lower()
-                or "unique" in error_msg.lower()
-            ):
-                user_message = f"Клан с таким именем ({name}) уже существует."
-            elif "user_id" in error_msg.lower():
-                user_message = f"Пользователь {leader.mention} уже состоит в другом клане."  # noqa: E501
-            else:
-                user_message = "Произошла ошибка при создании клана. Возможно, клан с таким именем уже существует или пользователь уже в другом клане."  # noqa: E501
             try:
                 asyncio.create_task(
                     safe_delete_role(
@@ -164,18 +152,16 @@ async def create(
                     guild.id,
                     delete_error,
                 )
-
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка создания клана",
-                    user_message,
+                    f"Клан с таким именем ({name}) уже существует.",
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
                 ),
             )
 
         except Exception as e:
-            await session.rollback()
             logger.error(
                 "[clans] Error creating clan in database for guild %s: %s",
                 guild.id,
