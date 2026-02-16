@@ -178,6 +178,31 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             reason=f"Создание канала для клана {clan_name}",
         )
 
+        async with bot.uow.start() as session:
+            dbclan = await session.merge(dbclan)
+
+            if not dbclan:
+                logger.error(
+                    "[clans/create_channel] Clan %s not found in database "
+                    "during channel creation in guild %s",
+                    clan_id,
+                    guild.id,
+                )
+                outcome = "clan_not_found_on_update"
+            else:
+                dbclan.clan_channel_id = channel.id
+
+        if outcome == "clan_not_found_on_update":
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка обновления информации о клане",
+                    "Клан не найден в базе данных при обновлении информации о канале.",  # noqa: E501
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
         logger.info(
             "[clans/create_channel] Created channel %s for clan %s in "
             "guild %s by user %s",
