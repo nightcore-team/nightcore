@@ -294,6 +294,21 @@ async def safe_delete_role(role: Role, reason: str) -> None:
         )
 
 
+async def safe_delete_channel(
+    channel: GuildChannel | Thread, reason: str
+) -> None:
+    """Safely delete a channel, logging any errors."""
+    try:
+        await channel.delete(reason=reason)
+    except Exception as e:
+        logger.error(
+            "[safe_delete_channel] Failed deleting channel %s in guild %s: %s",
+            channel.id,
+            channel.guild.id,
+            e,
+        )
+
+
 def compare_top_roles(guild: Guild, entity: User | Member | Role) -> bool:
     """Compares the top roles between user and bot or check if bot's role is higher than chosen role."""  # noqa: E501
     if isinstance(entity, User):
