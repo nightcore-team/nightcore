@@ -108,6 +108,7 @@ class ClanManageActionEnum(Enum):
     CHANGE_LEADER = "Изменение лидера"
     CHANGE_ROLE = "Изменение роли"
     CHANGE_NAME = "Изменение названия"
+    CHANGE_CHANNEL = "Изменение канала"
     BUY_IMPOVEMENT = "Покупка улучшения"
     ADD_DEPUTY = "Добавление заместителя"
     REMOVE_DEPUTY = "Снятие заместителя"

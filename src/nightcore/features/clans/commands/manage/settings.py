@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, Role, app_commands
+from discord import Guild, Member, Role, TextChannel, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models._enums import (
@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
     new_leader="Новый лидер клана.",
     new_role="Новая роль, связанная с кланом.",
     new_name="Новое название клана",
+    new_channel="Новый текстовый канал для клана",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
@@ -61,6 +62,7 @@ async def settings(
     new_leader: Member | None = None,
     new_role: Role | None = None,
     new_name: app_commands.Range[str, 1, 100] | None = None,
+    new_channel: TextChannel | None = None,
 ):
     """Manage clan settings."""
     bot = interaction.client
@@ -79,7 +81,7 @@ async def settings(
         )
         return
 
-    if not new_leader and not new_role and not new_name:
+    if not new_leader and not new_role and not new_name and not new_channel:
         return await interaction.response.send_message(
             embed=NoOptionsSuppliedEmbed(
                 bot.user.display_name,  # type: ignore
@@ -94,6 +96,7 @@ async def settings(
     changed_role_to: int | None = None
     old_role_id: int | None = None
     old_name: str | None = None
+    old_channel_id: int | None = None
 
     async with bot.uow.start() as session:
         if outcome is None:
@@ -153,6 +156,11 @@ async def settings(
                                     e,
                                 )
                                 outcome = "role_change_internal_error"
+
+                # change clan channel
+                if outcome is None and new_channel:
+                    old_channel_id = clan_entity.clan_channel_id
+                    clan_entity.clan_channel_id = new_channel.id
 
                 # change clan name
                 if outcome is None and new_name:
@@ -277,6 +285,8 @@ async def settings(
         summary_lines.append(f"Роль клана обновлена: <@&{changed_role_to}>")
     if new_name:
         summary_lines.append(f"Название клана обновлено: {new_name}")
+    if new_channel is not None:
+        summary_lines.append(f"Канал клана обновлен: <#{new_channel.id}>")
     details = (
         "\n".join(summary_lines)
         if summary_lines
@@ -310,6 +320,15 @@ async def settings(
         )
 
         actions.append(clan_change_role_action)
+
+    if new_channel is not None and old_channel_id is not None:
+        clan_change_channel_action = ClanManageAction(
+            type=ClanManageActionEnum.CHANGE_CHANNEL,
+            before=f"<#{old_channel_id}> ('{old_channel_id}')",
+            after=f"<#{clan_entity.clan_channel_id}> ('{clan_entity.clan_channel_id}')",  # type: ignore The clan will always exist here because of the checks on lines 86 and 139  # noqa: E501
+        )
+
+        actions.append(clan_change_channel_action)
 
     if new_name is not None and old_name is not None:
         clan_change_name_action = ClanManageAction(
