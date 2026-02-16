@@ -3,12 +3,16 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.operations import get_temp_infractions
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.tasks.utils import handle_infraction_type_event
 
 logger = logging.getLogger(__name__)
@@ -16,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # CRITICAL
 class UnPunishTask(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
         self.un_punish_task.start()
@@ -69,6 +73,6 @@ class UnPunishTask(Cog):
             self.un_punish_task.restart()
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the UnPunishTask cog."""
     await bot.add_cog(UnPunishTask(bot))

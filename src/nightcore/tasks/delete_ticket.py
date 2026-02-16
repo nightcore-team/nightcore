@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
@@ -14,7 +15,10 @@ from src.infra.db.operations import (
     get_all_closed_tickets,
     get_specified_channel,
 )
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.features.tickets.events.dto import (
     TicketChangeEventData,
 )
@@ -25,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # CRITICAL
 class DeleteTicketTask(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
         self.delete_ticket_task.start()
@@ -112,6 +116,6 @@ class DeleteTicketTask(Cog):
             self.delete_ticket_task.restart()
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the DeleteTicketTask cog."""
     await bot.add_cog(DeleteTicketTask(bot))
