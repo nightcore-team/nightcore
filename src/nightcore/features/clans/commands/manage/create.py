@@ -273,9 +273,10 @@ async def create(
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
             try:
-                await guild.create_text_channel(
+                channel = await guild.create_text_channel(
                     name=f"{name}-clan",
                     category=category,
                     overwrites={
@@ -288,6 +289,10 @@ async def create(
                         )
                     },
                 )
+                async with bot.uow.start() as session:
+                    clan = await session.merge(clan)
+                    clan.clan_channel_id = channel.id
+
                 await interaction.followup.send(
                     embed=SuccessMoveEmbed(
                         "Канал клана создан",
