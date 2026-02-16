@@ -115,15 +115,26 @@ class Mute(Cog):
                 ephemeral=True,
             )
 
-        if not guild.me.guild_permissions.moderate_members:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "У меня нет прав для блокировки чата участников.",
-                ),
-                ephemeral=True,
-            )
+        if mute_type == "role":
+            if not guild.me.guild_permissions.manage_roles:
+                return await interaction.response.send_message(
+                    embed=MissingPermissionsEmbed(
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                        "У меня нет прав для блокировки чата участников.",
+                    ),
+                    ephemeral=True,
+                )
+        elif mute_type == "timeout":  # noqa: SIM102
+            if not guild.me.guild_permissions.moderate_members:
+                return await interaction.response.send_message(
+                    embed=MissingPermissionsEmbed(
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                        "У меня нет прав для блокировки чата участников.",
+                    ),
+                    ephemeral=True,
+                )
 
         if guild.me == member:
             return await interaction.response.send_message(
