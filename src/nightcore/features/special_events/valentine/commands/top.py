@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
 async def top(
     interaction: Interaction["Nightcore"],
-    sort_by: app_commands.Choice[str] | None = None,
+    sort_by: app_commands.Choice[str],
 ) -> None:
     """Get list of users by specified choice."""
 

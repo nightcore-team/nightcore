@@ -178,6 +178,9 @@ class GuildClansConfig(IdIntegerMixin, Base):  # ---
     guild_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, unique=True
     )
+    create_clan_channel_category_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
     clan_payday_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )

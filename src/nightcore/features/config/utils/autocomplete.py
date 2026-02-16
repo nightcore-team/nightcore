@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _commands: Final[dict[str, int]] = {"add_level": 1, "change_level": 2}
+_options: Final[list[str]] = ["new_reward_type", "reward_type"]
 
 
 async def reward_depends_on_type_autocomplete(
@@ -31,11 +32,13 @@ async def reward_depends_on_type_autocomplete(
     guild = cast(Guild, interaction.guild)
     result: list[app_commands.Choice[str]] = []
 
-    index = _commands[interaction.command.name]  # type: ignore
+    value = -1
 
-    match interaction.data["options"][0]["options"][0]["options"][index][  # type: ignore
-        "value"
-    ]:
+    for option in interaction.data["options"][0]["options"][0]["options"]:  # type: ignore
+        if option["name"] in _options:  # type: ignore
+            value = option["value"]  # type: ignore
+
+    match value:
         case CaseDropTypeEnum.CASE.value:
             result = await _cases_autocomplete(interaction, current)
         case CaseDropTypeEnum.COLOR.value:

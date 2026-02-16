@@ -13,8 +13,6 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import economy as economy_group
 from src.nightcore.features.config.utils import (
-    coins_drop_dict_value,
-    colors_drop_dict_value,
     shop_items_dict_value,
 )
 from src.nightcore.services.config import specified_guild_config
@@ -44,8 +42,6 @@ logger = logging.getLogger(__name__)
     shop_items="Конфигурация предметов в магазине. Формат: название, цена | название, цена | ...",  # noqa: E501
     reward_bonus="Коины выдаваемые в /reward",
     coin_name="Название локальной валюты",
-    coins_drop="Конфигурация выпадения монет с кейса. Формат: коины, шанс (без %) | монеты, шанс | ...",  # noqa: E501
-    colors_drop="Конфигурация выпадения цветов с кейса. Формат: role_id, шанс (без %) | role_id, шанс | ...",  # noqa: E501
     color_compensation="Компенсация за существующий у юзера цвет, в коинах",
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
@@ -57,8 +53,6 @@ async def setup(
     shop_items: str | None = None,
     reward_bonus: int | None = None,
     coin_name: app_commands.Range[str, 1, 100] | None = None,
-    coins_drop: str | None = None,
-    colors_drop: str | None = None,
     color_compensation: int | None = None,
 ):
     """Configure economy settings."""
@@ -70,8 +64,6 @@ async def setup(
         shop_items_dict_value("economy_shop_items", shop_items),
         int_id_value("reward_bonus", reward_bonus),
         str_value("coin_name", coin_name),
-        coins_drop_dict_value("drop_from_coins_case", coins_drop),
-        colors_drop_dict_value("drop_from_colors_case", colors_drop),
         int_id_value("color_drop_compensation", color_compensation),
     ]
 

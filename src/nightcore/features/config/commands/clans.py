@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
     reputation_per_payday="Количество репутации, выдаваемой в пейдэй.",
     payday_channel="Канал для объявлений о дне зарплаты.",
     base_exp_multiplier="Базовый множитель опыта, выдаваемого за сообщение.",
+    clan_category="Категория для создания каналов кланов. Если не указано - канал не будет создаваться.",  # noqa: E501
     improvements_costs="Стоимость улучшений клана (Всего их 3). Формат: cost,cost,cost",  # noqa: E501
 )
 @check_required_permissions(PermissionsFlagEnum.CLANS_CONFIG_ACCESS)
@@ -50,6 +51,7 @@ async def setup(
     reputation_per_payday: int | None = None,
     base_exp_multiplier: int | None = None,
     payday_channel: discord.TextChannel | None = None,
+    clan_category: discord.CategoryChannel | None = None,
     improvements_costs: str | None = None,
 ):
     """Configure clans settings."""
@@ -61,6 +63,7 @@ async def setup(
         int_id_value("clan_reputation_per_payday", reputation_per_payday),
         int_id_value("base_exp_multiplier", base_exp_multiplier),
         int_id_value("clan_payday_channel_id", payday_channel),
+        int_id_value("create_clan_channel_category_id", clan_category),
         list_csv("clan_improvements", improvements_costs, _len=3),
     ]
 
