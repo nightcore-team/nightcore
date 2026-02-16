@@ -33,5 +33,6 @@ __all__ = (
     "has_any_role",
     "has_any_role_from_sequence",
     "log_tree_summary",
+    "safe_delete_channel",
     "safe_delete_role",
 )
