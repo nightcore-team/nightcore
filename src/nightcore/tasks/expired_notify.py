@@ -184,9 +184,9 @@ class ExpiredNotifyTask(Cog):
         await self.bot.wait_until_ready()
 
     @expired_notify_task.error
-    async def expired_notify_task_error(self, exc):  # type: ignore
+    async def expired_notify_task_error(self, exc: BaseException) -> None:
         """Handle errors in the expired notify task."""
-        logger.exception("[task] - Expired notify task crashed:", exc_info=exc)  # type: ignore
+        logger.exception("[task] - Expired notify task crashed:", exc_info=exc)
 
         # Wait before restarting to avoid rapid restart loops
         await asyncio.sleep(60)

@@ -61,9 +61,9 @@ class UnPunishTask(Cog):
         await self.bot.wait_until_ready()
 
     @un_punish_task.error
-    async def un_punish_task_error(self, exc):  # type: ignore
+    async def un_punish_task_error(self, exc: BaseException) -> None:
         """Handle errors in the unpunish task."""
-        logger.exception("[task] - Unpunish task crashed:", exc_info=exc)  # type: ignore
+        logger.exception("[task] - Unpunish task crashed:", exc_info=exc)
 
         # Wait before restarting to avoid rapid restart loops
         await asyncio.sleep(60)

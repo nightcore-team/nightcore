@@ -104,9 +104,9 @@ class DeleteTicketTask(Cog):
         await self.bot.wait_until_ready()
 
     @delete_ticket_task.error
-    async def delete_ticket_task_error(self, exc):  # type: ignore
+    async def delete_ticket_task_error(self, exc: BaseException) -> None:
         """Handle errors in the delete ticket task."""
-        logger.exception("[task] - Delete ticket task crashed:", exc_info=exc)  # type: ignore
+        logger.exception("[task] - Delete ticket task crashed:", exc_info=exc)
 
         # Wait before restarting to avoid rapid restart loops
         await asyncio.sleep(60)

@@ -150,11 +150,11 @@ class DeleteRoleRequestTask(Cog):
         await self.bot.wait_until_ready()
 
     @delete_role_request_task.error
-    async def delete_role_request_task_error(self, exc):  # type: ignore
+    async def delete_role_request_task_error(self, exc: BaseException) -> None:
         """Handle errors in the delete role request task."""
         logger.exception(
             "[task] - Delete role request task crashed:",
-            exc_info=exc,  # type: ignore
+            exc_info=exc,
         )
 
         # Wait before restarting to avoid rapid restart loops
