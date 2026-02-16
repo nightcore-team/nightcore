@@ -10,6 +10,7 @@ from .commands import info, leave, seq, top
 from .commands.manage import (
     change_deputy,
     create,
+    create_channel,
     delete,
     improvements,
     invite,
@@ -21,6 +22,7 @@ from .commands.manage import (
 __all__ = (
     "change_deputy",
     "create",
+    "create_channel",
     "delete",
     "improvements",
     "info",
