@@ -44,6 +44,11 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
     payday_multipler: Mapped[int] = mapped_column(nullable=False, default=1)
     invite_message: Mapped[str | None] = mapped_column(nullable=True)
 
+    # channel
+    clan_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True, unique=True
+    )
+
     members: Mapped[list["ClanMember"]] = relationship(
         back_populates="clan",
         cascade="all, delete-orphan",

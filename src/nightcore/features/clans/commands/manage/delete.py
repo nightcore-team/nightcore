@@ -25,7 +25,9 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
+    ensure_messageable_channel_exists,
     ensure_role_exists,
+    safe_delete_channel,
     safe_delete_role,
 )
 from src.nightcore.utils.permissions import (
@@ -67,6 +69,7 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
     outcome = ""
     clan_name = ""
     clan_role_id = 0
+    clan_channel_id = None
 
     async with bot.uow.start() as session:
         try:
@@ -79,9 +82,9 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
             else:
                 clan_name = dbclan.name
                 clan_role_id = dbclan.role_id
+                clan_channel_id = dbclan.clan_channel_id
 
                 await session.delete(dbclan)
-                await session.flush()
 
                 outcome = "success"
 
@@ -118,6 +121,16 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
         role = await ensure_role_exists(guild, clan_role_id)
         if role:
             asyncio.create_task(safe_delete_role(role, "Удаление роли клана"))
+
+        if clan_channel_id:
+            clan_channel = await ensure_messageable_channel_exists(
+                guild,
+                clan_channel_id,
+            )
+            if clan_channel:
+                asyncio.create_task(
+                    safe_delete_channel(clan_channel, "Удаление канала клана")
+                )
 
         await interaction.followup.send(
             embed=SuccessMoveEmbed(

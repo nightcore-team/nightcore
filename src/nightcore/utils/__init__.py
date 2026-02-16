@@ -11,6 +11,7 @@ from .object import (
     get_discord_user,
     has_any_role,
     has_any_role_from_sequence,
+    safe_delete_channel,
     safe_delete_role,
 )
 from .on_ready_log import log_tree_summary

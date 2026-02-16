@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
@@ -11,16 +12,18 @@ from src.infra.db.operations import (
     get_clans_by_spec,
     get_specified_guild_config,
 )
-from src.nightcore.bot import Nightcore
 from src.nightcore.features.clans.components.v2 import ClansPaydayViewV2
 from src.nightcore.utils import ensure_messageable_channel_exists
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
 
 # CRITICAL
 class ClansPayDayTask(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
         self.add_clan_reputation_task.start()
@@ -122,6 +125,6 @@ class ClansPayDayTask(Cog):
             self.add_clan_reputation_task.restart()
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the ClansPayDayTask cog."""
     await bot.add_cog(ClansPayDayTask(bot))

@@ -2,13 +2,17 @@
 
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.operations import get_role_requests_to_delete
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.features.role_requests.components.v2.view import (
     CheckRoleRequestView,
     RoleRequestStateView,
@@ -24,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # CRITICAL
 class DeleteRoleRequestTask(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
         self.delete_role_request_task.start()
@@ -146,11 +150,11 @@ class DeleteRoleRequestTask(Cog):
         await self.bot.wait_until_ready()
 
     @delete_role_request_task.error
-    async def delete_role_request_task_error(self, exc):  # type: ignore
+    async def delete_role_request_task_error(self, exc: BaseException) -> None:
         """Handle errors in the delete role request task."""
         logger.exception(
             "[task] - Delete role request task crashed:",
-            exc_info=exc,  # type: ignore
+            exc_info=exc,
         )
 
         # Wait before restarting to avoid rapid restart loops
@@ -161,6 +165,6 @@ class DeleteRoleRequestTask(Cog):
             self.delete_role_request_task.restart()
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the DeleteRoleRequestTask cog."""
     await bot.add_cog(DeleteRoleRequestTask(bot))

@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
@@ -13,7 +14,10 @@ from src.infra.db.operations import (
     get_all_pending_notifications,
     get_specified_channel,
 )
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.features.moderation.components.v2.view import (
     NotifyTimedOutViewV2,
     NotifyViewV2,
@@ -28,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExpiredNotifyTask(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
         self.expired_notify_task.start()
@@ -180,9 +184,9 @@ class ExpiredNotifyTask(Cog):
         await self.bot.wait_until_ready()
 
     @expired_notify_task.error
-    async def expired_notify_task_error(self, exc):  # type: ignore
+    async def expired_notify_task_error(self, exc: BaseException) -> None:
         """Handle errors in the expired notify task."""
-        logger.exception("[task] - Expired notify task crashed:", exc_info=exc)  # type: ignore
+        logger.exception("[task] - Expired notify task crashed:", exc_info=exc)
 
         # Wait before restarting to avoid rapid restart loops
         await asyncio.sleep(60)
@@ -192,6 +196,6 @@ class ExpiredNotifyTask(Cog):
             self.expired_notify_task.restart()
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the ExpiredNotifyTask cog."""
     await bot.add_cog(ExpiredNotifyTask(bot))

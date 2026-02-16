@@ -6,6 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from discord import (
+    CategoryChannel,
     Guild,
     HTTPException,
     Member,
@@ -85,6 +86,41 @@ async def ensure_message_exists(
     return message  # type: ignore
 
 
+async def ensure_category_exists(
+    guild: Guild, category_id: int
+) -> CategoryChannel | None:
+    """Ensure that a category with the given ID exists in the guild."""
+    category = guild.get_channel(category_id)
+    if category is None:
+        try:
+            category = await guild.fetch_channel(category_id)  # type: ignore
+            if not isinstance(category, CategoryChannel):
+                logger.error(
+                    "[ensure_category_exists] Channel %s is not a category in guild %s",  # noqa: E501
+                    category.id,  # type: ignore
+                    guild.id,
+                )
+                return None
+        except NotFound as e:
+            logger.error(
+                "[ensure_category_exists] Category %s not found in guild %s: %s",  # noqa: E501
+                category_id,
+                guild.id,
+                e,
+            )
+            return None
+        except HTTPException as e:
+            logger.error(
+                "[ensure_category_exists] Failed fetching category %s in guild %s: %s",  # noqa: E501
+                category_id,
+                guild.id,
+                e,
+            )
+            return None
+
+    return category  # type: ignore
+
+
 async def ensure_messageable_channel_exists(
     guild: Guild, channel_id: int
 ) -> GuildChannel | Thread | None:
@@ -150,7 +186,7 @@ async def ensure_member_exists(
                 guild.id,
                 e,
             )
-        return None
+            return None
 
     return member
 
@@ -254,6 +290,21 @@ async def safe_delete_role(role: Role, reason: str) -> None:
             "[safe_delete_role] Failed deleting role %s in guild %s: %s",
             role.id,
             role.guild.id,
+            e,
+        )
+
+
+async def safe_delete_channel(
+    channel: GuildChannel | Thread, reason: str
+) -> None:
+    """Safely delete a channel, logging any errors."""
+    try:
+        await channel.delete(reason=reason)
+    except Exception as e:
+        logger.error(
+            "[safe_delete_channel] Failed deleting channel %s in guild %s: %s",
+            channel.id,
+            channel.guild.id,
             e,
         )
 

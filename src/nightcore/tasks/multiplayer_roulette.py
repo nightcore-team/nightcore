@@ -18,7 +18,10 @@ from src.infra.db.operations import (
     get_active_casino_games,
     get_specified_field,
 )
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.nightcore.features.economy.components.v2 import (
     MultiplayerRouletteViewV2,
 )
@@ -35,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class MultiplayerRouletteTask(Cog):
-    def __init__(self, bot: Nightcore) -> None:
+    def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
         self.end_multiplayer_roulette_game_task.start()
@@ -181,6 +184,6 @@ class MultiplayerRouletteTask(Cog):
             self.end_multiplayer_roulette_game_task.restart()
 
 
-async def setup(bot: Nightcore):
+async def setup(bot: "Nightcore"):
     """Setup the MultiplayerRouletteTask cog."""
     await bot.add_cog(MultiplayerRouletteTask(bot))
