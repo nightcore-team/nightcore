@@ -1,9 +1,17 @@
 """Command to manage clan settings."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, Role, TextChannel, app_commands
+from discord import (
+    Guild,
+    Member,
+    PermissionOverwrite,
+    Role,
+    TextChannel,
+    app_commands,
+)
 from discord.interactions import Interaction
 
 from src.infra.db.models._enums import (
@@ -29,9 +37,14 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageNotifyDTO,
 )
 from src.nightcore.features.clans.utils import clans_autocomplete
+from src.nightcore.tasks.clan_reputation import (
+    ensure_messageable_channel_exists,
+)
 from src.nightcore.utils import (
     compare_top_roles,
+    ensure_role_exists,
 )
+from src.nightcore.utils.object import safe_delete_channel
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -67,6 +80,7 @@ async def settings(
     """Manage clan settings."""
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
+
     try:
         clan_id = int(clan)
     except ValueError:
@@ -161,6 +175,39 @@ async def settings(
                 if outcome is None and new_channel:
                     old_channel_id = clan_entity.clan_channel_id
                     clan_entity.clan_channel_id = new_channel.id
+
+                    if old_channel_id is not None:
+                        channel = await ensure_messageable_channel_exists(
+                            guild, old_channel_id
+                        )
+                        if channel is not None:
+                            asyncio.create_task(
+                                safe_delete_channel(
+                                    channel, "Удаление старого канала клана"
+                                )
+                            )
+
+                    clan_role = await ensure_role_exists(
+                        guild, clan_entity.role_id
+                    )
+
+                    overwrites = {
+                        guild.default_role: PermissionOverwrite(
+                            read_message_history=False,
+                            read_messages=False,
+                        ),
+                    }
+
+                    if clan_role:
+                        overwrites[clan_role] = PermissionOverwrite(
+                            read_message_history=True,
+                            read_messages=True,
+                            send_messages=True,
+                            attach_files=True,
+                            add_reactions=True,
+                        )
+
+                    await new_channel.edit(overwrites=overwrites)
 
                 # change clan name
                 if outcome is None and new_name:

@@ -148,7 +148,7 @@ async def create(
             elif (
                 "uq_clan_guild_name" in error_msg
                 or "clan_name" in error_msg.lower()
-            ):  # noqa: E501
+            ):
                 user_message = f"Клан с таким именем ({name}) уже существует."
             else:
                 user_message = "Произошла ошибка при создании клана. Возможно, клан с таким именем уже существует или пользователь уже в другом клане."  # noqa: E501
@@ -283,13 +283,17 @@ async def create(
                     name=f"{name}-clan",
                     category=category,
                     overwrites={
+                        guild.default_role: PermissionOverwrite(
+                            read_message_history=False,
+                            read_messages=False,
+                        ),
                         clan_role: PermissionOverwrite(
                             read_message_history=True,
                             read_messages=True,
                             send_messages=True,
                             attach_files=True,
                             add_reactions=True,
-                        )
+                        ),
                     },
                 )
                 async with bot.uow.start() as session:
