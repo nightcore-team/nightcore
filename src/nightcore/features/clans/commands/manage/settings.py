@@ -21,6 +21,7 @@ from src.infra.db.models._enums import (
 )
 from src.infra.db.models.guild import GuildLoggingConfig
 from src.infra.db.operations import (
+    create_clan_member,
     get_clan_by_id,
     get_clan_member,
     get_specified_channel,
@@ -109,6 +110,7 @@ async def settings(
     old_role_id: int | None = None
     old_name: str | None = None
     old_channel_id: int | None = None
+    leader_in_clan: bool = True
 
     async with bot.uow.start() as session:
         if outcome is None:
@@ -126,28 +128,57 @@ async def settings(
                         session, guild_id=guild.id, user_id=new_leader.id
                     )
 
-                    if (
-                        not clan_member
-                        or clan_member.clan_id != clan_entity.id
-                    ):
-                        outcome = "new_leader_not_in_clan"
-                    elif clan_member.role == ClanMemberRoleEnum.LEADER:
-                        outcome = "already_leader"
-                    else:
-                        try:
-                            # Make old leader a member
-                            clan_entity.leader.role = ClanMemberRoleEnum.MEMBER
-                            # Make new one the leader
-                            await session.flush()
-                            clan_member.role = ClanMemberRoleEnum.LEADER
-                            changed_leader_to = new_leader.id
-                        except Exception as e:
-                            logger.error(
-                                "[clans] Error changing clan leader in guild %s: %s",  # noqa: E501
-                                guild.id,
-                                e,
+                    if clan_member is None:
+                        if len(clan_entity.members) >= clan_entity.max_members:
+                            outcome = "max_members_achieved"
+                        else:
+                            try:
+                                # Make old leader a member
+                                clan_entity.leader.role = (
+                                    ClanMemberRoleEnum.MEMBER
+                                )
+                                # Make new one the leader
+                                await session.flush()
+
+                            except Exception as e:
+                                logger.error(
+                                    "[clans] Error changing clan leader in guild %s: %s",  # noqa: E501
+                                    guild.id,
+                                    e,
+                                )
+                                outcome = "leader_change_internal_error"
+
+                            await create_clan_member(
+                                session,
+                                guild_id=guild.id,
+                                clan_id=clan_entity.id,
+                                user_id=new_leader.id,
+                                role=ClanMemberRoleEnum.LEADER,
                             )
-                            outcome = "leader_change_internal_error"
+
+                            leader_in_clan = False
+                    else:
+                        if clan_member.clan_id != clan_entity.id:
+                            outcome = "new_leader_not_in_clan"
+                        elif clan_member.role == ClanMemberRoleEnum.LEADER:
+                            outcome = "already_leader"
+                        else:
+                            try:
+                                # Make old leader a member
+                                clan_entity.leader.role = (
+                                    ClanMemberRoleEnum.MEMBER
+                                )
+                                # Make new one the leader
+                                await session.flush()
+                                clan_member.role = ClanMemberRoleEnum.LEADER
+                                changed_leader_to = new_leader.id
+                            except Exception as e:
+                                logger.error(
+                                    "[clans] Error changing clan leader in guild %s: %s",  # noqa: E501
+                                    guild.id,
+                                    e,
+                                )
+                                outcome = "leader_change_internal_error"
 
                 # change clan role
                 if outcome is None and new_role:
@@ -238,6 +269,17 @@ async def settings(
             embed=ErrorEmbed(
                 "Ошибка назначения лидера",
                 f"{new_leader.mention} не состоит в вашем клане.",  # type: ignore[union-attr]
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "max_members_achieved":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка назначения лидера",
+                "Достигнуто максимальное количество участников в клане.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -406,6 +448,26 @@ async def settings(
         ),
         ephemeral=True,
     )
+
+    if not leader_in_clan:
+        role = await ensure_role_exists(
+            guild=guild,
+            role_id=clan_entity.role_id,  # type: ignore
+        )
+
+        if role:
+            try:
+                await new_leader.add_roles(role)  # type: ignore
+            except Exception:
+                await interaction.followup.send(
+                    embed=ErrorEmbed(
+                        "Ошибка выдачи роли лидеру",
+                        "При выдаче роли клана лидеру произошла ошибка.",
+                        bot.user.display_name,  # type: ignore
+                        bot.user.display_avatar.url,  # type: ignore
+                    ),
+                    ephemeral=True,
+                )
 
     logger.info(
         "[command] - invoked user=%s guild=%s clan=%s changed_leader_to=%s changed_role_to=%s",  # noqa: E501
