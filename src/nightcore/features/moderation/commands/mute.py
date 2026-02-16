@@ -125,6 +125,7 @@ class Mute(Cog):
                     ),
                     ephemeral=True,
                 )
+
         elif mute_type == "timeout":  # noqa: SIM102
             if not guild.me.guild_permissions.moderate_members:
                 return await interaction.response.send_message(

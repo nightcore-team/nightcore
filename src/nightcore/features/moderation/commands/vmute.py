@@ -104,7 +104,7 @@ class VMute(Cog):
                 ephemeral=True,
             )
 
-        if not guild.me.guild_permissions.moderate_members:
+        if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore
