@@ -253,6 +253,7 @@ async def create(
             bot.user.display_name,  # type: ignore
             bot.user.display_avatar.url,  # type: ignore
         ),
+        ephemeral=True,
     )
 
     if create_channel:
@@ -300,6 +301,7 @@ async def create(
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
             except Exception as e:
                 logger.error(
@@ -314,6 +316,8 @@ async def create(
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),
+                    ephemeral=True,
                 )
+
         else:
             raise FieldNotConfiguredError("категория кланов")
