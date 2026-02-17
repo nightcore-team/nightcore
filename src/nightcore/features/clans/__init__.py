@@ -15,6 +15,7 @@ from .commands.manage import (
     improvements,
     invite,
     kick,
+    m_invite,
     settings,
     shop,
 )
@@ -29,6 +30,7 @@ __all__ = (
     "invite",
     "kick",
     "leave",
+    "m_invite",
     "seq",
     "settings",
     "shop",

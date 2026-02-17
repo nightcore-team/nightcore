@@ -19,7 +19,7 @@ from discord.ui import (
 )
 from sqlalchemy.exc import IntegrityError
 
-from src.infra.db.models import Clan, ClanMember
+from src.infra.db.models import Clan
 from src.infra.db.models._enums import (
     ChannelType,
     ClanManageActionEnum,
@@ -74,8 +74,8 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
             try:
                 await create_clan_member(
                     session,
-                    guild_id=view.inviter.guild_id,
-                    clan_id=view.inviter.clan_id,
+                    guild_id=view.inviter.guild.id,
+                    clan_id=view.clan.id,
                     user_id=view.invited_member.id,
                     role=ClanMemberRoleEnum.MEMBER,
                 )
@@ -85,7 +85,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
             except Exception as e:
                 logger.exception(
                     "[clans] Error occurred while accepting clan invite in guild %s for user %s: %s",  # noqa: E501
-                    view.inviter.guild_id,
+                    view.inviter.guild.id,
                     view.invited_member.id,
                     e,
                 )
@@ -117,13 +117,13 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
             return
 
         role = await ensure_role_exists(
-            guild=view.invited_member.guild, role_id=view.inviter.clan.role_id
+            guild=view.invited_member.guild, role_id=view.clan.role_id
         )
 
         if not role:
             logger.error(
                 "[clans] Clan role %s not found in guild %s",
-                view.inviter.clan.role_id,
+                view.clan.role_id,
                 view.invited_member.guild.id,
             )
             await interaction.followup.send(
@@ -146,7 +146,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
         async with view.bot.uow.start() as session:
             clans_logging_channel = await get_specified_channel(
                 session,
-                guild_id=view.inviter.guild_id,
+                guild_id=view.inviter.guild.id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_CLANS,
             )
@@ -159,8 +159,8 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
         dto = ClanManageNotifyDTO(
             guild=view.invited_member.guild,
             event_type="clan_manage_notify",
-            actor_id=view.inviter.user_id,
-            clan_name=view.inviter.clan.name,
+            actor_id=view.inviter.id,
+            clan_name=view.clan.name,
             actions=[clan_invite_member_action],
             logging_channel_id=clans_logging_channel,
         )
@@ -198,13 +198,18 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
 
 class ClanInviteViewV2(LayoutView):
     def __init__(
-        self, bot: "Nightcore", inviter: ClanMember, invited_member: Member
+        self,
+        bot: "Nightcore",
+        inviter: Member,
+        invited_member: Member,
+        clan: Clan,
     ) -> None:
         super().__init__(timeout=None)
 
         self.bot = bot
         self.inviter = inviter
         self.invited_member = invited_member
+        self.clan = clan
 
         container = Container[Self]()
 
@@ -217,8 +222,8 @@ class ClanInviteViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"<:241508crown:1442923559541407844> **Лидер/заместитель** <@{inviter.user_id}>"  # noqa: E501
-                f" приглашает Вас в свой клан **{inviter.clan.name}**\n"
+                f"<:241508crown:1442923559541407844> **Лидер/заместитель** <@{inviter.id}>"  # noqa: E501
+                f" приглашает Вас в свой клан **{clan.name}**\n"
             )
         )
 
