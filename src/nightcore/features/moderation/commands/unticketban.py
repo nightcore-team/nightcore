@@ -9,7 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
-from src.infra.db.operations import set_user_field_upsert
+from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
@@ -72,13 +72,14 @@ class Unticketban(Cog):
             GuildModerationConfig,
         ) as (_, session):
             try:
-                await set_user_field_upsert(
-                    session,
-                    guild_id=guild.id,
-                    user_id=user.id,
-                    field="ticket_ban",
-                    value=False,
+                user_record, _ = await get_or_create_user(
+                    session, guild_id=guild.id, user_id=user.id
                 )
+                if user_record.ticket_ban:
+                    user_record.ticket_ban = False
+                else:
+                    outcome = "not_ticket_banned"
+
             except Exception as e:
                 logger.exception(
                     "Failed to unticketban user=%s in guild=%s: %s",
@@ -87,6 +88,17 @@ class Unticketban(Cog):
                     e,
                 )
                 outcome = "error"
+
+        if outcome == "not_ticket_banned":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка снятия блокировки",
+                    "Данный пользователь не имеет блокировки на создание тикетов.",  # noqa: E501
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         if outcome == "error":
             return await interaction.response.send_message(

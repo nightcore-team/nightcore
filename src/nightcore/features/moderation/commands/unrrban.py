@@ -9,7 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
-from src.infra.db.operations import set_user_field_upsert
+from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
@@ -70,13 +70,13 @@ class Unrrban(Cog):
             GuildModerationConfig,
         ) as (_, session):
             try:
-                await set_user_field_upsert(
-                    session,
-                    guild_id=guild.id,
-                    user_id=user.id,
-                    field="role_request_ban",
-                    value=False,
+                user_record, _ = await get_or_create_user(
+                    session, guild_id=guild.id, user_id=user.id
                 )
+                if user_record.role_request_ban:
+                    user_record.role_request_ban = False
+                else:
+                    outcome = "not_rrbanned"
             except Exception as e:
                 logger.exception(
                     "Failed to unrrban user=%s in guild=%s: %s",
@@ -85,6 +85,18 @@ class Unrrban(Cog):
                     e,
                 )
                 outcome = "error"
+
+        if outcome == "not_rrbanned":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка снятия блокировки",
+                    "Данный пользователь не имеет блокировки на запрос роли.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
         if outcome == "error":
             return await interaction.response.send_message(
                 embed=ErrorEmbed(

@@ -63,17 +63,6 @@ class UnBan(Cog):
                 ephemeral=True,
             )
 
-        if guild.me == user:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка снятия блокировки",
-                    "Вы не можете снять блокировку с меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
         try:
             await guild.fetch_ban(user)
         except discord.NotFound:

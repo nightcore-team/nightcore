@@ -70,10 +70,7 @@ class UnVMute(Cog):
         ) as (guild_config, _):
             mute_role_id = guild_config.vmute_role_id
 
-        if (
-            not guild.me.guild_permissions.moderate_members
-            or not guild.me.guild_permissions.manage_roles
-        ):
+        if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
                     self.bot.user.name,  # type: ignore

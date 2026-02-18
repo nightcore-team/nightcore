@@ -69,18 +69,27 @@ class UnMute(Cog):
             mute_type = guild_config.mute_type
             mute_role_id = guild_config.mute_role_id
 
-        if (
-            not guild.me.guild_permissions.moderate_members
-            or not guild.me.guild_permissions.manage_roles
-        ):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "У меня нет прав для разблокировки чата участников.",
-                ),
-                ephemeral=True,
-            )
+        if mute_type == "role":
+            if not guild.me.guild_permissions.manage_roles:
+                return await interaction.response.send_message(
+                    embed=MissingPermissionsEmbed(
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                        "У меня нет прав для разблокировки чата участников.",
+                    ),
+                    ephemeral=True,
+                )
+
+        elif mute_type == "timeout":  # noqa: SIM102
+            if not guild.me.guild_permissions.moderate_members:
+                return await interaction.response.send_message(
+                    embed=MissingPermissionsEmbed(
+                        self.bot.user.name,  # type: ignore
+                        self.bot.user.display_avatar.url,  # type: ignore
+                        "У меня нет прав для разблокировки чата участников.",
+                    ),
+                    ephemeral=True,
+                )
 
         if guild.me == member:
             return await interaction.response.send_message(
@@ -89,16 +98,6 @@ class UnMute(Cog):
                     "Вы не можете разблокировать чат мне.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if not compare_top_roles(guild, member):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "Я не могу разблокировать чат этому пользователю, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
@@ -122,11 +121,11 @@ class UnMute(Cog):
                 else:
                     has_role = has_any_role(member, mrole.id)
 
-                    if not has_role:
+                    if not has_role or not compare_top_roles(guild, mrole):
                         return await interaction.response.send_message(
                             embed=ErrorEmbed(
                                 "Ошибка снятия блокировки",
-                                "Роль блокировки не найдена у этого пользователя.",  # noqa: E501
+                                "Роль блокировки не найдена у этого пользователя или она выше моей.",  # noqa: E501
                                 self.bot.user.name,  # type: ignore
                                 self.bot.user.display_avatar.url,  # type: ignore
                             ),
