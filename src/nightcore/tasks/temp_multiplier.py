@@ -46,15 +46,17 @@ class ResetTempMultiplierTask(Cog):
                     logger.info("[task] - No expired temp multipliers found")
                     return
 
-                for temp_multiplier in temp_multipliers:
-                    guild_id = temp_multiplier.guild_id
-                    multiplier_type = temp_multiplier.multiplier_type
+            for temp_multiplier in temp_multipliers:
+                guild_id = temp_multiplier.guild_id
+                multiplier_type = temp_multiplier.multiplier_type
 
+                async with self.bot.uow.start() as session:
                     guild_config = await get_specified_guild_config(
                         session,
                         guild_id=guild_id,
                         config_type=GuildLevelsConfig,
                     )
+
                     if guild_config is None:
                         logger.error(
                             "[task] - GuildLevelsConfig not found for guild %s",  # noqa: E501
@@ -82,14 +84,16 @@ class ResetTempMultiplierTask(Cog):
                                 guild_id,
                             )
 
-                    await session.delete(temp_multiplier)
+                    _temp_multiplier = await session.merge(temp_multiplier)
+                    await session.delete(_temp_multiplier)
 
-                    logger.info(
-                        "[task] - Removed expired %s multiplier (x%s) for guild %s",  # noqa: E501
-                        multiplier_type.value,
-                        temp_multiplier.multiplier,
-                        guild_id,
-                    )
+                logger.info(
+                    "[task] - Removed expired %s multiplier (x%s) for guild %s",  # noqa: E501
+                    multiplier_type.value,
+                    temp_multiplier.multiplier,
+                    guild_id,
+                )
+
         except Exception as e:
             logger.exception(
                 "[task] - Error in reset temp multiplier task iteration: %s",

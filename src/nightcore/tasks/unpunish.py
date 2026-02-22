@@ -2,13 +2,12 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.operations import get_temp_infractions
+from src.infra.db.operations import get_expired_temp_infractions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -36,17 +35,23 @@ class UnPunishTask(Cog):
         try:
             logger.info("[task] - Running unpunish task")
             async with self.bot.uow.start() as session:
-                active_infractions = await get_temp_infractions(session)
+                active_infractions = await get_expired_temp_infractions(
+                    session
+                )
+                if not active_infractions:
+                    logger.info("[task] - No expired infractions found")
+                    return
 
                 for infraction in active_infractions:
-                    if infraction.end_time <= datetime.now(UTC):
-                        await session.delete(infraction)
-                        handle_infraction_type_event(
-                            active_punish=infraction, bot=self.bot
-                        )
-                        logger.info(
-                            "[task] - Unpunished user: %s", infraction.user_id
-                        )
+                    await session.delete(infraction)
+
+            # Dispatch events after successful commit
+            for infraction in active_infractions:
+                handle_infraction_type_event(
+                    active_punish=infraction, bot=self.bot
+                )
+                logger.info("[task] - Unpunished user: %s", infraction.user_id)
+
         except Exception as e:
             logger.exception(
                 "[task] - Error in unpunish task iteration: %s",
