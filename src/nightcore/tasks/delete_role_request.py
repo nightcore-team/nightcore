@@ -73,12 +73,13 @@ class DeleteRoleRequestTask(Cog):
                     )
                 ):
                     logger.warning(
-                        "[task] - Role request channel %s not found in guild %s, deleting role request %s from DB",  # noqa: E501
+                        "[task] - Role request channel %s not found in guild %s, deleting role request %s",  # noqa: E501
                         rr.channel_id,
                         rr.guild_id,
                         rr.id,
                     )
-                    return
+                    await self._delete_role_request(rr)
+                    continue
 
                 if not (
                     rr_message := await ensure_message_exists(
@@ -91,12 +92,11 @@ class DeleteRoleRequestTask(Cog):
                         rr.guild_id,
                         rr.id,
                     )
-                    return
+                    await self._delete_role_request(rr)
+                    continue
 
                 try:
-                    async with self.bot.uow.start() as session:
-                        _rr = await session.merge(rr)
-                        await session.delete(_rr)
+                    await self._delete_role_request(rr)
 
                     logger.info(
                         "[task] - Deleted role request %s in guild %s",
@@ -111,7 +111,7 @@ class DeleteRoleRequestTask(Cog):
                         rr.guild_id,
                         e,
                     )
-                    return
+                    continue
 
                 # create rr view (default and state) and send them to check_rr_channel  # noqa: E501
                 try:
