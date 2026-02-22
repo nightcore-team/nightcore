@@ -56,6 +56,7 @@ class DeleteTempRoleTask(Cog):
                         "[task] - Guild %s not found",
                         temp_role.guild_id,
                     )
+                    await self._delete_temp_role(temp_role)
                     continue
 
                 role = await ensure_role_exists(guild, temp_role.role_id)
@@ -65,6 +66,7 @@ class DeleteTempRoleTask(Cog):
                         temp_role.role_id,
                         guild.id,
                     )
+                    await self._delete_temp_role(temp_role)
                     continue
 
                 member = await ensure_member_exists(guild, temp_role.user_id)
@@ -74,15 +76,14 @@ class DeleteTempRoleTask(Cog):
                         temp_role.user_id,
                         guild.id,
                     )
+                    await self._delete_temp_role(temp_role)
                     continue
 
                 await member.remove_roles(
                     role, reason="Temporary role expired"
                 )
 
-                async with self.bot.uow.start() as session:
-                    _temp_role = await session.merge(temp_role)
-                    await session.delete(_temp_role)
+                await self._delete_temp_role(temp_role)
 
                 logger.info(
                     "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
