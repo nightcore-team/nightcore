@@ -48,16 +48,127 @@ class MultiplayerRouletteTask(Cog):
         if self.end_multiplayer_roulette_game_task.is_running():
             self.end_multiplayer_roulette_game_task.cancel()
 
+    async def _process_single_game(
+        self, game_id: int, guild_id: int, coin_name: str | None
+    ):
+        """Process a single casino game in its own transaction."""
+        try:
+            # Use a separate session for each game to avoid long transactions
+            async with self.bot.uow.start() as session:
+                # Re-fetch the game with all relations in this session
+                casino_games = await get_active_casino_games(
+                    session, guild_id=guild_id, dt=datetime.now(UTC)
+                )
+
+                # Find the specific game we want to process
+                game = next((g for g in casino_games if g.id == game_id), None)
+                if not game:
+                    logger.warning(
+                        "[task] - Game %s not found or already processed",
+                        game_id,
+                    )
+                    return
+
+                bets_annot: list[CasinoBetAnnot] = []
+                initiator_id = 0
+                initiator_bet = 0
+                initiator_selected_color = ""
+                initiator_result_coins: int | None = None
+
+                num, color = spin_roulette()
+
+                # Process all bets and update user balances
+                for bet in game.bets:
+                    result = RouletteResult(
+                        num, color, bet.amount // 2, bet.color
+                    )
+                    result_type: CasinoBetResultTypeEnum
+
+                    if result.is_win:
+                        result_type = CasinoBetResultTypeEnum.WIN
+                        bet.user.coins += result.coins_change * 2
+                    else:
+                        result_type = CasinoBetResultTypeEnum.LOSE
+
+                    bet.result_type = result_type
+
+                    if bet.user.user_id == game.initiator_id:
+                        initiator_id = bet.user.user_id
+                        initiator_bet = bet.amount // 2
+                        initiator_selected_color = bet.color
+                        initiator_result_coins = result.coins_change
+                    else:
+                        bets_annot.append(
+                            {
+                                "user_id": bet.user.user_id,
+                                "bet": bet.amount // 2,
+                                "result_coins": result.coins_change,
+                                "selected_color": bet.color,
+                            }
+                        )
+
+                game.state = CasinoGameStateEnum.FINISHED
+
+                # Session commits here when context exits
+                message_id = game.message_id
+                channel_id = game.channel_id
+
+            # Send Discord message outside transaction
+            await asyncio.sleep(0.2)  # to avoid rate limits
+
+            view = MultiplayerRouletteViewV2(
+                bot=self.bot,
+                coin_name=coin_name or "коинов",
+                initiator_id=initiator_id,
+                initiator_bet=initiator_bet,
+                initiator_selected_color=initiator_selected_color,
+                initiator_result_coins=initiator_result_coins,
+                state=CasinoGameStateEnum.FINISHED,
+                result_color=color,
+                bets=bets_annot,
+                disable_buttons=True,
+            )
+
+            asyncio.create_task(
+                self.bot.http.edit_message(
+                    message_id=message_id,
+                    channel_id=channel_id,
+                    params=MultipartParameters(
+                        payload={
+                            "components": view.to_components(),
+                        },
+                        multipart=None,
+                        files=None,
+                    ),
+                )
+            )
+
+            logger.info(
+                "[task] - Ended multiplayer roulette game %s in guild %s",
+                game_id,
+                guild_id,
+            )
+
+        except Exception as e:
+            logger.exception(
+                "[task] - Error processing game %s in guild %s: %s",
+                game_id,
+                guild_id,
+                e,
+                exc_info=True,
+            )
+
     @tasks.loop(seconds=15)
     async def end_multiplayer_roulette_game_task(self):
         """Task to add reputation points to clans."""
         try:
-            logger.info("[task] - Running add clan reputation task")
+            logger.info("[task] - Running end multiplayer roulette task")
 
-            # get all multiplayer roulette games that need to be ended (state and end_time)  # noqa: E501
-            async with self.bot.uow.start() as session:
-                guilds = self.bot.guilds
-                for guild in guilds:
+            guilds = self.bot.guilds
+
+            for guild in guilds:
+                # Separate session for reading games list
+                async with self.bot.uow.start() as session:
                     casino_games = await get_active_casino_games(
                         session, guild_id=guild.id, dt=datetime.now(UTC)
                     )
@@ -67,93 +178,28 @@ class MultiplayerRouletteTask(Cog):
                         config_type=GuildEconomyConfig,
                         field_name="coin_name",
                     )
-                    if casino_games:
-                        for game in casino_games:
-                            bets_annot: list[CasinoBetAnnot] = []
-                            initiator_id = 0
-                            initiator_bet = 0
-                            initiator_selected_color = ""
-                            initiator_result_coins: int | None = None
 
-                            num, color = spin_roulette()
+                    # Extract game IDs to process
+                    game_ids = [game.id for game in casino_games]
 
-                            for bet in game.bets:
-                                result = RouletteResult(
-                                    num, color, bet.amount // 2, bet.color
-                                )
-                                result_type: CasinoBetResultTypeEnum
+                if not game_ids:
+                    logger.info(
+                        "[task] - No multiplayer roulette games to end in "
+                        "guild %s",
+                        guild.id,
+                    )
+                    continue
 
-                                if result.is_win:
-                                    result_type = CasinoBetResultTypeEnum.WIN
-                                    bet.user.coins += result.coins_change * 2
-                                else:
-                                    result_type = CasinoBetResultTypeEnum.LOSE
-
-                                bet.result_type = result_type
-
-                                if bet.user.user_id == game.initiator_id:
-                                    initiator_id = bet.user.user_id
-                                    initiator_bet = bet.amount // 2
-                                    initiator_selected_color = bet.color
-                                    initiator_result_coins = (
-                                        result.coins_change
-                                    )
-                                else:
-                                    bets_annot.append(
-                                        {
-                                            "user_id": bet.user.user_id,
-                                            "bet": bet.amount // 2,
-                                            "result_coins": result.coins_change,  # noqa: E501
-                                            "selected_color": bet.color,
-                                        }
-                                    )
-
-                            game.state = CasinoGameStateEnum.FINISHED
-
-                            await asyncio.sleep(0.2)  # to avoid rate limits
-
-                            view = MultiplayerRouletteViewV2(
-                                bot=self.bot,
-                                coin_name=coin_name or "коинов",
-                                initiator_id=initiator_id,
-                                initiator_bet=initiator_bet,
-                                initiator_selected_color=initiator_selected_color,
-                                initiator_result_coins=initiator_result_coins,
-                                state=CasinoGameStateEnum.FINISHED,
-                                result_color=color,
-                                bets=bets_annot,
-                                disable_buttons=True,
-                            )
-
-                            asyncio.create_task(
-                                self.bot.http.edit_message(
-                                    message_id=game.message_id,
-                                    channel_id=game.channel_id,
-                                    params=MultipartParameters(
-                                        payload={
-                                            "components": view.to_components(),
-                                        },
-                                        multipart=None,
-                                        files=None,
-                                    ),
-                                )
-                            )
-
-                            logger.info(
-                                "[task] - Ended multiplayer roulette game %s in guild %s",  # noqa: E501
-                                game.id,
-                                guild.id,
-                            )
-                    else:
-                        logger.info(
-                            "[task] - No multiplayer roulette games to end in guild %s",  # noqa: E501
-                            guild.id,
-                        )
-                        continue
+                # Process each game in its own transaction
+                for game_id in game_ids:
+                    await self._process_single_game(
+                        game_id, guild.id, coin_name
+                    )
 
         except Exception as e:
             logger.exception(
-                "[task] - Error in end multiplayer roulette game task iteration: %s",  # noqa: E501
+                "[task] - Error in end multiplayer roulette game task "
+                "iteration: %s",
                 e,
                 exc_info=True,
             )

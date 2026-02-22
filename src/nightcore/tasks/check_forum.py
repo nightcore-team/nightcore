@@ -44,6 +44,7 @@ class CheckForumTask(Cog):
                     "[task] - Processing forum server: %s", server.guild_id
                 )
                 await self.service.process_server(server)
+
         except Exception as e:
             logger.exception(
                 "[task] - Error in check forum task iteration: %s",

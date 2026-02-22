@@ -15,7 +15,6 @@ class TicketState(IdIntegerMixin, Base):
     author_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     channel_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    is_deleted: Mapped[bool] = mapped_column(nullable=False, default=False)
 
     state: Mapped[TicketStateEnum] = mapped_column(
         Enum(
