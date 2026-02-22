@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
+from src.infra.db.models import TempRole
 from src.infra.db.operations import get_all_expired_temp_roles
 from src.nightcore.utils import (
     ensure_guild_exists,
@@ -30,6 +31,12 @@ class DeleteTempRoleTask(Cog):
         """Unload the cog and cancel the task if running."""
         if self.delete_temp_role_task.is_running():
             self.delete_temp_role_task.cancel()
+
+    async def _delete_temp_role(self, temp_role: TempRole) -> None:
+        """Delete a temporary role from the database."""
+        async with self.bot.uow.start() as session:
+            _temp_role = await session.merge(temp_role)
+            await session.delete(_temp_role)
 
     @tasks.loop(seconds=60.0)
     async def delete_temp_role_task(self):
