@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildNotificationsConfig
+from src.infra.db.models import GuildNotificationsConfig, NotifyState
 from src.infra.db.models._enums import ChannelType, NotifyStateEnum
 from src.infra.db.operations import (
     get_all_pending_notifications,

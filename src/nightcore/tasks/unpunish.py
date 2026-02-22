@@ -2,13 +2,12 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.operations import get_temp_infractions
+from src.infra.db.operations import get_expired_temp_infractions
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

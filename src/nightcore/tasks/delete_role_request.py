@@ -26,7 +26,6 @@ from src.nightcore.utils import (
 logger = logging.getLogger(__name__)
 
 
-# CRITICAL
 class DeleteRoleRequestTask(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot

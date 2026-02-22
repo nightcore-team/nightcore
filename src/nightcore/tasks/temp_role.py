@@ -2,15 +2,12 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.operations import (
-    get_all_temp_roles,
-)
+from src.infra.db.operations import get_all_expired_temp_roles
 from src.nightcore.utils import (
     ensure_guild_exists,
     ensure_member_exists,
