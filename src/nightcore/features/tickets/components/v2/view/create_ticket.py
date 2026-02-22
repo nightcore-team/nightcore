@@ -129,10 +129,10 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                             session, guild_id=guild.id, user_id=user.id
                         )
 
-                        if (
-                            last_ticket
-                            and last_ticket.state != TicketStateEnum.CLOSED
-                        ):
+                        if last_ticket and last_ticket.state not in [
+                            TicketStateEnum.CLOSED,
+                            TicketStateEnum.DELETED,
+                        ]:
                             outcome = "user_has_open_ticket"
                         else:
                             try:
