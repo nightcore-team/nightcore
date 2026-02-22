@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
+from src.infra.db.models import RoleRequestState
 from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.operations import get_role_requests_to_delete
 
@@ -36,6 +37,12 @@ class DeleteRoleRequestTask(Cog):
         """Unload the cog and cancel the task if running."""
         if self.delete_role_request_task.is_running():
             self.delete_role_request_task.cancel()
+
+    async def _delete_role_request(self, rr: RoleRequestState) -> None:
+        """Delete a role request from the database."""
+        async with self.bot.uow.start() as session:
+            _rr = await session.merge(rr)
+            await session.delete(_rr)
 
     @tasks.loop(seconds=60.0)
     async def delete_role_request_task(self):
