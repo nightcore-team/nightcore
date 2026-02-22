@@ -20,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with open("migrations/structure.sql") as file:
+    with open("migrations/sql/economy_triggers.sql") as file:
         sql = file.read()
 
     commands = sql.split("\n\n")
@@ -31,7 +31,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    with open("migrations/drop_structure.sql") as file:
+    with open("migrations/sql/drop_economy_triggers.sql") as file:
         sql = file.read()
 
     for stmt in [s.strip() for s in sql.split(";") if s.strip()]:
