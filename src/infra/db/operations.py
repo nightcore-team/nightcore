@@ -699,7 +699,9 @@ async def get_moderation_stats(
                 to_date,
                 "updated_at",
             ),
-            TicketState.state == TicketStateEnum.CLOSED,
+            TicketState.state.in_(
+                [TicketStateEnum.CLOSED, TicketStateEnum.DELETED]
+            ),
         )
         .order_by(TicketState.moderator_id.asc())
     )
