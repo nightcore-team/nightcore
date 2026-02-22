@@ -68,6 +68,7 @@ class DeleteTicketTask(Cog):
                         "[task] - Guild %s not found",
                         ticket.guild_id,
                     )
+                    await self._delete_ticket(ticket)
                     continue
 
                 async with self.bot.uow.start() as session:

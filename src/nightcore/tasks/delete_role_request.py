@@ -59,6 +59,12 @@ class DeleteRoleRequestTask(Cog):
             for rr in all_rr:
                 guild = await ensure_guild_exists(self.bot, rr.guild_id)
                 if not guild:
+                    logger.warning(
+                        "[task] - Guild %s is not found, deleting role request %s",  # noqa: E501
+                        rr.guild_id,
+                        rr.id,
+                    )
+                    await self._delete_role_request(rr)
                     continue
 
                 if not (
