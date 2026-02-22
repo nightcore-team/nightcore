@@ -7,8 +7,8 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildInfomakerConfig
+from src.infra.db.operations import get_specified_guild_config
 from src.nightcore.bot import Nightcore
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_messageable_channel_exists
 
 from .._utils.roles import roles_difference  # type: ignore
@@ -32,12 +32,12 @@ class InfomakerUpdateMemberEvent(Cog):
 
         guild = after.guild
 
-        async with specified_guild_config(
-            self.bot,
-            guild.id,
-            config_type=GuildInfomakerConfig,  # type: ignore
-        ) as (guild_config, _):
-            if not guild_config:
+        async with self.bot.uow.start() as session:
+            guild_config = await get_specified_guild_config(
+                session, config_type=GuildInfomakerConfig, guild_id=guild.id
+            )
+
+            if guild_config is None:
                 logger.info(
                     f"[infomaker] Infomaker config not configured for guild {guild.id}"  # noqa: E501
                 )
