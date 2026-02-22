@@ -40,55 +40,53 @@ class DeleteTempRoleTask(Cog):
         try:
             logger.info("[task] - Running delete temp role task")
             async with self.bot.uow.start() as session:
-                temp_roles = await get_all_temp_roles(session)
+                temp_roles = await get_all_expired_temp_roles(session)
+                if not temp_roles:
+                    logger.info("[task] - No expired temp roles found")
+                    return
 
-                for temp_role in temp_roles:
-                    if not temp_role.end_time <= datetime.now(UTC):
-                        continue
-
-                    guild = await ensure_guild_exists(
-                        self.bot, temp_role.guild_id
+            for temp_role in temp_roles:
+                guild = await ensure_guild_exists(self.bot, temp_role.guild_id)
+                if guild is None:
+                    logger.warning(
+                        "[task] - Guild %s not found",
+                        temp_role.guild_id,
                     )
-                    if guild is None:
-                        logger.warning(
-                            "[task] - Guild %s not found",
-                            temp_role.guild_id,
-                        )
-                        continue
+                    continue
 
-                    role = await ensure_role_exists(guild, temp_role.role_id)
-                    if role is None:
-                        logger.warning(
-                            "[task] - Role %s not found in guild %s",
-                            temp_role.role_id,
-                            guild.id,
-                        )
-                        continue
-
-                    member = await ensure_member_exists(
-                        guild, temp_role.user_id
-                    )
-                    if member is None:
-                        logger.warning(
-                            "[task] - Member %s not found in guild %s",
-                            temp_role.user_id,
-                            guild.id,
-                        )
-                        continue
-
-                    await asyncio.gather(
-                        member.remove_roles(
-                            role, reason="Temporary role expired"
-                        ),
-                        session.delete(temp_role),
-                    )
-
-                    logger.info(
-                        "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
+                role = await ensure_role_exists(guild, temp_role.role_id)
+                if role is None:
+                    logger.warning(
+                        "[task] - Role %s not found in guild %s",
                         temp_role.role_id,
-                        member.id,
                         guild.id,
                     )
+                    continue
+
+                member = await ensure_member_exists(guild, temp_role.user_id)
+                if member is None:
+                    logger.warning(
+                        "[task] - Member %s not found in guild %s",
+                        temp_role.user_id,
+                        guild.id,
+                    )
+                    continue
+
+                await member.remove_roles(
+                    role, reason="Temporary role expired"
+                )
+
+                async with self.bot.uow.start() as session:
+                    _temp_role = await session.merge(temp_role)
+                    await session.delete(_temp_role)
+
+                logger.info(
+                    "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
+                    temp_role.role_id,
+                    member.id,
+                    guild.id,
+                )
+
         except Exception as e:
             logger.exception(
                 "[task] - Error in delete temp role task iteration: %s",
