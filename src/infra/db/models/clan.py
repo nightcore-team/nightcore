@@ -90,9 +90,7 @@ class ClanMember(IdIntegerMixin, Base):
     clan_id: Mapped[int] = mapped_column(
         ForeignKey("clan.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    user_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, index=True
-    )
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
     # Role inside the clan
     role: Mapped[ClanMemberRoleEnum] = mapped_column(
