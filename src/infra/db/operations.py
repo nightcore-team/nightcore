@@ -381,6 +381,26 @@ async def get_clans(session: AsyncSession, *, guild_id: int) -> Sequence[Clan]:
     return result.all()
 
 
+async def get_clans_by_input(
+    session: AsyncSession, *, guild_id: int, user_input: str
+) -> Sequence[Clan]:
+    """Get the list of clans for a guild."""
+    a = 0.7
+    similarity = (len(user_input) / 100) ** a
+
+    stmt = (
+        select(Clan)
+        .where(
+            Clan.guild_id == guild_id,
+            func.similarity(Clan.name, user_input) >= similarity,
+        )
+        .limit(25)
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
 async def get_clans_by_spec(
     session: AsyncSession,
     *,

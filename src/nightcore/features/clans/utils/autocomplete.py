@@ -8,7 +8,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildClansConfig
-from src.infra.db.operations import get_clans
+from src.infra.db.operations import get_clans_by_input
 from src.nightcore.exceptions import ConfigMissingError
 from src.nightcore.services.config import specified_guild_config
 
@@ -21,14 +21,16 @@ logger = logging.getLogger(__name__)
 
 async def clans_autocomplete(
     interaction: Interaction["Nightcore"],
-    current: str,
+    user_input: str,
 ) -> list[app_commands.Choice[str]]:
     """Autocomplete function to get fraction roles for the guild."""
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
     async with interaction.client.uow.start() as session:
-        clans = await get_clans(session, guild_id=guild.id)
+        clans = await get_clans_by_input(
+            session, guild_id=guild.id, user_input=user_input
+        )
 
     result: list[app_commands.Choice[str]] = []
     for clan in clans:
