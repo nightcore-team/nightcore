@@ -520,9 +520,11 @@ async def create_temp_punish(
     return temp_punish
 
 
-async def get_temp_infractions(session: AsyncSession) -> Sequence[TempPunish]:
-    """Get the list of temporary punishments from the database."""
-    stmt = select(TempPunish)
+async def get_expired_temp_infractions(
+    session: AsyncSession,
+) -> Sequence[TempPunish]:
+    """Get the list of expired temporary punishments from the database."""
+    stmt = select(TempPunish).where(TempPunish.end_time <= datetime.now(UTC))
     result = await session.scalars(stmt)
     return result.all()
 
@@ -972,11 +974,11 @@ async def get_all_closed_tickets(
     return result.scalars().all()
 
 
-async def get_all_temp_roles(
+async def get_all_expired_temp_roles(
     session: AsyncSession,
 ) -> Sequence[TempRole]:
-    """Get all temporary roles."""
-    stmt = select(TempRole)
+    """Get all expired temporary roles."""
+    stmt = select(TempRole).where(TempRole.end_time <= datetime.now(UTC))
     result = await session.scalars(stmt)
 
     return result.all()
