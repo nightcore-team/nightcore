@@ -1223,6 +1223,26 @@ async def get_guild_cases(
     return result.scalars().all()
 
 
+async def get_cases_by_input(
+    session: AsyncSession, *, guild_id: int, user_input: str
+) -> Sequence[Case]:
+    """Get the list of cases for a guild by user input."""
+    a = 0.7
+    similarity = (len(user_input) / 100) ** a
+
+    stmt = (
+        select(Case)
+        .where(
+            Case.guild_id == guild_id,
+            func.similarity(Case.name, user_input) >= similarity,
+        )
+        .limit(25)
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
 async def get_case_by_id(
     session: AsyncSession, *, guild_id: int, case_id: int
 ) -> Case | None:

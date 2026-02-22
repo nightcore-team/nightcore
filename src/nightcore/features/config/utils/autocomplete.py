@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.operations import (
-    get_guild_cases,
+    get_cases_by_input,
     get_guild_colors,
 )
 
@@ -74,16 +74,15 @@ async def _custom_reward_autocomplete() -> list[app_commands.Choice[str]]:
 
 async def _cases_autocomplete(
     interaction: Interaction["Nightcore"],
-    current: str,
+    user_input: str,
 ) -> list[app_commands.Choice[str]]:
     result: list[app_commands.Choice[str]] = []
 
     guild = cast(Guild, interaction.guild)
 
     async with interaction.client.uow.start() as session:
-        guild_cases = await get_guild_cases(
-            session,
-            guild_id=guild.id,
+        guild_cases = await get_cases_by_input(
+            session, guild_id=guild.id, user_input=user_input
         )
 
         for case in guild_cases:
