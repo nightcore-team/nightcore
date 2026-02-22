@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -78,6 +79,17 @@ class CasinoGame(IdIntegerMixin, Base):
         lazy="selectin",
     )
 
+    __table_args__ = (
+        # Composite indexes for casino game queries
+        Index("ix_casino_game_guild_message", "guild_id", "message_id"),
+        Index(
+            "ix_casino_game_guild_state_endtime",
+            "guild_id",
+            "state",
+            "end_time",
+        ),
+    )
+
 
 class CasinoBet(IdIntegerMixin, Base):
     # amount of coins bet
@@ -104,8 +116,12 @@ class CasinoBet(IdIntegerMixin, Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     # relationship to the casino game
     user: Mapped["User"] = relationship(back_populates="casino_bets")
     game: Mapped["CasinoGame"] = relationship(back_populates="bets")
+
+    __table_args__ = (
+        # Composite index for user bet queries
+        Index("ix_casino_bet_user_game", "user_id", "game_id"),
+    )
