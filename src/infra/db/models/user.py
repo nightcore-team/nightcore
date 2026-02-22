@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     PrimaryKeyConstraint,
     Table,
@@ -43,6 +44,23 @@ if TYPE_CHECKING:
 class User(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint("guild_id", "user_id", name="ux_user_guild_user"),
+        # Performance indexes for leaderboard queries
+        Index("ix_user_guild_coins", "guild_id", text("coins DESC")),
+        Index(
+            "ix_user_guild_level_exp",
+            "guild_id",
+            text("level DESC"),
+            text("current_exp DESC"),
+        ),
+        Index("ix_user_guild_voice", "guild_id", text("voice_activity DESC")),
+        Index(
+            "ix_user_guild_battlepass",
+            "guild_id",
+            text("battle_pass_level DESC"),
+        ),
+        Index(
+            "ix_user_guild_messages", "guild_id", text("messages_count DESC")
+        ),
     )
 
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)

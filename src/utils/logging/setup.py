@@ -32,11 +32,11 @@ def setup_logging() -> tuple[logging.Logger, logging.Logger]:
     discord_logger.propagate = True
 
     # --- SQLAlchemy ---
-    for name in ("sqlalchemy.engine", "sqlalchemy.pool"):
-        sa_logger = logging.getLogger(name)
-        sa_logger.handlers.clear()
-        sa_logger.setLevel(DEFAULT_LOGGING_LEVEL_DICT.get(name, logging.INFO))
-        sa_logger.propagate = True
+    # for name in ("sqlalchemy.engine", "sqlalchemy.pool"):
+    #     sa_logger = logging.getLogger(name)
+    #     sa_logger.handlers.clear()
+    #     sa_logger.setLevel(DEFAULT_LOGGING_LEVEL_DICT.get(name, logging.INFO))  # noqa: E501
+    #     sa_logger.propagate = True
 
     # --- asyncio та aiohttp ---
     for name in ("asyncio", "aiohttp.client"):
