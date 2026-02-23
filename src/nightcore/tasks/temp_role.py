@@ -52,7 +52,7 @@ class DeleteTempRoleTask(Cog):
             for temp_role in temp_roles:
                 guild = await ensure_guild_exists(self.bot, temp_role.guild_id)
                 if guild is None:
-                    logger.warning(
+                    logger.info(
                         "[task] - Guild %s not found",
                         temp_role.guild_id,
                     )
@@ -61,7 +61,7 @@ class DeleteTempRoleTask(Cog):
 
                 role = await ensure_role_exists(guild, temp_role.role_id)
                 if role is None:
-                    logger.warning(
+                    logger.info(
                         "[task] - Role %s not found in guild %s",
                         temp_role.role_id,
                         guild.id,
@@ -71,7 +71,7 @@ class DeleteTempRoleTask(Cog):
 
                 member = await ensure_member_exists(guild, temp_role.user_id)
                 if member is None:
-                    logger.warning(
+                    logger.info(
                         "[task] - Member %s not found in guild %s",
                         temp_role.user_id,
                         guild.id,

@@ -131,14 +131,14 @@ async def ensure_messageable_channel_exists(
         try:
             channel = await guild.fetch_channel(channel_id)  # type: ignore
             if not isinstance(channel, Messageable):
-                logger.error(
+                logger.info(
                     "[ensure_messageable_channel_exists] channel %s not messageable (%s)",  # noqa: E501
                     channel.id,  # type: ignore
                     type(channel).__name__,
                 )
                 return None
         except NotFound as e:
-            logger.error(
+            logger.info(
                 "[ensure_messageable_channel_exists] Channel %s not found in guild %s: %s",  # noqa: E501
                 channel_id,
                 guild.id,
@@ -172,7 +172,7 @@ async def ensure_member_exists(
             logger.info("Refetching member %s in guild %s", user_id, guild.id)
             member = await guild.fetch_member(user_id)
         except NotFound as e:
-            logger.error(
+            logger.info(
                 "[ensure_member_exists] Member %s not found in guild %s: %s",
                 user_id,
                 guild.id,
@@ -199,7 +199,7 @@ async def ensure_guild_exists(bot: "Nightcore", guild_id: int) -> Guild | None:
         try:
             guild = await bot.fetch_guild(guild_id)
         except NotFound as e:
-            logger.error(
+            logger.info(
                 "[ensure_guild_exists] Guild %s not found: %s",
                 guild_id,
                 e,

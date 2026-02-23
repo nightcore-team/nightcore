@@ -67,7 +67,7 @@ class ForumComplaintProcessor:
         )
 
         if not threads:
-            logger.warning(
+            logger.info(
                 "[forum] No new complaint threads found in section %s",
                 server.section_id,
             )
@@ -110,14 +110,12 @@ class ForumComplaintProcessor:
 
         guild = self.bot.get_guild(server.guild_id)
         if not guild:
-            logger.warning(
-                "[forum] Guild with ID %s not found", server.guild_id
-            )
+            logger.info("[forum] Guild with ID %s not found", server.guild_id)
             return
 
         member = await ensure_member_exists(guild, discord_id)
         if not member:
-            logger.warning(
+            logger.info(
                 "[forum] Member with Discord ID %s not found in guild %s",
                 discord_id,
                 server.guild_id,
@@ -199,7 +197,7 @@ class ForumComplaintProcessor:
                 guild, server.channel_id
             )
             if not channel:
-                logger.warning(
+                logger.info(
                     "[forum] Channel with ID %s not found in guild %s",
                     server.channel_id,
                     server.guild_id,

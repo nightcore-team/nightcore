@@ -64,7 +64,7 @@ class DeleteTicketTask(Cog):
 
                 guild = await ensure_guild_exists(self.bot, ticket.guild_id)
                 if guild is None:
-                    logger.error(
+                    logger.info(
                         "[task] - Guild %s not found",
                         ticket.guild_id,
                     )

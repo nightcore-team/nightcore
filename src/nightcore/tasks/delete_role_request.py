@@ -59,7 +59,7 @@ class DeleteRoleRequestTask(Cog):
             for rr in all_rr:
                 guild = await ensure_guild_exists(self.bot, rr.guild_id)
                 if not guild:
-                    logger.warning(
+                    logger.info(
                         "[task] - Guild %s is not found, deleting role request %s",  # noqa: E501
                         rr.guild_id,
                         rr.id,
@@ -72,7 +72,7 @@ class DeleteRoleRequestTask(Cog):
                         guild, rr.channel_id
                     )
                 ):
-                    logger.warning(
+                    logger.info(
                         "[task] - Role request channel %s not found in guild %s, deleting role request %s",  # noqa: E501
                         rr.channel_id,
                         rr.guild_id,
@@ -86,7 +86,7 @@ class DeleteRoleRequestTask(Cog):
                         self.bot, channel, rr.message_id
                     )
                 ):
-                    logger.warning(
+                    logger.info(
                         "[task] - Role request message %s not found in guild %s, deleting role request %s from DB",  # noqa: E501
                         rr.message_id,
                         rr.guild_id,

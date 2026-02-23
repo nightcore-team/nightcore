@@ -67,7 +67,7 @@ class ExpiredNotifyTask(Cog):
 
                 guild = await ensure_guild_exists(self.bot, notify.guild_id)
                 if guild is None:
-                    logger.error(
+                    logger.info(
                         "[task] - Guild %s not found, deleting notification",
                         notify.guild_id,
                     )
@@ -89,7 +89,7 @@ class ExpiredNotifyTask(Cog):
                     )
 
                 if not moderation_notifications:
-                    logger.warning(
+                    logger.info(
                         "[task] - Moderation notifications channel not set in guild %s, deleting notification",  # noqa: E501
                         guild.id,
                     )
@@ -97,7 +97,7 @@ class ExpiredNotifyTask(Cog):
                     continue
 
                 if not notifications:
-                    logger.warning(
+                    logger.info(
                         "[task] - Notifications channel not set in guild %s, "
                         "deleting notification",
                         guild.id,
@@ -111,7 +111,7 @@ class ExpiredNotifyTask(Cog):
                         guild, moderation_notifications
                     )
                 ):
-                    logger.error(
+                    logger.info(
                         "[task] - Moderation notifications channel %s not found in guild %s, deleting notification",  # noqa: E501
                         moderation_notifications,
                         guild.id,
@@ -125,7 +125,7 @@ class ExpiredNotifyTask(Cog):
                         guild, notifications
                     )
                 ):
-                    logger.error(
+                    logger.info(
                         "[task] - Notifications channel %s not found in guild %s, deleting notification",  # noqa: E501
                         notifications,
                         guild.id,
@@ -138,7 +138,7 @@ class ExpiredNotifyTask(Cog):
                 )
 
                 if not notification_message:
-                    logger.error(
+                    logger.info(
                         "[task] - Notification message %s not found in guild %s, deleting notification",  # noqa: E501
                         notify.message_id,
                         guild.id,
