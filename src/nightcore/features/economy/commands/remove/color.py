@@ -1,5 +1,6 @@
 """Command to remove color from a user."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -24,6 +25,7 @@ from src.nightcore.features.economy.events.dto import (
 from src.nightcore.features.economy.utils.autocomplete import (
     user_colors_autocomplete,
 )
+from src.nightcore.utils import ensure_member_exists
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -58,6 +60,17 @@ async def remove_color(
     bot = interaction.client
 
     outcome = ""
+
+    if not guild.me.guild_permissions.manage_roles:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка удаления цвета",
+                "У меня недостаточно прав для управления ролями.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     if user == bot.user:
         return await interaction.response.send_message(
@@ -101,7 +114,7 @@ async def remove_color(
     if outcome == "unknown_color":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
-                "Ошибка выдачи цвета",
+                "Ошибка удаления цвета",
                 "Цвет не был найден.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
@@ -132,6 +145,15 @@ async def remove_color(
         )
 
         color_role = guild.get_role(color.role_id)  # type: ignore
+
+        if color_role:
+            member = await ensure_member_exists(guild, user.id)
+            if member:
+                asyncio.create_task(
+                    member.remove_roles(
+                        color_role, reason="Color removed via economy command."
+                    )
+                )
 
         color_name = color_role.name if color_role else "unknown"
 
