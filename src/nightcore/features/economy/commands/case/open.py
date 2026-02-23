@@ -187,7 +187,7 @@ async def open_case(
     if outcome == "success":
         view = CaseOpenViewV2(
             bot=bot,
-            case_name=case.name,  # type: ignore
+            case_name=user_case.item.name,  # type: ignore
             reward=reward["name"],  # type: ignore
             chance=reward["chance"],  # type: ignore
             amount=reward["amount"],  # type: ignore
