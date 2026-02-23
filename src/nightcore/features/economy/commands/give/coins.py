@@ -72,8 +72,6 @@ async def give_coins(
         )
 
         coin_name = guild_config.coin_name
-        if not coin_name:
-            outcome = "coin_name_not_configured"
 
         if not outcome:
             try:
@@ -102,23 +100,12 @@ async def give_coins(
             ephemeral=True,
         )
 
-    if outcome == "coin_name_not_configured":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
-                "Ошибка выдачи монет",
-                "Название монеты не настроено на этом сервере.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
     if outcome == "success":
         await interaction.response.send_message(
             embed=SuccessMoveEmbed(
                 "Выдача монет успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
-                f"**{amount} {coin_name}**.",
+                f"**{amount} {coin_name or 'коинов'}**.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -133,7 +120,7 @@ async def give_coins(
                 logging_channel_id=logging_channel_id,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
-                item_name=cast(str, coin_name),
+                item_name=coin_name or "коины",
                 amount=amount,
                 reason=reason,
             ),

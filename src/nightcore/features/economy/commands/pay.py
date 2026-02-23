@@ -108,7 +108,7 @@ class Pay(Cog):
                 channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
-            coin_name = guild_config.coin_name or ""
+            coin_name = guild_config.coin_name
 
             sender, created = await get_or_create_user(
                 session,
@@ -147,7 +147,7 @@ class Pay(Cog):
             await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Успешный перевод",
-                    f"Вы успешно перевели пользователю {member.mention} {amount} {coin_name}.",  # noqa: E501
+                    f"Вы успешно перевели пользователю {member.mention} {amount} {coin_name or 'коинов'}.",  # noqa: E501
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
@@ -161,7 +161,7 @@ class Pay(Cog):
                     logging_channel_id=logging_channel_id,
                     sender_id=interaction.user.id,
                     receiver=member,
-                    item_name=coin_name,
+                    item_name=coin_name or "коины",
                     amount=amount,
                     comment=comment,
                 ),
