@@ -21,6 +21,7 @@ class AwardNotificationEventDTO(BaseEventDTO):
     logging_channel_id: int | None
     user_id: int
     moderator_id: int
+    clan_name: str
     item_name: str
     amount: int
     reason: str | None = None
@@ -43,6 +44,7 @@ class AwardNotificationEventDTO(BaseEventDTO):
                 value=f"<@{self.user_id}> (`{self.user_id}`)",
                 inline=False,
             )
+            .add_field(name="Клан", value=f"**{self.clan_name}**")
             .add_field(name="Предмет", value=f"**{self.item_name}**")
             .add_field(
                 name="Количество",
