@@ -108,7 +108,7 @@ class Pay(Cog):
                 channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
-            coin_name = guild_config.coin_name
+            coin_name = guild_config.coin_name or ""
 
             sender, created = await get_or_create_user(
                 session,
@@ -124,9 +124,6 @@ class Pay(Cog):
                 user_id=member.id,
             )
 
-            if not coin_name:
-                outcome = "coin_name_not_configured"
-
             if not outcome:
                 if sender.coins < amount:
                     outcome = "user_dont_have_enough_coins"
@@ -134,17 +131,6 @@ class Pay(Cog):
                     sender.coins -= amount
                     receiver.coins += amount
                     outcome = "success"
-
-        if outcome == "coin_name_not_configured":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка перевода",
-                    "Название коина не настроено на этом сервере.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
 
         if outcome == "user_dont_have_enough_coins":
             return await interaction.response.send_message(
@@ -175,7 +161,7 @@ class Pay(Cog):
                     logging_channel_id=logging_channel_id,
                     sender_id=interaction.user.id,
                     receiver=member,
-                    item_name=cast(str, coin_name),
+                    item_name=coin_name,
                     amount=amount,
                     comment=comment,
                 ),
