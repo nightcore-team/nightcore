@@ -14,6 +14,9 @@ from nightforo import (
 
 from src.infra.api.forum.dto import Server
 from src.infra.api.forum.utils import extract_discord_id
+from src.infra.db.operations import (
+    get_or_create_processed_thread,
+)
 from src.nightcore.features.forum.components.v2 import ComplaintViewV2
 from src.nightcore.features.tickets.utils import extract_str_by_pattern
 from src.nightcore.utils import (
@@ -71,6 +74,14 @@ class ForumComplaintProcessor:
             return
 
         for thread in threads:
+            async with self.bot.uow.start() as session:
+                processed_thread = await get_or_create_processed_thread(
+                    session, thread_id=thread.thread_id
+                )
+
+            if processed_thread is not None:
+                continue
+
             await self._process_single_thread(server, thread)
 
     async def _process_single_thread(

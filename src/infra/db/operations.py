@@ -58,6 +58,7 @@ from src.infra.db.models._enums import (
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
+from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
@@ -1314,3 +1315,23 @@ async def get_active_casino_games(
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def get_or_create_processed_thread(
+    session: AsyncSession, *, thread_id: int
+) -> ProcessedForumThread | None:
+    """Create processed forum thread in the database."""
+
+    stmt = select(ProcessedForumThread).where(
+        ProcessedForumThread.thread_id == thread_id
+    )
+
+    result = await session.execute(stmt)
+
+    processed_thread = result.scalar_one_or_none()
+
+    if processed_thread is None:
+        new_processed_thread = ProcessedForumThread(thread_id=thread_id)
+        session.add(new_processed_thread)
+
+    return processed_thread
