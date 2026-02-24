@@ -22,11 +22,12 @@ class UnitOfWork:
         *,
         readonly: bool = False,
         origin: str | None = None,
+        is_config: bool = False,
     ) -> AsyncIterator[AsyncSession]:
         """Start a new unit of work session."""
 
         if origin is None:
-            callsite = find_callsite()
+            callsite = find_callsite(level=2) if is_config else find_callsite()
             origin_display = str(callsite) if callsite else "unknown"
         else:
             origin_display = origin
