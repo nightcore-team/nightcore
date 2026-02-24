@@ -196,14 +196,13 @@ async def _check_user_permission(
                 permissions
             ]
 
-            async with bot.uow.start() as session:
-                return await has_specified_permission(
-                    member,
-                    session=session,
-                    guild_id=guild.id,
-                    config_type=config_type,
-                    field_name=field_name,
-                    access_name=access_name,
-                )
+            return await has_specified_permission(
+                member,
+                session=session,
+                guild_id=guild.id,
+                config_type=config_type,
+                field_name=field_name,
+                access_name=access_name,
+            )
 
     return False

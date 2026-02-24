@@ -190,35 +190,36 @@ async def handle_battlepass_claim_reward_button(
         return
 
     if outcome == "success" or outcome == "success_no_next_level":
-        match new_level_data.reward["type"]:  # type: ignore
-            case CaseDropTypeEnum.COINS.value:
-                new_level_data.reward["name"] = coin_name or "коины"  # type: ignore
-            case CaseDropTypeEnum.CASE.value:
-                case = await get_case_by_id(
-                    session,
-                    guild_id=guild.id,
-                    case_id=new_level_data.reward["drop_id"],  # type: ignore
-                )
+        async with bot.uow.start() as session:
+            match new_level_data.reward["type"]:  # type: ignore
+                case CaseDropTypeEnum.COINS.value:
+                    new_level_data.reward["name"] = coin_name or "коины"  # type: ignore
+                case CaseDropTypeEnum.CASE.value:
+                    case = await get_case_by_id(
+                        session,
+                        guild_id=guild.id,
+                        case_id=new_level_data.reward["drop_id"],  # type: ignore
+                    )
 
-                new_level_data.reward["name"] = (  # type: ignore
-                    case.name if case else "unknown"
-                )
-            case CaseDropTypeEnum.COLOR.value:
-                color = await get_color_by_id(
-                    session,
-                    guild_id=guild.id,
-                    color_id=new_level_data.reward["drop_id"],  # type: ignore
-                )
+                    new_level_data.reward["name"] = (  # type: ignore
+                        case.name if case else "unknown"
+                    )
+                case CaseDropTypeEnum.COLOR.value:
+                    color = await get_color_by_id(
+                        session,
+                        guild_id=guild.id,
+                        color_id=new_level_data.reward["drop_id"],  # type: ignore
+                    )
 
-                if color is None:
-                    reward_name = "unknown"
-                else:
-                    role = guild.get_role(color.role_id)
+                    if color is None:
+                        reward_name = "unknown"
+                    else:
+                        role = guild.get_role(color.role_id)
 
-                    reward_name = role.name if role else "unknown"
+                        reward_name = role.name if role else "unknown"
 
-            case _:
-                ...
+                case _:
+                    ...
 
         # new_level_data is guaranteed to exist here
         updated_view = view_to_update(

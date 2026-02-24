@@ -100,29 +100,30 @@ class Battlepass(Cog):
         reward_id = current_level.reward["drop_id"]
         reward_amount = current_level.reward["amount"]
 
-        match reward_type:
-            case CaseDropTypeEnum.COINS.value:
-                reward_name = coin_name or "коины"
-            case CaseDropTypeEnum.CASE.value:
-                case = await get_case_by_id(
-                    session, guild_id=guild.id, case_id=reward_id
-                )
+        async with self.bot.uow.start() as session:
+            match reward_type:
+                case CaseDropTypeEnum.COINS.value:
+                    reward_name = coin_name or "коины"
+                case CaseDropTypeEnum.CASE.value:
+                    case = await get_case_by_id(
+                        session, guild_id=guild.id, case_id=reward_id
+                    )
 
-                reward_name = case.name if case else "unknown"
-            case CaseDropTypeEnum.COLOR.value:
-                color = await get_color_by_id(
-                    session, guild_id=guild.id, color_id=reward_id
-                )
+                    reward_name = case.name if case else "unknown"
+                case CaseDropTypeEnum.COLOR.value:
+                    color = await get_color_by_id(
+                        session, guild_id=guild.id, color_id=reward_id
+                    )
 
-                if color is None:
-                    reward_name = "unknown"
-                else:
-                    role = guild.get_role(color.role_id)
+                    if color is None:
+                        reward_name = "unknown"
+                    else:
+                        role = guild.get_role(color.role_id)
 
-                    reward_name = role.name if role else "unknown"
+                        reward_name = role.name if role else "unknown"
 
-            case _:
-                ...
+                case _:
+                    ...
 
         view = BattlepassClaimViewV2(
             bot=bot,
