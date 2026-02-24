@@ -13,7 +13,6 @@ from src.infra.db.operations import (
     get_moderation_access_roles,
     get_or_create_user,
     is_user_ticketbanned,
-    set_user_field_upsert,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -70,6 +69,8 @@ class Ticketban(Cog):
         # Ensure we have a guild Member object
         member = user
 
+        outcome = ""
+
         if guild.me == member:
             return await interaction.response.send_message(
                 embed=ErrorEmbed(
@@ -93,80 +94,64 @@ class Ticketban(Cog):
                 ephemeral=True,
             )
 
-        async with self.bot.uow.start() as session:
-            moderation_access_roles = await get_moderation_access_roles(
-                session, guild_id=guild.id
+        try:
+            async with self.bot.uow.start() as session:
+                moderation_access_roles = await get_moderation_access_roles(
+                    session, guild_id=guild.id
+                )
+
+                is_member_moderator = has_any_role_from_sequence(
+                    member, moderation_access_roles
+                )
+                if is_member_moderator:
+                    outcome = "cannot_punish_moderator"
+                else:
+                    u, _ = await get_or_create_user(
+                        session, guild_id=guild.id, user_id=member.id
+                    )
+                    if u.ticket_ban or await is_user_ticketbanned(
+                        session, guild_id=guild.id, user_id=member.id
+                    ):
+                        outcome = "already_punisned"
+                    else:
+                        u.ticket_ban = True
+        except Exception as e:
+            logger.error(
+                "Failed to ticketban user %s in guild %s: %s",
+                user.id,
+                guild.id,
+                e,
             )
 
-            is_member_moderator = has_any_role_from_sequence(
-                member, moderation_access_roles
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки тикетов",
+                    "Не удалось заблокировать пользователя.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                )
             )
-            if is_member_moderator:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка блокировки",
-                        "Вы не можете заблокировать модераторов.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
-                )
 
-            try:
-                u, _ = await get_or_create_user(
-                    session, guild_id=guild.id, user_id=member.id
-                )
-                if u.ticket_ban or await is_user_ticketbanned(
-                    session, guild_id=guild.id, user_id=member.id
-                ):
-                    return await interaction.response.send_message(
-                        embed=ValidationErrorEmbed(
-                            "Этот пользователь уже имеет блокировку на создание тикетов.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-            except Exception as e:
-                logger.error(
-                    "Failed to ticketban user %s in guild %s: %s",
-                    user.id,
-                    guild.id,
-                    e,
-                )
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка блокировки тикетов",
-                        "Не удалось заблокировать пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    )
-                )
+        if outcome == "cannot_punish_moderator":
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка блокировки",
+                    "Вы не можете заблокировать модераторов.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
-            try:
-                await set_user_field_upsert(
-                    session,
-                    guild_id=guild.id,
-                    user_id=member.id,
-                    field="ticket_ban",
-                    value=True,
-                )
-
-            except Exception as e:
-                logger.error(
-                    "Failed to ticketban user %s in guild %s: %s",
-                    user.id,
-                    guild.id,
-                    e,
-                )
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка блокировки тикетов",
-                        "Не удалось заблокировать пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                    )
-                )
+        if outcome == "already_punisned":
+            return await interaction.response.send_message(
+                embed=ValidationErrorEmbed(
+                    "Этот пользователь уже имеет блокировку на создание тикетов.",  # noqa: E501
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         await interaction.response.defer()
 
