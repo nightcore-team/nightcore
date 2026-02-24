@@ -1,10 +1,13 @@
-"""Unit of Work (UoW) implementation for managing database sessions."""
+"""Unit of Work implementation for managing database sessions."""
 
 import logging
 import time
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from .callsite import find_callsite  # ваш путь
 
 logger = logging.getLogger(__name__)
 
@@ -14,36 +17,52 @@ class UnitOfWork:
         self._sm = sessionmaker
 
     @asynccontextmanager
-    async def start(self, readonly: bool = False):
-        """Start a new db session."""
+    async def start(
+        self,
+        *,
+        readonly: bool = False,
+        origin: str | None = None,
+    ) -> AsyncIterator[AsyncSession]:
+        """Start a new unit of work session."""
+
+        if origin is None:
+            callsite = find_callsite()
+            origin_display = str(callsite) if callsite else "unknown"
+        else:
+            origin_display = origin
+
         async with self._sm() as session:
             start_time = time.perf_counter()
-            logger.info("[UoW] Session started")
+            logger.info(
+                "[UoW] Session started | %s",
+                origin_display,
+            )
 
             try:
                 yield session
 
                 commit_start = time.perf_counter()
-                if not readonly:
-                    await session.commit()
-                else:
+                if readonly:
                     await session.rollback()
+                else:
+                    await session.commit()
+
                 logger.info(
-                    f"[UoW] Commit finished in {time.perf_counter() - commit_start:.10f}s "  # noqa: E501
-                    f"(total {time.perf_counter() - start_time:.10f}s)"
+                    "[UoW] Commit finished in %.6fs (total %.6fs)",
+                    time.perf_counter() - commit_start,
+                    time.perf_counter() - start_time,
                 )
             except Exception as e:
-                logger.warning(
-                    f"[UoW] Exception occurred: {e!r}, rolling back..."
+                logger.error(
+                    "[UoW] Exception occurred, rolling back | %s, error: %s",
+                    origin_display,
+                    e,
                 )
-                rollback_start = time.perf_counter()
                 await session.rollback()
-                logger.info(
-                    f"[UoW] Rollback finished in {time.perf_counter() - rollback_start:.10f}s "  # noqa: E501
-                    f"(total {time.perf_counter() - start_time:.10f}s)"
-                )
                 raise
             finally:
                 logger.info(
-                    f"[UoW] Session closed (total time {time.perf_counter() - start_time:.10f}s)"  # noqa: E501
+                    "[UoW] Session closed (total time %.10fs) | %s",
+                    time.perf_counter() - start_time,
+                    origin_display,
                 )
