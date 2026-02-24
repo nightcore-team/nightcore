@@ -71,86 +71,76 @@ async def open_case(
                 with_relations=True,
             )
 
-            case = await get_case_by_id(
-                session, guild_id=guild.id, case_id=case_id
+            logging_channel_id = await get_specified_channel(
+                session,
+                guild_id=guild.id,
+                config_type=GuildLoggingConfig,
+                channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
-            if case is None:
-                outcome = "unknown_case"
+            user_case = user.get_case(case_id)
+
+            if user_case is None:
+                outcome = "no_case"
             else:
-                logging_channel_id = await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildLoggingConfig,
-                    channel_type=ChannelType.LOGGING_ECONOMY,
-                )
+                reward = user_case.item.open()
 
-                user_case = user.get_case(case_id)
-
-                if user_case is None:
-                    outcome = "no_case"
+                if reward is None:
+                    outcome = "no_case_reward_configured"
                 else:
-                    reward = user_case.item.open()
+                    user_case.amount -= 1
 
-                    if reward is None:
-                        outcome = "no_case_reward_configured"
-                    else:
-                        user_case.amount -= 1
+                    result = await give_reward_by_type(
+                        session, reward=reward, user=user
+                    )
 
-                        result = await give_reward_by_type(
-                            session, reward=reward, user=user
-                        )
+                    match reward["type"]:
+                        case CaseDropTypeEnum.COINS.value:
+                            reward["name"] = guild_config.coin_name or "коины"
 
-                        match reward["type"]:
-                            case CaseDropTypeEnum.COINS.value:
+                            if (
+                                result
+                                == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
+                            ):
+                                reward["name"] += " (Компенсация за цвет)"
+
+                        case CaseDropTypeEnum.CASE.value:
+                            case = await get_case_by_id(
+                                session,
+                                guild_id=guild.id,
+                                case_id=reward["drop_id"],
+                            )
+
+                            reward["name"] = (
+                                case.name if case else "unknown case"
+                            )
+                        case CaseDropTypeEnum.COLOR.value:
+                            color = await get_color_by_id(
+                                session,
+                                guild_id=guild.id,
+                                color_id=reward["drop_id"],
+                            )
+
+                            if color is None:
+                                reward["name"] = "unknown"
+                            else:
+                                role = guild.get_role(color.role_id)
+
                                 reward["name"] = (
-                                    guild_config.coin_name or "коины"
+                                    role.name if role else "unknown role"
                                 )
 
-                                if (
-                                    result
-                                    == RewardOutcomeEnum.COLOR_WITH_COMPENSATION  # noqa: E501
-                                ):
-                                    reward["name"] += " (Компенсация за цвет)"
+                        case _:
+                            ...
 
-                            case CaseDropTypeEnum.CASE.value:
-                                case = await get_case_by_id(
-                                    session,
-                                    guild_id=guild.id,
-                                    case_id=reward["drop_id"],
-                                )
+                    reward_text = reward["name"]
 
-                                reward["name"] = (
-                                    case.name if case else "unknown case"
-                                )
-                            case CaseDropTypeEnum.COLOR.value:
-                                color = await get_color_by_id(
-                                    session,
-                                    guild_id=guild.id,
-                                    color_id=reward["drop_id"],
-                                )
-
-                                if color is None:
-                                    reward["name"] = "unknown"
-                                else:
-                                    role = guild.get_role(color.role_id)
-
-                                    reward["name"] = (
-                                        role.name if role else "unknown role"
-                                    )
-
-                            case _:
-                                ...
-
-                        reward_text = reward["name"]
-
-                        outcome = (
-                            "success"
-                            if result == RewardOutcomeEnum.SUCCESS
-                            or result
-                            == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
-                            else "error: " + result.name
-                        )
+                    outcome = (
+                        "success"
+                        if result == RewardOutcomeEnum.SUCCESS
+                        or result == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
+                        else "error: " + result.name
+                    )
 
     except Exception as e:
         logger.exception(
@@ -166,16 +156,6 @@ async def open_case(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "У вас нет такого кейса для открытия.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
-        )
-
-    if outcome == "unknown_case":
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
-                "Неизвестный тип кейса.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -207,7 +187,7 @@ async def open_case(
     if outcome == "success":
         view = CaseOpenViewV2(
             bot=bot,
-            case_name=case.name,  # type: ignore
+            case_name=user_case.item.name,  # type: ignore
             reward=reward["name"],  # type: ignore
             chance=reward["chance"],  # type: ignore
             amount=reward["amount"],  # type: ignore

@@ -41,8 +41,8 @@ class DeleteChannelHandler(Cog):
                     channel_type=ChannelType.LOGGING_CHANNELS,
                 )
             ):
-                logger.debug(
-                    "[logging] Logging channel (channels) not configured for guild %s",
+                logger.info(
+                    "[logging] Logging channel (channels) not configured for guild %s",  # noqa: E501
                     guild.id,
                 )
                 return
@@ -52,7 +52,7 @@ class DeleteChannelHandler(Cog):
                 guild, logging_channels_channel_id
             )
         ):
-            logger.debug(
+            logger.info(
                 "[logging] Logging channel (channels) not found in guild %s",
                 guild.id,
             )
@@ -107,8 +107,8 @@ class DeleteChannelHandler(Cog):
                     try:
                         file = build_channel_overwrites_file(channel)
                     except Exception as e:
-                        logger.warning(
-                            "[logging] Failed to build channel overwrites file: %s",
+                        logger.error(
+                            "[logging] Failed to build channel overwrites file: %s",  # noqa: E501
                             e,
                         )
 
@@ -125,14 +125,14 @@ class DeleteChannelHandler(Cog):
 
         except discord.Forbidden as e:
             logger.warning(
-                "[logging] Missing permissions to access audit logs in guild %s: %s",
+                "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
                 guild.id,
                 e,
             )
             return
         except discord.HTTPException as e:
-            logger.warning(
-                "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",
+            logger.error(
+                "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
                 guild.id,
                 e,
             )

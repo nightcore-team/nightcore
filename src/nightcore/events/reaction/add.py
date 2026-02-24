@@ -30,7 +30,7 @@ class ReactionAddEvent(Cog):
         guild = reaction.message.guild
 
         if not guild:
-            logger.error(
+            logger.info(
                 "[reactions] - Reaction added in a non-guild context by user %s",  # noqa: E501
                 user.id,
             )
@@ -45,7 +45,7 @@ class ReactionAddEvent(Cog):
             )
 
         if log_channel_id is None:
-            logger.error(
+            logger.info(
                 "[reactions] - Logging channel for reactions not configured in guild %s",  # noqa: E501
                 guild.id,
             )

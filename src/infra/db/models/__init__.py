@@ -20,6 +20,7 @@ from .meta import Base, GuildMetaConfig  # noqa: F811
 from .moderationmessage import Base, ModerationMessage  # noqa: F811
 from .notify import Base, NotifyState  # noqa: F811
 from .private_rooms import Base, PrivateRoomState  # noqa: F811
+from .processed_forum_thread import Base, ProcessedForumThread  # noqa: F811
 from .punish import Base, Punish  # noqa: F811
 from .role_request import Base, RoleRequestState  # noqa: F811
 from .shop import Base, ShopOrderState  # noqa: F811
@@ -53,6 +54,7 @@ __all__ = (
     "ModerationMessage",
     "NotifyState",
     "PrivateRoomState",
+    "ProcessedForumThread",
     "Punish",
     "RoleRequestState",
     "ShopOrderState",

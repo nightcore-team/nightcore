@@ -15,9 +15,9 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
 )
+from src.nightcore.features.clans.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.features.economy._groups import give as give_group
-from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     reason="Причина выдачи опыта (необязательно)",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
-@check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
 async def give_clanexp(
     interaction: Interaction["Nightcore"],
     clan: str,
@@ -99,6 +99,7 @@ async def give_clanexp(
             user_id=user.id,
             moderator_id=interaction.user.id,
             item_name="клановый опыт",
+            clan_name=db_clan.name,  # type: ignore
             amount=amount,
             reason=reason,
         ),

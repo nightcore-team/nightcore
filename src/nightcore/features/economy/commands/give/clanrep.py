@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     reason="Причина выдачи репутации (необязательно)",
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
-@check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
 async def give_clanrep(
     interaction: Interaction["Nightcore"],
     clan: str,
@@ -99,7 +99,9 @@ async def give_clanrep(
             logging_channel_id=logging_channel_id,
             user_id=user.id,
             moderator_id=interaction.user.id,
+            clan_name=db_clan.name,  # type: ignore
             item_name="репутация",
             amount=amount,
+            reason=reason,
         ),
     )

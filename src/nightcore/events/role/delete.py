@@ -47,7 +47,7 @@ class DeleteRoleEvent(Cog):
             )
 
         if not roles_logging_channel_id:
-            logger.error(
+            logger.info(
                 "[roles] Logging channel (roles) not configured for guild %s",
                 guild.id,
             )
@@ -58,7 +58,7 @@ class DeleteRoleEvent(Cog):
         )
 
         if not channel:
-            logger.error(
+            logger.info(
                 "[roles] Logging channel (roles) not found in guild %s",
                 guild.id,
             )
@@ -143,7 +143,7 @@ class DeleteRoleEvent(Cog):
         try:
             await channel.send(embed=embed)  # type: ignore
         except Exception as e:
-            logger.exception(
+            logger.error(
                 "[roles] Failed to send role deletion log in guild %s: %s",
                 guild.id,
                 e,

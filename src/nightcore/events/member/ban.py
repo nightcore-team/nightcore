@@ -34,7 +34,7 @@ class BanMemberEvent(Cog):
                     channel_type=ChannelType.LOGGING_BANS,
                 )
             ):
-                logger.warning(
+                logger.info(
                     f"[logging] Logging channel (bans) not configured for guild {guild.id}"  # noqa: E501
                 )
                 return
@@ -44,7 +44,7 @@ class BanMemberEvent(Cog):
                 guild, logging_members_channel_id
             )
         ):
-            logger.warning(
+            logger.info(
                 f"[logging] Logging channel (bans) not found in guild {guild.id}"  # noqa: E501
             )
             return
@@ -80,7 +80,9 @@ class BanMemberEvent(Cog):
         try:
             await logging_channel.send(embed=embed)  # type: ignore
         except Exception as e:
-            logger.error(f"Failed to send member join log message: {e}")
+            logger.error(
+                f"[logging] Failed to send member ban log message: {e}"
+            )
             return
 
         logger.info("[logging] Member ban logged for guild: %s", guild.id)

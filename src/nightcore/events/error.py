@@ -47,7 +47,7 @@ async def setup(bot: "Nightcore") -> None:
         original = getattr(error, "original", error)
 
         if isinstance(original, ConfigMissingButCreatingError):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -72,7 +72,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, app_commands.TransformerError):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -122,7 +122,7 @@ async def setup(bot: "Nightcore") -> None:
                 return
 
         if isinstance(original, app_commands.MissingPermissions):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -150,7 +150,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, app_commands.CommandOnCooldown):
-            logger.info(
+            logger.error(
                 "%s handled guild=%s user=%s retry_after=%.2fs",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -180,7 +180,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, ConfigMissingError):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -205,7 +205,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, OrgRolesParsingError):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -233,7 +233,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, TempVoiceRolesParsingError):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -261,7 +261,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, LevelRolesParsingError):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,
@@ -289,7 +289,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         if isinstance(original, FieldNotConfiguredError):
-            logger.warning(
+            logger.error(
                 "%s handled guild=%s user=%s msg=%s",
                 original.__class__.__name__,
                 cast(Guild, interaction.guild).id,

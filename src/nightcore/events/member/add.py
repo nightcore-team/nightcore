@@ -36,7 +36,7 @@ class AddMemberEvent(Cog):
                     channel_type=ChannelType.LOGGING_MEMBERS,
                 )
             ):
-                logger.warning(
+                logger.info(
                     f"[logging] Logging channel (members) not configured for guild {guild.id}"  # noqa: E501
                 )
                 return
@@ -46,7 +46,7 @@ class AddMemberEvent(Cog):
                 guild, logging_members_channel_id
             )
         ):
-            logger.warning(
+            logger.info(
                 f"[logging] Logging channel (members) not found in guild {guild.id}"  # noqa: E501
             )
             return
@@ -81,7 +81,9 @@ class AddMemberEvent(Cog):
         try:
             await logging_channel.send(embed=embed)  # type: ignore
         except Exception as e:
-            logger.error(f"Failed to send member join log message: {e}")
+            logger.error(
+                f"[logging] Failed to send member join log message: {e}"
+            )
             return
 
         logger.info("[logging] Member join logged for guild: %s", guild.id)

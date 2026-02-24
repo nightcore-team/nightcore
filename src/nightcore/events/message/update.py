@@ -52,7 +52,7 @@ class UpdateMessageEvent(Cog):
         guild = after.guild
 
         if not guild:
-            logger.debug(
+            logger.info(
                 "[message] Updated message is not from a guild: %s", after
             )
             return
@@ -66,7 +66,7 @@ class UpdateMessageEvent(Cog):
                     channel_type=ChannelType.LOGGING_MESSAGES,
                 )
             ):
-                logger.debug(
+                logger.info(
                     "[message] No logging channel configured for guild %s",
                     guild.id,
                 )
@@ -84,14 +84,14 @@ class UpdateMessageEvent(Cog):
 
         if ignoring_channels_ids:
             if after.channel.id in ignoring_channels_ids:
-                logger.debug(
+                logger.info(
                     "[message] Message from ignored channel %s in guild %s",
                     after.channel.id,
                     guild.id,
                 )
                 return
         else:
-            logger.debug(
+            logger.info(
                 "[message] No ignoring channels configured for guild %s",
                 guild.id,
             )
@@ -100,7 +100,7 @@ class UpdateMessageEvent(Cog):
             guild=guild, channel_id=logging_channel_id
         )
         if not channel:
-            logger.debug(
+            logger.info(
                 "[message] Logging channel %s not found in guild %s",
                 logging_channel_id,
                 guild.id,
@@ -221,14 +221,14 @@ class UpdateMessageEvent(Cog):
         try:
             await channel.send(embed=embed, files=files)  # type: ignore
         except Exception as e:
-            logger.warning(
-                "[message] Failed to send message log to channel %s in guild %s: %s",
+            logger.error(
+                "[message] Failed to send message log to channel %s in guild %s: %s",  # noqa: E501
                 channel.id,
                 guild.id,
                 e,
             )
 
-        logger.debug(
+        logger.info(
             "[message] Message updated: Old - %s, New - %s",
             before,
             after,

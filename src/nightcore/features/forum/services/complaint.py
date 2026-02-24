@@ -14,6 +14,9 @@ from nightforo import (
 
 from src.infra.api.forum.dto import Server
 from src.infra.api.forum.utils import extract_discord_id
+from src.infra.db.operations import (
+    get_or_create_processed_thread,
+)
 from src.nightcore.features.forum.components.v2 import ComplaintViewV2
 from src.nightcore.features.tickets.utils import extract_str_by_pattern
 from src.nightcore.utils import (
@@ -64,13 +67,21 @@ class ForumComplaintProcessor:
         )
 
         if not threads:
-            logger.warning(
+            logger.info(
                 "[forum] No new complaint threads found in section %s",
                 server.section_id,
             )
             return
 
         for thread in threads:
+            async with self.bot.uow.start() as session:
+                processed_thread = await get_or_create_processed_thread(
+                    session, thread_id=thread.thread_id
+                )
+
+            if processed_thread is not None:
+                continue
+
             await self._process_single_thread(server, thread)
 
     async def _process_single_thread(
@@ -99,14 +110,12 @@ class ForumComplaintProcessor:
 
         guild = self.bot.get_guild(server.guild_id)
         if not guild:
-            logger.warning(
-                "[forum] Guild with ID %s not found", server.guild_id
-            )
+            logger.info("[forum] Guild with ID %s not found", server.guild_id)
             return
 
         member = await ensure_member_exists(guild, discord_id)
         if not member:
-            logger.warning(
+            logger.info(
                 "[forum] Member with Discord ID %s not found in guild %s",
                 discord_id,
                 server.guild_id,
@@ -188,7 +197,7 @@ class ForumComplaintProcessor:
                 guild, server.channel_id
             )
             if not channel:
-                logger.warning(
+                logger.info(
                     "[forum] Channel with ID %s not found in guild %s",
                     server.channel_id,
                     server.guild_id,

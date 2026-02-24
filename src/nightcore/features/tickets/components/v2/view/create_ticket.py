@@ -129,10 +129,10 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                             session, guild_id=guild.id, user_id=user.id
                         )
 
-                        if (
-                            last_ticket
-                            and last_ticket.state != TicketStateEnum.CLOSED
-                        ):
+                        if last_ticket and last_ticket.state not in [
+                            TicketStateEnum.CLOSED,
+                            TicketStateEnum.DELETED,
+                        ]:
                             outcome = "user_has_open_ticket"
                         else:
                             try:
@@ -270,31 +270,21 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 )
 
             async with view.bot.uow.start() as session:
-                try:
-                    ticket_state = TicketState(
-                        guild_id=guild.id,
-                        author_id=user.id,
-                        channel_id=new_channel_id,
-                        state=TicketStateEnum.OPENED,
-                    )
-                    session.add(ticket_state)
-                    await session.commit()
+                ticket_state = TicketState(
+                    guild_id=guild.id,
+                    author_id=user.id,
+                    channel_id=new_channel_id,
+                    state=TicketStateEnum.OPENED,
+                )
+                session.add(ticket_state)
 
-                    logger.info(
-                        "[Ticket] Created ticket #%s for user %s in guild %s (channel: %s)",  # noqa: E501
-                        current_tickets_count,
-                        user.id,
-                        guild.id,
-                        new_channel_id,
-                    )
-
-                except Exception as e:
-                    logger.error(
-                        "Failed to save ticket state in guild %s, user %s: %s",
-                        guild.id,
-                        user.id,
-                        e,
-                    )
+                logger.info(
+                    "[Ticket] Created ticket #%s for user %s in guild %s (channel: %s)",  # noqa: E501
+                    current_tickets_count,
+                    user.id,
+                    guild.id,
+                    new_channel_id,
+                )
 
             if logging_channel_id:
                 view.bot.dispatch(

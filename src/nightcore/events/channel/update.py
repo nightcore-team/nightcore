@@ -38,8 +38,8 @@ class UpdateChannelHandler(Cog):
                     channel_type=ChannelType.LOGGING_CHANNELS,
                 )
             ):
-                logger.debug(
-                    "[logging] Logging channel (channels) not configured for guild %s",
+                logger.info(
+                    "[logging] Logging channel (channels) not configured for guild %s",  # noqa: E501
                     guild.id,
                 )
                 return
@@ -49,7 +49,7 @@ class UpdateChannelHandler(Cog):
                 guild, logging_channels_channel_id
             )
         ):
-            logger.debug(
+            logger.info(
                 "[logging] Logging channel (channels) not found in guild %s",
                 guild.id,
             )
@@ -92,13 +92,13 @@ class UpdateChannelHandler(Cog):
             try:
                 await logging_channel.send(embed=embed)  # type: ignore
             except Exception as e:
-                logger.warning(
-                    "[logging] Failed to send logging embed about channel updating: %s",
+                logger.error(
+                    "[logging] Failed to send logging embed about channel updating: %s",  # noqa: E501
                     e,
                 )
         else:
-            logger.debug(
-                "[logging] No relevant changes detected for channel %s in guild %s, skipping logging",
+            logger.info(
+                "[logging] No relevant changes detected for channel %s in guild %s, skipping logging",  # noqa: E501
                 new.id,
                 guild.id,
             )

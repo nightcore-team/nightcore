@@ -119,8 +119,13 @@ async def create(
             ),
         )
 
-    async with bot.uow.start() as session:
-        try:
+    # Wrap UoW in try-except to handle errors after transaction
+    outcome = None
+    error_msg = ""
+    clan = None  # Initialize clan for later use
+
+    try:
+        async with bot.uow.start() as session:
             clan = await create_clan(
                 session,
                 guild_id=guild.id,
@@ -136,74 +141,80 @@ async def create(
                 user_id=leader.id,
                 role=ClanMemberRoleEnum.LEADER,
             )
-            await session.commit()
 
-        except IntegrityError as e:
-            await session.rollback()
-            error_msg = str(e)
+    except IntegrityError as e:
+        outcome = "integrity_error"
+        error_msg = str(e)
 
-            # Check if it's a clan name conflict or member already in clan
-            if "uq_member_guild_user" in error_msg:
-                user_message = f"Пользователь {leader.mention} уже состоит в другом клане."  # noqa: E501
-            elif (
-                "uq_clan_guild_name" in error_msg
-                or "clan_name" in error_msg.lower()
-            ):
-                user_message = f"Клан с таким именем ({name}) уже существует."
-            else:
-                user_message = "Произошла ошибка при создании клана. Возможно, клан с таким именем уже существует или пользователь уже в другом клане."  # noqa: E501
+    except Exception as e:
+        outcome = "general_error"
+        logger.exception(
+            "[clans] Error creating clan in database for guild %s: %s",
+            guild.id,
+            e,
+        )
 
-            try:
-                asyncio.create_task(
-                    safe_delete_role(
-                        clan_role,
-                        reason="Откат создания роли клана из-за ошибки в базе данных.",  # noqa: E501
-                    )
-                )
-            except Exception as delete_error:
-                logger.error(
-                    "[clans] Error deleting clan role in guild %s during rollback: %s",  # noqa: E501
-                    guild.id,
-                    delete_error,
-                )
-
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Ошибка создания клана",
-                    user_message,
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
+    # Handle errors after transaction is complete
+    if outcome == "integrity_error":
+        # Check if it's a clan name conflict or member already in clan
+        if "uq_member_guild_user" in error_msg:
+            user_message = (
+                f"Пользователь {leader.mention} уже состоит в другом клане."  # noqa: E501
             )
+        elif (
+            "uq_clan_guild_name" in error_msg
+            or "clan_name" in error_msg.lower()
+        ):
+            user_message = f"Клан с таким именем ({name}) уже существует."
+        else:
+            user_message = "Произошла ошибка при создании клана. Возможно, клан с таким именем уже существует или пользователь уже в другом клане."  # noqa: E501
 
-        except Exception as e:
-            await session.rollback()
+        try:
+            asyncio.create_task(
+                safe_delete_role(
+                    clan_role,
+                    reason="Откат создания роли клана из-за ошибки в базе данных.",  # noqa: E501
+                )
+            )
+        except Exception as delete_error:
             logger.error(
-                "[clans] Error creating clan in database for guild %s: %s",
+                "[clans] Error deleting clan role in guild %s during rollback: %s",  # noqa: E501
                 guild.id,
-                e,
+                delete_error,
             )
-            try:
-                asyncio.create_task(
-                    safe_delete_role(
-                        clan_role,
-                        reason="Откат создания роли клана из-за ошибки в базе данных.",  # noqa: E501
-                    )
+
+        return await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка создания клана",
+                user_message,
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+        )
+
+    if outcome == "general_error":
+        try:
+            asyncio.create_task(
+                safe_delete_role(
+                    clan_role,
+                    reason="Откат создания роли клана из-за ошибки в базе данных.",  # noqa: E501
                 )
-            except Exception as delete_error:
-                logger.error(
-                    "[clans] Error deleting clan role in guild %s during rollback: %s",  # noqa: E501
-                    guild.id,
-                    delete_error,
-                )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Ошибка создания клана",
-                    "Произошла ошибка при создании клана в базе данных.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
             )
+        except Exception as delete_error:
+            logger.error(
+                "[clans] Error deleting clan role in guild %s during rollback: %s",  # noqa: E501
+                guild.id,
+                delete_error,
+            )
+
+        return await interaction.followup.send(
+            embed=ErrorEmbed(
+                "Ошибка создания клана",
+                "Произошла ошибка при создании клана в базе данных.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+        )
 
     asyncio.create_task(
         leader.add_roles(clan_role, reason="Назначение роли лидера клана.")
@@ -258,7 +269,8 @@ async def create(
         ephemeral=True,
     )
 
-    if create_channel:
+    # Only proceed with channel creation if clan was successfully created
+    if outcome is None and create_channel and clan is not None:
         if create_clan_channel_category_id:  # type: ignore
             category = await ensure_category_exists(
                 guild, create_clan_channel_category_id
@@ -297,9 +309,10 @@ async def create(
                     },
                 )
                 async with bot.uow.start() as session:
-                    clan = await session.merge(clan)
-                    clan.clan_channel_id = channel.id
-                    await session.commit()
+                    # clan is guaranteed to be not None here due to if check
+                    assert clan is not None
+                    merged_clan = await session.merge(clan)
+                    merged_clan.clan_channel_id = channel.id
 
                 await interaction.followup.send(
                     embed=SuccessMoveEmbed(

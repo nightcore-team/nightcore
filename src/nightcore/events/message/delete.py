@@ -31,14 +31,14 @@ class DeleteMessageEvent(Cog):
 
         message = payload.cached_message
         if not message:
-            logger.error(
+            logger.info(
                 "[message] Deleted message not found in cache: %s", payload
             )
             return
 
         guild = message.guild
         if not guild:
-            logger.error(
+            logger.info(
                 "[message] Deleted message is not from a guild: %s", payload
             )
             return
@@ -52,7 +52,7 @@ class DeleteMessageEvent(Cog):
                     channel_type=ChannelType.LOGGING_MESSAGES,
                 )
             ):
-                logger.error(
+                logger.info(
                     "[message] No logging channel configured for guild %s",
                     guild.id,
                 )
@@ -77,7 +77,7 @@ class DeleteMessageEvent(Cog):
                 )
                 return
         else:
-            logger.error(
+            logger.info(
                 "[message] No ignoring channels configured for guild %s",
                 guild.id,
             )
@@ -86,7 +86,7 @@ class DeleteMessageEvent(Cog):
             guild=guild, channel_id=logging_channel_id
         )
         if not channel:
-            logger.error(
+            logger.info(
                 "[message] Logging channel %s not found in guild %s",
                 logging_channel_id,
                 guild.id,

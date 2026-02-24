@@ -9,7 +9,7 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
 from src.config.config import config
-from src.infra.db.models import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig, TicketState
 from src.infra.db.models._enums import ChannelType, TicketStateEnum
 from src.infra.db.operations import (
     get_all_closed_tickets,
@@ -39,6 +39,12 @@ class DeleteTicketTask(Cog):
         if self.delete_ticket_task.is_running():
             self.delete_ticket_task.cancel()
 
+    async def _delete_ticket(self, ticket_state: TicketState) -> None:
+        """Delete a ticket from the database."""
+        async with self.bot.uow.start() as session:
+            _ticket = await session.merge(ticket_state)
+            await session.delete(_ticket)
+
     @tasks.loop(minutes=30)
     async def delete_ticket_task(self):
         """Task to delete tickets when their duration ends."""
@@ -58,10 +64,11 @@ class DeleteTicketTask(Cog):
 
                 guild = await ensure_guild_exists(self.bot, ticket.guild_id)
                 if guild is None:
-                    logger.error(
+                    logger.info(
                         "[task] - Guild %s not found",
                         ticket.guild_id,
                     )
+                    await self._delete_ticket(ticket)
                     continue
 
                 async with self.bot.uow.start() as session:

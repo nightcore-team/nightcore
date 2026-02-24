@@ -12,7 +12,7 @@ dependencies = [
     "chat-exporter>=2.8.4",
     "colorlog>=6.10.1",
     "discord-py",
-    "nightforo>=1.1.4",
+    "nightforo>=1.1.5",
     "pillow>=12.1.0",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",

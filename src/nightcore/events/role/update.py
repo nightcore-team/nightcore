@@ -118,7 +118,7 @@ class UpdateRoleEvent(Cog):
             )
 
         if not roles_logging_channel_id:
-            logger.error(
+            logger.info(
                 "[roles] Logging channel (roles) not configured for guild %s",
                 guild.id,
             )
@@ -129,7 +129,7 @@ class UpdateRoleEvent(Cog):
         )
 
         if not channel:
-            logger.error(
+            logger.info(
                 "[roles] Logging channel (roles) not found in guild %s",
                 guild.id,
             )
@@ -138,7 +138,7 @@ class UpdateRoleEvent(Cog):
         try:
             await channel.send(embed=embed)  # type: ignore
         except Exception as e:
-            logger.exception(
+            logger.error(
                 "[roles] Failed to send role updating log in guild %s: %s",
                 guild.id,
                 e,

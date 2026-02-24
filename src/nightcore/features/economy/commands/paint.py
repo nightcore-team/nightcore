@@ -51,6 +51,17 @@ class Paint(Cog):
         guild = cast(Guild, interaction.guild)
         member = cast(Member, interaction.user)
 
+        if not guild.me.guild_permissions.manage_roles:
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка выдачи цвета",
+                    "У меня недостаточно прав для управления ролями.",
+                    self.bot.user.display_name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
         outcome = ""
 
         async with bot.uow.start() as session:
@@ -82,18 +93,6 @@ class Paint(Cog):
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
                     "Вы уже применили на себя этот цвет.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
-                ephemeral=True,
-            )
-
-        if outcome == "no_permissions":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
-                    "Ошибка выдачи цвета",
-                    "У бота нет прав для управления ролями.\n"
-                    "Обратитесь к администрации.",
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

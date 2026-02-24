@@ -58,7 +58,7 @@ class ResetTempMultiplierTask(Cog):
                     )
 
                     if guild_config is None:
-                        logger.error(
+                        logger.info(
                             "[task] - GuildLevelsConfig not found for guild %s",  # noqa: E501
                             guild_id,
                         )
