@@ -31,55 +31,52 @@ class CountVoiceActivityEvent(Cog):
         """Count voice activity for users."""
 
         guild = member.guild
+        # guild_config = await get_specified_guild_config(
+        #     session, config_type=GuildLevelsConfig, guild_id=guild.id
+        # )
 
-        async with self.bot.uow.start() as session:
-            user, _ = await get_or_create_user(
-                session,
-                guild_id=guild.id,
-                user_id=member.id,
-            )
+        # if guild_config is None:
+        #     battlepass_multipler = 1
+        # else:
+        #     battlepass_multipler = (
+        #         guild_config.temp_battlepass_multiplier
+        #         or guild_config.base_battlepass_multiplier
+        #     )
 
-            # guild_config = await get_specified_guild_config(
-            #     session, config_type=GuildLevelsConfig, guild_id=guild.id
-            # )
+        now = datetime.now(UTC)
 
-            # if guild_config is None:
-            #     battlepass_multipler = 1
-            # else:
-            #     battlepass_multipler = (
-            #         guild_config.temp_battlepass_multiplier
-            #         or guild_config.base_battlepass_multiplier
-            #     )
-
-            now = datetime.now(UTC)
-
-            # join
-            if (
-                before.channel is None
-                and after.channel is not None
-                and after.channel != guild.afk_channel
-            ):
-                # start counting
-                try:
-                    user.temp_voice_activity = now
-                except Exception as e:
-                    logger.exception(
-                        "[voice/count] Error starting voice activity count for user %s in guild %s: %s",  # noqa: E501
-                        member.id,
-                        guild.id,
-                        e,
-                    )
-                    return
-
-                logger.info(
-                    "[voice/count] Start counting user voice %s activity in guild %s in %s",  # noqa: E501
-                    member.id,
-                    guild.id,
-                    after.channel.id,
+        # join
+        if (
+            before.channel is None
+            and after.channel is not None
+            and after.channel != guild.afk_channel
+        ):
+            async with self.bot.uow.start() as session:
+                user, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
                 )
 
-            # leave
-            elif before.channel is not None and after.channel is None:
+                # start counting
+                user.temp_voice_activity = now
+
+            logger.info(
+                "[voice/count] Start counting user voice %s activity in guild %s in %s",  # noqa: E501
+                member.id,
+                guild.id,
+                after.channel.id,
+            )
+
+        # leave
+        elif before.channel is not None and after.channel is None:
+            async with self.bot.uow.start() as session:
+                user, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
+                )
+
                 # stop counting
                 if user.temp_voice_activity is None:
                     return
@@ -88,35 +85,33 @@ class CountVoiceActivityEvent(Cog):
                     now - user.temp_voice_activity
                 ).total_seconds()
 
-                try:
-                    user.voice_activity += int(total_seconds)
-                    user.temp_voice_activity = None
-                    # user.battle_pass_points += (
-                    #     int(total_seconds) // 60
-                    # ) * battlepass_multipler
-                except Exception as e:
-                    logger.exception(
-                        "[voice/count] Error stopping voice activity count for user %s in guild %s: %s",  # noqa: E501
-                        member.id,
-                        guild.id,
-                        e,
+                user.voice_activity += int(total_seconds)
+                user.temp_voice_activity = None
+                # user.battle_pass_points += (
+                #     int(total_seconds) // 60
+                # ) * battlepass_multipler
+
+            logger.info(
+                "[voice/count] Stop counting user voice %s activity in guild %s in %s",  # noqa: E501
+                member.id,
+                guild.id,
+                before.channel.id,
+            )
+
+        # switch
+        elif (
+            before.channel is not None
+            and after.channel is not None
+            and before.channel.id != after.channel.id
+        ):
+            if after.channel == guild.afk_channel:
+                async with self.bot.uow.start() as session:
+                    user, _ = await get_or_create_user(
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
                     )
-                    return
 
-                logger.info(
-                    "[voice/count] Stop counting user voice %s activity in guild %s in %s",  # noqa: E501
-                    member.id,
-                    guild.id,
-                    before.channel.id,
-                )
-
-            # switch
-            elif (
-                before.channel is not None
-                and after.channel is not None
-                and before.channel.id != after.channel.id
-            ):
-                if after.channel == guild.afk_channel:
                     # stop counting
                     if user.temp_voice_activity is None:
                         return
@@ -125,31 +120,22 @@ class CountVoiceActivityEvent(Cog):
                         now - user.temp_voice_activity
                     ).total_seconds()
 
-                    try:
-                        user.voice_activity += int(total_seconds)
-                        user.temp_voice_activity = None
-                        # user.battle_pass_points += (
-                        #     int(total_seconds) // 60
-                        # ) * battlepass_multipler
-                    except Exception as e:
-                        logger.exception(
-                            "[voice/count] Error stopping voice activity count for user %s in guild %s: %s",  # noqa: E501
-                            member.id,
-                            guild.id,
-                            e,
-                        )
-                        return
+                    user.voice_activity += int(total_seconds)
+                    user.temp_voice_activity = None
+                    # user.battle_pass_points += (
+                    #     int(total_seconds) // 60
+                    # ) * battlepass_multipler
 
-                    logger.info(
-                        "[voice/count] Stop counting user voice %s activity in guild %s in %s",  # noqa: E501
-                        member.id,
-                        guild.id,
-                        before.channel.id,
-                    )
+                logger.info(
+                    "[voice/count] Stop counting user voice %s activity in guild %s in %s",  # noqa: E501
+                    member.id,
+                    guild.id,
+                    before.channel.id,
+                )
 
-                else:
-                    # continue counting
-                    return
+            else:
+                # continue counting
+                return
 
         logger.info(
             "[%s/log] - invoked user=%s guild=%s",
