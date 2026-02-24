@@ -57,9 +57,10 @@ class ExpiredNotifyTask(Cog):
                 pending_notifications = await get_all_pending_notifications(
                     session
                 )
-                if not pending_notifications:
-                    logger.info("[task] - No pending notifications found")
-                    return
+
+            if not pending_notifications:
+                logger.info("[task] - No pending notifications found")
+                return
 
             for notify in pending_notifications:
                 if not notify.end_time < datetime.now(UTC):

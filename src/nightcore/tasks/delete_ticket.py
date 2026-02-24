@@ -52,9 +52,10 @@ class DeleteTicketTask(Cog):
             logger.info("[task] - Running delete ticket task")
             async with self.bot.uow.start() as session:
                 closed_tickets = await get_all_closed_tickets(session)
-                if not closed_tickets:
-                    logger.info("[task] - No closed tickets found")
-                    return
+
+            if not closed_tickets:
+                logger.info("[task] - No closed tickets found")
+                return
 
             for ticket in closed_tickets:
                 if not ticket.updated_at + timedelta(

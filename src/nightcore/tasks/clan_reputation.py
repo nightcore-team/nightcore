@@ -58,18 +58,19 @@ class ClansPayDayTask(Cog):
                         added = clan.payday_multipler * len(clan.members)
                         clan.coins += added
 
-                        logger.info(
-                            "[task] - Added %s reputation to clan %s in guild %s",  # noqa: E501
-                            added,
-                            clan.name,
-                            guild.id,
-                        )
-
                     # Get channel_id before session closes
                     channel_id = (
                         guild_config.clan_payday_channel_id
                         if guild_config
                         else None
+                    )
+
+                for clan in clans:
+                    logger.info(
+                        "[task] - Added %s reputation to clan %s in guild %s",
+                        clan.payday_multipler * len(clan.members),
+                        clan.name,
+                        guild.id,
                     )
 
                 if not channel_id:

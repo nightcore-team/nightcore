@@ -63,10 +63,6 @@ class MultiplayerRouletteTask(Cog):
                 # Find the specific game we want to process
                 game = next((g for g in casino_games if g.id == game_id), None)
                 if not game:
-                    logger.info(
-                        "[task] - Game %s not found or already processed",
-                        game_id,
-                    )
                     return
 
                 bets_annot: list[CasinoBetAnnot] = []

@@ -34,16 +34,21 @@ class UnPunishTask(Cog):
         """Task to unpunish users when their punishment duration ends."""
         try:
             logger.info("[task] - Running unpunish task")
+
+            outcome = ""
             async with self.bot.uow.start() as session:
                 active_infractions = await get_expired_temp_infractions(
                     session
                 )
                 if not active_infractions:
-                    logger.info("[task] - No expired infractions found")
-                    return
+                    outcome = "no_expired_infractions"
+                else:
+                    for infraction in active_infractions:
+                        await session.delete(infraction)
 
-                for infraction in active_infractions:
-                    await session.delete(infraction)
+            if outcome == "no_expired_infractions":
+                logger.info("[task] - No expired infractions found")
+                return
 
             # Dispatch events after successful commit
             for infraction in active_infractions:

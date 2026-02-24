@@ -42,11 +42,13 @@ class ResetTempMultiplierTask(Cog):
                     session
                 )
 
-                if not temp_multipliers:
-                    logger.info("[task] - No expired temp multipliers found")
-                    return
+            if not temp_multipliers:
+                logger.info("[task] - No expired temp multipliers found")
+                return
 
             for temp_multiplier in temp_multipliers:
+                outcome = ""
+
                 guild_id = temp_multiplier.guild_id
                 multiplier_type = temp_multiplier.multiplier_type
 
@@ -58,34 +60,36 @@ class ResetTempMultiplierTask(Cog):
                     )
 
                     if guild_config is None:
-                        logger.info(
-                            "[task] - GuildLevelsConfig not found for guild %s",  # noqa: E501
-                            guild_id,
-                        )
-                        continue
-
-                    match multiplier_type:
-                        case MultiplierTypeEnum.EXP:
-                            guild_config.temp_exp_multiplier = None
-                            logger.info(
-                                "[task] - Reset EXP multiplier for guild %s",
-                                guild_id,
-                            )
-                        case MultiplierTypeEnum.COINS:
-                            guild_config.temp_coins_multiplier = None
-                            logger.info(
-                                "[task] - Reset COINS multiplier for guild %s",
-                                guild_id,
-                            )
-                        case MultiplierTypeEnum.BATTLEPASS:
-                            guild_config.temp_battlepass_multiplier = None
-                            logger.info(
-                                "[task] - Reset BATTLEPASS multiplier for guild %s",  # noqa: E501
-                                guild_id,
-                            )
+                        outcome = "config_not_found"
+                    else:
+                        match multiplier_type:
+                            case MultiplierTypeEnum.EXP:
+                                guild_config.temp_exp_multiplier = None
+                                logger.info(
+                                    "[task] - Reset EXP multiplier for guild %s",  # noqa: E501
+                                    guild_id,
+                                )
+                            case MultiplierTypeEnum.COINS:
+                                guild_config.temp_coins_multiplier = None
+                                logger.info(
+                                    "[task] - Reset COINS multiplier for guild %s",  # noqa: E501
+                                    guild_id,
+                                )
+                            case MultiplierTypeEnum.BATTLEPASS:
+                                guild_config.temp_battlepass_multiplier = None
+                                logger.info(
+                                    "[task] - Reset BATTLEPASS multiplier for guild %s",  # noqa: E501
+                                    guild_id,
+                                )
 
                     _temp_multiplier = await session.merge(temp_multiplier)
                     await session.delete(_temp_multiplier)
+
+                if outcome == "config_not_found":
+                    logger.info(
+                        "[task] - Guild config not found for guild %s, deleting temp multiplier",  # noqa: E501
+                        guild_id,
+                    )
 
                 logger.info(
                     "[task] - Removed expired %s multiplier (x%s) for guild %s",  # noqa: E501

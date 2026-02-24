@@ -52,9 +52,10 @@ class DeleteRoleRequestTask(Cog):
 
             async with self.bot.uow.start() as session:
                 all_rr = await get_role_requests_to_delete(session)
-                if not all_rr:
-                    logger.info("[task] - No role requests to delete")
-                    return
+
+            if not all_rr:
+                logger.info("[task] - No role requests to delete")
+                return
 
             for rr in all_rr:
                 guild = await ensure_guild_exists(self.bot, rr.guild_id)

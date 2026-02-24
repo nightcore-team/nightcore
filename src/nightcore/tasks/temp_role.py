@@ -45,9 +45,10 @@ class DeleteTempRoleTask(Cog):
             logger.info("[task] - Running delete temp role task")
             async with self.bot.uow.start() as session:
                 temp_roles = await get_all_expired_temp_roles(session)
-                if not temp_roles:
-                    logger.info("[task] - No expired temp roles found")
-                    return
+
+            if not temp_roles:
+                logger.info("[task] - No expired temp roles found")
+                return
 
             for temp_role in temp_roles:
                 guild = await ensure_guild_exists(self.bot, temp_role.guild_id)
