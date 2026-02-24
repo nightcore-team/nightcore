@@ -31,7 +31,7 @@ class VoiceStateLeaveEvent(Cog):
         before_channel = cast(VoiceChannel, before.channel)
 
         if not logging_channel_id:
-            logger.error(
+            logger.info(
                 "[voice/leave] No logging channel configured for guild %s",
                 guild.id,
             )
@@ -41,7 +41,7 @@ class VoiceStateLeaveEvent(Cog):
             guild, logging_channel_id
         )
         if not channel:
-            logger.error(
+            logger.info(
                 "[voice/leave] Logging channel with ID %s not found in guild %s",  # noqa: E501
                 logging_channel_id,
                 guild.id,

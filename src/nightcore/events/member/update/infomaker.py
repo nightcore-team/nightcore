@@ -26,10 +26,6 @@ class InfomakerUpdateMemberEvent(Cog):
     ) -> None:
         """Handle infomaker member update events."""
 
-        if not before:
-            logger.warning("[logging] 'before' member is None.")
-            return
-
         guild = after.guild
 
         async with self.bot.uow.start() as session:
@@ -47,8 +43,8 @@ class InfomakerUpdateMemberEvent(Cog):
         admin_roles_ids: list[int] = guild_config.admins_roles_ids or []
 
         if not leader_roles_ids and not admin_roles_ids:
-            logger.warning(
-                f"[logging] Leader roles not configured for guild {guild.id}"
+            logger.info(
+                f"[infomaker] Leader roles not configured for guild {guild.id}"
             )
             return
 
@@ -56,8 +52,8 @@ class InfomakerUpdateMemberEvent(Cog):
             not guild_config.leaders_roles_logging_channel_id
             and not guild_config.admins_roles_logging_channel_id
         ):
-            logger.warning(
-                f"[logging] Logging channel (leaders/admins) not configured for guild {guild.id}"  # noqa: E501
+            logger.info(
+                f"[infomaker] Logging channel (leaders/admins) not configured for guild {guild.id}"  # noqa: E501
             )
             return
 
@@ -81,19 +77,19 @@ class InfomakerUpdateMemberEvent(Cog):
                     break
 
         except discord.Forbidden as e:
-            logger.warning(
+            logger.error(
                 "[infomaker] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
                 guild.id,
                 e,
             )
         except discord.HTTPException as e:
-            logger.warning(
+            logger.error(
                 "[infomaker] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
                 guild.id,
                 e,
             )
         except Exception as e:
-            logger.exception(
+            logger.error(
                 "[infomaker] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
                 guild.id,
                 e,

@@ -41,8 +41,8 @@ class DefaultUpdateMemberEvent(Cog):
                     channel_type=ChannelType.LOGGING_MEMBERS,
                 )
             ):
-                logger.debug(
-                    "[logging] Logging channel (members) not configured for guild %s",
+                logger.info(
+                    "[logging] Logging channel (members) not configured for guild %s",  # noqa: E501
                     guild.id,
                 )
                 return
@@ -52,7 +52,7 @@ class DefaultUpdateMemberEvent(Cog):
                 guild, logging_members_channel_id
             )
         ):
-            logger.debug(
+            logger.info(
                 "[logging] Logging channel (members) not found in guild %s",
                 guild.id,
             )
@@ -98,21 +98,21 @@ class DefaultUpdateMemberEvent(Cog):
 
             except discord.Forbidden as e:
                 logger.warning(
-                    "[logging] Missing permissions to access audit logs in guild %s: %s",
+                    "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
                     guild.id,
                     e,
                 )
                 return
             except discord.HTTPException as e:
-                logger.warning(
-                    "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",
+                logger.error(
+                    "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
                     guild.id,
                     e,
                 )
                 return
             except Exception as e:
-                logger.exception(
-                    "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",
+                logger.error(
+                    "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
                     guild.id,
                     e,
                 )
@@ -155,21 +155,21 @@ class DefaultUpdateMemberEvent(Cog):
 
                 except discord.Forbidden as e:
                     logger.warning(
-                        "[logging] Missing permissions to access audit logs in guild %s: %s",
+                        "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
                         guild.id,
                         e,
                     )
                     return
                 except discord.HTTPException as e:
-                    logger.warning(
-                        "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",
+                    logger.error(
+                        "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
                         guild.id,
                         e,
                     )
                     return
                 except Exception as e:
-                    logger.exception(
-                        "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",
+                    logger.error(
+                        "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
                         guild.id,
                         e,
                     )
@@ -214,7 +214,9 @@ class DefaultUpdateMemberEvent(Cog):
             try:
                 await logging_channel.send(embed=embed)  # type: ignore
             except Exception as e:
-                logger.warning("Failed to send member join log message: %s", e)
+                logger.error(
+                    "[logging] Failed to send member update log message: %s", e
+                )
                 return
 
 

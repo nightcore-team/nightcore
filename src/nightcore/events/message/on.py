@@ -48,7 +48,7 @@ class OnMessageEvent(Cog):
                     channel_type=ChannelType.CREATE_PROPOSALS,
                 )
                 if not proposal_channel_id:
-                    logger.error(
+                    logger.info(
                         "[proposals] No proposal channel found for guild %s",
                         guild.id,
                     )
@@ -82,7 +82,7 @@ class OnMessageEvent(Cog):
                     field_name="trackable_moderation_role_id",
                 )
                 if not count_messages_channel_id:
-                    logger.error(
+                    logger.info(
                         "[levels] No count messages channel found for guild %s",  # noqa: E501
                         guild.id,
                     )
@@ -110,7 +110,7 @@ class OnMessageEvent(Cog):
                                 "count_moderation_message", message
                             )
                     else:
-                        logger.error(
+                        logger.info(
                             "[moderation] No trackable moderation role set for guild %s",  # noqa: E501
                             guild.id,
                         )
@@ -125,8 +125,9 @@ class OnMessageEvent(Cog):
                     ):
                         self.bot.dispatch("count_moderation_message", message)
                 else:
-                    logger.error(
+                    logger.info(
                         "[moderation] No trackable moderation role set for guild %s",  # noqa: E501
+                        guild.id,
                     )
 
             if clan_member:

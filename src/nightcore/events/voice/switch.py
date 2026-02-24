@@ -33,7 +33,7 @@ class VoiceStateSwitchEvent(Cog):
         after_channel = cast(VoiceChannel, after.channel)
 
         if not logging_channel_id:
-            logger.error(
+            logger.info(
                 "[voice/switch] No logging channel configured for guild %s",
                 guild.id,
             )
@@ -43,7 +43,7 @@ class VoiceStateSwitchEvent(Cog):
             guild, logging_channel_id
         )
         if not channel:
-            logger.error(
+            logger.info(
                 "[voice/switch] Logging channel with ID %s not found in guild %s",  # noqa: E501
                 logging_channel_id,
                 guild.id,
@@ -51,7 +51,7 @@ class VoiceStateSwitchEvent(Cog):
             return
 
         embed = Embed(
-            description=f"Участник {member.mention} перешел в другой голосовой канал",
+            description=f"Участник {member.mention} перешел в другой голосовой канал",  # noqa: E501
             color=discord.Color.yellow(),
             timestamp=datetime.now(UTC),
         )

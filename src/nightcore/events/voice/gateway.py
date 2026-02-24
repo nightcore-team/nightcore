@@ -65,15 +65,15 @@ class VoiceStateUpdateEvent(Cog):
                         if _ch:
                             try:
                                 await member.move_to(_ch)  # type: ignore
-                                logger.debug(
-                                    "[voice] Moved %s to their existing private room %s",
+                                logger.info(
+                                    "[voice] Moved %s to their existing private room %s",  # noqa: E501
                                     member,
                                     _ch.name,
                                 )
                                 return
                             except Exception as e:
-                                logger.warning(
-                                    "Error moving %s to their private room %s: %s",
+                                logger.error(
+                                    "Error moving %s to their private room %s: %s",  # noqa: E501
                                     member,
                                     _ch.name,
                                     e,
@@ -86,8 +86,8 @@ class VoiceStateUpdateEvent(Cog):
                                         ),
                                     )
                                 except Exception as e:
-                                    logger.warning(
-                                        "Error moving %s to None or sending message: %s",
+                                    logger.error(
+                                        "Error moving %s to None or sending message: %s",  # noqa: E501
                                         member,
                                         e,
                                     )
@@ -97,7 +97,7 @@ class VoiceStateUpdateEvent(Cog):
                             async with self.bot.uow.start() as session:
                                 await session.delete(private_room_state)
                                 await session.flush()
-                            logger.warning(
+                            logger.info(
                                 "[voice] Private room channel %s for %s not found, creating a new one",  # noqa: E501
                                 private_room_state.channel_id,
                                 member,
@@ -119,11 +119,12 @@ class VoiceStateUpdateEvent(Cog):
                             after,
                             logging_channel_id,
                         )
-                    except Exception:
-                        logger.exception(
-                            "[voice/join] Error dispatching voice channel join event"
+                    except Exception as e:
+                        logger.error(
+                            "[voice/join] Error dispatching voice channel join event: %s",  # noqa: E501
+                            e,
                         )
-                logger.debug(
+                logger.info(
                     "[voice/join] %s joined voice channel %s",
                     member,
                     getattr(
@@ -164,9 +165,10 @@ class VoiceStateUpdateEvent(Cog):
                             before,
                             logging_channel_id,
                         )
-                    except Exception:
-                        logger.exception(
-                            "[voice/leave] Error dispatching voice channel leave event"  # noqa: E501
+                    except Exception as e:
+                        logger.error(
+                            "[voice/leave] Error dispatching voice channel leave event: %s",  # noqa: E501
+                            e,
                         )
                 logger.info(
                     "[voice/leave] %s left voice channel %s",
@@ -215,7 +217,7 @@ class VoiceStateUpdateEvent(Cog):
                     try:
                         await member.move_to(before.channel)
                     except Exception as e:
-                        logger.exception(
+                        logger.error(
                             "Error moving %s back to %s: %s",
                             member,
                             before.channel.name,
@@ -230,7 +232,7 @@ class VoiceStateUpdateEvent(Cog):
                         try:
                             await member.move_to(None)
                         except Exception as e:
-                            logger.exception(
+                            logger.error(
                                 "Error moving %s to None: %s",
                                 member,
                                 e,
@@ -303,9 +305,10 @@ class VoiceStateUpdateEvent(Cog):
                         getattr(after.channel, "name", str(after.channel.id)),
                     )
 
-        except Exception:
-            logger.exception(
-                "[voice] Failed to dispatch voice state update event"
+        except Exception as e:
+            logger.error(
+                "[voice] Failed to dispatch voice state update event: %s",
+                e,
             )
 
 
