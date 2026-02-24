@@ -1,12 +1,40 @@
 """Unit of Work (UoW) implementation for managing database sessions."""
 
+import inspect
 import logging
 import time
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class CallSite:
+    file: str
+    line: int
+    function: str
+
+    def __str__(self) -> str:
+        """Return a human-readable string representation of the call site."""
+        return f"{self.file}:{self.line} in {self.function}()"
+
+
+def find_callsite(*, skip_functions: set[str]) -> CallSite | None:
+    """Find the call site in the stack that is not in the skip_functions set."""  # noqa: E501
+
+    for frame_info in inspect.stack()[2:]:
+        if frame_info.function in skip_functions:
+            continue
+        return CallSite(
+            file=frame_info.filename,
+            line=frame_info.lineno,
+            function=frame_info.function,
+        )
+
+    return None
 
 
 class UnitOfWork:
@@ -18,7 +46,8 @@ class UnitOfWork:
         """Start a new db session."""
         async with self._sm() as session:
             start_time = time.perf_counter()
-            logger.info("[UoW] Session started")
+            callsite = find_callsite(skip_functions={"start"})
+            logger.info("[UoW] Session started callsite=%s", callsite)
 
             try:
                 yield session
@@ -45,5 +74,5 @@ class UnitOfWork:
                 raise
             finally:
                 logger.info(
-                    f"[UoW] Session closed (total time {time.perf_counter() - start_time:.10f}s)"  # noqa: E501
+                    f"[UoW] Session closed callsite={find_callsite(skip_functions={'start'})} (total time {time.perf_counter() - start_time:.10f}s)"  # noqa: E501
                 )
