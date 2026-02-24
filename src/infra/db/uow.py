@@ -33,7 +33,10 @@ class UnitOfWork:
 
         async with self._sm() as session:
             start_time = time.perf_counter()
-            logger.info("[UoW] Session started")
+            logger.info(
+                "[UoW] Session started | %s",
+                origin_display,
+            )
 
             try:
                 yield session
@@ -45,10 +48,9 @@ class UnitOfWork:
                     await session.commit()
 
                 logger.info(
-                    "[UoW] Commit finished in %.6fs (total %.6fs) | %s",
+                    "[UoW] Commit finished in %.6fs (total %.6fs)",
                     time.perf_counter() - commit_start,
                     time.perf_counter() - start_time,
-                    origin_display,
                 )
             except Exception as e:
                 logger.error(
@@ -60,5 +62,7 @@ class UnitOfWork:
                 raise
             finally:
                 logger.info(
-                    f"[UoW] Session closed (total time {time.perf_counter() - start_time:.10f}s)"  # noqa: E501
+                    "[UoW] Session closed (total time %.10fs) | %s",
+                    time.perf_counter() - start_time,
+                    origin_display,
                 )
