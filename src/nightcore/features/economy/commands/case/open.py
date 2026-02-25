@@ -59,6 +59,7 @@ async def open_case(
     outcome = ""
     reward_text = ""
     logging_channel_id = None
+    opened_case_item = None
 
     try:
         async with specified_guild_config(
@@ -83,6 +84,7 @@ async def open_case(
             if user_case is None:
                 outcome = "no_case"
             else:
+                opened_case_item = user_case.item
                 reward = user_case.item.open()
 
                 if reward is None:
@@ -105,14 +107,16 @@ async def open_case(
                                 reward["name"] += " (Компенсация за цвет)"
 
                         case CaseDropTypeEnum.CASE.value:
-                            case = await get_case_by_id(
+                            dropped_case = await get_case_by_id(
                                 session,
                                 guild_id=guild.id,
                                 case_id=reward["drop_id"],
                             )
 
                             reward["name"] = (
-                                case.name if case else "unknown case"
+                                dropped_case.name
+                                if dropped_case
+                                else "unknown case"
                             )
                         case CaseDropTypeEnum.COLOR.value:
                             color = await get_color_by_id(
@@ -185,13 +189,24 @@ async def open_case(
         )
 
     if outcome == "success":
+        if opened_case_item is None:
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка открытия кейса",
+                    "Кейс не найден после открытия.",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
+
         view = CaseOpenViewV2(
             bot=bot,
-            case_name=user_case.item.name,  # type: ignore
+            case_name=opened_case_item.name,
             reward=reward["name"],  # type: ignore
             chance=reward["chance"],  # type: ignore
             amount=reward["amount"],  # type: ignore
-            total_weight=sum(drop["chance"] for drop in case.drop),  # type: ignore
+            total_weight=sum(drop["chance"] for drop in opened_case_item.drop),  # type: ignore
         )
         await interaction.response.send_message(
             view=view,
