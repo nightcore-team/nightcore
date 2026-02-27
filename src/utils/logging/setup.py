@@ -30,7 +30,6 @@ def setup_logging() -> logging.Logger:
     )
     # # console_handler.setFormatter(COLOR_FORMATTER)
     console_handler.setFormatter(FILE_FORMATTER)
-    root_logger.addHandler(console_handler)
 
     handlers.append(console_handler)
 
