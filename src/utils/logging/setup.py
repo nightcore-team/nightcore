@@ -63,8 +63,8 @@ def setup_logging() -> logging.Logger:
     root_logger.addHandler(queue_handler)
 
     _listener = QueueListener(
+        _queue,  # pyright: ignore[reportUnknownArgumentType]
         *handlers,
-        queue=_queue,  # pyright: ignore[reportUnknownArgumentType]
         respect_handler_level=True,
     )
     _listener.start()
