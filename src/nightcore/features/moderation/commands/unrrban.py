@@ -113,7 +113,7 @@ class Unrrban(Cog):
         await interaction.followup.send(
             view=PunishViewV2(
                 bot=self.bot,
-                user=user,
+                user_id=user.id,
                 punish_type="unrrban",
                 moderator_id=interaction.user.id,  # type: ignore
                 reason=reason,

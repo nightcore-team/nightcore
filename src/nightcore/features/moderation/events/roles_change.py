@@ -1,8 +1,6 @@
 """Roles Changes Event Cog for Nightcore Bot."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
 from datetime import UTC
 from typing import TYPE_CHECKING
 
@@ -53,9 +51,9 @@ class RolesChangeEvent(Cog):
 
         rr_channel_id: int | None = None
 
-        async with self.bot.uow.start() as session:
-            if _create_punish:
-                try:
+        try:
+            async with self.bot.uow.start() as session:
+                if _create_punish:
                     await create_punish(
                         session,
                         guild_id=data.moderator.guild.id,
@@ -65,69 +63,71 @@ class RolesChangeEvent(Cog):
                         reason=data.reason,
                         time_now=discord.utils.utcnow().astimezone(UTC),
                     )
-                except Exception as e:
-                    logger.exception(
-                        "[event] on_roles_change - %s: Failed to create punish record: %s",  # noqa: E501
-                        data.category,
-                        e,
-                    )
-                    return
 
-            if _send_to_rr_channel:
-                rr_channel_id = await get_specified_channel(
+                if _send_to_rr_channel:
+                    rr_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=data.moderator.guild.id,
+                        config_type=MainGuildConfig,
+                        channel_type=ChannelType.ROLE_REQUESTS,
+                    )
+
+                logging_channel_id = await get_specified_channel(
                     session,
                     guild_id=data.moderator.guild.id,
-                    config_type=MainGuildConfig,
-                    channel_type=ChannelType.ROLE_REQUESTS,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_MODERATION,
                 )
-
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=data.moderator.guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_MODERATION,
+        except Exception as e:
+            logger.exception(
+                "[event] on_roles_change - %s: Failed to create punish record: %s",  # noqa: E501
+                data.category,
+                e,
             )
+            return
 
-        gather_list: list[Awaitable[None]] = []
-
-        # sending log message
         if logging_channel_id:
-            gather_list.append(
-                send_moderation_log(
-                    self.bot, channel_id=logging_channel_id, event_data=data
+            try:
+                await send_moderation_log(
+                    self.bot,
+                    channel_id=logging_channel_id,
+                    event_data=data,
                 )
-            )
+            except Exception as e:
+                logger.warning(
+                    "[event] on_roles_change - %s: Guild: %s, failed to send log message: %s, log embed: %s",  # noqa: E501
+                    data.category,
+                    data.moderator.guild.id,
+                    e,
+                    data.build_embed(self.bot).to_dict(),
+                )
+
         else:
-            logger.warning(
+            logger.info(
                 "[event] on_roles_change - %s: Guild: %s, logging channel is not set",  # noqa: E501
                 data.category,
                 data.moderator.guild.id,
             )
 
-        # sending log message (rr channel)
         if rr_channel_id:
-            gather_list.append(
-                send_rr_channel_log(
+            try:
+                await send_rr_channel_log(
                     self.bot, channel_id=rr_channel_id, event_data=data
                 )
-            )
+            except Exception as e:
+                logger.warning(
+                    "[event] on_roles_change - %s: Guild: %s, failed to send log message(rr channel): %s, log embed: %s",  # noqa: E501
+                    data.category,
+                    data.moderator.guild.id,
+                    e,
+                    data.build_embed(self.bot).to_dict(),
+                )
         else:
-            logger.warning(
+            logger.info(
                 "[event] on_roles_change - %s: Guild: %s, role request channel is not set",  # noqa: E501
                 data.category,
                 data.moderator.guild.id,
             )
-
-        try:
-            await asyncio.gather(*gather_list, return_exceptions=True)
-        except Exception as e:
-            logger.exception(
-                "[event] on_roles_change - %s: Guild: %s, Failed to send log messages: %s",  # noqa: E501
-                data.category,
-                data.moderator.guild.id,
-                e,
-            )
-            return
 
 
 async def setup(bot: "Nightcore"):

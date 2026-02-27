@@ -1,8 +1,6 @@
 """Kick Event Cog for Nightcore Bot."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
 from datetime import UTC
 
 import discord
@@ -44,20 +42,7 @@ class UserKickEvent(Cog):
         )
 
         try:
-            user = await self.bot.fetch_user(data.user.id)
-            data.user = user
-        except Exception as e:
-            logger.exception(
-                "[event] on_user_kicked - %s: Failed to fetch user %s: %s",
-                data.category,
-                data.user.id,
-                e,
-            )
-            return
-
-        # db insert and getting logging channel
-        async with self.bot.uow.start() as session:
-            try:
+            async with self.bot.uow.start() as session:
                 await create_punish(
                     session,
                     guild_id=data.moderator.guild.id,
@@ -68,50 +53,57 @@ class UserKickEvent(Cog):
                     end_time=None,
                     time_now=discord.utils.utcnow().astimezone(UTC),
                 )
-            except Exception as e:
-                logger.exception(
-                    "[event] on_user_kicked - %s: Failed to create punish record: %s",  # noqa: E501
-                    data.category,
-                    e,
+
+                logging_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=data.moderator.guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_MODERATION,
                 )
-                return
 
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=data.moderator.guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_MODERATION,
+        except Exception as e:
+            logger.exception(
+                "[event] on_user_kicked - %s: Failed to create punish record: %s",  # noqa: E501
+                data.category,
+                e,
             )
+            return
 
-        gather_list: list[Awaitable[None]] = []
-
-        # send dm message to user
-        gather_list.append(
-            send_punish_dm_message(
-                self.bot, guild_name=data.guild_name, event_data=data
-            ),
-        )
-
-        # sending log message
         if logging_channel_id:
-            gather_list.append(
-                send_moderation_log(
+            try:
+                await send_moderation_log(
                     self.bot, channel_id=logging_channel_id, event_data=data
                 )
-            )
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    data.category,
+                    data.moderator.guild.id,
+                    e,
+                    data.build_embed(self.bot).to_dict(),
+                )
         else:
-            logger.warning(
+            logger.info(
                 "[event] on_user_kicked - %s: Guild: %s, logging channel is not set",  # noqa: E501
                 data.category,
                 data.moderator.guild.id,
             )
 
         try:
-            await asyncio.gather(*gather_list, return_exceptions=True)
-        except Exception as e:
-            logger.exception(
-                "[event] on_user_kicked - %s: Failed to send DM or log message: %s",  # noqa: E501
+            await send_punish_dm_message(
+                self.bot, guild_name=data.guild_name, event_data=data
+            )
+        except discord.Forbidden:
+            logger.info(
+                "[%s/event] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
                 data.category,
+                data.user.id,
+            )
+        except Exception as e:
+            logger.warning(
+                "[%s/event] Failed to send DM to user %s: %e",
+                data.category,
+                data.user.id,
                 e,
             )
 

@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import discord
+from discord import Object
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -73,7 +74,7 @@ async def send_unpunish_dm_message(
     mode: str,
     reason: str,
     moderator_id: int,
-    user: discord.Member | discord.User,
+    user_id: int,
     category: str,
     guild_name: str,
 ) -> None:
@@ -81,7 +82,7 @@ async def send_unpunish_dm_message(
 
     view = PunishViewV2(
         bot=bot,
-        user=user,
+        user_id=user_id,
         punish_type=category,
         mode=mode,
         guild_name=guild_name,
@@ -89,20 +90,15 @@ async def send_unpunish_dm_message(
         reason=reason,
         duration=None,
     )
-    try:
-        await user.send(view=view)  # type: ignore
-        logger.info(
-            "[event] - on_user_unpunish - %s: DM sent to %s",
-            category,
-            user.id,
-        )
-    except Exception as e:
-        logger.exception(
-            "[event] - on_user_unpunish - %s: Failed to send DM to %s: %s",
-            category,
-            user.id,
-            e,
-        )
+
+    channel = await bot.create_dm(Object(user_id))
+
+    await channel.send(view=view)
+    logger.info(
+        "[event] - on_user_unpunish - %s: DM sent to %s",
+        category,
+        user_id,
+    )
 
 
 async def send_moderation_log(
