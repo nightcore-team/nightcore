@@ -3,6 +3,13 @@
 from src.infra.db.models._annot import Chapter, Rule, Rules
 
 
+def parse_clause(v: str) -> bool:
+    """Check if the clause string is valid (non-empty and contains only positive integers separated by dots)."""  # noqa: E501
+    return not (
+        not v or any(not x.isdigit() or int(x) <= 0 for x in v.split("."))
+    )
+
+
 def find_rule_by_index(
     rules: Rules, index: str
 ) -> tuple[Rule | Chapter | None, str | None]:
