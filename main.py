@@ -18,7 +18,8 @@ async def main() -> None:
 
     bot_task = asyncio.create_task(bot.startup())
 
-    bot.loop.add_signal_handler(
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(
         signal.SIGTERM,
         lambda: bot_task.cancel(),
     )
