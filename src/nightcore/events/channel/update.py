@@ -29,7 +29,7 @@ class UpdateChannelHandler(Cog):
     ):
         """Handle guild channel update event."""
         guild = cast(Guild, new.guild)  # type: ignore
-        async with self.bot.uow.start() as session:
+        async with self.bot.uow.start(readonly=True) as session:
             if not (
                 logging_channels_channel_id := await get_specified_channel(
                     session,
