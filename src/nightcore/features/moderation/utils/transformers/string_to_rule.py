@@ -12,7 +12,7 @@ from src.infra.db.models._annot import Chapter
 from src.infra.db.operations import get_guild_rules
 from src.nightcore.features.meta.utils import convert_dict_to_rules
 
-from ..parse_rules import find_rule_by_index
+from ..parse_rules import find_rule_by_index, parse_clause
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -44,6 +44,9 @@ class StringToRuleTransformer(Transformer["Nightcore"]):
 
         guild = cast(Guild, interaction.guild)
         bot = interaction.client
+
+        if not parse_clause(value):
+            return value
 
         async with bot.uow.start(readonly=True) as session:
             rules_dict = await get_guild_rules(
