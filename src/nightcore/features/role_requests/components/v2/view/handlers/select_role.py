@@ -139,8 +139,8 @@ async def handle_role_select_button_callback(
             embed=ErrorEmbed(
                 "Не удалось отправить запрос роли",
                 "Произошла внутренняя ошибка при обработке вашего запроса на роль.",  # noqa: E501
-                view.bot.user.name,  # type: ignore
-                view.bot.user.display_avatar.url,  # type: ignore
+                bot.user.name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -150,8 +150,8 @@ async def handle_role_select_button_callback(
             embed=ErrorEmbed(
                 "Не удалось отправить запрос роли",
                 "Организационные роли не настроены на этом сервере.",
-                view.bot.user.name,  # type: ignore
-                view.bot.user.display_avatar.url,  # type: ignore
+                bot.user.name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -161,8 +161,8 @@ async def handle_role_select_button_callback(
             embed=ErrorEmbed(
                 "Не удалось отправить запрос роли",
                 "У вас имеется блокировки на подачу запросов для получение роли.",  # noqa: E501
-                view.bot.user.name,  # type: ignore
-                view.bot.user.display_avatar.url,  # type: ignore
+                bot.user.name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -172,8 +172,8 @@ async def handle_role_select_button_callback(
             embed=ErrorEmbed(
                 "Не удалось отправить запрос роли",
                 "У вас уже есть активный запрос на роль.",
-                view.bot.user.name,  # type: ignore
-                view.bot.user.display_avatar.url,  # type: ignore
+                bot.user.name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -183,8 +183,8 @@ async def handle_role_select_button_callback(
             embed=ErrorEmbed(
                 "Не удалось отправить запрос роли",
                 "Канал для проверки запросов на роли не настроен.",
-                interaction.client.user.name,  # type: ignore
-                interaction.client.user.display_avatar.url,  # type: ignore
+                bot.user.name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -198,8 +198,8 @@ async def handle_role_select_button_callback(
                         embed=ErrorEmbed(
                             "Не удалось отправить запрос роли",
                             "Выбранная роль не существует на этом сервере.",
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
+                            bot.user.name,  # type: ignore
+                            bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     ),
@@ -222,8 +222,8 @@ async def handle_role_select_button_callback(
                         embed=ErrorEmbed(
                             "Не удалось отправить запрос роли",
                             "Канал для проверки запросов на роли не существует или недоступен.",  # noqa: E501
-                            view.bot.user.name,  # type: ignore
-                            view.bot.user.display_avatar.url,  # type: ignore
+                            bot.user.name,  # type: ignore
+                            bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     ),
