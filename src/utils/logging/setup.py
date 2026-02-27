@@ -28,7 +28,7 @@ def setup_logging() -> logging.Logger:
     console_handler.setLevel(
         DEFAULT_LOGGING_LEVEL_DICT.get("main", logging.INFO)
     )
-    # console_handler.setFormatter(COLOR_FORMATTER)
+    # # console_handler.setFormatter(COLOR_FORMATTER)
     console_handler.setFormatter(FILE_FORMATTER)
     root_logger.addHandler(console_handler)
 

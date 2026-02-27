@@ -29,7 +29,9 @@ class UpdateChannelHandler(Cog):
     ):
         """Handle guild channel update event."""
         guild = cast(Guild, new.guild)  # type: ignore
-        async with self.bot.uow.start() as session:
+        outcome = ""
+
+        async with self.bot.uow.start(readonly=True) as session:
             if not (
                 logging_channels_channel_id := await get_specified_channel(
                     session,
@@ -38,15 +40,19 @@ class UpdateChannelHandler(Cog):
                     channel_type=ChannelType.LOGGING_CHANNELS,
                 )
             ):
-                logger.info(
-                    "[logging] Logging channel (channels) not configured for guild %s",  # noqa: E501
-                    guild.id,
-                )
-                return
+                outcome = "channel_not_configured"
+
+        if outcome == "channel_not_configured":
+            logger.info(
+                "[logging] Logging channel (channels) not configured for guild %s",  # noqa: E501
+                guild.id,
+            )
+            return
 
         if not (
             logging_channel := await ensure_messageable_channel_exists(
-                guild, logging_channels_channel_id
+                guild,
+                logging_channels_channel_id,  # pyright: ignore[reportArgumentType]
             )
         ):
             logger.info(
