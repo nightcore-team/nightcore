@@ -6,8 +6,9 @@ import sys
 import colorlog
 
 from src.utils.logging.config import (
-    COLOR_FORMATTER,
+    # COLOR_FORMATTER,
     DEFAULT_LOGGING_LEVEL_DICT,
+    FILE_FORMATTER,
 )
 
 
@@ -21,7 +22,8 @@ def setup_logging() -> tuple[logging.Logger, logging.Logger]:
     console_handler.setLevel(
         DEFAULT_LOGGING_LEVEL_DICT.get("main", logging.INFO)
     )
-    console_handler.setFormatter(COLOR_FORMATTER)
+    # console_handler.setFormatter(COLOR_FORMATTER)
+    console_handler.setFormatter(FILE_FORMATTER)
     root_logger.handlers = [console_handler]
 
     # --- Discord ---
