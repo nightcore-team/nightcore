@@ -148,7 +148,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
             )
 
         if outcome == "missing_permissions":
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
                     bot.user.display_name,  # type: ignore
                     bot.user.display_avatar.url,  # type: ignore
