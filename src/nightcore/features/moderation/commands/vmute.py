@@ -214,7 +214,7 @@ class VMute(Cog):
         await interaction.followup.send(
             view=PunishViewV2(
                 bot=self.bot,
-                user=member,
+                user_id=member.id,
                 punish_type="vmute",
                 moderator_id=interaction.user.id,
                 reason=reason,

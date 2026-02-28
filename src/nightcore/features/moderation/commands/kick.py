@@ -159,7 +159,7 @@ class Kick(Cog):
         await interaction.followup.send(
             view=PunishViewV2(
                 bot=self.bot,
-                user=member,
+                user_id=member.id,
                 punish_type="kick",
                 moderator_id=interaction.user.id,  # type: ignore
                 reason=reason,

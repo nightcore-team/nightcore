@@ -1,8 +1,6 @@
 """SetName Event Cog for Nightcore Bot."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
 from datetime import UTC
 
 import discord
@@ -34,6 +32,7 @@ class UserSetNameEvent(Cog):
         data: UserSetNameEventData,
     ) -> None:
         """Handle user setname events."""
+
         logger.info(
             "[event] on_user_setname - %s: Guild: %s, Member: %s, Reason: %s",
             data.category,
@@ -43,20 +42,7 @@ class UserSetNameEvent(Cog):
         )
 
         try:
-            user = await self.bot.fetch_user(data.user.id)
-            data.user = user
-        except Exception as e:
-            logger.exception(
-                "[event] on_user_setname - %s: Failed to fetch user %s: %s",
-                data.category,
-                data.user.id,
-                e,
-            )
-            return
-
-        # db insert and getting logging channel
-        async with self.bot.uow.start() as session:
-            try:
+            async with self.bot.uow.start() as session:
                 punish_info = await create_punish(
                     session,
                     guild_id=data.moderator.guild.id,
@@ -67,13 +53,6 @@ class UserSetNameEvent(Cog):
                     end_time=None,
                     time_now=discord.utils.utcnow().astimezone(UTC),
                 )
-            except Exception as e:
-                logger.exception(
-                    "[event] on_user_setname - %s: Failed to create punish record: %s",  # noqa: E501
-                    data.category,
-                    e,
-                )
-                return
 
             logging_channel_id = await get_specified_channel(
                 session,
@@ -82,30 +61,32 @@ class UserSetNameEvent(Cog):
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
-        gather_list: list[Awaitable[None]] = []
-
-        # sending log message
-        if logging_channel_id:
-            gather_list.append(
-                send_moderation_log(
-                    self.bot, channel_id=logging_channel_id, event_data=data
-                )
-            )
-        else:
-            logger.warning(
-                "[event] on_user_setname - %s: Guild: %s, logging channel is not set",  # noqa: E501
-                data.moderator.guild.id,
-                punish_info.category,
+        except Exception as e:
+            logger.exception(
+                "[event] on_user_setname - %s: Failed to create punish record: %s",  # noqa: E501
+                data.category,
+                e,
             )
             return
 
-        try:
-            await asyncio.gather(*gather_list, return_exceptions=True)
-        except Exception as e:
-            logger.exception(
-                "[event] on_user_setname - %s: Failed to send log message: %s",
-                data.category,
-                e,
+        if logging_channel_id:
+            try:
+                await send_moderation_log(
+                    self.bot, channel_id=logging_channel_id, event_data=data
+                )
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    data.category,
+                    data.moderator.guild.id,
+                    e,
+                    data.build_embed(self.bot).to_dict(),
+                )
+        else:
+            logger.info(
+                "[event] on_user_setname - %s: Guild: %s, logging channel is not set",  # noqa: E501
+                data.moderator.guild.id,
+                punish_info.category,
             )
 
 

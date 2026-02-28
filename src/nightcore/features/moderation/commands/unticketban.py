@@ -116,7 +116,7 @@ class Unticketban(Cog):
         await interaction.followup.send(
             view=PunishViewV2(
                 bot=self.bot,
-                user=user,
+                user_id=user.id,
                 punish_type="unticketban",
                 moderator_id=interaction.user.id,  # type: ignore
                 reason=reason,

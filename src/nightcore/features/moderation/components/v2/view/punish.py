@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
-from discord import Color, Member, User
+from discord import Color
 from discord.ui import (
     Container,
     LayoutView,
@@ -38,7 +38,7 @@ class PunishViewV2(LayoutView):
     def __init__(
         self,
         bot: Nightcore,
-        user: Member | User,
+        user_id: int,
         punish_type: str,
         moderator_id: int,
         reason: str,
@@ -62,7 +62,7 @@ class PunishViewV2(LayoutView):
             main_text = self._get_expired_text(guild_name)
         else:
             main_text = self._get_punishment_text(
-                user=user,
+                user_id=user_id,
                 punish_type=punish_type,
                 mode=mode,
             )
@@ -104,14 +104,14 @@ class PunishViewV2(LayoutView):
 
     def _get_punishment_text(
         self,
-        user: Member | User,
+        user_id: int,
         punish_type: str,
         mode: str,
     ) -> str:
         """Get punishment description text based on mode.
 
         Args:
-            user: Target user
+            user_id: Target user id
             punish_type: Type of punishment (mute, ban, etc.)
             mode: "server" or "dm"
 
@@ -125,7 +125,7 @@ class PunishViewV2(LayoutView):
         )
 
         if mode == "server":
-            return f"**Пользователь {user.mention} {punishment_desc}**"
+            return f"**Пользователь <@{user_id}> {punishment_desc}**"
         else:
             return f"**Вы {punishment_desc}**"
 

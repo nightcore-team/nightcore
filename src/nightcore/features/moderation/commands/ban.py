@@ -217,7 +217,7 @@ class Ban(Cog):
                     )
                 except Exception as e:
                     logger.warning(
-                        "[command] - Failed to send ban DM to user=%s guild=%s: %s",
+                        "[command] - Failed to send ban DM to user=%s guild=%s: %s",  # noqa: E501
                         member.id,
                         guild.id,
                         e,
@@ -249,7 +249,7 @@ class Ban(Cog):
                 await interaction.followup.send(
                     view=PunishViewV2(
                         bot=self.bot,
-                        user=member,
+                        user_id=member.id,
                         punish_type="ban",
                         moderator_id=interaction.user.id,  # type: ignore
                         duration=duration,

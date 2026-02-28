@@ -1,10 +1,9 @@
 """Handle user items changed events in the economy feature."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
+import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.operations import create_transfer_money_record
@@ -32,24 +31,14 @@ class TransferCoinsEvent(Cog):
         dto: "TransferCoinsEventDTO",
     ):
         """Create a transfer money record in the database."""
-
         async with self.bot.uow.start() as session:
-            try:
-                await create_transfer_money_record(
-                    session,
-                    guild_id=dto.guild.id,
-                    sender_id=dto.sender_id,
-                    receiver_id=dto.receiver.id,
-                    amount=dto.amount,
-                )
-            except Exception as e:
-                logger.exception(
-                    "[%s/log] Failed to create transfer record for user %s in guild %s: %s",  # noqa: E501
-                    dto.event_type,
-                    dto.sender_id,
-                    dto.guild.id,
-                    e,
-                )
+            await create_transfer_money_record(
+                session,
+                guild_id=dto.guild.id,
+                sender_id=dto.sender_id,
+                receiver_id=dto.receiver.id,
+                amount=dto.amount,
+            )
 
     @Cog.listener()
     async def on_transfer_coins(
@@ -57,6 +46,19 @@ class TransferCoinsEvent(Cog):
         dto: "TransferCoinsEventDTO",
     ):
         """Handle user items changed event."""
+
+        try:
+            await self._create_transfer_record(dto)
+        except Exception as e:
+            logger.exception(
+                "[%s/log] Failed to create transfer record (reciever=%s sender=%s amount=%s) in guild %s: %s",  # noqa: E501
+                dto.event_type,
+                dto.receiver.id,
+                dto.sender_id,
+                dto.amount,
+                dto.guild.id,
+                e,
+            )
 
         view = TransferCoinsViewV2(
             self.bot,
@@ -66,28 +68,37 @@ class TransferCoinsEvent(Cog):
             comment=dto.comment,
         )
 
-        gather_list: list[Awaitable[Any]] = []
-
         if dto.logging_channel_id:
-            gather_list.append(send_log_message(self.bot, dto))
+            try:
+                await send_log_message(self.bot, dto)
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    dto.event_type,
+                    dto.guild.id,
+                    e,
+                    dto.build_log_embed(self.bot).to_dict(),
+                )
         else:
-            logger.error(
+            logger.info(
                 "[%s/log] No logging channel ID provided for guild %s",
                 dto.event_type,
                 dto.guild.id,
             )
 
-        gather_list.append(dto.receiver.send(view=view))
-        gather_list.append(self._create_transfer_record(dto))
-
         try:
-            await asyncio.gather(*gather_list)
-        except Exception as e:
-            logger.exception(
-                "[%s/log] Failed to run gather for user %s in guild %s: %s",
+            await dto.receiver.send(view=view)
+        except discord.Forbidden:
+            logger.info(
+                "[%s/log] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
                 dto.event_type,
                 dto.receiver.id,
-                dto.guild.id,
+            )
+        except Exception as e:
+            logger.warning(
+                "[%s/log] Failed to send DM to user %s: %e",
+                dto.event_type,
+                dto.receiver.id,
                 e,
             )
 

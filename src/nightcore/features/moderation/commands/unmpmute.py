@@ -157,7 +157,7 @@ class UnMpMute(Cog):
         await interaction.followup.send(
             view=PunishViewV2(
                 bot=self.bot,
-                user=member,
+                user_id=member.id,
                 punish_type="unmpmute",
                 moderator_id=interaction.user.id,  # type: ignore
                 reason=reason,

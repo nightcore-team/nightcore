@@ -1,10 +1,9 @@
 """Handle coins shop order notifications."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
+import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.nightcore.features.economy.components.v2 import (
@@ -35,33 +34,48 @@ class CoinsShopNotifyEvent(Cog):
     ) -> None:
         """Handle coins shop purchase notification event."""
 
+        if dto.logging_channel_id is not None:
+            try:
+                await send_log_message(self.bot, dto)
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    dto.event_type,
+                    dto.guild.id,
+                    e,
+                    dto.build_log_embed(self.bot).to_dict(),
+                )
+        else:
+            logger.info(
+                "[%s/log] No logging channel ID provided for guild %s",
+                dto.event_type,
+                dto.guild.id,
+            )
+
         member = await ensure_member_exists(dto.guild, dto.user_id)
-        if not member:
-            logger.error(
+        if member is None:
+            logger.info(
                 "[%s/log] Member %s not found in guild %s.",
                 dto.event_type,
                 dto.user_id,
                 dto.guild.id,
             )
-
-        gather_list: list[Awaitable[Any]] = []
-
-        gather_list.append(send_log_message(bot=self.bot, dto=dto))
+            return
 
         notifications_channel = None
         if dto.notifications_channel_id:
             notifications_channel = await ensure_messageable_channel_exists(
                 dto.guild, dto.notifications_channel_id
             )
-            if not notifications_channel:
-                logger.error(
+            if notifications_channel is None:
+                logger.warning(
                     "[%s/log] Notifications channel %s not found in guild %s.",
                     dto.event_type,
                     dto.notifications_channel_id,
                     dto.guild.id,
                 )
         else:
-            logger.error(
+            logger.info(
                 "[%s/log] No notifications channel ID provided for guild %s.",
                 dto.event_type,
                 dto.guild.id,
@@ -87,6 +101,12 @@ class CoinsShopNotifyEvent(Cog):
                     dto.user_id,
                     dto.guild.id,
                 )
+            except discord.Forbidden:
+                logger.info(
+                    "[%s/log] Failed to send DM to user %s because he doesn't accept DM. Trying notifications channel...",  # noqa: E501
+                    dto.event_type,
+                    dto.user_id,
+                )
             except Exception as e:
                 logger.warning(
                     "[%s/log] Failed to send DM to user %s in guild %s: %s. Trying notifications channel...",  # noqa: E501
@@ -95,32 +115,22 @@ class CoinsShopNotifyEvent(Cog):
                     dto.guild.id,
                     e,
                 )
-
+            finally:
                 # fallback
                 if notifications_channel:
-                    gather_list.append(
-                        notifications_channel.send(  # type: ignore
+                    try:
+                        await notifications_channel.send(  # type: ignore
                             view=view,
                         )
-                    )
-                else:
-                    logger.error(
-                        "[%s/log] No notifications channel available for fallback for user %s in guild %s.",  # noqa: E501
-                        dto.event_type,
-                        dto.user_id,
-                        dto.guild.id,
-                    )
-
-        try:
-            await asyncio.gather(*gather_list, return_exceptions=True)
-        except Exception as e:
-            logger.exception(
-                "[%s/log] Failed to run gather for user %s in guild %s: %s",
-                dto.event_type,
-                dto.user_id,
-                dto.guild.id,
-                e,
-            )
+                    except Exception as e:
+                        logger.warning(
+                            "[%s/log] Failed to send message in notifications channel %s to user %s in guild %s: %s.",  # noqa: E501
+                            dto.event_type,
+                            notifications_channel.id,
+                            dto.user_id,
+                            dto.guild.id,
+                            e,
+                        )
 
         logger.info(
             "[%s/log] - invoked user=%s guild=%s item_name=%s item_price=%s balance_before=%s balance_after=%s",  # noqa: E501

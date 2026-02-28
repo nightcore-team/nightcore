@@ -1,10 +1,9 @@
 """Handle user items changed events."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
+import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.nightcore.features.economy.components.v2 import (
@@ -36,6 +35,24 @@ class UserItemsChangedEvent(Cog):
     ):
         """Handle user items changed event."""
 
+        if dto.logging_channel_id:
+            try:
+                await send_log_message(self.bot, dto)
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    dto.event_type,
+                    dto.guild.id,
+                    e,
+                    dto.build_log_embed(self.bot).to_dict(),
+                )
+        else:
+            logger.info(
+                "[%s/log] No logging channel ID provided for guild %s",
+                dto.event_type,
+                dto.guild.id,
+            )
+
         member = await ensure_member_exists(dto.guild, dto.user_id)
         if not member:
             logger.error(
@@ -54,24 +71,18 @@ class UserItemsChangedEvent(Cog):
             reason=dto.reason,
         )
 
-        gather_list: list[Awaitable[Any]] = []
-
-        if dto.logging_channel_id:
-            gather_list.append(send_log_message(self.bot, dto))
-        else:
-            logger.error(
-                "[%s/log] No logging channel ID provided for guild %s",
+        try:
+            await member.send(view=view)
+        except discord.Forbidden:
+            logger.info(
+                "[%s/log] Failed to send private message for user %s in guild %s because he doesn't accept DM",  # noqa: E501
                 dto.event_type,
+                dto.user_id,
                 dto.guild.id,
             )
-
-        gather_list.append(member.send(view=view))
-
-        try:
-            await asyncio.gather(*gather_list)
         except Exception as e:
-            logger.exception(
-                "[%s/log] Failed to run gather for user %s in guild %s: %s",
+            logger.warning(
+                "[%s/log] Failed to send private message for user %s in guild %s: %s",  # noqa: E501
                 dto.event_type,
                 dto.user_id,
                 dto.guild.id,

@@ -27,7 +27,23 @@ class ItemChangeNotifyEvent(Cog):
     ):
         """Handle user items changed event."""
 
-        await send_log_message(self.bot, dto)
+        if dto.logging_channel_id:
+            try:
+                await send_log_message(self.bot, dto)
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    dto.event_type,
+                    dto.guild.id,
+                    e,
+                    dto.build_log_embed(self.bot).to_dict(),
+                )
+        else:
+            logger.info(
+                "[%s/log] No logging channel ID provided for guild %s",
+                dto.event_type,
+                dto.guild.id,
+            )
 
         logger.info(
             "[%s/log] - invoked guild=%s item_name=%s",

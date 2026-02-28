@@ -1,8 +1,6 @@
 """Ban Event Cog for Nightcore Bot."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
 from datetime import UTC
 
 import discord
@@ -99,29 +97,24 @@ class UserBanEvent(Cog):
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
-        gather_list: list[Awaitable[None]] = []
-
-        # sending log message
         if logging_channel_id:
-            gather_list.append(
-                send_moderation_log(
+            try:
+                await send_moderation_log(
                     self.bot, channel_id=logging_channel_id, event_data=data
                 )
-            )
+            except Exception as e:
+                logger.warning(
+                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    data.category,
+                    data.guild_id,
+                    e,
+                    data.build_embed(self.bot).to_dict(),
+                )
         else:
-            logger.debug(
-                "[event] on_user_banned - %s: Guild: %s, logging channel is not set",
+            logger.info(
+                "[event] on_user_banned - %s: Guild: %s, logging channel is not set",  # noqa: E501
                 data.guild_id,
                 punish_info.category,
-            )
-
-        try:
-            await asyncio.gather(*gather_list, return_exceptions=True)
-        except Exception as e:
-            logger.warning(
-                "[event] on_user_banned - %s: Failed to send DM or log message: %s",
-                data.category,
-                e,
             )
 
     @Cog.listener()
@@ -137,7 +130,16 @@ class UserBanEvent(Cog):
             data.reason,
         )
 
-        guild = self.bot.get_guild(data.guild_id)
+        guild = self.bot.get_guild(
+            data.guild_id,
+        )
+        if guild is None:
+            logger.warning(
+                "[event] user_unbanned - %s: Guild %s not in cache",
+                data.category,
+                data.guild_id,
+            )
+            return
 
         user = self.bot.get_user(data.user_id)
         if user is None:
@@ -151,14 +153,6 @@ class UserBanEvent(Cog):
                     e,
                 )
                 return
-
-        if guild is None:
-            logger.warning(
-                "[event] user_unbanned - %s: Guild %s not in cache",
-                data.category,
-                data.guild_id,
-            )
-            return
 
         async with self.bot.uow.start() as session:
             logging_channel_id = await get_specified_channel(
@@ -190,7 +184,7 @@ class UserBanEvent(Cog):
                     await session.delete(temp)
                 else:
                     logger.warning(
-                        "[event] user_unmute - %s: No active temporary punishment found for user %s in guild %s",
+                        "[event] user_unmute - %s: No active temporary punishment found for user %s in guild %s",  # noqa: E501
                         data.category,
                         data.user_id,
                         data.guild_id,
@@ -228,38 +222,35 @@ class UserBanEvent(Cog):
                     )
                     return
 
-        gather_list: list[Awaitable[None]] = []
-
-        # sending log message
         if logging_channel_id:
-            gather_list.append(
-                send_moderation_log(
+            try:
+                await send_moderation_log(
                     self.bot, channel_id=logging_channel_id, event_data=data
                 )
-            )
-
-        # send dm message to user
-        gather_list.append(
-            send_unpunish_dm_message(
-                self.bot,
-                user=user,
-                mode=data.mode,
-                category=f"un{data.category}",
-                guild_name=guild.name,
-                moderator_id=data.moderator_id,
-                reason=data.reason,
-            )
-        )
-
-        try:
-            await asyncio.gather(*gather_list, return_exceptions=True)
-        except Exception as e:
-            logger.exception(
-                "[event] on_user_muted - %s: Failed to send DM or log message: %s",  # noqa: E501
+            except Exception as e:
+                logger.warning(
+                    "[un%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
+                    data.category,
+                    data.guild_id,
+                    e,
+                    data.build_embed(self.bot).to_dict(),
+                )
+        else:
+            logger.info(
+                "[event] on_user_unbanned - %s: Guild: %s, logging channel is not set",  # noqa: E501
                 data.category,
-                e,
+                data.guild_id,
             )
-            return
+
+        await send_unpunish_dm_message(
+            self.bot,
+            user_id=data.user_id,
+            mode=data.mode,
+            category=f"un{data.category}",
+            guild_name=guild.name,
+            moderator_id=data.moderator_id,
+            reason=data.reason,
+        )
 
 
 async def setup(bot: Nightcore):

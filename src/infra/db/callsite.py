@@ -15,7 +15,7 @@ class CallSite:
 
 
 def find_callsite(
-    *, skip_functions: set[str] | None = None
+    *, level: int = 1, skip_functions: set[str] | None = None
 ) -> CallSite | None:
     """Find the first call site outside of internal/library frames."""
     if skip_functions is None:
@@ -30,7 +30,7 @@ def find_callsite(
         "start",  # uow method
     }
 
-    for frame_info in inspect.stack()[1:]:  # [0] — сам find_callsite
+    for frame_info in inspect.stack()[level:]:  # [0] — сам find_callsite
         func = frame_info.function
         filename = frame_info.filename
 

@@ -1,8 +1,6 @@
 """MessageClear Event Cog for Nightcore Bot."""
 
-import asyncio
 import logging
-from collections.abc import Awaitable
 
 from discord.ext.commands import Cog  # type: ignore
 
@@ -49,31 +47,24 @@ class MessageClearEvent(Cog):
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
-        gather_list: list[Awaitable[None]] = []
-
         # sending log message
         if logging_channel_id:
-            gather_list.append(
-                send_moderation_log(
+            try:
+                await send_moderation_log(
                     self.bot, channel_id=logging_channel_id, event_data=data
                 )
-            )
+            except Exception as e:
+                logger.warning(
+                    "[event] on_message_clear - Failed to send log message in guild %s: %s, log: %s",  # noqa: E501
+                    data.moderator.guild.id,
+                    e,
+                    data.build_embed(self.bot).to_dict(),
+                )
         else:
-            logger.warning(
+            logger.info(
                 "[event] on_message_clear - %s: Guild: %s, logging channel is not set",  # noqa: E501
                 data.moderator.guild.id,
                 data.category,
-            )
-            return
-
-        try:
-            await asyncio.gather(*gather_list, return_exceptions=True)
-        except Exception as e:
-            logger.exception(
-                "[event] on_message_clear - %s: Guild: %s, Failed to send log message: %s",  # noqa: E501
-                data.category,
-                data.moderator.guild.id,
-                e,
             )
             return
 

@@ -87,6 +87,12 @@ class Nightcore(Bot):
         self.chunked_guilds: int = 0
         self.startup_time: datetime = datetime.now(UTC)
 
+    async def startup(self):
+        """Run the bot with graceful shutdown via async context manager."""
+
+        async with self:
+            await self.start(config.bot.BOT_TOKEN)
+
     @property
     def _http_connector(self) -> TCPConnector:
         return TCPConnector(

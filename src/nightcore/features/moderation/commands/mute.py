@@ -256,7 +256,7 @@ class Mute(Cog):
         await interaction.followup.send(
             view=PunishViewV2(
                 self.bot,
-                user=member,
+                user_id=member.id,
                 punish_type="mute",
                 moderator_id=interaction.user.id,
                 duration=duration,
