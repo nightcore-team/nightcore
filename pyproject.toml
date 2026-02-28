@@ -18,12 +18,11 @@ dependencies = [
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "pynacl>=1.6.1",
-    "pytest>=9.0.2",
     "sqlalchemy[asyncio]>=2.0.42",
 ]
 
 [dependency-groups]
-dev = ["ruff>=0.12.7"]
+dev = ["ruff>=0.12.7", "pytest>=9.0.2"]
 
 [tool.uv.sources]
 discord-py = { git = "https://github.com/Rapptz/discord.py.git" }
