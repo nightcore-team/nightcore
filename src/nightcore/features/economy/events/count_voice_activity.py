@@ -132,7 +132,26 @@ class CountVoiceActivityEvent(Cog):
                     guild.id,
                     before.channel.id,
                 )
+            elif (
+                before.channel == guild.afk_channel
+                and after.channel != guild.afk_channel
+            ):
+                async with self.bot.uow.start() as session:
+                    user, _ = await get_or_create_user(
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                    )
 
+                    # start counting
+                    user.temp_voice_activity = now
+
+                logger.info(
+                    "[voice/count] Start counting user voice %s activity in guild %s in %s",  # noqa: E501
+                    member.id,
+                    guild.id,
+                    after.channel.id,
+                )
             else:
                 # continue counting
                 return

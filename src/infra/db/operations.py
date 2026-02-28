@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any, TypeVar, cast
 
-from sqlalchemy import asc, exists, extract, func, select, update
+from sqlalchemy import asc, exists, extract, func, literal, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -1335,3 +1335,25 @@ async def get_or_create_processed_thread(
         session.add(new_processed_thread)
 
     return processed_thread
+
+
+async def reset_users_voice_activity(session: AsyncSession) -> int:
+    """Reset temp voice activity for all users and update their total voice activity accordingly. Returns the count of affected users."""  # noqa: E501
+    now = datetime.now(UTC)
+
+    stmt = (
+        update(User)
+        .where(User.temp_voice_activity.is_not(None))
+        .values(
+            voice_activity=User.voice_activity
+            + func.floor(
+                extract("epoch", literal(now))
+                - extract("epoch", User.temp_voice_activity)
+            ),
+            temp_voice_activity=None,
+        )
+    )
+
+    result = await session.execute(stmt)
+
+    return result.rowcount or 0

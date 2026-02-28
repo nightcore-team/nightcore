@@ -15,6 +15,7 @@ from discord.ext.commands import Bot  # type: ignore
 from nightforo import Client as XenforoClient
 
 from src.config.config import config
+from src.infra.db.operations import reset_users_voice_activity
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
@@ -107,7 +108,7 @@ class Nightcore(Bot):
         try:
             await self.application_info()
         except Exception as e:
-            logger.error(f"[failed] Warmup failed: {e}")
+            logger.error("[failed] Warmup failed: %s", e)
 
         tasks: list[Awaitable[None]] = []
 
@@ -116,12 +117,29 @@ class Nightcore(Bot):
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
+    async def _reset_users_voice_activity(self) -> None:
+        """Reset users' voice activity status in the database on startup."""
+        try:
+            async with self.uow.start() as session:
+                count = await reset_users_voice_activity(session)
+            logger.info(
+                "[reset/voice] Successfully reset %d users' voice activity status.",  # noqa: E501
+                count,
+            )
+        except Exception as e:
+            logger.error(
+                "[reset/voice] Failed to reset users' voice activity status: %s",  # noqa: E501
+                e,
+            )
+
     async def _warmup_guild_channels(self, guild: Guild) -> None:
         try:
             await guild.fetch_channels()
         except Exception as e:
             logger.error(
-                f"[failed] Failed to fetch channels for guild {guild.id}: {e}"
+                "[warmup] Failed to fetch channels for guild %d: %s",
+                guild.id,
+                e,
             )
             return
 
@@ -141,7 +159,9 @@ class Nightcore(Bot):
         ]
 
         for view in views:
-            logger.info("Loading persistent view: %s", view.__class__.__name__)
+            logger.info(
+                "[views] Loading persistent view: %s", view.__class__.__name__
+            )
             self.add_view(view)
 
     def _validate_commands_permissions(
@@ -172,7 +192,9 @@ class Nightcore(Bot):
                 )
             else:
                 logger.info(
-                    f"Command {path} has __permissions_flag__: {cmd.callback.__permissions_flag__}"  # noqa: E501 # type: ignore
+                    "[permissions] Command %s has __permissions_flag__: %s",  # noqa: E501
+                    path,
+                    cmd.callback.__permissions_flag__,  # type: ignore
                 )
 
         def _check_group(group: app_commands.Group, path: str = "") -> None:
@@ -192,17 +214,18 @@ class Nightcore(Bot):
                 _check_command(cmd, cmd.name)
             else:
                 logger.warning(
-                    "Ignore app_commands.ContextMenu in permission validation: %s",  # noqa: E501
+                    "[permissions] Ignore app_commands.ContextMenu in permission validation: %s",  # noqa: E501
                     cmd.name,
                 )
 
             logger.info(
-                "Validating permissions flag for command: %s", cmd.name
+                "[permissions] Validating permissions flag for command: %s",
+                cmd.name,
             )
 
     async def load_extensions(self) -> None:
         """Load all bot extensions (cogs)."""
-        logger.info("Starting to load extensions...")
+        logger.info("[extensions] Starting to load extensions...")
 
         if self.cog_modules:
             for module in self.cog_modules:
@@ -212,21 +235,22 @@ class Nightcore(Bot):
                         and config.bot.DISABLE_FORUM_TASK
                     ):
                         logger.info(
-                            f"Skipping loading cog {module} because forum task is disabled."  # noqa: E501
+                            "[extensions] Skipping loading cog %s because forum task is disabled.",  # noqa: E501
+                            module,
                         )
                         continue
 
-                    logger.info(f"Loading cog: {module}")
+                    logger.info("[extensions] Loading cog: %s", module)
                     await self.load_extension(module)
-                    logger.info(f"[success] Successfully loaded {module}")
+                    logger.info("[success] Successfully loaded %s", module)
                 except Exception as e:
-                    logger.error(f"[failed] Failed to load {module}: {e}")
+                    logger.error("[failed] Failed to load %s: %s", module, e)
         else:
-            logger.warning("No cogs to load")
+            logger.warning("[extensions] No cogs to load")
 
     async def setup_hook(self):
         """Setup hook called when the bot is ready to start."""
-        logger.info("Setup hook started...")
+        logger.info("[setup] Setup hook started...")
 
         await self.load_extensions()
 
@@ -235,7 +259,8 @@ class Nightcore(Bot):
         await self.http.get_bot_gateway()
         end = time.perf_counter()
         logger.info(
-            f"[gateway] Fetched bot gateway in {(end - start) * 1000:.2f}ms"
+            "[gateway] Fetched bot gateway in %.2fms",
+            (end - start) * 1000,
         )
 
         commands = self.tree.get_commands()
@@ -243,14 +268,15 @@ class Nightcore(Bot):
         self._validate_commands_permissions(commands)
 
         try:
-            logger.info("Starting command sync...")
+            logger.info("[sync] Starting command sync...")
             synced = await self.tree.sync()
             logger.info(
-                f"[success] Successfully synced {len(synced)} commands"
+                "[success] Successfully synced %d commands",
+                len(synced),
             )
 
         except Exception as e:
-            logger.error(f"[failed] Sync failed: {e}")
+            logger.error("[failed] Sync failed: %s", e)
             import traceback
 
             logger.error(traceback.format_exc())
@@ -267,3 +293,4 @@ class Nightcore(Bot):
         logger.info("🚀 Nightcore bot started successfully!")
 
         await self._warmup_discord()
+        await self._reset_users_voice_activity()
