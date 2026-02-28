@@ -119,23 +119,9 @@ class UserRoleRequestBannedEvent(Cog):
                 punish_info.category,
             )
 
-        try:
-            await send_punish_dm_message(
-                self.bot, guild_name=data.guild_name, event_data=data
-            )
-        except discord.Forbidden:
-            logger.info(
-                "[%s/event] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
-                data.category,
-                data.user.id,
-            )
-        except Exception as e:
-            logger.warning(
-                "[%s/event] Failed to send DM to user %s: %e",
-                data.category,
-                data.user.id,
-                e,
-            )
+        await send_punish_dm_message(
+            self.bot, guild_name=data.guild_name, event_data=data
+        )
 
     @Cog.listener()
     async def on_user_unrole_request_banned(
@@ -235,29 +221,15 @@ class UserRoleRequestBannedEvent(Cog):
                 guild.id,
             )
 
-        try:
-            await send_unpunish_dm_message(
-                self.bot,
-                user_id=data.user_id,
-                mode=data.mode,
-                moderator_id=data.moderator_id,
-                category=f"un{data.category}",
-                guild_name=guild.name,
-                reason=data.reason,
-            )
-        except discord.Forbidden:
-            logger.info(
-                "[un%s/event] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
-                data.category,
-                data.user_id,
-            )
-        except Exception as e:
-            logger.warning(
-                "[un%s/event] Failed to send DM to user %s: %e",
-                data.category,
-                data.user_id,
-                e,
-            )
+        await send_unpunish_dm_message(
+            self.bot,
+            user_id=data.user_id,
+            mode=data.mode,
+            moderator_id=data.moderator_id,
+            category=f"un{data.category}",
+            guild_name=guild.name,
+            reason=data.reason,
+        )
 
 
 async def setup(bot: Nightcore):

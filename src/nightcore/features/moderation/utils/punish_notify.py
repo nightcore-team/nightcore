@@ -55,13 +55,19 @@ async def send_punish_dm_message(
     try:  # type: ignore
         await event_data.user.send(view=view)  # type: ignore
         logger.info(
-            "[event] - on_user_punish - %s: DM sent to %s",
+            "[%s/event] - on_user_punish - DM sent to %s",
+            event_data.category,  # type: ignore
+            event_data.user.id,  # type: ignore
+        )
+    except discord.Forbidden:
+        logger.info(
+            "[%s/event] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
             event_data.category,  # type: ignore
             event_data.user.id,  # type: ignore
         )
     except Exception as e:
-        logger.exception(
-            "[event] - on_user_punish - %s: Failed to send DM to %s: %s",
+        logger.warning(
+            "[%s/event] Failed to send DM to user %s: %e",
             event_data.category,  # type: ignore
             event_data.user.id,  # type: ignore
             e,
@@ -91,14 +97,28 @@ async def send_unpunish_dm_message(
         duration=None,
     )
 
-    channel = await bot.create_dm(Object(user_id))
+    try:
+        channel = await bot.create_dm(Object(user_id))
 
-    await channel.send(view=view)
-    logger.info(
-        "[event] - on_user_unpunish - %s: DM sent to %s",
-        category,
-        user_id,
-    )
+        await channel.send(view=view)
+        logger.info(
+            "[%s/event] - on_user_unpunish - DM sent to %s",
+            category,
+            user_id,
+        )
+    except discord.Forbidden:
+        logger.info(
+            "[un%s/event] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
+            category,
+            user_id,
+        )
+    except Exception as e:
+        logger.warning(
+            "[un%s/event] Failed to send DM to user %s: %e",
+            category,
+            user_id,
+            e,
+        )
 
 
 async def send_moderation_log(
@@ -114,7 +134,7 @@ async def send_moderation_log(
         try:
             channel = await bot.fetch_channel(channel_id)
         except discord.NotFound:
-            logger.warning(
+            logger.info(
                 "[event] on_user_punish - %s: logging channel %s not found",
                 event_data.category,  # type: ignore
                 channel_id,
@@ -137,7 +157,7 @@ async def send_moderation_log(
             return
 
     if not isinstance(channel, (discord.TextChannel | discord.Thread)):
-        logger.warning(
+        logger.error(
             "[event] on_user_punish - %s: channel %s not messageable (%s)",
             event_data.category,  # type: ignore
             channel.id,
@@ -169,7 +189,7 @@ async def send_rr_channel_log(
         try:
             channel = await bot.fetch_channel(channel_id)
         except discord.NotFound:
-            logger.warning(
+            logger.info(
                 "[event] %s: role request channel %s not found",
                 event_data.category,
                 channel_id,

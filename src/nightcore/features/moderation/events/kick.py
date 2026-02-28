@@ -89,23 +89,9 @@ class UserKickEvent(Cog):
                 data.moderator.guild.id,
             )
 
-        try:
-            await send_punish_dm_message(
-                self.bot, guild_name=data.guild_name, event_data=data
-            )
-        except discord.Forbidden:
-            logger.info(
-                "[%s/event] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
-                data.category,
-                data.user.id,
-            )
-        except Exception as e:
-            logger.warning(
-                "[%s/event] Failed to send DM to user %s: %e",
-                data.category,
-                data.user.id,
-                e,
-            )
+        await send_punish_dm_message(
+            self.bot, guild_name=data.guild_name, event_data=data
+        )
 
 
 async def setup(bot: Nightcore):

@@ -242,29 +242,15 @@ class UserBanEvent(Cog):
                 data.guild_id,
             )
 
-        try:
-            await send_unpunish_dm_message(
-                self.bot,
-                user_id=data.user_id,
-                mode=data.mode,
-                category=f"un{data.category}",
-                guild_name=guild.name,
-                moderator_id=data.moderator_id,
-                reason=data.reason,
-            )
-        except discord.Forbidden:
-            logger.info(
-                "[un%s/event] Failed to send DM to user %s because he doesn't accept DM",  # noqa: E501
-                data.category,
-                data.user_id,
-            )
-        except Exception as e:
-            logger.warning(
-                "[un%s/event] Failed to send DM to user %s: %e",
-                data.category,
-                data.user_id,
-                e,
-            )
+        await send_unpunish_dm_message(
+            self.bot,
+            user_id=data.user_id,
+            mode=data.mode,
+            category=f"un{data.category}",
+            guild_name=guild.name,
+            moderator_id=data.moderator_id,
+            reason=data.reason,
+        )
 
 
 async def setup(bot: Nightcore):
