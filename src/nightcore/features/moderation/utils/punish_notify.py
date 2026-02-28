@@ -42,7 +42,7 @@ async def send_punish_dm_message(
 
     view = PunishViewV2(
         bot=bot,
-        user=event_data.user,  # type: ignore
+        user_id=event_data.user.id,  # type: ignore
         punish_type=event_data.category,  # type: ignore
         moderator_id=event_data.moderator_id
         if isinstance(event_data, UserBannedEventData)
