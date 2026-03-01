@@ -2,6 +2,7 @@
 
 import logging
 
+import discord
 from discord import Member
 
 from src.infra.db.models._enums import RoleRequestStateEnum
@@ -27,20 +28,37 @@ async def send_role_request_dm(
     reason: str | None = None,
 ) -> None:
     """Send a DM to the user about their role request status."""
-    match state:
-        case RoleRequestStateEnum.APPROVED:
-            await user.send(
-                APPROVED_MESSAGE.format(
-                    user_id=user.id, moderator_id=moderator_id
+
+    try:
+        match state:
+            case RoleRequestStateEnum.APPROVED:
+                await user.send(
+                    APPROVED_MESSAGE.format(
+                        user_id=user.id, moderator_id=moderator_id
+                    )
                 )
-            )
-        case RoleRequestStateEnum.DENIED:
-            await user.send(
-                DENIED_MESSAGE.format(
-                    user_id=user.id,
-                    moderator_id=moderator_id,
-                    reason=reason,
+            case RoleRequestStateEnum.DENIED:
+                await user.send(
+                    DENIED_MESSAGE.format(
+                        user_id=user.id,
+                        moderator_id=moderator_id,
+                        reason=reason,
+                    )
                 )
-            )
-        case _:
-            ...
+            case _:
+                ...
+    except discord.Forbidden:
+        logger.info(
+            "[%s/log] Failed to send private message for user %s in guild %s because he doesn't accept DM",  # noqa: E501
+            "role_request",
+            user.id,
+            user.guild.id,
+        )
+    except Exception as e:
+        logger.warning(
+            "[%s/log] Failed to send private message for user %s in guild %s: %s",  # noqa: E501
+            "role_request",
+            user.id,
+            user.guild.id,
+            e,
+        )
