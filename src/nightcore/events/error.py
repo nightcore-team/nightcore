@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import AppCommandOptionType, Guild, app_commands
+from discord.ext import commands
 
 from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
@@ -45,6 +46,9 @@ async def setup(bot: "Nightcore") -> None:
         """Handle application command errors."""
 
         original = getattr(error, "original", error)
+
+        if isinstance(original, commands.CommandNotFound):
+            return
 
         if isinstance(original, ConfigMissingButCreatingError):
             logger.info(
