@@ -69,7 +69,7 @@ async def send(
         if color:
             c = Color.from_str(color)
     except Exception as e:
-        logger.error("[compbuilder/preview] Invalid color provided: %s", e)
+        logger.info("[compbuilder/preview] Invalid color provided: %s", e)
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки компонента",
