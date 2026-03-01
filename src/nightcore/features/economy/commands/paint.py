@@ -159,7 +159,6 @@ class Paint(Cog):
             member.id,
             guild.id,
             color_id,
-            color_id,
         )
 
 
