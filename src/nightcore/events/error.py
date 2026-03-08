@@ -1,17 +1,13 @@
 """Error events module."""
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import discord
 from discord import AppCommandOptionType, Guild, app_commands
 from discord.ext import commands
 
-from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
-
-if TYPE_CHECKING:
-    from src.nightcore.bot import Nightcore
-
+from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed.error import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -31,6 +27,7 @@ from src.nightcore.features.config.exceptions import (
     OrgRolesParsingError,
     TempVoiceRolesParsingError,
 )
+from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +54,7 @@ async def setup(bot: "Nightcore") -> None:
 
     @bot.tree.error
     async def on_app_command_error(  # type: ignore
-        interaction: discord.Interaction,
+        interaction: discord.Interaction[Nightcore],
         error: app_commands.AppCommandError,
     ):
         """Handle application command errors."""
