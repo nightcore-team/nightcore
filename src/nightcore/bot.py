@@ -3,7 +3,6 @@
 import asyncio
 import contextlib
 import logging
-import time
 from collections.abc import Awaitable
 from datetime import UTC, datetime
 from typing import Any
@@ -192,7 +191,7 @@ class Nightcore(Bot):
                 )
             else:
                 logger.info(
-                    "[permissions] Command %s has __permissions_flag__: %s",  # noqa: E501
+                    "[permissions] Command %s has __permissions_flag__: %s",
                     path,
                     cmd.callback.__permissions_flag__,  # type: ignore
                 )
@@ -254,14 +253,7 @@ class Nightcore(Bot):
 
         await self.load_extensions()
 
-        start = time.perf_counter()
         self.http.connector = self._http_connector
-        await self.http.get_bot_gateway()
-        end = time.perf_counter()
-        logger.info(
-            "[gateway] Fetched bot gateway in %.2fms",
-            (end - start) * 1000,
-        )
 
         commands = self.tree.get_commands()
 
