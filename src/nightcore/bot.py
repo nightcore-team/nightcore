@@ -1,15 +1,13 @@
 """Nightcore Bot."""
 
-import asyncio
 import contextlib
 import logging
-from collections.abc import Awaitable
 from datetime import UTC, datetime
 from typing import Any
 
 import discord
 from aiohttp import TCPConnector
-from discord import Guild, app_commands
+from discord import app_commands
 from discord.ext.commands import Bot  # type: ignore
 from nightforo import Client as XenforoClient
 
@@ -103,19 +101,6 @@ class Nightcore(Bot):
             keepalive_timeout=60,  # Keep connection alive for 60 seconds
         )
 
-    async def _warmup_discord(self) -> None:
-        try:
-            await self.application_info()
-        except Exception as e:
-            logger.error("[failed] Warmup failed: %s", e)
-
-        tasks: list[Awaitable[None]] = []
-
-        for guild in self.guilds:
-            tasks.append(self._warmup_guild_channels(guild))
-
-        await asyncio.gather(*tasks, return_exceptions=True)
-
     async def _reset_users_voice_activity(self) -> None:
         """Reset users' voice activity status in the database on startup."""
         try:
@@ -130,17 +115,6 @@ class Nightcore(Bot):
                 "[reset/voice] Failed to reset users' voice activity status: %s",  # noqa: E501
                 e,
             )
-
-    async def _warmup_guild_channels(self, guild: Guild) -> None:
-        try:
-            await guild.fetch_channels()
-        except Exception as e:
-            logger.error(
-                "[warmup] Failed to fetch channels for guild %d: %s",
-                guild.id,
-                e,
-            )
-            return
 
     async def init_views(self) -> None:
         """Initialize persistent views."""
@@ -284,5 +258,4 @@ class Nightcore(Bot):
         logger.info(f"Chunked guilds: {self.chunked_guilds}")
         logger.info("🚀 Nightcore bot started successfully!")
 
-        await self._warmup_discord()
         await self._reset_users_voice_activity()
