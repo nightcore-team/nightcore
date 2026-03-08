@@ -116,7 +116,7 @@ class Nightcore(Bot):
                 e,
             )
 
-    async def init_views(self) -> None:
+    def init_views(self) -> None:
         """Initialize persistent views."""
 
         views: list[discord.ui.LayoutView] = [
@@ -247,7 +247,9 @@ class Nightcore(Bot):
 
             logger.error(traceback.format_exc())
 
-        await self.init_views()
+        self.init_views()
+
+        await self._reset_users_voice_activity()
 
         log_tree_summary(self.tree, logger=logger)
 
@@ -257,5 +259,3 @@ class Nightcore(Bot):
         logger.info(f"Connected to {len(self.guilds)} guilds")
         logger.info(f"Chunked guilds: {self.chunked_guilds}")
         logger.info("🚀 Nightcore bot started successfully!")
-
-        await self._reset_users_voice_activity()
