@@ -36,7 +36,24 @@ logger = logging.getLogger(__name__)
 
 
 async def setup(bot: "Nightcore") -> None:
-    """Setup the error handling for application commands."""
+    """Setup the error handling for commands."""
+
+    @bot.event
+    async def on_command_error(  # type: ignore
+        ctx: commands.Context[Nightcore],
+        error: commands.CommandError,
+    ):
+        """Handle text command errors."""
+
+        original = getattr(error, "original", error)
+
+        if isinstance(original, commands.CommandNotFound):
+            return
+
+        logger.exception("Unhandled text command error", exc_info=error)
+        await ctx.send(
+            "Unexpected error occurred. Please contact the developer.",
+        )
 
     @bot.tree.error
     async def on_app_command_error(  # type: ignore
@@ -46,9 +63,6 @@ async def setup(bot: "Nightcore") -> None:
         """Handle application command errors."""
 
         original = getattr(error, "original", error)
-
-        if isinstance(original, commands.CommandNotFound):
-            return
 
         if isinstance(original, ConfigMissingButCreatingError):
             logger.info(
