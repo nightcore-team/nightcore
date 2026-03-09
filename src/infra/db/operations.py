@@ -1160,6 +1160,26 @@ async def get_custom_components(
     return result.scalars().all()
 
 
+async def get_custom_components_by_input(
+    session: AsyncSession, *, guild_id: int, user_input: str
+) -> Sequence[CustomComponent]:
+    """Get the custom components for a guild by user input."""
+    a = 0.7
+    similarity = (len(user_input) / 100) ** a
+
+    stmt = (
+        select(CustomComponent)
+        .where(
+            CustomComponent.guild_id == guild_id,
+            func.similarity(CustomComponent.name, user_input) >= similarity,
+        )
+        .limit(25)
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
 async def get_custom_component_by_id(
     session: AsyncSession, *, guild_id: int, id: int
 ) -> CustomComponent | None:

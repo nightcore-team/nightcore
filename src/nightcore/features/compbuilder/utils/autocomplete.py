@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.operations import get_custom_components
+from src.infra.db.operations import (
+    get_custom_components_by_input,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 async def components_autocomplete(
     interaction: Interaction[Nightcore],
-    current: str,
+    user_input: str,
 ) -> list[app_commands.Choice[str]]:
     """Autocomplete function to get custom components for the guild."""
 
@@ -28,10 +30,12 @@ async def components_autocomplete(
     guild = cast(Guild, interaction.guild)
 
     async with interaction.client.uow.start() as session:
-        components = await get_custom_components(session, guild_id=guild.id)
+        components = await get_custom_components_by_input(
+            session, guild_id=guild.id, user_input=user_input
+        )
 
     result: list[app_commands.Choice[str]] = []
-    for cmp in components[:25]:
+    for cmp in components:
         logger.info(
             "[components/autocomplete] Found component with name %s (len: %d) and id %s for guild %s",  # noqa: E501
             cmp.name,
