@@ -10,6 +10,7 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
+from src.infra.redis.serializers import serialize_role
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -35,6 +36,19 @@ class UpdateRoleEvent(Cog):
         """Handle role deletion events."""
 
         guild = after.guild
+
+        try:
+            await self.bot.guild_state_repository.upsert_role(
+                guild_id=str(guild.id),
+                role=serialize_role(after),
+            )
+        except Exception as e:
+            logger.error(
+                "[redis] Failed to refresh role %s in guild %s: %s",
+                after.id,
+                guild.id,
+                e,
+            )
 
         embed = discord.Embed(
             title="Изменение роли",

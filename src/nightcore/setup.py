@@ -1,10 +1,14 @@
 """Setup module for creating and configuring the Nightcore bot instance."""
 
 from src.infra.db.uow import UnitOfWork
+from src.infra.redis.repository import GuildStateRepository
 from src.nightcore.bot import Nightcore
 
 
-def create_bot(uow: UnitOfWork) -> Nightcore:
+def create_bot(
+    uow: UnitOfWork,
+    guild_state_repository: GuildStateRepository,
+) -> Nightcore:
     """Create and return an instance of the Nightcore bot."""
 
     cog_modules = [
@@ -99,6 +103,9 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.events.message.update",
         "src.nightcore.events.error",
         "src.nightcore.events.interaction",
+        "src.nightcore.events.guild.join",
+        "src.nightcore.events.guild.remove",
+        "src.nightcore.events.guild.update",
         "src.nightcore.events.channel.create",
         "src.nightcore.events.channel.delete",
         "src.nightcore.events.channel.update",
@@ -121,22 +128,23 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         # === compbuilder
         "src.nightcore.features.compbuilder",
         # === tasks
-        "src.nightcore.tasks.unpunish",
-        "src.nightcore.tasks.multiplayer_roulette",
-        "src.nightcore.tasks.delete_ticket",
-        "src.nightcore.tasks.delete_role_request",
-        "src.nightcore.tasks.expired_notify",
-        "src.nightcore.tasks.check_forum",
-        "src.nightcore.tasks.clan_reputation",
-        "src.nightcore.tasks.temp_role",
-        "src.nightcore.tasks.temp_multiplier",
+        # "src.nightcore.tasks.unpunish",
+        # "src.nightcore.tasks.multiplayer_roulette",
+        # "src.nightcore.tasks.delete_ticket",
+        # "src.nightcore.tasks.delete_role_request",
+        # "src.nightcore.tasks.expired_notify",
+        # "src.nightcore.tasks.check_forum",
+        # "src.nightcore.tasks.clan_reputation",
+        # "src.nightcore.tasks.temp_role",
+        # "src.nightcore.tasks.temp_multiplier",
         # special events / valentine day
-        "src.nightcore.features.special_events.valentine",
+        # "src.nightcore.features.special_events.valentine",
         # special events / valentine day events
-        "src.nightcore.features.special_events.valentine.events.valentine_send",
+        # "src.nightcore.features.special_events.valentine.events.valentine_send",  # noqa: E501
     ]
 
     return Nightcore(
         cog_modules=cog_modules,
+        guild_state_repository=guild_state_repository,
         uow=uow,
     )

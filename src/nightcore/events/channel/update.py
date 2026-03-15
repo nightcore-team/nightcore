@@ -11,6 +11,7 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.models.guild import GuildLoggingConfig
 from src.infra.db.operations import get_specified_channel  # type: ignore
+from src.infra.redis.serializers import serialize_channel
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import ensure_messageable_channel_exists
 
@@ -30,6 +31,19 @@ class UpdateChannelHandler(Cog):
         """Handle guild channel update event."""
         guild = cast(Guild, new.guild)  # type: ignore
         outcome = ""
+
+        try:
+            await self.bot.guild_state_repository.upsert_channel(
+                guild_id=str(guild.id),
+                channel=serialize_channel(new),
+            )
+        except Exception as e:
+            logger.error(
+                "[redis] Failed to refresh channel %s in guild %s: %s",
+                new.id,
+                guild.id,
+                e,
+            )
 
         async with self.bot.uow.start(readonly=True) as session:
             if not (

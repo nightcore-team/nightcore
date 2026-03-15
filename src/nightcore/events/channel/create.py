@@ -10,6 +10,7 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
+from src.infra.redis.serializers import serialize_channel
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import (
     channel_type,
@@ -28,6 +29,19 @@ class CreateChannelHandler(Cog):
     async def on_guild_channel_create(self, channel: discord.abc.GuildChannel):
         """Handle guild channel create event."""
         guild = cast(Guild, channel.guild)  # type: ignore
+
+        try:
+            await self.bot.guild_state_repository.upsert_channel(
+                guild_id=str(guild.id),
+                channel=serialize_channel(channel),
+            )
+        except Exception as e:
+            logger.error(
+                "[redis] Failed to cache created channel %s in guild %s: %s",
+                channel.id,
+                guild.id,
+                e,
+            )
 
         async with self.bot.uow.start() as session:
             if not (

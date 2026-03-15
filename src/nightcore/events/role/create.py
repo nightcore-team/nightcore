@@ -10,6 +10,7 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
+from src.infra.redis.serializers import serialize_role
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -37,6 +38,19 @@ class CreateRoleEvent(Cog):
         """Handle role creation events."""
 
         guild = role.guild
+
+        try:
+            await self.bot.guild_state_repository.upsert_role(
+                guild_id=str(guild.id),
+                role=serialize_role(role),
+            )
+        except Exception as e:
+            logger.error(
+                "[redis] Failed to cache created role %s in guild %s: %s",
+                role.id,
+                guild.id,
+                e,
+            )
 
         async with self.bot.uow.start() as session:
             roles_logging_channel_id = await get_specified_channel(

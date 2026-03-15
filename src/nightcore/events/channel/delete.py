@@ -32,6 +32,19 @@ class DeleteChannelHandler(Cog):
         """Handle guild channel delete event."""
         guild = cast(Guild, channel.guild)  # type: ignore
 
+        try:
+            await self.bot.guild_state_repository.delete_channel(
+                guild_id=str(guild.id),
+                channel_id=str(channel.id),
+            )
+        except Exception as e:
+            logger.error(
+                "[redis] Failed to evict deleted channel %s in guild %s: %s",
+                channel.id,
+                guild.id,
+                e,
+            )
+
         async with self.bot.uow.start() as session:
             if not (
                 logging_channels_channel_id := await get_specified_channel(

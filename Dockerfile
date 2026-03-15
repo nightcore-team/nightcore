@@ -44,4 +44,6 @@ RUN rm -rf /app/.venv/share/man \
     /app/.venv/lib/python*/tkinter \
     && chmod +x ./docker/*
 
+EXPOSE 8000
+
 CMD ["sh", "./docker/docker-entrypoint.sh"]

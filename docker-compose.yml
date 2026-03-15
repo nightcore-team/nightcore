@@ -24,8 +24,13 @@ services:
     networks:
       - nightcore-network
 
+    ports:
+      - "${API_PORT}:${API_PORT}"
+
     depends_on:
       nightcore-db:
+        condition: service_healthy
+      nightcore-redis:
         condition: service_healthy
 
   nightcore-db:
@@ -43,6 +48,41 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+    networks:
+      - nightcore-network
+
+  nightcore-redis:
+    image: redis:7-alpine
+    container_name: nightcore-redis
+    restart: no
+
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+    networks:
+      - nightcore-network
+
+  nightcore-redisinsight:
+    image: redis/redisinsight:latest
+    container_name: nightcore-redisinsight
+    restart: no
+
+    ports:
+      - "${REDIS_INSIGHT_PORT}:${REDIS_INSIGHT_PORT}"
+
+    volumes:
+      - ./.redisinsight:/data
+
+    depends_on:
+      nightcore-redis:
+        condition: service_healthy
 
     networks:
       - nightcore-network
