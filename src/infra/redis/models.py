@@ -14,6 +14,8 @@ class RoleCacheEntry:
     id: str
     name: str
     color: str
+    position: int
+    administrator: bool
 
 
 @dataclass(frozen=True, slots=True)

@@ -24,9 +24,6 @@ services:
     networks:
       - nightcore-network
 
-    ports:
-      - "${API_PORT}:${API_PORT}"
-
     depends_on:
       nightcore-db:
         condition: service_healthy

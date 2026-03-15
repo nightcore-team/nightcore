@@ -7,6 +7,7 @@ from dataclasses import asdict
 
 from redis.asyncio import Redis
 from redis.exceptions import ConnectionError, TimeoutError
+
 from src.config.config import config
 
 from .models import (
@@ -95,12 +96,12 @@ class GuildStateRepository:
 
         return await self.redis.get(self._ready_key) == "1"
 
-    async def get_guilds(self) -> list[dict[str, str]]:
+    async def get_guilds(self) -> list[dict[str, str | int | bool]]:
         """Return all cached guilds."""
 
         values = await self.redis.hvals(self._guilds_key)  # type: ignore
         guilds = [self._loads(value) for value in values]  # type: ignore
-        return sorted(guilds, key=lambda guild: guild["name"].casefold())
+        return sorted(guilds, key=lambda guild: guild["name"].casefold())  # type: ignore
 
     async def get_guild(self, guild_id: str) -> dict[str, str] | None:
         """Return a cached guild by ID."""
@@ -110,21 +111,25 @@ class GuildStateRepository:
             return None
         return self._loads(value)  # type: ignore
 
-    async def get_roles(self, guild_id: str) -> list[dict[str, str]]:
+    async def get_roles(
+        self, guild_id: str
+    ) -> list[dict[str, str | int | bool]]:
         """Return cached roles for a guild."""
 
         values = await self.redis.hvals(self._roles_key(guild_id))  # type: ignore
         roles = [self._loads(value) for value in values]  # type: ignore
-        return sorted(roles, key=lambda role: role["name"].casefold())
+        return sorted(roles, key=lambda role: role["position"])
 
-    async def get_channels(self, guild_id: str) -> list[dict[str, str]]:
+    async def get_channels(
+        self, guild_id: str
+    ) -> list[dict[str, str | int | bool]]:
         """Return cached channels for a guild."""
 
         values = await self.redis.hvals(self._channels_key(guild_id))  # type: ignore
         channels = [self._loads(value) for value in values]  # type: ignore
         return sorted(
             channels,
-            key=lambda channel: (channel["type"], channel["name"].casefold()),
+            key=lambda channel: (channel["type"], channel["name"].casefold()),  # type: ignore
         )
 
     async def sync_guilds(self, snapshots: list[GuildStateSnapshot]) -> None:
@@ -262,5 +267,5 @@ class GuildStateRepository:
     ) -> str:
         return json.dumps(asdict(value))
 
-    def _loads(self, value: str) -> dict[str, str]:
+    def _loads(self, value: str) -> dict[str, str | int | bool]:
         return json.loads(value)

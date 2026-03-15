@@ -26,6 +26,8 @@ def serialize_role(role: discord.Role) -> RoleCacheEntry:
         id=str(role.id),
         name=role.name,
         color=f"#{role.color.value:06X}",
+        position=role.position,
+        administrator=role.permissions.administrator,
     )
 
 
