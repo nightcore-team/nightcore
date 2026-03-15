@@ -1,6 +1,7 @@
 """Redis client factory."""
 
 from redis.asyncio import Redis
+
 from src.config.config import config
 
 
