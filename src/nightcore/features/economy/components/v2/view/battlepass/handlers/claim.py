@@ -11,17 +11,15 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.guild import GuildEconomyConfig
 from src.infra.db.operations import (
-    get_case_by_id,
-    get_color_by_id,
     get_guild_battlepass_levels,
     get_or_create_user,
 )
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.economy.utils.case import (
     RewardOutcomeEnum,
+    format_single_battlepass_level_reward,
     give_reward_by_type,
 )
 from src.nightcore.services.config import specified_guild_config
@@ -47,7 +45,6 @@ async def handle_battlepass_claim_reward_button(
     new_level = 0
     new_points = 0
     reward_name = ""
-    coin_name = ""
     disable_button = False
     claimed_level = 0
 
@@ -59,8 +56,6 @@ async def handle_battlepass_claim_reward_button(
         guild_config,
         session,
     ):
-        coin_name = guild_config.coin_name if guild_config else "коины"
-
         user_record, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
@@ -191,35 +186,12 @@ async def handle_battlepass_claim_reward_button(
 
     if outcome == "success" or outcome == "success_no_next_level":
         async with bot.uow.start() as session:
-            match new_level_data.reward["type"]:  # type: ignore
-                case CaseDropTypeEnum.COINS.value:
-                    new_level_data.reward["name"] = coin_name or "коины"  # type: ignore
-                case CaseDropTypeEnum.CASE.value:
-                    case = await get_case_by_id(
-                        session,
-                        guild_id=guild.id,
-                        case_id=new_level_data.reward["drop_id"],  # type: ignore
-                    )
-
-                    new_level_data.reward["name"] = (  # type: ignore
-                        case.name if case else "unknown"
-                    )
-                case CaseDropTypeEnum.COLOR.value:
-                    color = await get_color_by_id(
-                        session,
-                        guild_id=guild.id,
-                        color_id=new_level_data.reward["drop_id"],  # type: ignore
-                    )
-
-                    if color is None:
-                        reward_name = "unknown"
-                    else:
-                        role = guild.get_role(color.role_id)
-
-                        reward_name = role.name if role else "unknown"
-
-                case _:
-                    ...
+            await format_single_battlepass_level_reward(
+                session,
+                level=new_level_data,  # type: ignore
+                coin_name=guild_config.coin_name,
+                guild=guild,
+            )
 
         # new_level_data is guaranteed to exist here
         updated_view = view_to_update(

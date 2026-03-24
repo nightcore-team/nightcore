@@ -44,13 +44,10 @@ async def open_case(
         guild_config,
         session,
     ):
-        coin_name = (
-            guild_config.coin_name if guild_config.coin_name else "коины"
-        )
         cases = await get_guild_cases(session, guild_id=guild.id)
 
         await format_cases_rewards(
-            session, cases=cases, coin_name=coin_name, guild=guild
+            session, cases=cases, coin_name=guild_config.coin_name, guild=guild
         )
 
     pages = build_cases_help_pages(cases)
