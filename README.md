@@ -1,7 +1,3 @@
-<!-- markdownlint-disable -->
-<p align="center">
-  <img src="assets/nightcore-banner-winter.jpg" alt="Nightcore Bot Banner" width="100%">
-</p>
 <!-- markdownlint-restore -->
 
 <div align="center">
