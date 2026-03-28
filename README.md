@@ -22,7 +22,6 @@
 ## 📋 Table of Contents
 
 - [📋 Table of Contents](#-table-of-contents)
-- [✨ Features](#-features)
 - [🛠 Tech Stack](#-tech-stack)
 - [📦 Requirements](#-requirements)
   - [For Docker Setup:](#for-docker-setup)
@@ -45,22 +44,9 @@
 - [📁 Project Structure](#-project-structure)
 - [📝 License](#-license)
 
-## ✨ Features
-
-- **Economy System**: Casino, roulette, rewards, and custom economy triggers
-- **Moderation Tools**: Bans, mutes, warns, and other moderation features
-- **Clans System**: Clan management with reputation tracking
-- **Forum Integration**: Automatic forum post synchronization via NightForo API
-- **Ticket System**: Support ticket management with auto-deletion
-- **Role Requests**: Automated role request handling
-- **Private Rooms**: Voice channel management
-- **Proposals**: Community voting system
-- **Custom Components**: Embeds and interactive components v2
-- **Background Tasks**: Automated tasks for multipliers, punishments, and more
-
 ## 🛠 Tech Stack
 
-- **Python 3.13**: Modern Python with latest features
+- **Python 3.13**
 - **discord.py**: Discord API wrapper
 - **PostgreSQL 16**: Database with asyncpg driver
 - **SQLAlchemy 2.0**: Async ORM
