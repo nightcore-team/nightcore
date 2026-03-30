@@ -2,12 +2,12 @@ from discord import app_commands
 
 from src.nightcore.bot import Nightcore
 
-from . import create, delete, edit, send
+from . import create, delete, edit, get, send
 
 # SIDE-EFFECT IMPORTS
 from ._groups import rules as rules_group
 
-__all__ = ("create", "delete", "edit", "send")
+__all__ = ("create", "delete", "edit", "get", "send")
 
 
 async def setup(bot: Nightcore):
