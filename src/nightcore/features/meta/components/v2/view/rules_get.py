@@ -44,3 +44,5 @@ class RulesGetViewV2(LayoutView):
                 f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
             )
         )
+
+        self.add_item(container)
