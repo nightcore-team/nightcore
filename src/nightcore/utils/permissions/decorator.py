@@ -16,6 +16,7 @@ from typing import (
 
 from discord import Guild, Interaction, Member, app_commands
 
+from src.config.config import config as project_config
 from src.infra.db.operations import get_specified_field
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.utils import has_any_role_from_sequence
@@ -186,6 +187,9 @@ async def _check_user_permission(
         """  # noqa: E501
 
         return True
+
+    if permissions == PermissionsFlagEnum.BOT_ACCESS:
+        return member.id in project_config.bot.DEVELOPER_IDS
 
     if permissions == PermissionsFlagEnum.NONE:
         return True
