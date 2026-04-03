@@ -1,5 +1,7 @@
 """Check the forum for new posts and updates."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class CheckForumTask(Cog):
-    def __init__(self, bot: "Nightcore") -> None:
+    def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
         self.service = ForumComplaintProcessor(
@@ -74,6 +76,6 @@ class CheckForumTask(Cog):
             self.check_forum_task.restart()
 
 
-async def setup(bot: "Nightcore"):
+async def setup(bot: Nightcore):
     """Setup the CheckForumTask cog."""
     await bot.add_cog(CheckForumTask(bot))

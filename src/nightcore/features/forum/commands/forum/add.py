@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 )  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)
 async def forum_add(
-    interaction: Interaction[Nightcore],
+    interaction: Interaction["Nightcore"],
     section_id: int,
     channel: TextChannel,
     role: Role,
