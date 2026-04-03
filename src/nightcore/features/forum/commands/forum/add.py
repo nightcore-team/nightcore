@@ -36,7 +36,7 @@ async def forum_add(
             )
             session.add(config)
     except IntegrityError:
-        await interaction.response.send_message(
+        return await interaction.response.send_message(
             "Конфиг для данной гильдии уже существует", ephemeral=True
         )
     except Exception as e:
@@ -45,6 +45,11 @@ async def forum_add(
             guild.id,
             e,
         )
+        await interaction.response.send_message(
+            content="Произошла неизвестная ошибка при создании конфига!",
+            ephemeral=True,
+        )
+        return
 
     await interaction.response.send_message(
         content="Конфиг успешно создан!", ephemeral=True

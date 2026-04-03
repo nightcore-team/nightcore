@@ -47,9 +47,14 @@ async def forum_delete(
             guild.id,
             e,
         )
+        await interaction.response.send_message(
+            content="Произошла неизвестная ошибка при удалении конфига!",
+            ephemeral=True,
+        )
+        return
 
     if outcome == "config_not_found":
-        await interaction.response.send_message(
+        return await interaction.response.send_message(
             content="Конфиг для данной гильдии не найден!", ephemeral=True
         )
 
