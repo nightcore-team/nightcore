@@ -19,6 +19,7 @@ from src.infra.db.models import (
     CustomComponent,
     GuildClansConfig,
     GuildEconomyConfig,
+    GuildForumConfig,
     GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
@@ -77,6 +78,7 @@ GuildT = TypeVar(
     MainGuildConfig,
     GuildInfomakerConfig,
     GuildMetaConfig,
+    GuildForumConfig,
 )
 
 
@@ -94,6 +96,7 @@ def get_config_type_by_name(name: str) -> type[GuildT]:
         "other": MainGuildConfig,
         "private_channels": GuildPrivateChannelsConfig,
         "tickets": GuildTicketsConfig,
+        "forum": GuildForumConfig,
     }  # type: ignore
     return config_types[name]
 
@@ -1377,3 +1380,15 @@ async def reset_users_voice_activity(session: AsyncSession) -> int:
     result = await session.execute(stmt)
 
     return result.rowcount or 0
+
+
+async def get_forum_guilds(
+    session: AsyncSession,
+) -> Sequence[GuildForumConfig]:
+    """Get all forum configurations."""
+
+    stmt = select(GuildForumConfig)
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()

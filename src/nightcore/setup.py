@@ -120,6 +120,8 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.private_rooms.events.delete",
         # === compbuilder
         "src.nightcore.features.compbuilder",
+        # === forum
+        "src.nightcore.features.forum",
         # === tasks
         "src.nightcore.tasks.unpunish",
         "src.nightcore.tasks.multiplayer_roulette",

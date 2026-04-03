@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.config.config import config
+from src.infra.db.operations import get_forum_guilds
 from src.nightcore.features.forum.services.complaint import (
     ForumComplaintProcessor,
 )
@@ -39,11 +39,14 @@ class CheckForumTask(Cog):
         try:
             logger.info("[task] - Running check forum task")
 
-            for server in config.forum.SERVERS:
+            async with self.bot.uow.start() as session:
+                guilds = await get_forum_guilds(session)
+
+            for guild in guilds:
                 logger.info(
-                    "[task] - Processing forum server: %s", server.guild_id
+                    "[task] - Processing forum server: %s", guild.guild_id
                 )
-                await self.service.process_server(server)
+                await self.service.process_server(guild)
 
         except Exception as e:
             logger.exception(

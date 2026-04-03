@@ -372,3 +372,20 @@ class GuildInfomakerConfig(IdIntegerMixin, Base):
     leaders_roles_logging_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+
+
+class GuildForumConfig(IdIntegerMixin, Base):
+    """Forum configuration for a guild."""
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
+    section_id: Mapped[int] = mapped_column(
+        Integer, nullable=False, unique=True
+    )
+    channel_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
+    role_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )

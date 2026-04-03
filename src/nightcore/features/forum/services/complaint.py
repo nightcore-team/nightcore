@@ -12,8 +12,8 @@ from nightforo import (
     ThreadUpdateParams,
 )
 
-from src.infra.api.forum.dto import Server
 from src.infra.api.forum.utils import extract_discord_id
+from src.infra.db.models.guild import GuildForumConfig
 from src.infra.db.operations import (
     get_or_create_processed_thread,
 )
@@ -36,7 +36,7 @@ class ForumComplaintProcessor:
         self.bot = bot
         self._api = forum_api
 
-    async def process_server(self, server: Server) -> None:
+    async def process_server(self, server: GuildForumConfig) -> None:
         """Process complaints for a given server."""
         logger.info(
             "[forum] Starting complaint processing for section_id=%s, guild_id=%s, channel_id=%s",  # noqa: E501
@@ -85,7 +85,7 @@ class ForumComplaintProcessor:
             await self._process_single_thread(server, thread)
 
     async def _process_single_thread(
-        self, server: Server, thread: Thread
+        self, server: GuildForumConfig, thread: Thread
     ) -> None:
         """Process a single complaint thread."""
         logger.info(
