@@ -402,6 +402,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 send_messages=True,
                 attach_files=True,
                 read_message_history=True,
+                view_channel=False,
             )
 
             await channel.edit(
@@ -567,6 +568,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
 
             overwrites[guild.default_role] = discord.PermissionOverwrite(
                 send_messages=False,
+                view_channel=False,
             )
 
             await channel.edit(
