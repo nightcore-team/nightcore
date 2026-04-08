@@ -7,6 +7,7 @@ from discord import Guild, Role, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
     get_case_by_id,
@@ -39,25 +40,16 @@ logger = logging.getLogger(__name__)
     reward_id="Кейс/цвет для выдачи (обязательно для case/color).",
     reason="Причина выдачи (необязательно).",
 )
-@app_commands.choices(
-    item_type=[
-        app_commands.Choice(name="Кейс", value="case"),
-        app_commands.Choice(name="Цвет", value="color"),
-        app_commands.Choice(name="Коины", value="coins"),
-        app_commands.Choice(name="Опыт", value="exp"),
-        app_commands.Choice(name="Очки батлпасса", value="bp_coins"),
-    ]
-)
 @app_commands.autocomplete(reward_id=reward_depends_on_type_autocomplete)
 @app_commands.rename(item_type="type", reward_id="reward")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_item(
     interaction: Interaction["Nightcore"],
     role: Role,
-    item_type: str,
+    item_type: CaseDropTypeEnum,
     amount: app_commands.Range[int, 1, 50000],
     reward_id: str | None = None,
-    reason: str | None = None,
+    # reason: str | None = None,
 ):
     """Give selected economy item to all members with the specified role."""
 
@@ -87,7 +79,9 @@ async def give_item(
         async with bot.uow.start() as session:
             selected_case = None
             selected_color = None
-            if item_type == "case":
+            if item_type == CaseDropTypeEnum.CUSTOM:
+                outcome = "custom_type_not_supported"
+            elif item_type == CaseDropTypeEnum.CASE:
                 if reward_id is None:
                     outcome = "missing_reward_id"
                 else:
@@ -101,7 +95,7 @@ async def give_item(
                     else:
                         item_name = selected_case.name
 
-            elif item_type == "color":
+            elif item_type == CaseDropTypeEnum.COLOR:
                 if reward_id is None:
                     outcome = "missing_reward_id"
                 else:
@@ -120,7 +114,7 @@ async def give_item(
                             else f"color ({selected_color.role_id})"
                         )
 
-            elif item_type == "coins":
+            elif item_type == CaseDropTypeEnum.COINS:
                 guild_config = await get_specified_guild_config(
                     session,
                     guild_id=guild.id,
@@ -131,9 +125,9 @@ async def give_item(
                     if guild_config
                     else "коины"
                 )
-            elif item_type == "exp":
+            elif item_type == CaseDropTypeEnum.EXP:
                 item_name = "опыт"
-            elif item_type == "bp_coins":
+            elif item_type == CaseDropTypeEnum.BATTLEPASS_POINTS:
                 item_name = "очки батлпасса"
 
             if not outcome:
@@ -142,16 +136,20 @@ async def give_item(
                         session,
                         guild_id=guild.id,
                         user_id=member.id,
-                        with_relations=item_type in {"case", "color"},
+                        with_relations=item_type
+                        in {CaseDropTypeEnum.CASE, CaseDropTypeEnum.COLOR},
                     )
 
-                    if item_type == "coins":
+                    if item_type == CaseDropTypeEnum.COINS:
                         user_record.coins += amount
-                    elif item_type == "exp":
+                    elif item_type == CaseDropTypeEnum.EXP:
                         user_record.current_exp += amount
-                    elif item_type == "bp_coins":
+                    elif item_type == CaseDropTypeEnum.BATTLEPASS_POINTS:
                         user_record.battle_pass_points += amount
-                    elif item_type == "case" and selected_case is not None:
+                    elif (
+                        item_type == CaseDropTypeEnum.CASE
+                        and selected_case is not None
+                    ):
                         user_case = user_record.get_case(selected_case.id)
                         if user_case:
                             user_case.amount += amount
@@ -165,7 +163,7 @@ async def give_item(
                                 )
                             )
                     elif (
-                        item_type == "color"
+                        item_type == CaseDropTypeEnum.COLOR
                         and selected_color is not None
                         and selected_color not in user_record.colors
                     ):
@@ -184,6 +182,17 @@ async def give_item(
             e,
         )
         outcome = "give_item_error"
+
+    if outcome == "custom_type_not_supported":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи",
+                "Выбранный тип не поддерживается для массовой выдачи.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     if outcome == "missing_reward_id":
         return await interaction.response.send_message(
