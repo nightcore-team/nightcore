@@ -6,20 +6,18 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Role, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
     get_case_by_id,
+    get_color_by_id,
     get_or_create_user,
-    get_specified_channel,
     get_specified_guild_config,
 )
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.economy._groups import give as give_group
-from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils.autocomplete import (
-    guild_cases_autocomplete,
+    reward_depends_on_type_autocomplete,
 )
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -38,26 +36,27 @@ logger = logging.getLogger(__name__)
     role="Роль пользователей для выдачи.",
     item_type="Тип предмета/валюты для выдачи.",
     amount="Количество для выдачи каждому пользователю.",
-    case_id="Кейс для выдачи (обязательно только для типа case).",
+    reward_id="Кейс/цвет для выдачи (обязательно для case/color).",
     reason="Причина выдачи (необязательно).",
 )
 @app_commands.choices(
     item_type=[
         app_commands.Choice(name="Кейс", value="case"),
+        app_commands.Choice(name="Цвет", value="color"),
         app_commands.Choice(name="Коины", value="coins"),
         app_commands.Choice(name="Опыт", value="exp"),
         app_commands.Choice(name="Очки батлпасса", value="bp_coins"),
     ]
 )
-@app_commands.autocomplete(case_id=guild_cases_autocomplete)
-@app_commands.rename(item_type="type", case_id="case")
+@app_commands.autocomplete(reward_id=reward_depends_on_type_autocomplete)
+@app_commands.rename(item_type="type", reward_id="reward")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def give_item(
     interaction: Interaction["Nightcore"],
     role: Role,
     item_type: str,
     amount: app_commands.Range[int, 1, 50000],
-    case_id: str | None = None,
+    reward_id: str | None = None,
     reason: str | None = None,
 ):
     """Give selected economy item to all members with the specified role."""
@@ -84,31 +83,42 @@ async def give_item(
 
     outcome = ""
     item_name = ""
-    logging_channel_id: int | None = None
-
     try:
         async with bot.uow.start() as session:
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_ECONOMY,
-            )
-
             selected_case = None
+            selected_color = None
             if item_type == "case":
-                if case_id is None:
-                    outcome = "missing_case"
+                if reward_id is None:
+                    outcome = "missing_reward_id"
                 else:
                     selected_case = await get_case_by_id(
                         session,
                         guild_id=guild.id,
-                        case_id=int(case_id),
+                        case_id=int(reward_id),
                     )
                     if selected_case is None:
                         outcome = "unknown_case"
                     else:
                         item_name = selected_case.name
+
+            elif item_type == "color":
+                if reward_id is None:
+                    outcome = "missing_reward_id"
+                else:
+                    selected_color = await get_color_by_id(
+                        session,
+                        guild_id=guild.id,
+                        color_id=int(reward_id),
+                    )
+                    if selected_color is None:
+                        outcome = "unknown_color"
+                    else:
+                        color_role = guild.get_role(selected_color.role_id)
+                        item_name = (
+                            f"{color_role.name} ({selected_color.role_id})"
+                            if color_role
+                            else f"color ({selected_color.role_id})"
+                        )
 
             elif item_type == "coins":
                 guild_config = await get_specified_guild_config(
@@ -132,7 +142,7 @@ async def give_item(
                         session,
                         guild_id=guild.id,
                         user_id=member.id,
-                        with_relations=item_type == "case",
+                        with_relations=item_type in {"case", "color"},
                     )
 
                     if item_type == "coins":
@@ -154,6 +164,12 @@ async def give_item(
                                     guild_id=guild.id,
                                 )
                             )
+                    elif (
+                        item_type == "color"
+                        and selected_color is not None
+                        and selected_color not in user_record.colors
+                    ):
+                        user_record.colors.append(selected_color)
 
                 outcome = "success"
 
@@ -169,11 +185,33 @@ async def give_item(
         )
         outcome = "give_item_error"
 
-    if outcome in {"missing_case", "invalid_case", "unknown_case"}:
+    if outcome == "missing_reward_id":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка выдачи",
-                "Для типа case нужно указать корректный кейс.",
+                "Для выбранного типа нужно указать корректный reward.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome in {"invalid_case", "unknown_case"}:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи",
+                "Кейс с указанным id не найден.",
+                bot.user.display_name,  # type: ignore
+                bot.user.display_avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
+
+    if outcome == "unknown_color":
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка выдачи",
+                "Цвет с указанным id не найден.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
