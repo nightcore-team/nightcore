@@ -28,7 +28,16 @@ from .commands.casino import roulette
 from .commands.color import change as color_change
 from .commands.color import create as color_create
 from .commands.color import delete as color_delete
-from .commands.give import bp_exp, case, clanexp, clanrep, coins, color, exp
+from .commands.give import (
+    bp_exp,
+    case,
+    clanexp,
+    clanrep,
+    coins,
+    color,
+    exp,
+    item,
+)
 from .commands.remove import color as remove_color
 from .commands.temp import multiplier, role
 
@@ -49,6 +58,7 @@ __all__ = (
     "delete_reward",
     "exp",
     "help",
+    "item",
     "multiplier",
     "open",
     "remove_color",
