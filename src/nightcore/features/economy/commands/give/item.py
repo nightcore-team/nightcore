@@ -49,7 +49,7 @@ async def give_item(
     item_type: CaseDropTypeEnum,
     amount: app_commands.Range[int, 1, 50000],
     reward_id: str | None = None,
-    # reason: str | None = None,
+    reason: str | None = None,
 ):
     """Give selected economy item to all members with the specified role."""
 
