@@ -24,16 +24,16 @@ class Case(IdIntegerMixin, Base):
         server_default=text("'[]'::json"),
     )
 
-    def open(self) -> CaseDropAnnot | None:
+    def open(self, amount: int = 1) -> list[CaseDropAnnot | None]:
         """Open case and get reward."""
 
         if not self.drop:
-            return None
+            return [None] * amount
 
         chances = [drop["chance"] for drop in self.drop]
 
-        selected_index = random.choices(
-            range(len(self.drop)), weights=chances, k=1
-        )[0]
+        selected_indices = random.choices(
+            range(len(self.drop)), weights=chances, k=amount
+        )
 
-        return self.drop[selected_index]
+        return [self.drop[i] for i in selected_indices]

@@ -21,6 +21,7 @@ from discord.ui import (
 from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
+    from src.infra.db.models.case import CaseDropAnnot
     from src.nightcore.bot import Nightcore
 
 
@@ -29,34 +30,50 @@ class CaseOpenViewV2(LayoutView):
         self,
         bot: "Nightcore",
         case_name: str,
-        reward: str,
-        amount: int,
-        chance: int,
         total_weight: int,
+        opened_amount: int,
+        rewards: list[CaseDropAnnot],
     ):
         super().__init__()
 
         self.bot = bot
         self.case_name = case_name
-        self.reward = reward
-        self.amount = amount
-        self.chance = chance
-        self.total_weight = total_weight
 
         container = Container[Self](accent_color=Color.from_str("#1441ac"))
 
+        title_suffix = f" x{opened_amount}" if opened_amount > 1 else ""
         container.add_item(
             TextDisplay(
-                "## <a:68842universebox:1442920870996742275> Открытие кейса"
+                f"## <a:68842universebox:1442920870996742275> Открытие кейса{title_suffix}"  # noqa: E501
             )
         )
         container.add_item(Separator())
 
+        # Aggregate rewards
+        aggregated_rewards: dict[str, dict[str, int]] = {}
+        for r in rewards:
+            aggregated_rewards.setdefault(
+                r["name"], {"amount": 0, "chance": r["chance"]}
+            )
+            aggregated_rewards[r["name"]]["amount"] += r["amount"]
+
+        lines: list[str] = []
+        for name, data in aggregated_rewards.items():
+            chance_str = f"**`{data['chance'] / total_weight * 100:.2f}%`**"
+            if opened_amount > 1:
+                lines.append(
+                    f"> **{name}**: {data['amount']} шт. (Шанс: {chance_str})"
+                )
+            else:
+                lines.append(
+                    f"> **Ваш приз:** {data['amount']} {name}\n> **Шанс выпадения:** {chance_str}"  # noqa: E501
+                )
+
+        rewards_text = "\n".join(lines) + "\n"
+
         container.add_item(
             TextDisplay(
-                f"Вы успешно открыли **{self.case_name}**\n"
-                f"> **Ваш приз:** {self.amount} {self.reward}\n"
-                f"> **Шанс выпадения:** **`{self.chance / total_weight * 100:.2f}%`**"  # noqa: E501
+                f"Вы успешно открыли **{self.case_name}**\n" + rewards_text
             )
         )
         container.add_item(Separator())
