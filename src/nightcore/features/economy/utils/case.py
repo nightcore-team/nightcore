@@ -173,9 +173,6 @@ async def format_single_case_reward(
             case CaseDropTypeEnum.COINS.value:
                 drop["name"] = coin_name or "коины"
 
-                if drop["is_color_compensation"]:
-                    drop["name"] += " (Компенсация за цвет)"
-
             case CaseDropTypeEnum.CASE.value:
                 drop_id = drop["drop_id"]
                 if drop_id not in case_cache:
@@ -198,6 +195,10 @@ async def format_single_case_reward(
                 else:
                     role = guild.get_role(color.role_id)
                     drop["name"] = role.name if role else "unknown"
+
+                if drop["is_color_compensation"]:
+                    drop["name"] += " (Компенсация за цвет)"
+
             case _:
                 ...
 
