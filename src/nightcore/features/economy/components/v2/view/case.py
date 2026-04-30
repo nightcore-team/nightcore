@@ -32,7 +32,7 @@ class CaseOpenViewV2(LayoutView):
         case_name: str,
         total_weight: int,
         opened_amount: int,
-        rewards: list[CaseDropAnnot],
+        rewards: list["CaseDropAnnot"],
     ):
         super().__init__()
 
