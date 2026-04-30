@@ -22,7 +22,6 @@ from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils import user_cases_autocomplete
 from src.nightcore.features.economy.utils.case import (
-    RewardOutcomeEnum,
     format_single_case_reward,
     give_reward_by_type,
 )
@@ -106,16 +105,11 @@ async def open_case(
                             user=user,
                         )
 
-                        is_color_compensation = (
-                            result == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
-                        )
-
                         await format_single_case_reward(
                             session,
-                            drops=rewards,  # pyright: ignore[reportArgumentType]
+                            drops=result[0],  # pyright: ignore[reportArgumentType]
                             coin_name=guild_config.coin_name,
                             guild=guild,
-                            is_color_compensation=is_color_compensation,
                         )
 
                         reward_text = ", ".join(
@@ -123,13 +117,7 @@ async def open_case(
                             for reward in rewards
                         )
 
-                        outcome = (
-                            "success"
-                            if result == RewardOutcomeEnum.SUCCESS
-                            or result
-                            == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
-                            else "error: " + result.name
-                        )
+                        outcome = "success"
 
     except Exception as e:
         logger.exception(

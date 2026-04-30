@@ -39,8 +39,12 @@ async def give_reward_by_type(
     *,
     rewards: list[CaseDropAnnot | BattlepassRewardAnnot],
     user: User,
-) -> RewardOutcomeEnum:
+) -> tuple[
+    list[CaseDropAnnot | BattlepassRewardAnnot], list[RewardOutcomeEnum]
+]:
     """Apply reward to user based on reward type and return outcome status."""
+
+    states: list[RewardOutcomeEnum] = []
 
     guild_config = None
     color_cache: dict[int, Color | None] = {}
@@ -84,8 +88,8 @@ async def give_reward_by_type(
                     )
 
                     user.coins += compensation
+                    states.append(RewardOutcomeEnum.COLOR_WITH_COMPENSATION)
                     reward["is_color_compensation"] = True
-                    reward["compensation_amount"] = compensation
 
             case CaseDropTypeEnum.CASE.value:
                 if drop_id not in case_cache:
@@ -113,7 +117,8 @@ async def give_reward_by_type(
             case _:
                 continue
 
-    return RewardOutcomeEnum.SUCCESS
+    states.append(RewardOutcomeEnum.SUCCESS)
+    return rewards, states
 
 
 async def format_cases_rewards(
@@ -168,7 +173,7 @@ async def format_single_case_reward(
             case CaseDropTypeEnum.COINS.value:
                 drop["name"] = coin_name or "коины"
 
-                if is_color_compensation:
+                if drop["is_color_compensation"]:
                     drop["name"] += " (Компенсация за цвет)"
 
             case CaseDropTypeEnum.CASE.value:
