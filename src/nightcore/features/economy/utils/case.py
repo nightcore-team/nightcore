@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
     from src.infra.db.models._annot import BattlepassRewardAnnot, CaseDropAnnot
     from src.infra.db.models.case import Case
+    from src.infra.db.models.color import Color
     from src.infra.db.models.user import User
 
 
@@ -36,74 +37,88 @@ class RewardOutcomeEnum(Enum):
 async def give_reward_by_type(
     session: AsyncSession,
     *,
-    reward: CaseDropAnnot | BattlepassRewardAnnot,
+    rewards: list[CaseDropAnnot | BattlepassRewardAnnot],
     user: User,
-) -> RewardOutcomeEnum:
+) -> tuple[
+    list[CaseDropAnnot | BattlepassRewardAnnot], list[RewardOutcomeEnum]
+]:
     """Apply reward to user based on reward type and return outcome status."""
 
-    drop_id = reward["drop_id"]
-    amount = reward["amount"]
+    states: list[RewardOutcomeEnum] = []
 
-    match reward["type"]:
-        case CaseDropTypeEnum.EXP.value:
-            user.current_exp += amount
-        case CaseDropTypeEnum.COINS.value:
-            user.coins += amount
-        case CaseDropTypeEnum.BATTLEPASS_POINTS.value:
-            user.battle_pass_points += amount
-        case CaseDropTypeEnum.COLOR.value:
-            color = await get_color_by_id(
-                session, guild_id=user.guild_id, color_id=drop_id
-            )
+    guild_config = None
+    color_cache: dict[int, Color | None] = {}
+    case_cache: dict[int, Case | None] = {}
 
-            if color is None:
-                return RewardOutcomeEnum.REWARD_NOT_FOUND
+    for reward in rewards:
+        drop_id = reward["drop_id"]
+        amount = reward["amount"]
 
-            if user.get_color(color.id) is None:
-                user.colors.append(color)
-            else:
-                guild_config = await get_specified_guild_config(
-                    session,
-                    config_type=GuildEconomyConfig,
-                    guild_id=user.guild_id,
-                )
+        match reward["type"]:
+            case CaseDropTypeEnum.EXP.value:
+                user.current_exp += amount
+            case CaseDropTypeEnum.COINS.value:
+                user.coins += amount
+            case CaseDropTypeEnum.BATTLEPASS_POINTS.value:
+                user.battle_pass_points += amount
+            case CaseDropTypeEnum.COLOR.value:
+                if drop_id not in color_cache:
+                    color_cache[drop_id] = await get_color_by_id(
+                        session, guild_id=user.guild_id, color_id=drop_id
+                    )
+                color = color_cache[drop_id]
 
-                compensation = (
-                    guild_config.color_drop_compensation if guild_config else 0
-                )
+                if color is None:
+                    continue
 
-                user.coins += compensation
+                if user.get_color(color.id) is None:
+                    user.colors.append(color)
+                else:
+                    if guild_config is None:
+                        guild_config = await get_specified_guild_config(
+                            session,
+                            config_type=GuildEconomyConfig,
+                            guild_id=user.guild_id,
+                        )
 
-                reward["type"] = CaseDropTypeEnum.COINS.value
-                reward["amount"] = compensation
+                    compensation = (
+                        guild_config.color_drop_compensation
+                        if guild_config
+                        else 0
+                    )
 
-                return RewardOutcomeEnum.COLOR_WITH_COMPENSATION
+                    user.coins += compensation
+                    states.append(RewardOutcomeEnum.COLOR_WITH_COMPENSATION)
+                    reward["is_color_compensation"] = True
 
-        case CaseDropTypeEnum.CASE.value:
-            case = await get_case_by_id(
-                session, guild_id=user.guild_id, case_id=drop_id
-            )
+            case CaseDropTypeEnum.CASE.value:
+                if drop_id not in case_cache:
+                    case_cache[drop_id] = await get_case_by_id(
+                        session, guild_id=user.guild_id, case_id=drop_id
+                    )
+                case = case_cache[drop_id]
 
-            if case is None:
-                return RewardOutcomeEnum.REWARD_NOT_FOUND
+                if case is None:
+                    continue
 
-            if (user_case := user.get_case(case.id)) is not None:
-                user_case.amount += amount
-            else:
-                new_case = UserCase(
-                    user_id=user.user_id,
-                    case_id=case.id,
-                    amount=amount,
-                    guild_id=user.guild_id,
-                )
-                session.add(new_case)
+                if (user_case := user.get_case(case.id)) is not None:
+                    user_case.amount += amount
+                else:
+                    new_case = UserCase(
+                        user_id=user.user_id,
+                        case_id=case.id,
+                        amount=amount,
+                        guild_id=user.guild_id,
+                    )
+                    session.add(new_case)
 
-        case CaseDropTypeEnum.CUSTOM.value:
-            ...
-        case _:
-            return RewardOutcomeEnum.UNKNOWN_REWARD
+            case CaseDropTypeEnum.CUSTOM.value:
+                continue
+            case _:
+                continue
 
-    return RewardOutcomeEnum.SUCCESS
+    states.append(RewardOutcomeEnum.SUCCESS)
+    return rewards, states
 
 
 async def format_cases_rewards(
@@ -143,38 +158,49 @@ async def format_cases_rewards(
 async def format_single_case_reward(
     session: AsyncSession,
     *,
-    drop: CaseDropAnnot,
+    drops: list[CaseDropAnnot],
     coin_name: str | None,
     guild: Guild,
     is_color_compensation: bool | None = None,
 ):
-    """Resolve and format single case drop (modifies object in-place)."""
+    """Resolve and format multiple/single case drop (modifies object in-place)."""  # noqa: E501
 
-    match drop["type"]:
-        case CaseDropTypeEnum.COINS.value:
-            drop["name"] = coin_name or "коины"
+    color_cache: dict[int, Color | None] = {}
+    case_cache: dict[int, Case | None] = {}
 
-            if is_color_compensation:
-                drop["name"] += " (Компенсация за цвет)"
+    for drop in drops:
+        match drop["type"]:
+            case CaseDropTypeEnum.COINS.value:
+                drop["name"] = coin_name or "коины"
 
-        case CaseDropTypeEnum.CASE.value:
-            reward_case = await get_case_by_id(
-                session, guild_id=guild.id, case_id=drop["drop_id"]
-            )
+            case CaseDropTypeEnum.CASE.value:
+                drop_id = drop["drop_id"]
+                if drop_id not in case_cache:
+                    case_cache[drop_id] = await get_case_by_id(
+                        session, guild_id=guild.id, case_id=drop_id
+                    )
+                reward_case = case_cache[drop_id]
 
-            drop["name"] = reward_case.name if reward_case else "unknown"
-        case CaseDropTypeEnum.COLOR.value:
-            color = await get_color_by_id(
-                session, guild_id=guild.id, color_id=drop["drop_id"]
-            )
+                drop["name"] = reward_case.name if reward_case else "unknown"
+            case CaseDropTypeEnum.COLOR.value:
+                drop_id = drop["drop_id"]
+                if drop_id not in color_cache:
+                    color_cache[drop_id] = await get_color_by_id(
+                        session, guild_id=guild.id, color_id=drop_id
+                    )
+                color = color_cache[drop_id]
 
-            if color is None:
-                drop["name"] = "unknown"
-            else:
-                role = guild.get_role(color.role_id)
-                drop["name"] = role.name if role else "unknown"
-        case _:
-            ...
+                if color is None:
+                    drop["name"] = "unknown"
+                else:
+                    role = guild.get_role(color.role_id)
+                    drop["name"] = role.name if role else "unknown"
+
+                if drop["is_color_compensation"]:
+                    drop["name"] += " (Компенсация за цвет)"
+
+            case _:
+                ...
 
 
 async def format_battlepass_levels_rewards(

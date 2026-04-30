@@ -22,7 +22,6 @@ from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils import user_cases_autocomplete
 from src.nightcore.features.economy.utils.case import (
-    RewardOutcomeEnum,
     format_single_case_reward,
     give_reward_by_type,
 )
@@ -41,13 +40,17 @@ logger = logging.getLogger(__name__)
 
 
 @case_group.command(name="open", description="Открыть кейс")  # type: ignore
-@app_commands.describe(case_id="Кейс для открытия.")
+@app_commands.describe(
+    case_id="Кейс для открытия.",
+    amount="Количество кейсов для открытия (по умолчанию 1).",
+)
 @app_commands.rename(case_id="case")
 @app_commands.autocomplete(case_id=user_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)
 async def open_case(
     interaction: Interaction["Nightcore"],
     case_id: app_commands.Transform[int, StrToIntTransformer],
+    amount: int = 1,
 ):
     """Open case and get reward."""
 
@@ -84,37 +87,37 @@ async def open_case(
                 outcome = "no_case"
             else:
                 opened_case_item = user_case.item
-                reward = user_case.item.open()
-
-                if reward is None:
-                    outcome = "no_case_reward_configured"
+                if amount > 1 and user_case.amount < amount:
+                    outcome = "no_many_cases"
                 else:
-                    user_case.amount -= 1
+                    rewards = opened_case_item.open(amount=amount)
 
-                    result = await give_reward_by_type(
-                        session, reward=reward, user=user
-                    )
+                    if not rewards or all(
+                        reward is None for reward in rewards
+                    ):
+                        outcome = "no_case_reward_configured"
+                    else:
+                        user_case.amount -= amount
 
-                    is_color_compensation = (
-                        result == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
-                    )
+                        result = await give_reward_by_type(
+                            session,
+                            rewards=rewards,  # pyright: ignore[reportArgumentType]
+                            user=user,
+                        )
 
-                    await format_single_case_reward(
-                        session,
-                        drop=reward,
-                        coin_name=guild_config.coin_name,
-                        guild=guild,
-                        is_color_compensation=is_color_compensation,
-                    )
+                        await format_single_case_reward(
+                            session,
+                            drops=result[0],  # pyright: ignore[reportArgumentType]
+                            coin_name=guild_config.coin_name,
+                            guild=guild,
+                        )
 
-                    reward_text = reward["name"]
+                        reward_text = ", ".join(
+                            reward["name"]  # type: ignore
+                            for reward in rewards
+                        )
 
-                    outcome = (
-                        "success"
-                        if result == RewardOutcomeEnum.SUCCESS
-                        or result == RewardOutcomeEnum.COLOR_WITH_COMPENSATION
-                        else "error: " + result.name
-                    )
+                        outcome = "success"
 
     except Exception as e:
         logger.exception(
@@ -151,7 +154,7 @@ async def open_case(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка открытия кейса",
-                f"Произошла ошибка при открытии кейса. {outcome}",
+                "Произошла ошибка при открытии кейса.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -173,29 +176,37 @@ async def open_case(
         view = CaseOpenViewV2(
             bot=bot,
             case_name=opened_case_item.name,
-            reward=reward["name"],  # type: ignore
-            chance=reward["chance"],  # type: ignore
-            amount=reward["amount"],  # type: ignore
             total_weight=sum(drop["chance"] for drop in opened_case_item.drop),  # type: ignore
+            opened_amount=amount,
+            rewards=rewards,  # type: ignore
         )
         await interaction.response.send_message(
             view=view,
             ephemeral=True,
         )
+        aggregated_to_dispatch = {}
+        for r in rewards:  # type: ignore
+            r_name = r["name"]  # type: ignore
+            if r_name not in aggregated_to_dispatch:
+                aggregated_to_dispatch[r_name] = {"amount": 0}
+            aggregated_to_dispatch[r_name]["amount"] += r["amount"]  # type: ignore
 
-        bot.dispatch(
-            "user_items_changed",
-            dto=AwardNotificationEventDTO(
-                guild=guild,
-                event_type="case/open",
-                logging_channel_id=logging_channel_id,
-                user_id=member.id,
-                moderator_id=bot.user.id,  # type: ignore
-                item_name=reward["name"],  # type: ignore
-                amount=reward["amount"],  # type: ignore
-                reason="открытие кейса",
-            ),
-        )
+        for r_name, val in aggregated_to_dispatch.items():  # type: ignore
+            bot.dispatch(
+                "user_items_changed",
+                dto=AwardNotificationEventDTO(
+                    guild=guild,
+                    event_type="case/open",
+                    logging_channel_id=logging_channel_id,
+                    user_id=member.id,
+                    moderator_id=bot.user.id,  # type: ignore
+                    item_name=r_name,  # type: ignore
+                    amount=val["amount"],  # type: ignore
+                    reason=f"открытие кейса (x{amount})"
+                    if amount > 1
+                    else "открытие кейса",
+                ),
+            )
 
     logger.info(
         "[command] - invoked user=%s guild=%s case=%s reward=%s",
