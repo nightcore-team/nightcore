@@ -154,7 +154,7 @@ async def open_case(
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка открытия кейса",
-                f"Произошла ошибка при открытии кейса. {outcome}",
+                "Произошла ошибка при открытии кейса.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),

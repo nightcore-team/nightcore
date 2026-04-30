@@ -36,4 +36,8 @@ class Case(IdIntegerMixin, Base):
             range(len(self.drop)), weights=chances, k=amount
         )
 
-        return [self.drop[i] for i in selected_indices]
+        drops = [self.drop[i] for i in selected_indices]
+        for drop in drops:
+            drop["is_color_compensation"] = None
+
+        return drops  # type: ignore
