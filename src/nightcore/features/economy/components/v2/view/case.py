@@ -50,12 +50,20 @@ class CaseOpenViewV2(LayoutView):
         container.add_item(Separator())
 
         # Aggregate rewards
-        aggregated_rewards: dict[str, dict[str, int]] = {}
+        aggregated_rewards: dict[str, dict[str, int | float]] = {}
+        processed_drop_ids: set[tuple[str, int, int]] = set()
+
         for r in rewards:
-            aggregated_rewards.setdefault(
-                r["name"], {"amount": 0, "chance": r["chance"]}
-            )
-            aggregated_rewards[r["name"]]["amount"] += r["amount"]
+            name = r["name"]
+            if name not in aggregated_rewards:
+                aggregated_rewards[name] = {"amount": 0, "chance": 0.0}
+
+            aggregated_rewards[name]["amount"] += r["amount"]
+
+            drop_key = (name, r["drop_id"], r["type"])
+            if drop_key not in processed_drop_ids:
+                aggregated_rewards[name]["chance"] += r["chance"]
+                processed_drop_ids.add(drop_key)
 
         lines: list[str] = []
         for name, data in aggregated_rewards.items():

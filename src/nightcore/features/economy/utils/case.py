@@ -65,7 +65,7 @@ async def give_reward_by_type(
                 color = color_cache[drop_id]
 
                 if color is None:
-                    return RewardOutcomeEnum.REWARD_NOT_FOUND
+                    continue
 
                 if user.get_color(color.id) is None:
                     user.colors.append(color)
@@ -84,11 +84,8 @@ async def give_reward_by_type(
                     )
 
                     user.coins += compensation
-
-                    reward["type"] = CaseDropTypeEnum.COINS.value
-                    reward["amount"] = compensation
-
-                    return RewardOutcomeEnum.COLOR_WITH_COMPENSATION
+                    reward["is_color_compensation"] = True
+                    reward["compensation_amount"] = compensation
 
             case CaseDropTypeEnum.CASE.value:
                 if drop_id not in case_cache:
@@ -98,7 +95,7 @@ async def give_reward_by_type(
                 case = case_cache[drop_id]
 
                 if case is None:
-                    return RewardOutcomeEnum.REWARD_NOT_FOUND
+                    continue
 
                 if (user_case := user.get_case(case.id)) is not None:
                     user_case.amount += amount
@@ -112,9 +109,9 @@ async def give_reward_by_type(
                     session.add(new_case)
 
             case CaseDropTypeEnum.CUSTOM.value:
-                ...
+                continue
             case _:
-                return RewardOutcomeEnum.UNKNOWN_REWARD
+                continue
 
     return RewardOutcomeEnum.SUCCESS
 
