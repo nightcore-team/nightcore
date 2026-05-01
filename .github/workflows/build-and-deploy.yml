@@ -67,8 +67,8 @@ jobs:
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Stop and remove old container
-            docker stop ${{ secrets.CONTAINER_NAME }} || true
-            docker rm ${{ secrets.CONTAINER_NAME }} || true
+            docker stop ${{ vars.CONTAINER_NAME }} || true
+            docker rm ${{ vars.CONTAINER_NAME }} || true
 
             # Remove old image (optional, to save space)
             docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest || true
