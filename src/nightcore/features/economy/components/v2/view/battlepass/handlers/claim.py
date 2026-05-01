@@ -91,7 +91,7 @@ async def handle_battlepass_claim_reward_button(
 
                     if (
                         RewardOutcomeEnum.COLOR_WITH_COMPENSATION not in result
-                        or RewardOutcomeEnum.SUCCESS not in result
+                        and RewardOutcomeEnum.SUCCESS not in result
                     ):
                         outcome = "error"
 
