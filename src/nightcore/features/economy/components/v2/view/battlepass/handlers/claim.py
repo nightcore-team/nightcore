@@ -85,15 +85,15 @@ async def handle_battlepass_claim_reward_button(
                     reward = current_level_data.reward
                     reward["is_color_compensation"] = None
 
-                    result = await give_reward_by_type(
+                    _, result = await give_reward_by_type(
                         session, rewards=[reward], user=user_record
                     )
 
                     if (
-                        result != RewardOutcomeEnum.SUCCESS
-                        and result != RewardOutcomeEnum.COLOR_WITH_COMPENSATION
+                        RewardOutcomeEnum.COLOR_WITH_COMPENSATION not in result
+                        or RewardOutcomeEnum.SUCCESS not in result
                     ):
-                        outcome = "error: "
+                        outcome = "error"
 
                     if not outcome:
                         overflow_points = (
@@ -177,7 +177,7 @@ async def handle_battlepass_claim_reward_button(
         await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка при получении награды",
-                f"Произошла ошибка при получении награды. {outcome}",
+                "Произошла ошибка при получении награды.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
