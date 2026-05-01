@@ -83,16 +83,17 @@ async def handle_battlepass_claim_reward_button(
                     outcome = "not_enough_points"
                 else:
                     reward = current_level_data.reward
+                    reward["is_color_compensation"] = None
 
                     result = await give_reward_by_type(
-                        session, reward=reward, user=user_record
+                        session, rewards=[reward], user=user_record
                     )
 
                     if (
                         result != RewardOutcomeEnum.SUCCESS
                         and result != RewardOutcomeEnum.COLOR_WITH_COMPENSATION
                     ):
-                        outcome = "error: " + result.name
+                        outcome = "error: "
 
                     if not outcome:
                         overflow_points = (
