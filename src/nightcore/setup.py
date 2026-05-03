@@ -133,9 +133,9 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.tasks.temp_role",
         "src.nightcore.tasks.temp_multiplier",
         # special events / valentine day
-        "src.nightcore.features.special_events.valentine",
+        # "src.nightcore.features.special_events.valentine",
         # special events / valentine day events
-        "src.nightcore.features.special_events.valentine.events.valentine_send",
+        # "src.nightcore.features.special_events.valentine.events.valentine_send",  # noqa: E501
     ]
 
     return Nightcore(

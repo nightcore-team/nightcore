@@ -1,18 +1,15 @@
 """Command to send a vote ban request."""
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from discord import (
-    Guild,
-    User,
-    app_commands,
-)
+from discord import User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
+from sqlalchemy.exc import IntegrityError
 
-from src.config.config import config
-from src.infra.db.models import GuildModerationConfig
+from src.infra.db.models import GuildModerationConfig, VoteBanState
+from src.infra.db.models._enums import VoteBanStateEnum
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -29,10 +26,10 @@ from src.nightcore.features.moderation.utils.transformers import (
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
+    cast_guild,
     compare_top_roles,
     ensure_member_exists,
     ensure_messageable_channel_exists,
-    ensure_role_exists,
     has_any_role_from_sequence,
 )
 from src.nightcore.utils.permissions import (
@@ -53,7 +50,7 @@ class Voteban(Cog):
 
     @app_commands.command(  # type: ignore
         name="voteban",
-        description="Отправить запрос на голосование по бану пользователя",
+        description="Отправить запрос на бан пользователя",
     )
     @app_commands.guild_only()
     @app_commands.describe(
@@ -65,7 +62,7 @@ class Voteban(Cog):
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
     async def voteban(
         self,
-        interaction: Interaction,
+        interaction: Interaction["Nightcore"],
         user: User,
         duration: str,
         reason: app_commands.Transform[
@@ -74,9 +71,7 @@ class Voteban(Cog):
         delete_messages_per: str | None = None,
     ):
         """Vote to ban a user on the server."""
-        guild = cast(Guild, interaction.guild)
-
-        ping_role = None
+        guild = cast_guild(interaction.guild)
 
         async with specified_guild_config(
             self.bot,
@@ -85,7 +80,7 @@ class Voteban(Cog):
         ) as (guild_config, _):
             moderation_access_roles = guild_config.moderation_access_roles_ids
 
-            if not (ban_access_roles := guild_config.ban_access_roles_ids):
+            if not guild_config.ban_access_roles_ids:
                 raise FieldNotConfiguredError("доступ к банам")
 
             if not (
@@ -95,9 +90,6 @@ class Voteban(Cog):
                 raise FieldNotConfiguredError("канал запросов на бан")
 
             ping_role_id = guild_config.ban_request_ping_role_id
-
-        if ping_role_id:
-            ping_role = await ensure_role_exists(guild, ping_role_id)
 
         if guild.me == user:
             return await interaction.response.send_message(
@@ -140,8 +132,8 @@ class Voteban(Cog):
             if not compare_top_roles(guild, member):
                 return await interaction.response.send_message(
                     embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                         "Я не могу забанить этого пользователя, потому что у него роль выше, чем у меня.",  # noqa: E501
                     ),
                     ephemeral=True,
@@ -149,7 +141,7 @@ class Voteban(Cog):
 
         parsed_duration = parse_duration(duration)
 
-        if not parsed_duration:
+        if parsed_duration is None:
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
@@ -173,10 +165,13 @@ class Voteban(Cog):
                     ),
                 )
 
-            if tmp_delete_messages_per > config.bot.DELETE_MESSAGES_SECONDS:
+            if (
+                tmp_delete_messages_per
+                > self.bot.config.bot.DELETE_MESSAGES_SECONDS
+            ):
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
-                        f"Продолжительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
+                        f"Продолжительность удаления сообщений не может превышать {self.bot.config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
                         self.bot.user.name,  # type: ignore
                         self.bot.user.display_avatar.url,  # type: ignore
                     ),
@@ -198,26 +193,45 @@ class Voteban(Cog):
             )
         await interaction.response.defer(thinking=True, ephemeral=True)
 
+        try:
+            async with self.bot.uow.start() as session:
+                votebanstate = VoteBanState(
+                    guild_id=guild.id,
+                    moderator_id=interaction.user.id,
+                    user_id=user.id,
+                    reason=reason,
+                    original_duration=duration,
+                    duration=parsed_duration,
+                    original_delete_messages_per=delete_messages_per,
+                    delete_messages_per=parsed_delete_messages_per_seconds,
+                    state=VoteBanStateEnum.PENDING,
+                )
+
+                session.add(votebanstate)
+                await session.flush()
+
+        except IntegrityError:
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка отправки запроса на блокировку",
+                    "Пользователь уже имеет активный запрос на блокировку.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                )
+            )
+
         view = BanRequestViewV2(
-            author_id=interaction.user.id,
-            reason=reason,
-            target=user,
             bot=self.bot,
-            ping_role=ping_role,
-            original_duration=duration,
-            duration=parsed_duration,
-            original_delete_seconds=delete_messages_per,
-            delete_seconds=parsed_delete_messages_per_seconds,
-            ban_access_roles_ids=ban_access_roles,
-            moderation_access_roles_ids=cast(
-                list[int], moderation_access_roles
-            ),
-        )
+            moderator_id=votebanstate.moderator_id,
+            user=user,
+            reason=votebanstate.reason,
+            original_duration=votebanstate.original_duration,
+            original_delete_messages_per=votebanstate.original_delete_messages_per,
+            ping_role_id=ping_role_id,
+        ).create_component()
 
         try:
-            message = await channel.send(  # type: ignore
-                view=view
-            )
+            message = await channel.send(view=view)  # type: ignore
 
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
@@ -245,7 +259,7 @@ class Voteban(Cog):
             )
 
         logger.info(
-            "[ban_request_submit] - invoked user=%s guild=%s target=%s duration=%s reason=%s delete_messages_for_last=%s",  # noqa: E501
+            "[voteban_submit] - invoked user=%s guild=%s target=%s duration=%s reason=%s delete_messages_for_last=%s",  # noqa: E501
             interaction.user.id,
             channel.guild.id,
             user.id,

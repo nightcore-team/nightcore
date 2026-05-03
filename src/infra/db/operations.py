@@ -41,6 +41,7 @@ from src.infra.db.models import (
     TicketState,
     TransferHistory,
     User,
+    VoteBanState,
 )
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
@@ -629,6 +630,21 @@ async def get_latest_user_role_request(
             RoleRequestState.updated_at.desc().nulls_last(),
         )
         .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def get_voteban_state(
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> VoteBanState | None:
+    """Get latest voteban state for a user and lock row for update."""
+    stmt = (
+        select(VoteBanState)
+        .where(VoteBanState.user_id == user_id)
+        .order_by(VoteBanState.updated_at.desc().nulls_last())
+        .limit(1)
+        .with_for_update()
     )
     res = await session.execute(stmt)
     return res.scalar_one_or_none()

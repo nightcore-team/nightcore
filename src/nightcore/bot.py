@@ -76,6 +76,7 @@ class Nightcore(Bot):
         self.uow = uow
         self.apis = CustomAPICollection()
         self.images_cache = ImageCache()
+        self.config = config
 
         super().__init__(
             command_prefix=".",
