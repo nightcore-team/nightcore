@@ -7,7 +7,7 @@ from typing import Any
 
 import discord
 from aiohttp import TCPConnector
-from discord import app_commands
+from discord import ClientUser, app_commands
 from discord.ext.commands import Bot  # type: ignore
 from nightforo import Client as XenforoClient
 
@@ -64,6 +64,8 @@ class GuildOnlyTree(app_commands.CommandTree):
 
 
 class Nightcore(Bot):
+    user: ClientUser  # type: ignore
+
     def __init__(
         self,
         *,
