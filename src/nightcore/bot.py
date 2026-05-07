@@ -2,7 +2,6 @@
 
 import contextlib
 import logging
-import socket
 from datetime import UTC, datetime
 from typing import Any
 
@@ -103,7 +102,6 @@ class Nightcore(Bot):
             enable_cleanup_closed=True,
             force_close=False,  # Don't close connection after each request  # noqa: E501
             keepalive_timeout=60,  # Keep connection alive for 60 seconds
-            family=socket.AF_INET,
         )
 
     async def _reset_users_voice_activity(self) -> None:

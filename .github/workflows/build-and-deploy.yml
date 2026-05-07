@@ -80,9 +80,8 @@ jobs:
             docker run -d \
               --name ${{ vars.CONTAINER_NAME }} \
               --restart unless-stopped \
+              --dns ${{ secrets.DNS_SERVER }} \
               --network ${{ vars.DOCKER_NETWORK }} \
-              --dns 1.1.1.1 \
-              --dns 8.8.8.8 \
               -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
               -e POSTGRES_URL=${{ secrets.POSTGRES_URL }} \
               -e FORUM_API_URL=${{ secrets.FORUM_API_URL }} \
