@@ -13,7 +13,7 @@ dependencies = [
     "colorlog>=6.10.1",
     "discord-py",
     "discordhealthcheck>=0.1.1",
-    "nightforo>=1.1.5",
+    "nightforo>=1.1.8",
     "pillow>=12.1.0",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",
