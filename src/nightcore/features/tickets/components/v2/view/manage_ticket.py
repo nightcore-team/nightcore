@@ -26,6 +26,8 @@ from discord.ui import (
     button,
 )
 
+from src.nightcore.utils.lock_manager import AsyncioLockTypeEnum
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -126,7 +128,12 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         pinned_tickets_category_id = 0
         logging_channel_id: int | None = None
 
-        async with view.bot.uow.start() as session:
+        async with (
+            view.bot.lock_manager.acquire(
+                AsyncioLockTypeEnum.TicketManageAction, interaction.channel_id
+            ),
+            view.bot.uow.start() as session,
+        ):
             ticket_state = await get_latest_user_ticket(
                 session, guild_id=guild.id, channel_id=channel.id
             )

@@ -35,6 +35,7 @@ from src.nightcore.features.tickets.components.v2 import (
 )
 from src.nightcore.utils import log_tree_summary
 from src.nightcore.utils.image_builder.cache import ImageCache
+from src.nightcore.utils.lock_manager import AsyncioLockManager
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,7 @@ class Nightcore(Bot):
         self.apis = CustomAPICollection()
         self.images_cache = ImageCache()
         self.config = config
+        self.lock_manager = AsyncioLockManager()
 
         super().__init__(
             command_prefix=".",
