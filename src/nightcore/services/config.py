@@ -24,7 +24,7 @@ async def specified_guild_config(
 ):
     """Open a context manager for the guild configuration."""
 
-    async with bot.uow.start(is_config=True) as session:
+    async with bot.uow.start() as session:
         guild_config: GuildT | None = await get_specified_guild_config(
             session,
             config_type=config_type,
