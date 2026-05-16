@@ -7,7 +7,6 @@ from typing import Any
 
 import discord
 import discordhealthcheck  # type: ignore
-from aiohttp import TCPConnector
 from discord import ClientUser, app_commands
 from discord.ext.commands import Bot  # type: ignore
 from nightforo import Client as XenforoClient
@@ -96,16 +95,6 @@ class Nightcore(Bot):
 
         async with self:
             await self.start(config.bot.BOT_TOKEN)
-
-    @property
-    def _http_connector(self) -> TCPConnector:
-        return TCPConnector(
-            limit=100,  # max 100 connections
-            ttl_dns_cache=60,  # Refresh DNS more often on unstable hosts
-            enable_cleanup_closed=True,
-            force_close=False,  # Don't close connection after each request  # noqa: E501
-            keepalive_timeout=60,  # Keep connection alive for 60 seconds
-        )
 
     async def _reset_users_voice_activity(self) -> None:
         """Reset users' voice activity status in the database on startup."""
@@ -235,8 +224,6 @@ class Nightcore(Bot):
         self.healthcheck_server = await discordhealthcheck.start(self)
 
         await self.load_extensions()
-
-        self.http.connector = self._http_connector
 
         commands = self.tree.get_commands()
 
