@@ -54,12 +54,12 @@ class UserSetNameEvent(Cog):
                     time_now=discord.utils.utcnow().astimezone(UTC),
                 )
 
-            logging_channel_id = await get_specified_channel(
-                session,
-                guild_id=data.moderator.guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_MODERATION,
-            )
+                logging_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=data.moderator.guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_MODERATION,
+                )
 
         except Exception as e:
             logger.exception(
