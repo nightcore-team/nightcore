@@ -1,6 +1,7 @@
 """Service for processing forum complaints."""
 
 import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from nightforo import (
@@ -9,6 +10,7 @@ from nightforo import (
 from nightforo import (
     PostCreateParams,
     Thread,
+    ThreadsGetParams,
     ThreadUpdateParams,
 )
 
@@ -36,53 +38,51 @@ class ForumComplaintProcessor:
         self.bot = bot
         self._api = forum_api
 
-    async def process_server(self, server: GuildForumConfig) -> None:
+    async def process_servers(
+        self, servers: Sequence[GuildForumConfig]
+    ) -> None:
         """Process complaints for a given server."""
         logger.info(
-            "[forum] Starting complaint processing for section_id=%s, guild_id=%s, channel_id=%s",  # noqa: E501
-            server.section_id,
-            server.guild_id,
-            server.channel_id,
+            "[forum] Starting complaint processing",
         )
         try:
-            threads_resp = await self._api.get_threads()
+            threads_resp = await self._api.get_threads(
+                ThreadsGetParams(prefix_id=0)
+            )
             logger.info(
-                "[forum] Fetched %s total threads from API for section_id=%s",
+                "[forum] Fetched %s total threads from API",
                 len(threads_resp.threads),
-                server.section_id,
             )
         except Exception as e:
             logger.exception(
-                "[forum] Failed to fetch threads for section %s: %s",
-                server.section_id,
+                "[forum] Failed to fetch threads: %s",
                 e,
             )
             return
 
-        threads = self._filter_threads(threads_resp.threads, server.section_id)
+        filtered_threads = self._filter_threads(threads_resp.threads, servers)
         logger.info(
-            "[forum] After filtering: %s complaint threads to process (section_id=%s, prefix_id=0, sticky=0)",  # noqa: E501
-            len(threads),
-            server.section_id,
+            "[forum] After filtering: %s complaint threads to process (prefix_id=0, sticky=0)",  # noqa: E501
+            len(filtered_threads),
         )
 
-        if not threads:
+        if not filtered_threads:
             logger.info(
-                "[forum] No new complaint threads found in section %s",
-                server.section_id,
+                "[forum] No new complaint threads found",
             )
             return
 
-        for thread in threads:
-            async with self.bot.uow.start() as session:
-                processed_thread = await get_or_create_processed_thread(
-                    session, thread_id=thread.thread_id
-                )
+        for config, threads in filtered_threads.items():
+            for thread in threads:
+                async with self.bot.uow.start() as session:
+                    processed_thread = await get_or_create_processed_thread(
+                        session, thread_id=thread.thread_id
+                    )
 
-            if processed_thread is not None:
-                continue
+                if processed_thread is not None:
+                    continue
 
-            await self._process_single_thread(server, thread)
+                await self._process_single_thread(config, thread)
 
     async def _process_single_thread(
         self, server: GuildForumConfig, thread: Thread
@@ -228,10 +228,17 @@ class ForumComplaintProcessor:
 
     @staticmethod
     def _filter_threads(
-        threads: list[Thread], section_id: int
-    ) -> list[Thread]:
-        return [
-            t
-            for t in threads
-            if t.node_id == section_id and t.prefix_id == 0 and t.sticky == 0
-        ]
+        threads: list[Thread], servers: Sequence[GuildForumConfig]
+    ) -> dict[GuildForumConfig, list[Thread]]:
+        result: dict[GuildForumConfig, list[Thread]] = {}
+
+        for config in servers:
+            result[config] = [
+                t
+                for t in threads
+                if t.node_id == config.section_id
+                and t.prefix_id == 0
+                and t.sticky == 0
+            ]
+
+        return result

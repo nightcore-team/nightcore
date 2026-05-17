@@ -44,11 +44,7 @@ class CheckForumTask(Cog):
             async with self.bot.uow.start() as session:
                 guilds = await get_forum_guilds(session)
 
-            for guild in guilds:
-                logger.info(
-                    "[task] - Processing forum server: %s", guild.guild_id
-                )
-                await self.service.process_server(guild)
+            await self.service.process_servers(guilds)
 
         except Exception as e:
             logger.exception(
