@@ -51,6 +51,7 @@ def create_bot(uow: UnitOfWork) -> Nightcore:
         "src.nightcore.features.moderation.commands.rrban",
         "src.nightcore.features.moderation.commands.unrrban",
         "src.nightcore.features.moderation.commands.notify",
+        "src.nightcore.features.moderation.commands.inactive",
         # moderation events
         "src.nightcore.features.moderation.events.kick",
         "src.nightcore.features.moderation.events.roles_change",
