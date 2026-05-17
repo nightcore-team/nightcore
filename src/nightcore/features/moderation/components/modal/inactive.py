@@ -53,7 +53,7 @@ class InactiveFormModal(Modal, title="Отправить заявку на не�
 
         date_range = self.date_range.value
         reason = self.reason.value
-        dm_notified = bool(self.dm_notified.component.value)  # type: ignore
+        dm_notified = bool(self.dm_notified.component.values[0])  # type: ignore
 
         message = f"""
             1. Ник: {nickname}
