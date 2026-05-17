@@ -31,6 +31,9 @@ from src.nightcore.features.faq.components.v2.view.handlers import (
 from src.nightcore.features.meta.components.v2.view.handlers.roleselector import (  # noqa: E501
     handle_role_selector_select,
 )
+from src.nightcore.features.moderation.components.v2.view.handlers import (
+    handle_voteban_button_callback,
+)
 from src.nightcore.features.role_requests.components.v2 import (
     SendRoleRequestView,
 )
@@ -86,8 +89,14 @@ async def setup(bot: "Nightcore") -> None:
                         interaction=interaction,
                         view=SendRoleRequestView,
                     )
+
                 case str() if custom_id.startswith("role_selector:"):
                     await handle_role_selector_select(interaction=interaction)
+
+                case str() if custom_id.startswith("voteban:"):
+                    await handle_voteban_button_callback(
+                        interaction=interaction, custom_id=custom_id
+                    )
 
                 case str() if custom_id.startswith("casino:"):
                     match custom_id:

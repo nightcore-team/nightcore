@@ -66,6 +66,12 @@ class NotifyStateEnum(Enum):
     TIMED_OUT = "timed_out"
 
 
+class VoteBanStateEnum(Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"
+
+
 class ClanMemberRoleEnum(Enum):
     LEADER = "leader"
     DEPUTY = "deputy"

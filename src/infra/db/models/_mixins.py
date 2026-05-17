@@ -12,5 +12,14 @@ class CreatedAtMixin:
     )
 
 
+class UpdatedAtMixin:
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.now,
+        onupdate=datetime.now,
+    )
+
+
 class IdIntegerMixin:
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

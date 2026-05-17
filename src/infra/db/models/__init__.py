@@ -31,6 +31,7 @@ from .temprole import Base, TempRole  # noqa: F811
 from .ticket import Base, TicketState  # noqa: F811
 from .transfer_history import Base, TransferHistory  # noqa: F811
 from .user import Base, User  # noqa: F811
+from .voteban import Base, VoteBanState  # noqa: F811
 
 __all__ = (
     "Base",
@@ -66,4 +67,5 @@ __all__ = (
     "TicketState",
     "TransferHistory",
     "User",
+    "VoteBanState",
 )

@@ -28,6 +28,8 @@ from src.nightcore.features.moderation.utils.transformers import (
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
+    cast_guild,
+    cast_member,
     compare_top_roles,
     ensure_member_exists,
     ensure_messageable_channel_exists,
@@ -281,24 +283,26 @@ async def _ban_request_callback(
     interaction: Interaction["Nightcore"], user: discord.Member
 ):
     """Callback for the ban request context menu."""
-    guild = cast(Guild, interaction.guild)
-    client = interaction.client
-    # Ensure we have a guild Member object
+    guild = cast_guild(interaction.guild)
+
+    bot = interaction.client
+
     member = await ensure_member_exists(guild, user.id)
+    moderator = cast_member(interaction.user)
 
     if member is None:
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки запроса на бан",
                 "Пользователь не найден на сервере.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
 
     async with specified_guild_config(
-        client,
+        bot,
         guild.id,
         GuildModerationConfig,
     ) as (guild_config, _):
@@ -312,10 +316,10 @@ async def _ban_request_callback(
         ):
             raise FieldNotConfiguredError("канал запросов на бан")
 
-        if not (ban_access_roles := guild_config.ban_access_roles_ids):
+        if not guild_config.ban_access_roles_ids:
             raise FieldNotConfiguredError("доступ к бану")
 
-        ban_request_ping_role_id = guild_config.ban_request_ping_role_id
+        ping_role_id = guild_config.ban_request_ping_role_id
 
     has_moder_role = any(
         interaction.user.get_role(role_id)  # type: ignore
@@ -324,8 +328,8 @@ async def _ban_request_callback(
     if not has_moder_role:
         return await interaction.response.send_message(
             embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -337,8 +341,8 @@ async def _ban_request_callback(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Вы не можете забанить модераторов.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -347,8 +351,8 @@ async def _ban_request_callback(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Вы не можете забанить администраторов.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -356,8 +360,8 @@ async def _ban_request_callback(
     if not guild.me.guild_permissions.ban_members:
         return await interaction.response.send_message(
             embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
                 "У меня нет прав на бан участников.",
             ),
             ephemeral=True,
@@ -367,8 +371,8 @@ async def _ban_request_callback(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Вы не можете забанить меня.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -376,21 +380,12 @@ async def _ban_request_callback(
     if not compare_top_roles(guild, member):
         return await interaction.response.send_message(
             embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
                 "Я не могу забанить этого пользователя, потому что у него роль выше моей.",  # noqa: E501
             ),
             ephemeral=True,
         )
-
-    role = None
-    if ban_request_ping_role_id:
-        role = guild.get_role(ban_request_ping_role_id)
-        if role is None:
-            try:
-                role = await guild.fetch_role(ban_request_ping_role_id)
-            except discord.NotFound:
-                role = None
 
     channel = await ensure_messageable_channel_exists(
         guild, ban_request_channel_id
@@ -400,19 +395,16 @@ async def _ban_request_callback(
             embed=ErrorEmbed(
                 "Ошибка отправки запроса на бан",
                 "Канал для отправки запросов на бан не найден.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                bot.user.name,
+                bot.user.display_avatar.url,
             )
         )
 
     modal = BanFormModal(
-        target=user,
-        moderator=interaction.user,  # type: ignore
-        bot=client,
-        ping_role=role,
-        channel=channel,  # type: ignore
-        ban_access_roles_ids=ban_access_roles,
-        moderation_access_roles_ids=moderation_access_roles,
+        user=member,
+        moderator=moderator,
+        voteban_channel=channel,  # type: ignore
+        ping_role_id=ping_role_id,
     )
 
     await interaction.response.send_modal(modal)

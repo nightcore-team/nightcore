@@ -1,4 +1,6 @@
 from .object import (
+    cast_guild,
+    cast_member,
     channel_type,
     compare_top_roles,
     ensure_channel_is_messageable,
@@ -18,6 +20,8 @@ from .on_ready_log import log_tree_summary
 from .time_utils import discord_ts, format_voice_time
 
 __all__ = (
+    "cast_guild",
+    "cast_member",
     "channel_type",
     "compare_top_roles",
     "discord_ts",

@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from discord import (
     CategoryChannel,
@@ -336,3 +336,15 @@ def compare_top_roles(guild: Guild, entity: User | Member | Role) -> bool:
         role_position = entity.position
 
         return bot_top_role > role_position
+
+
+def cast_guild(value: Guild | None) -> Guild:
+    """Cast a Guild object, ensuring it's not None."""
+
+    return cast(Guild, value)
+
+
+def cast_member(value: Member | User | None) -> Member:
+    """Cast a Member object, ensuring it's not None."""
+
+    return cast(Member, value)
