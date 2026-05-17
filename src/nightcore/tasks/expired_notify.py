@@ -55,7 +55,7 @@ class ExpiredNotifyTask(Cog):
             logger.info("[task] - Running expired notify task")
             async with self.bot.uow.start() as session:
                 pending_notifications = await get_all_pending_notifications(
-                    session
+                    session, now=datetime.now(UTC)
                 )
 
             if not pending_notifications:
@@ -63,9 +63,6 @@ class ExpiredNotifyTask(Cog):
                 return
 
             for notify in pending_notifications:
-                if not notify.end_time < datetime.now(UTC):
-                    continue
-
                 guild = await ensure_guild_exists(self.bot, notify.guild_id)
                 if guild is None:
                     logger.info(

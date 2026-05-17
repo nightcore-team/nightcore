@@ -161,10 +161,12 @@ async def get_moderation_access_roles(
 
 async def get_all_pending_notifications(
     session: AsyncSession,
+    now: datetime,
 ) -> Sequence[NotifyState]:
     """Get all pending notifications."""
     stmt = select(NotifyState).where(
-        NotifyState.state == NotifyStateEnum.PENDING
+        NotifyState.state == NotifyStateEnum.PENDING,
+        NotifyState.end_time < now,
     )
     result = await session.scalars(stmt)
     return result.all()
