@@ -1327,11 +1327,10 @@ async def get_user_casino_bet_by_game_id(
 
 
 async def get_active_casino_games(
-    session: AsyncSession, *, guild_id: int, dt: datetime
+    session: AsyncSession, *, dt: datetime
 ) -> Sequence[CasinoGame]:
     """Get all active casino games for a guild."""
     stmt = select(CasinoGame).where(
-        CasinoGame.guild_id == guild_id,
         CasinoGame.state == CasinoGameStateEnum.PENDING,
         CasinoGame.end_time <= dt,
     )
