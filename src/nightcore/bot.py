@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import discord
+import discordhealthcheck  # type: ignore
 from aiohttp import TCPConnector
 from discord import ClientUser, app_commands
 from discord.ext.commands import Bot  # type: ignore
@@ -76,6 +77,7 @@ class Nightcore(Bot):
         self.uow = uow
         self.apis = CustomAPICollection()
         self.images_cache = ImageCache()
+        self.config = config
 
         super().__init__(
             command_prefix=".",
@@ -97,7 +99,7 @@ class Nightcore(Bot):
     def _http_connector(self) -> TCPConnector:
         return TCPConnector(
             limit=100,  # max 100 connections
-            ttl_dns_cache=300,  # Cache DNS for 5 minutes
+            ttl_dns_cache=60,  # Refresh DNS more often on unstable hosts
             enable_cleanup_closed=True,
             force_close=False,  # Don't close connection after each request  # noqa: E501
             keepalive_timeout=60,  # Keep connection alive for 60 seconds
@@ -226,6 +228,9 @@ class Nightcore(Bot):
     async def setup_hook(self):
         """Setup hook called when the bot is ready to start."""
         logger.info("[setup] Setup hook started...")
+
+        logger.info("[healthcheck] Running discord health check...")
+        self.healthcheck_server = await discordhealthcheck.start(self)
 
         await self.load_extensions()
 
