@@ -44,7 +44,7 @@ class InactiveFormModal(Modal, title="Отправить заявку на не�
         ),
     )
 
-    async def submit(self, interaction: Interaction["Nightcore"]):
+    async def on_submit(self, interaction: Interaction["Nightcore"]):  # type: ignore
         """Handle the submission of the inactive form."""
 
         bot = interaction.client
