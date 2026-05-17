@@ -126,7 +126,7 @@ async def add_case_reward(
                         amount=amount,
                         chance=weight,
                         name=reward_type.to_str(),
-                    )
+                    )  # type: ignore
 
                     match reward_type:
                         case CaseDropTypeEnum.CASE:

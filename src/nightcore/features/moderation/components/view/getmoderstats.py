@@ -1,9 +1,9 @@
 """View for paginating infractions."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self
 
-from discord import ButtonStyle, ClientUser
+from discord import ButtonStyle
 from discord.colour import Color
 from discord.embeds import Embed
 from discord.interactions import Interaction
@@ -65,7 +65,7 @@ class GetModerationStatsView(View):
                 self._embed.add_field(name=f"<@{k}>", value=v, inline=True)
         self._embed.set_footer(
             text=f"Page {self.current_page + 1} / {len(self.pages)}",
-            icon_url=cast(ClientUser, self.bot.user).display_avatar.url,
+            icon_url=self.bot.user.display_avatar.url,
         )
         return self._embed
 
