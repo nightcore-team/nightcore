@@ -221,3 +221,9 @@ class CasinoGameStateEnum(Enum):
 class CasinoBetResultTypeEnum(Enum):
     WIN = "win"
     LOSE = "lose"
+
+
+class InactiveRequestStateEnum(Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"

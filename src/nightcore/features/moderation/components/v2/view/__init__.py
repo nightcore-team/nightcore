@@ -1,4 +1,5 @@
 from .ban_request import BanRequestViewV2
+from .inactive import InactiveRequestViewV2
 from .infractions import InfractionsViewV2
 from .notify import NotifyTimedOutViewV2, NotifyViewV2, PrepareNotifyViewV2
 from .punish import PunishViewV2

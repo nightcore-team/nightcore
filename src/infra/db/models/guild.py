@@ -299,6 +299,9 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
     leader_access_rr_roles_ids: Mapped[list[int]] = mapped_column(
         ARRAY(BigInteger), nullable=False, default=list
     )  #
+    inactive_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
     # embed_config_access_roles: Mapped[list[int] | None] = mapped_column(
     #     ARRAY(BigInteger), nullable=True
     # )
@@ -381,6 +384,9 @@ class GuildForumConfig(IdIntegerMixin, Base):
         BigInteger, nullable=False, unique=True
     )
     section_id: Mapped[int] = mapped_column(
+        Integer, nullable=False, unique=True
+    )
+    prefix_id: Mapped[int] = mapped_column(
         Integer, nullable=False, unique=True
     )
     channel_id: Mapped[int] = mapped_column(

@@ -1392,3 +1392,17 @@ async def get_forum_guilds(
     result = await session.execute(stmt)
 
     return result.scalars().all()
+
+
+async def get_guild_forum_config(
+    session: AsyncSession, *, guild_id: int
+) -> GuildForumConfig | None:
+    """Get the forum configuration for a guild."""
+
+    stmt = select(GuildForumConfig).where(
+        GuildForumConfig.guild_id == guild_id
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
