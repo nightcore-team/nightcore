@@ -88,17 +88,17 @@ class InactiveRequestViewV2(LayoutView):
         container.add_item(Separator())
 
         now = datetime.now(UTC)
-        footer_text = f"-# Статус: {status}"
-        if ping_role_id:
-            footer_text = f"{footer_text} | <@&{ping_role_id}>"
-
-        container.add_item(TextDisplay(footer_text))
         if user_answer_id and answer:
             container.add_item(
                 TextDisplay(
                     f"### Решение от <@{user_answer_id}> ({discord_ts(now)}):\n```{answer}```"  # noqa: E501
                 )
             )
+            container.add_item(Separator())
+
+        footer_text = f"-# Статус: {status}"
+        if ping_role_id:
+            footer_text = f"{footer_text} | <@&{ping_role_id}>"
 
         container.add_item(TextDisplay(footer_text))
 
