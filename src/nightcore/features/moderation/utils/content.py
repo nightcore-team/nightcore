@@ -18,7 +18,7 @@ def parse_inactive_text_from_components(
             if item.id == 5:  # type: ignore
                 content = cast(str | None, item.content)  # type: ignore
                 if content:
-                    return content
+                    return content.replace("```", "").strip()
 
     return None
 
