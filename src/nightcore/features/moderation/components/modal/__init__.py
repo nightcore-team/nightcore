@@ -1,4 +1,4 @@
 from .ban_request import BanFormModal
-from .inactive import InactiveFormModal
+from .inactive import InactiveFormModal, InactiveRejectModal
 
-__all__ = ("BanFormModal", "InactiveFormModal")
+__all__ = ("BanFormModal", "InactiveFormModal", "InactiveRejectModal")

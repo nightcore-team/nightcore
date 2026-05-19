@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
     unban_access_roles="Роли, которые могут получать доступ к разбану.",
     ban_request_ping_role="Роль, которую нужно пинговать, когда создается запрос на бан.",  # noqa: E501
     ban_request_channel="Канал, в котором создаются запросы на бан.",
+    inactive_channel="Канал, в котором модераторы могут отправлять запросы на неактив.",  # noqa: E501
     mute_type="Тип мута, который нужно применить: Timeout | Role",
     mute_role="Роль, которую нужно назначить, когда пользователь замьючен.",
     mpmute_role="Роль, которую нужно назначить, когда пользователь замьючен в торговой площадке.",  # noqa: E501
@@ -62,24 +63,26 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.MODERATION_CONFIG_ACCESS)
 async def setup_moderation(
     interaction: Interaction,
-    moderation_access_roles: str | None = None,  #
-    leadership_access_roles: str | None = None,  #
-    ban_access_roles: str | None = None,  #
+    moderation_access_roles: str | None = None,
+    leadership_access_roles: str | None = None,
+    ban_access_roles: str | None = None,
     unban_access_roles: str | None = None,
-    ban_request_ping_role: discord.Role | None = None,  #
-    ban_request_channel: discord.TextChannel | None = None,  #
-    mute_type: Literal["timeout", "role"] | None = None,  #
-    mute_role: discord.Role | None = None,  #
-    mpmute_role: discord.Role | None = None,  #
-    vmute_role: discord.Role | None = None,  #
-    leaders_access_rr_roles: str | None = None,  #
-    fraction_roles_access: str | None = None,  #
+    ban_request_ping_role: discord.Role | None = None,
+    ban_request_channel: discord.TextChannel | None = None,
+    inactive_channel: discord.TextChannel | None = None,
+    mute_type: Literal["timeout", "role"] | None = None,
+    mute_role: discord.Role | None = None,
+    mpmute_role: discord.Role | None = None,
+    vmute_role: discord.Role | None = None,
+    leaders_access_rr_roles: str | None = None,
+    fraction_roles_access: str | None = None,
 ):
     """Configure moderation settings."""
 
     specs: list[FieldSpec | None] = [
         int_id_value("ban_request_ping_role_id", ban_request_ping_role),
         int_id_value("send_ban_request_channel_id", ban_request_channel),
+        int_id_value("inactive_channel_id", inactive_channel),
         int_id_value("mute_role_id", mute_role),
         int_id_value("mpmute_role_id", mpmute_role),
         int_id_value("vmute_role_id", vmute_role),

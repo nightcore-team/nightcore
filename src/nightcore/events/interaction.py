@@ -17,7 +17,7 @@ from src.nightcore.features.economy.components.v2.view.battlepass.handlers.info 
 from src.nightcore.features.economy.components.v2.view.battlepass.info import (
     BattlepassInfoViewV2,
 )
-from src.nightcore.features.economy.components.v2.view.handlers.roulette import (  # noqa: E501
+from src.nightcore.features.economy.components.v2.view.roulette.handlers.roulette import (  # noqa: E501
     handle_roulette_multiplayer_join_button_callback,
 )
 from src.nightcore.features.faq.components.v2.view.faq import (
@@ -30,6 +30,12 @@ from src.nightcore.features.faq.components.v2.view.handlers import (
 )
 from src.nightcore.features.meta.components.v2.view.handlers.roleselector import (  # noqa: E501
     handle_role_selector_select,
+)
+from src.nightcore.features.moderation.components.modal.handlers import (
+    handle_inactive_reject_modal_submit,
+)
+from src.nightcore.features.moderation.components.v2.view.handlers import (
+    handle_inactive_request_button_callback,
 )
 from src.nightcore.features.role_requests.components.v2 import (
     SendRoleRequestView,
@@ -97,6 +103,16 @@ async def setup(bot: "Nightcore") -> None:
                             )
                         case _:
                             ...
+
+                case str() if custom_id.startswith("inactive:"):
+                    await handle_inactive_request_button_callback(
+                        interaction=interaction, custom_id=custom_id
+                    )
+
+                case str() if custom_id.startswith("inactive_modal:"):
+                    await handle_inactive_reject_modal_submit(
+                        interaction=interaction
+                    )
 
                 case _:  # type: ignore
                     logger.info(

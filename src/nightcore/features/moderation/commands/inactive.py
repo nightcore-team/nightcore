@@ -27,6 +27,7 @@ class Inactive(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @app_commands.checks.cooldown(1, 3600 * 24, key=lambda i: i.user.id)
     async def inactive(self, interaction: Interaction["Nightcore"]):
         """Send an inactive request."""
         guild = cast(Guild, interaction.guild)
