@@ -15,8 +15,9 @@ from discord.ui import (
     TextDisplay,
 )
 
+from src.infra.db.models._enums import InactiveRequestStateEnum
+
 if TYPE_CHECKING:
-    from src.infra.db.models._enums import InactiveRequestStateEnum
     from src.nightcore.bot import Nightcore
 
 
@@ -31,7 +32,7 @@ class InactiveRequestViewV2(LayoutView):
         bot: "Nightcore",
         author_id: int,
         message: str,
-        state: "InactiveRequestStateEnum",
+        state: InactiveRequestStateEnum,
         ping_role_id: int | None = None,
         user_answer_id: int | None = None,
         answer: str | None = None,
