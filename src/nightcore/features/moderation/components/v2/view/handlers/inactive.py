@@ -167,6 +167,7 @@ async def handle_inactive_request_approve_button(
             ),
             ephemeral=True,
         )
+    logger.info("FFFFFFFFFFFFFFFFF NICKNAME: %s", nickname)
 
     try:
         async with bot.uow.start() as session:
