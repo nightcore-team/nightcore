@@ -4,6 +4,7 @@ import logging
 import re
 from typing import cast
 
+import regex
 from discord import Component
 
 logger = logging.getLogger(__name__)
@@ -75,3 +76,9 @@ def parse_nickname_from_components(components: list[Component]) -> str | None:  
         return match.group(1).strip()
 
     return None
+
+
+def remove_emoji_from_text(text: str) -> str:
+    """Removes custom emojis from the text."""
+
+    return regex.sub(r"\p{Emoji}", "", text)

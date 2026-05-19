@@ -20,6 +20,7 @@ from src.nightcore.features.moderation.utils.content import (
     parse_author_id_from_components,
     parse_inactive_text_from_components,
     parse_nickname_from_components,
+    remove_emoji_from_text,
 )
 from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.utils.object import cast_guild, cast_message
@@ -167,7 +168,7 @@ async def handle_inactive_request_approve_button(
             ),
             ephemeral=True,
         )
-    logger.info("FFFFFFFFFFFFFFFFF NICKNAME: %s", nickname)
+    nickname = remove_emoji_from_text(nickname)
 
     try:
         async with bot.uow.start() as session:
