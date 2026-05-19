@@ -7,7 +7,11 @@ from discord.interactions import Interaction
 from nightforo.types.thread.params import ThreadCreateParams
 
 from src.infra.db.models._enums import InactiveRequestStateEnum
-from src.infra.db.operations import get_guild_forum_config
+from src.infra.db.models.guild import GuildModerationConfig
+from src.infra.db.operations import (
+    get_guild_forum_config,
+    get_specified_guild_config,
+)
 from src.nightcore.exceptions import (
     ConfigMissingError,
     FieldNotConfiguredError,
@@ -17,6 +21,7 @@ from src.nightcore.features.moderation.utils.content import (
     parse_inactive_text_from_components,
     parse_nickname_from_components,
 )
+from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.utils.object import cast_guild, cast_message
 
 if TYPE_CHECKING:
@@ -37,7 +42,61 @@ async def handle_inactive_request_button_callback(
 ):
     """Handle inactive request button callback."""
 
-    _, _, action = custom_id.split(":")
+    bot = interaction.client
+    guild = cast_guild(interaction.guild)
+    _, author_id, action = custom_id.split(":")
+
+    try:
+        author_id = int(author_id)
+    except ValueError:
+        logger.error(
+            "[inactive] Invalid author ID in custom_id: %s", custom_id
+        )
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка обработки запроса на неактив",
+                "Некорректный идентификатор автора в данных кнопки.",
+                interaction.client.user.name,
+                interaction.client.user.display_avatar.url,
+            ),
+            ephemeral=True,
+        )
+
+    async with bot.uow.start() as session:
+        guild_config = await get_specified_guild_config(
+            session, config_type=GuildModerationConfig, guild_id=guild.id
+        )
+
+    if guild_config is None:
+        logger.error(
+            "[inactive] Guild moderation config not found for guild_id=%s",
+            guild.id,
+        )
+        raise ConfigMissingError(guild.id)
+
+    if interaction.user.id == author_id:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка обработки запроса на неактив",
+                "Вы не можете одобрить или отклонить свой собственный запрос.",
+                bot.user.name,
+                bot.user.display_avatar.url,
+            ),
+            ephemeral=True,
+        )
+
+    if not has_any_role_from_sequence(
+        interaction.user, guild_config.leadership_access_roles_ids
+    ):
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка обработки запроса на неактив",
+                "У вас нет прав для одобрения или отклонения этого запроса.",
+                bot.user.name,
+                bot.user.display_avatar.url,
+            ),
+            ephemeral=True,
+        )
 
     match action:
         case "approve":
