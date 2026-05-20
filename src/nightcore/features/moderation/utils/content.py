@@ -81,4 +81,4 @@ def parse_nickname_from_components(components: list[Component]) -> str | None:  
 def remove_emoji_from_text(text: str) -> str:
     """Removes custom emojis from the text."""
 
-    return regex.sub(r"\p{Emoji}", "", text)
+    return regex.sub(r"\p{Emoji}", "", text).strip()
