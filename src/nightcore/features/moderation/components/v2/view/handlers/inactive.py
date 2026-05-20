@@ -168,6 +168,7 @@ async def handle_inactive_request_approve_button(
             ),
             ephemeral=True,
         )
+
     nickname = remove_emoji_from_text(nickname)
 
     try:
@@ -227,7 +228,7 @@ async def handle_inactive_request_approve_button(
         result = await bot.apis.forum.create_thread(
             params=ThreadCreateParams(
                 node_id=bot.config.bot.INACTIVE_FORUM_NODE_ID,
-                title="",
+                title=nickname,
                 message=inactive_message,
                 prefix_id=forum_config.prefix_id,
             )
