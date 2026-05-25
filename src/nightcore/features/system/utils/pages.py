@@ -10,6 +10,52 @@ if TYPE_CHECKING:
     from src.infra.db.operations import GuildT
 
 
+def _format_config_value(field_name: str, value: object) -> str:
+    """Format config values while preserving structure and pinging IDs."""
+
+    if value is None:
+        return "Не установлено"
+
+    if isinstance(value, dict):
+        if not value:
+            return "Не установлено"
+
+        return ", ".join(
+            f"{key}: {_format_config_value(field_name, item)}"  # type: ignore
+            for key, item in value.items()  # type: ignore
+        )
+
+    if isinstance(value, list):
+        if not value:
+            return "Не установлено"
+
+        return ", ".join(
+            _format_config_value(field_name, item)  # type: ignore
+            for item in value  # type: ignore
+        )
+
+    if isinstance(value, bool):
+        return str(value)
+
+    if isinstance(value, int):
+        if field_name.endswith(
+            ("_channel_id", "_channel_ids", "_category_id", "_category_ids")
+        ):
+            return f"<#{value}>"
+
+        if (
+            field_name.endswith(("_role_id", "_roles_ids"))
+            or "role" in field_name
+        ):
+            return f"<@&{value}>"
+
+    text = str(value)
+    if not text:
+        return "Не установлено"
+
+    return text
+
+
 def build_guild_config_pages(
     config: GuildT,
     is_v2: bool = False,
@@ -42,25 +88,11 @@ def build_guild_config_pages(
 
         field_value = getattr(config, field_name)
 
-        if isinstance(field_value, dict):
-            field_value = ", ".join(
-                f"{k}: {v}"
-                for k, v in field_value.items()  # type: ignore
-            )
+        line = f"**{field_name}**: {_format_config_value(field_name, field_value)}\n"  # noqa: E501
 
-        if isinstance(field_value, list):
-            field_value = ", ".join(str(item) for item in field_value)  # type: ignore
-
-        if field_value is None:
-            field_value = "Не установлено"
-
-        if not field_value:
-            field_value = "Не установлено"
-
-        line = f"**{field_name}**: {field_value}\n"
-
-        if (len(current) + len(line) >= limit) or (
-            fields_in_current_page >= fields_per_page
+        if current and (
+            (len(current) + len(line) >= limit)
+            or (fields_in_current_page >= fields_per_page)
         ):
             pages.append(current)
             current = ""
