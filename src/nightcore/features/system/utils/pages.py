@@ -21,7 +21,7 @@ def _format_config_value(field_name: str, value: object) -> str:
             return "Не установлено"
 
         return ", ".join(
-            f"{key}: {_format_config_value(field_name, item)}"  # type: ignore
+            f"{_format_config_value(field_name, key)}: {_format_config_value(field_name, item)}"  # type: ignore  # noqa: E501
             for key, item in value.items()  # type: ignore
         )
 
