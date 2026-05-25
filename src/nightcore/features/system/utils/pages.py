@@ -10,32 +10,17 @@ if TYPE_CHECKING:
     from src.infra.db.operations import GuildT
 
 
-def _format_config_value(field_name: str, value: object) -> str:
-    """Format config values while preserving structure and pinging IDs."""
+def _format_config_scalar(field_name: str, value: object) -> str:
+    """Format a scalar config value while pinging known Discord IDs."""
 
     if value is None:
         return "Не установлено"
 
-    if isinstance(value, dict):
-        if not value:
-            return "Не установлено"
-
-        return ", ".join(
-            f"{_format_config_value(field_name, key)}: {_format_config_value(field_name, item)}"  # type: ignore  # noqa: E501
-            for key, item in value.items()  # type: ignore
-        )
-
-    if isinstance(value, list):
-        if not value:
-            return "Не установлено"
-
-        return ", ".join(
-            _format_config_value(field_name, item)  # type: ignore
-            for item in value  # type: ignore
-        )
-
     if isinstance(value, bool):
         return str(value)
+
+    if isinstance(value, str) and value.isdigit():
+        value = int(value)
 
     if isinstance(value, int):
         if field_name.endswith(
@@ -54,6 +39,41 @@ def _format_config_value(field_name: str, value: object) -> str:
         return "Не установлено"
 
     return text
+
+
+def _format_config_value(
+    field_name: str,
+    value: object,
+    *,
+    is_key: bool = False,
+) -> str:
+    """Format config values while preserving structure and pinging IDs."""
+
+    if value is None:
+        return "Не установлено"
+
+    if isinstance(value, dict):
+        if not value:
+            return "Не установлено"
+
+        return ", ".join(
+            f"{_format_config_value(field_name, key, is_key=True)}: {_format_config_value(field_name, item)}"  # type: ignore  # noqa: E501
+            for key, item in value.items()  # type: ignore
+        )
+
+    if isinstance(value, list):
+        if not value:
+            return "Не установлено"
+
+        return ", ".join(
+            _format_config_value(field_name, item)  # type: ignore
+            for item in value  # type: ignore
+        )
+
+    if is_key and isinstance(value, str) and value.isdigit():
+        value = int(value)
+
+    return _format_config_scalar(field_name, value)
 
 
 def build_guild_config_pages(
