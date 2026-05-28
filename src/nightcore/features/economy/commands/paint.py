@@ -225,7 +225,8 @@ async def _choose_color(
 
     try:
         if color_roles_to_remove:
-            new_roles.remove(*color_roles_to_remove)
+            for crm in color_roles_to_remove:
+                new_roles.remove(crm)
 
         new_roles.append(role)
 
