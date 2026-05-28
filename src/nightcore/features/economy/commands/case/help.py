@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 @case_group.command(name="help", description="Узнать информацию о кейсах")  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.NONE)
-async def open_case(
+async def case_help(
     interaction: Interaction["Nightcore"],
 ):
     """Get information about cases."""
