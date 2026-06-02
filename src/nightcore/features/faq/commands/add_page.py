@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models.guild import MainGuildConfig
+from src.infra.db.models.guild import GuildFaqConfig
 from src.nightcore.features.faq._groups import faq as faq_group
 from src.nightcore.features.faq.components.modal import NewFAQPageModal
 from src.nightcore.services.config import specified_guild_config
@@ -37,7 +37,7 @@ async def add_faq_page(
     async with specified_guild_config(
         interaction.client,
         guild_id=guild.id,
-        config_type=MainGuildConfig,
+        config_type=GuildFaqConfig,
     ) as (_, _):
         pass
 

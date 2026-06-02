@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 import contextlib
 
 from src.infra.db.models import RoleRequestState
-from src.infra.db.models._enums import RoleRequestStateEnum
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -25,6 +24,7 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.role_requests.utils import validate_user_nickname
 from src.nightcore.utils import has_any_role_from_sequence
+from src.utils._enums import RoleRequestStateEnum
 
 logger = logging.getLogger(__name__)
 

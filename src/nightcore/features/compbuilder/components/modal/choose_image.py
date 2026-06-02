@@ -19,13 +19,13 @@ from discord.ui import FileUpload, Label, LayoutView, Modal, TextInput
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models._enums import ComponentTypeEnum
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.compbuilder.components.embed import build_embed
 from src.nightcore.features.compbuilder.components.v2 import (
     build_view as build_v2_component,
 )
 from src.nightcore.utils.content import is_image_url
+from src.utils._enums import ComponentTypeEnum
 
 logger = logging.getLogger(__name__)
 

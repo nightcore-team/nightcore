@@ -8,7 +8,6 @@ from discord import Guild
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
 from src.infra.redis.serializers import serialize_channel
 from src.nightcore.bot import Nightcore
@@ -17,6 +16,7 @@ from src.nightcore.utils import (
     discord_ts,
     ensure_messageable_channel_exists,
 )
+from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
 

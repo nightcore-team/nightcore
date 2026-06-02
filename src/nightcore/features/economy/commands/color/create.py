@@ -9,7 +9,6 @@ from discord.interactions import Interaction
 from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType, ItemChangeActionEnum
 from src.infra.db.models.color import Color
 from src.infra.db.operations import (
     get_specified_channel,
@@ -28,6 +27,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ChannelType, ItemChangeActionEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

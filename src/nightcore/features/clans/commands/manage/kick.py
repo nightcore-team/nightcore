@@ -7,12 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import (
-    ChannelType,
-    ClanManageActionEnum,
-    ClanMemberRoleEnum,
-)
-from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_clan_member, get_specified_channel
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -28,6 +23,11 @@ from src.nightcore.utils import ensure_member_exists, ensure_role_exists
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
+)
+from src.utils._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
 )
 
 if TYPE_CHECKING:

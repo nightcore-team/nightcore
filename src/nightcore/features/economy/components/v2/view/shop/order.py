@@ -26,7 +26,6 @@ from src.infra.db.models import (
     GuildLoggingConfig,
     GuildNotificationsConfig,
 )
-from src.infra.db.models._enums import ChannelType, ShopOrderStateEnum
 from src.infra.db.operations import (
     get_or_create_user,
     get_shop_order_state,
@@ -42,6 +41,7 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.economy.events.dto import CoinsShopOrderNotifyDTO
 from src.nightcore.utils import discord_ts, has_any_role_from_sequence
 from src.nightcore.utils.types import MessageComponentType
+from src.utils._enums import ChannelType, ShopOrderStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

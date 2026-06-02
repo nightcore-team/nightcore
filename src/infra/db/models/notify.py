@@ -5,9 +5,9 @@ from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, Enum, Index, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._enums import NotifyStateEnum
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.utils._enums import NotifyStateEnum
 
 
 class NotifyState(IdIntegerMixin, Base):

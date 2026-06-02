@@ -12,7 +12,6 @@ from src.infra.db.models import (
     GuildClansConfig,
     ShopOrderState,
 )
-from src.infra.db.models._enums import ClanMemberRoleEnum, ShopOrderStateEnum
 from src.infra.db.operations import get_clan_member, get_specified_field
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -27,6 +26,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ClanMemberRoleEnum, ShopOrderStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

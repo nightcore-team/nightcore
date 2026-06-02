@@ -10,12 +10,12 @@ from discord import Message
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (  # type: ignore
     get_specified_channel,
     get_specified_field,
 )
 from src.nightcore.utils import ensure_messageable_channel_exists
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

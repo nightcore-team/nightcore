@@ -2,21 +2,26 @@ from .battlepass_level import Base, BattlepassLevel
 from .casino import Base, CasinoBet, CasinoGame  # noqa: F811
 from .changestat import Base, ChangeStat  # noqa: F811
 from .clan import Base, Clan, ClanMember  # noqa: F811
-from .custom_component import Base, CustomComponent  # noqa: F811  # noqa: F811
-from .guild import (
+from .configurations import (
     Base,  # noqa: F811
+    GuildAccessConfig,
     GuildClansConfig,
     GuildEconomyConfig,
+    GuildFaqConfig,
+    GuildForumConfig,
     GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
     GuildModerationConfig,
+    GuildMultipliersConfig,
     GuildNotificationsConfig,
     GuildPrivateChannelsConfig,
+    GuildProposalsConfig,
+    GuildRoleRequestConfig,
+    GuildRulesConfig,
     GuildTicketsConfig,
-    MainGuildConfig,
 )
-from .meta import Base, GuildMetaConfig  # noqa: F811
+from .custom_component import Base, CustomComponent  # noqa: F811  # noqa: F811
 from .moderationmessage import Base, ModerationMessage  # noqa: F811
 from .notify import Base, NotifyState  # noqa: F811
 from .private_rooms import Base, PrivateRoomState  # noqa: F811
@@ -40,17 +45,22 @@ __all__ = (
     "Clan",
     "ClanMember",
     "CustomComponent",
+    "GuildAccessConfig",
     "GuildClansConfig",
     "GuildEconomyConfig",
+    "GuildFaqConfig",
+    "GuildForumConfig",
     "GuildInfomakerConfig",
     "GuildLevelsConfig",
     "GuildLoggingConfig",
-    "GuildMetaConfig",
     "GuildModerationConfig",
+    "GuildMultipliersConfig",
     "GuildNotificationsConfig",
     "GuildPrivateChannelsConfig",
+    "GuildProposalsConfig",
+    "GuildRoleRequestConfig",
+    "GuildRulesConfig",
     "GuildTicketsConfig",
-    "MainGuildConfig",
     "ModerationMessage",
     "NotifyState",
     "PrivateRoomState",

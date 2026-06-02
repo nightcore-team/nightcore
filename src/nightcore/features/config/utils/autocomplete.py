@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, Final, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.operations import (
     get_cases_by_input,
     get_guild_colors,
 )
+from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

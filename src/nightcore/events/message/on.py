@@ -9,9 +9,8 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.models import (
     GuildLevelsConfig,
     GuildModerationConfig,
-    MainGuildConfig,
+    GuildProposalsConfig,
 )
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     get_clan_member,
     get_specified_channel,
@@ -19,6 +18,7 @@ from src.infra.db.operations import (
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import has_any_role
+from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class OnMessageEvent(Cog):
                 proposal_channel_id = await get_specified_channel(
                     session,
                     guild_id=guild.id,
-                    config_type=MainGuildConfig,
+                    config_type=GuildProposalsConfig,
                     channel_type=ChannelType.CREATE_PROPOSALS,
                 )
                 if not proposal_channel_id:

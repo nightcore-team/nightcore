@@ -3,9 +3,9 @@
 from sqlalchemy import BigInteger, Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._enums import ComponentTypeEnum
 from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.utils._enums import ComponentTypeEnum
 
 
 class CustomComponent(IdIntegerMixin, CreatedAtMixin, Base):

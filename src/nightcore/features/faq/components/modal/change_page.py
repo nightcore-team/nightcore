@@ -13,7 +13,7 @@ from discord.interactions import Interaction
 from discord.ui import Modal, TextInput
 from sqlalchemy.orm import attributes
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildFaqConfig
 from src.infra.db.models._annot import FAQPageAnnot
 from src.nightcore.components.embed import (
     NoOptionsSuppliedEmbed,
@@ -79,7 +79,7 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
         outcome = ""
 
         async with specified_guild_config(
-            self.bot, guild.id, MainGuildConfig
+            self.bot, guild.id, GuildFaqConfig
         ) as (
             guild_config,
             _,

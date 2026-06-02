@@ -8,7 +8,6 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_or_create_user, get_specified_channel
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
@@ -18,6 +17,7 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.economy.events.dto import TransferCoinsEventDTO
 from src.nightcore.services.config import specified_guild_config
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

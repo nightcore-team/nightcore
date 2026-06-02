@@ -5,7 +5,7 @@ import logging
 import discord
 from discord import Member
 
-from src.infra.db.models._enums import RoleRequestStateEnum
+from src.utils._enums import RoleRequestStateEnum
 
 logger = logging.getLogger(__name__)
 

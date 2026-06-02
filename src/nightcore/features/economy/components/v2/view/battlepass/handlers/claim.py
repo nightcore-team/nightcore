@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import CaseDropTypeEnum
-from src.infra.db.models.guild import GuildEconomyConfig
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
@@ -25,6 +24,7 @@ from src.nightcore.features.economy.utils.case import (
     give_reward_by_type,
 )
 from src.nightcore.services.config import specified_guild_config
+from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

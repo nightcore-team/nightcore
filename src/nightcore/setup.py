@@ -128,19 +128,15 @@ def create_bot(
         # === compbuilder
         "src.nightcore.features.compbuilder",
         # === tasks
-        # "src.nightcore.tasks.unpunish",
-        # "src.nightcore.tasks.multiplayer_roulette",
-        # "src.nightcore.tasks.delete_ticket",
-        # "src.nightcore.tasks.delete_role_request",
-        # "src.nightcore.tasks.expired_notify",
-        # "src.nightcore.tasks.check_forum",
-        # "src.nightcore.tasks.clan_reputation",
-        # "src.nightcore.tasks.temp_role",
-        # "src.nightcore.tasks.temp_multiplier",
-        # special events / valentine day
-        # "src.nightcore.features.special_events.valentine",
-        # special events / valentine day events
-        # "src.nightcore.features.special_events.valentine.events.valentine_send",  # noqa: E501
+        "src.nightcore.tasks.unpunish",
+        "src.nightcore.tasks.multiplayer_roulette",
+        "src.nightcore.tasks.delete_ticket",
+        "src.nightcore.tasks.delete_role_request",
+        "src.nightcore.tasks.expired_notify",
+        "src.nightcore.tasks.check_forum",
+        "src.nightcore.tasks.clan_reputation",
+        "src.nightcore.tasks.temp_role",
+        "src.nightcore.tasks.temp_multiplier",
     ]
 
     return Nightcore(

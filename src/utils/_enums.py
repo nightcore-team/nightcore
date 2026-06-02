@@ -119,7 +119,6 @@ class ClanManageActionEnum(Enum):
 class MetaConfigAccessTypeEnum(Enum):
     """Enumeration for meta config access types."""
 
-    OTHER = "other_config_access_roles_ids"
     LOGGING = "logging_config_access_roles_ids"
     ECONOMY = "economy_config_access_roles_ids"
     LEVELS = "levels_config_access_roles_ids"
@@ -128,6 +127,11 @@ class MetaConfigAccessTypeEnum(Enum):
     MODERATION = "moderation_config_access_roles_ids"
     NOTIFICATIONS = "notifications_config_access_roles_ids"
     INFOMAKER = "infomaker_config_access_roles_ids"
+    FORUM = "forum_config_access_roles_ids"
+    ROLE_REQUEST = "org_roles_config_access_roles_ids"
+    PROPOSALS = "proposal_config_access_roles_ids"
+    RULES = "rules_config_access_roles_ids"
+    MULTIPLERS = "multiplers_config_access_roles_ids"
 
     @classmethod
     def all_values(cls) -> list[str]:
@@ -145,8 +149,12 @@ class MetaConfigAccessTypeEnum(Enum):
             "moderation": cls.MODERATION,
             "notifications": cls.NOTIFICATIONS,
             "private_channels": cls.PRIVATE_CHANNELS,
-            "other": cls.OTHER,
             "infomaker": cls.INFOMAKER,
+            "proposals": cls.PROPOSALS,
+            "rules": cls.RULES,
+            "role_request": cls.ROLE_REQUEST,
+            "forum": cls.FORUM,
+            "multiplers": cls.MULTIPLERS,
         }
         return mapping[choice]
 
@@ -161,7 +169,11 @@ class MetaConfigAccessTypeEnum(Enum):
             ("Модерация", "moderation"),
             ("Уведомления", "notifications"),
             ("Приватные каналы", "private_channels"),
-            ("Другое", "other"),
+            ("Множители", "multiplers"),
+            ("Правила", "rules"),
+            ("Предложения", "proposals"),
+            ("Форум", "forum"),
+            ("Запрос ролей", "role_request"),
             ("Инфомейкер", "infomaker"),
         ]
 
@@ -221,3 +233,31 @@ class CasinoGameStateEnum(Enum):
 class CasinoBetResultTypeEnum(Enum):
     WIN = "win"
     LOSE = "lose"
+
+
+class ConfigTypeEnum(Enum):
+    FORUM = "forum"
+    LOGGING = "logging"
+    ECONOMY = "economy"
+    LEVELS = "levels"
+    CLANS = "clans"
+    PRIVATE_CHANNELS = "private_channels"
+    MODERATION = "moderation"
+    NOTIFICATIONS = "notifications"
+    INFOMAKER = "infomakers"
+    RULES = "rules"
+    PROPOSALS = "proposals"
+    ROLE_REQUEST = "role_request"
+    MULTIPLERS = "multiplers"
+    TICKETS = "tickets"
+    ACCESS = "access"
+
+
+class ConfigMuteTypeEnum(Enum):
+    TIMEOUT = "timeout"
+    ROLE = "role"
+
+
+class MessageCountTypeEnum(Enum):
+    CHANNEL_ONLY = "channel_only"
+    ALL = "all"

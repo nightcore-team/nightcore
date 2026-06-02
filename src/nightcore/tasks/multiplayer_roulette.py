@@ -9,14 +9,14 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 from discord.http import MultipartParameters
 
-from src.infra.db.models._enums import (
-    CasinoBetResultTypeEnum,
-    CasinoGameStateEnum,
-)
-from src.infra.db.models.guild import GuildEconomyConfig
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     get_active_casino_games,
     get_specified_field,
+)
+from src.utils._enums import (
+    CasinoBetResultTypeEnum,
+    CasinoGameStateEnum,
 )
 
 if TYPE_CHECKING:

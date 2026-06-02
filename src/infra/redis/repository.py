@@ -14,6 +14,7 @@ from .models import (
     ChannelCacheEntry,
     GuildCacheEntry,
     GuildStateSnapshot,
+    MemberCacheEntry,
     RoleCacheEntry,
 )
 
@@ -30,6 +31,9 @@ class GuildStateRepository:
     def _ready_key(self) -> str:
         return "nightcore:discord_state:ready"
 
+    def _user_guilds_key(self, user_id: str) -> str:
+        return f"nightcore:discord_state:user:{user_id}:guilds"
+
     @property
     def _guilds_key(self) -> str:
         return "nightcore:discord_state:guilds"
@@ -39,6 +43,9 @@ class GuildStateRepository:
 
     def _channels_key(self, guild_id: str) -> str:
         return f"nightcore:discord_state:guild:{guild_id}:channels"
+
+    def _members_key(self, guild_id: str) -> str:
+        return f"nightcore:discord_state:guild:{guild_id}:members"
 
     async def connect(self) -> None:
         """Ensure the Redis connection is available."""
@@ -96,42 +103,6 @@ class GuildStateRepository:
 
         return await self.redis.get(self._ready_key) == "1"
 
-    async def get_guilds(self) -> list[dict[str, str | int | bool]]:
-        """Return all cached guilds."""
-
-        values = await self.redis.hvals(self._guilds_key)  # type: ignore
-        guilds = [self._loads(value) for value in values]  # type: ignore
-        return sorted(guilds, key=lambda guild: guild["name"].casefold())  # type: ignore
-
-    async def get_guild(self, guild_id: str) -> dict[str, str] | None:
-        """Return a cached guild by ID."""
-
-        value = await self.redis.hget(self._guilds_key, guild_id)  # type: ignore
-        if value is None:
-            return None
-        return self._loads(value)  # type: ignore
-
-    async def get_roles(
-        self, guild_id: str
-    ) -> list[dict[str, str | int | bool]]:
-        """Return cached roles for a guild."""
-
-        values = await self.redis.hvals(self._roles_key(guild_id))  # type: ignore
-        roles = [self._loads(value) for value in values]  # type: ignore
-        return sorted(roles, key=lambda role: role["position"])
-
-    async def get_channels(
-        self, guild_id: str
-    ) -> list[dict[str, str | int | bool]]:
-        """Return cached channels for a guild."""
-
-        values = await self.redis.hvals(self._channels_key(guild_id))  # type: ignore
-        channels = [self._loads(value) for value in values]  # type: ignore
-        return sorted(
-            channels,
-            key=lambda channel: (channel["type"], channel["name"].casefold()),  # type: ignore
-        )
-
     async def sync_guilds(self, snapshots: list[GuildStateSnapshot]) -> None:
         """Replace the cached Discord state with a fresh bot snapshot."""
 
@@ -163,6 +134,7 @@ class GuildStateRepository:
         for snapshot in snapshots:
             await self.replace_roles(snapshot.guild.id, snapshot.roles)
             await self.replace_channels(snapshot.guild.id, snapshot.channels)
+            await self.replace_members(snapshot.guild.id, snapshot.members)
 
     async def upsert_guild(self, guild: GuildCacheEntry) -> None:
         """Upsert a guild entry."""
@@ -263,9 +235,61 @@ class GuildStateRepository:
 
     def _dumps(
         self,
-        value: GuildCacheEntry | RoleCacheEntry | ChannelCacheEntry,
+        value: GuildCacheEntry
+        | RoleCacheEntry
+        | ChannelCacheEntry
+        | MemberCacheEntry,
     ) -> str:
         return json.dumps(asdict(value))
 
     def _loads(self, value: str) -> dict[str, str | int | bool]:
         return json.loads(value)
+
+    async def upsert_member(
+        self, guild_id: str, member: MemberCacheEntry
+    ) -> None:
+        """Upsert a member and update reverse index atomically."""
+        async with self.redis.pipeline(transaction=True) as pipeline:
+            pipeline.hset(  # type: ignore
+                self._members_key(guild_id), member.id, self._dumps(member)
+            )
+            pipeline.sadd(self._user_guilds_key(member.id), guild_id)
+            await pipeline.execute()
+
+    async def delete_member(self, guild_id: str, member_id: str) -> None:
+        """Delete a single cached role for a guild."""
+
+        async with self.redis.pipeline(transaction=True) as pipeline:
+            pipeline.hdel(self._members_key(guild_id), member_id)
+            pipeline.srem(self._user_guilds_key(member_id), guild_id)
+            await pipeline.execute()
+
+    async def replace_members(
+        self, guild_id: str, members: list[MemberCacheEntry]
+    ) -> None:
+        """Replace all members and rebuild reverse index with cleanup."""
+        key = self._members_key(guild_id)
+
+        old_member_ids = {
+            k.decode() if isinstance(k, bytes) else str(k)  # type: ignore
+            for k in await self.redis.hkeys(key)  # type: ignore
+        }
+
+        new_member_ids = {str(m.id) for m in members}
+
+        removed_ids = old_member_ids - new_member_ids  # type: ignore
+
+        async with self.redis.pipeline(transaction=True) as pipeline:
+            pipeline.delete(key)
+
+            if members:
+                pipeline.hset(  # type: ignore
+                    key, mapping={m.id: self._dumps(m) for m in members}
+                )
+                for m in members:
+                    pipeline.sadd(self._user_guilds_key(m.id), guild_id)
+
+            for user_id in removed_ids:  # type: ignore
+                pipeline.srem(self._user_guilds_key(user_id), guild_id)  # type: ignore
+
+            await pipeline.execute()

@@ -7,10 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import (
-    GuildLevelsConfig,
-)
-from src.infra.db.models._enums import MultiplierTypeEnum
+from src.infra.db.models import GuildMultipliersConfig
 from src.infra.db.operations import (
     get_or_create_temp_multiplier,
 )
@@ -26,6 +23,7 @@ from src.nightcore.utils.permissions import (
     check_required_permissions,
 )
 from src.nightcore.utils.time_utils import parse_duration
+from src.utils._enums import MultiplierTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -78,7 +76,9 @@ async def set_multiplier(
     outcome = ""
     multiplier_type_enum = MultiplierTypeEnum(multiplier_type.value)
 
-    async with specified_guild_config(bot, guild.id, GuildLevelsConfig) as (
+    async with specified_guild_config(
+        bot, guild.id, GuildMultipliersConfig
+    ) as (
         guild_config,
         session,
     ):

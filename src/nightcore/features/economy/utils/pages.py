@@ -11,9 +11,9 @@ from src.infra.db.models.battlepass_level import BattlepassLevel
 if TYPE_CHECKING:
     from src.infra.db.models import TransferHistory
 
-from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.case import Case
 from src.nightcore.utils import discord_ts
+from src.utils._enums import CaseDropTypeEnum
 
 
 def build_transfer_history_pages(

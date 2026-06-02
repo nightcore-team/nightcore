@@ -10,11 +10,11 @@ from discord.ext.commands import Cog  # type: ignore
 
 from src.config.config import config
 from src.infra.db.models import GuildLoggingConfig, TicketState
-from src.infra.db.models._enums import ChannelType, TicketStateEnum
 from src.infra.db.operations import (
     get_all_closed_tickets,
     get_specified_channel,
 )
+from src.utils._enums import ChannelType, TicketStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

@@ -74,12 +74,49 @@ services:
     ports:
       - "${REDIS_INSIGHT_PORT}:${REDIS_INSIGHT_PORT}"
 
-    volumes:
-      - ./.redisinsight:/data
-
     depends_on:
       nightcore-redis:
         condition: service_healthy
 
     networks:
       - nightcore-network
+
+  traefik:
+    image: traefik:v3.7.1
+    container_name: nightcore-traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --api.insecure=false
+
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=nightcore-network
+
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.websecure.address=:443
+
+      - --log.level=INFO
+      - --accesslog=true
+      - --accesslog.format=json
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme.json:/acme.json
+
+    networks:
+      - nightcore-network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.sdfgdfgdfg.tech`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls=true"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"

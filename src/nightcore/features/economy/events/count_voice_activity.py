@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from discord import Member, VoiceState
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildLevelsConfig
+from src.infra.db.models import GuildMultipliersConfig
 from src.infra.db.operations import (
     get_or_create_user,
     get_specified_guild_config,
@@ -65,7 +65,7 @@ class CountVoiceActivityEvent(Cog):
 
             guild_config = await get_specified_guild_config(
                 session,
-                config_type=GuildLevelsConfig,
+                config_type=GuildMultipliersConfig,
                 guild_id=member.guild.id,
             )
 

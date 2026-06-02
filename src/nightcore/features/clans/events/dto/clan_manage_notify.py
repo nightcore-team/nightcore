@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from discord import Colour, Embed, Guild
 
-from src.infra.db.models._enums import ClanManageActionEnum
 from src.nightcore.events.dto.base import BaseEventDTO
+from src.utils._enums import ClanManageActionEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

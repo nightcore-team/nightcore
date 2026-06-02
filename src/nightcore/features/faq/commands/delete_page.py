@@ -6,7 +6,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildFaqConfig
 from src.infra.db.models._annot import FAQPageAnnot
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.faq._groups import faq as faq_group
@@ -41,7 +41,7 @@ async def delete_faq_page(
     outcome = ""
     page_to_delete: FAQPageAnnot | None = None
 
-    async with specified_guild_config(bot, guild.id, MainGuildConfig) as (
+    async with specified_guild_config(bot, guild.id, GuildFaqConfig) as (
         guild_config,
         _,
     ):

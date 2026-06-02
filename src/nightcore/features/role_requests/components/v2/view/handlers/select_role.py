@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member, Role, SelectOption
 from discord.interactions import Interaction
 
-from src.infra.db.models import MainGuildConfig
-from src.infra.db.models._enums import ChannelType, RoleRequestStateEnum
+from src.infra.db.models import GuildRoleRequestConfig
 from src.infra.db.operations import (
     get_illegal_roles_full_json,
     get_latest_user_role_request,
@@ -20,6 +19,7 @@ from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.role_requests.components.modal import (
     SendRoleRequestModal,
 )
+from src.utils._enums import ChannelType, RoleRequestStateEnum
 
 from ..check_role_request import CheckRoleRequestView
 
@@ -116,7 +116,7 @@ async def handle_role_select_button_callback(
                             await get_specified_channel(
                                 session,
                                 guild_id=guild.id,
-                                config_type=MainGuildConfig,
+                                config_type=GuildRoleRequestConfig,
                                 channel_type=ChannelType.ROLE_REQUESTS,
                             )
                         )

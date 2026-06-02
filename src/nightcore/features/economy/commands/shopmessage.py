@@ -9,6 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models.configurations.economy import GuildEconomyShopItem
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.components.embed.success import SuccessMoveEmbed
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
@@ -42,7 +43,7 @@ class ShopMessage(Cog):
         member = cast(Member, interaction.user)
 
         outcome = ""
-        shop_items: dict[str, int] = {}
+        shop_items: list[GuildEconomyShopItem] = []
 
         async with specified_guild_config(
             self.bot, guild.id, config_type=GuildEconomyConfig
@@ -53,9 +54,7 @@ class ShopMessage(Cog):
             else:
                 if not outcome:
                     outcome = "success"
-                    shop_items: dict[str, int] = (
-                        guild_config.economy_shop_items
-                    )
+                    shop_items = guild_config.economy_shop_items
 
         answer_time = time.perf_counter()
 
@@ -84,10 +83,10 @@ class ShopMessage(Cog):
 
             options: list[SelectOption] = [
                 SelectOption(
-                    label=item,
-                    value=f"{item},{price}",
+                    label=item.name,
+                    value=f"{item},{item.cost}",
                 )
-                for item, price in shop_items.items()
+                for item in shop_items
             ]
 
             view = CoinsShopViewV2(

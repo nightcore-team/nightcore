@@ -3,9 +3,9 @@
 from enum import Enum
 
 from src.infra.db.models import (
+    GuildAccessConfig,
     GuildClansConfig,
     GuildEconomyConfig,
-    GuildMetaConfig,
     GuildModerationConfig,
 )
 
@@ -66,47 +66,47 @@ PERMISSION_CONFIG_MAP: dict[PermissionsFlagEnum, tuple[type, str, str]] = {
         "доступ к экономике",
     ),
     PermissionsFlagEnum.OTHER_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "other_config_access_roles_ids",
         "доступ к настройке остальной конфигурации",
     ),
     PermissionsFlagEnum.LOGGING_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "logging_config_access_roles_ids",
         "доступ к настройке системы логов",
     ),
     PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "economy_config_access_roles_ids",
         "доступ к настройке системы экономики",
     ),
     PermissionsFlagEnum.LEVELS_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "levels_config_access_roles_ids",
         "доступ к настройке системы уровней",
     ),
     PermissionsFlagEnum.NOTIFICATIONS_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "notifications_config_access_roles_ids",
         "доступ к настройке системы уведомлений",
     ),
     PermissionsFlagEnum.PRIVATE_CHANNELS_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "private_channels_config_access_roles_ids",
         "доступ к настройке системы приватных каналов",
     ),
     PermissionsFlagEnum.INFOMAKER_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "infomaker_config_access_roles_ids",
         "доступ к настройке системы инфомейкера",
     ),
     PermissionsFlagEnum.CLANS_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "clans_config_access_roles_ids",
         "доступ к настройке системы кланов",
     ),
     PermissionsFlagEnum.MODERATION_CONFIG_ACCESS: (
-        GuildMetaConfig,
+        GuildAccessConfig,
         "moderation_config_access_roles_ids",
         "доступ к настройке системы модерации",
     ),

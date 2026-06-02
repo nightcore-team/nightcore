@@ -17,17 +17,21 @@ from src.infra.db.models import (
     Clan,
     ClanMember,
     CustomComponent,
+    GuildAccessConfig,
     GuildClansConfig,
     GuildEconomyConfig,
+    GuildFaqConfig,
     GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
-    GuildMetaConfig,
     GuildModerationConfig,
+    GuildMultipliersConfig,
     GuildNotificationsConfig,
     GuildPrivateChannelsConfig,
+    GuildProposalsConfig,
+    GuildRoleRequestConfig,
+    GuildRulesConfig,
     GuildTicketsConfig,
-    MainGuildConfig,
     ModerationMessage,
     NotifyState,
     PrivateRoomState,
@@ -43,10 +47,17 @@ from src.infra.db.models import (
 )
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
-    OrgRoleWithoutTagAnnot,
-    Rules,
 )
-from src.infra.db.models._enums import (
+from src.infra.db.models.battlepass_level import BattlepassLevel
+from src.infra.db.models.case import Case
+from src.infra.db.models.color import Color
+from src.infra.db.models.configurations.rules import GuildRules
+from src.infra.db.models.processed_forum_thread import ProcessedForumThread
+from src.infra.db.models.user import UserCase
+from src.infra.db.utils import (
+    build_base_filters as _build_base_moderstats_filters,
+)
+from src.utils._enums import (
     CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
@@ -54,14 +65,6 @@ from src.infra.db.models._enums import (
     NotifyStateEnum,
     RoleRequestStateEnum,
     TicketStateEnum,
-)
-from src.infra.db.models.battlepass_level import BattlepassLevel
-from src.infra.db.models.case import Case
-from src.infra.db.models.color import Color
-from src.infra.db.models.processed_forum_thread import ProcessedForumThread
-from src.infra.db.models.user import UserCase
-from src.infra.db.utils import (
-    build_base_filters as _build_base_moderstats_filters,
 )
 
 GuildT = TypeVar(
@@ -74,16 +77,20 @@ GuildT = TypeVar(
     GuildPrivateChannelsConfig,
     GuildNotificationsConfig,
     GuildTicketsConfig,
-    MainGuildConfig,
     GuildInfomakerConfig,
-    GuildMetaConfig,
+    GuildAccessConfig,
+    GuildProposalsConfig,
+    GuildRoleRequestConfig,
+    GuildFaqConfig,
+    GuildRulesConfig,
+    GuildMultipliersConfig,
 )
 
 
 def get_config_type_by_name(name: str) -> type[GuildT]:
     """Get the guild configuration type by its name."""
     config_types: dict[str, type[GuildT]] = {
-        "meta": GuildMetaConfig,
+        "access": GuildAccessConfig,
         "clans": GuildClansConfig,
         "economy": GuildEconomyConfig,
         "infomaker": GuildInfomakerConfig,
@@ -91,9 +98,13 @@ def get_config_type_by_name(name: str) -> type[GuildT]:
         "logging": GuildLoggingConfig,
         "moderation": GuildModerationConfig,
         "notifications": GuildNotificationsConfig,
-        "other": MainGuildConfig,
         "private_channels": GuildPrivateChannelsConfig,
         "tickets": GuildTicketsConfig,
+        "rules": GuildRulesConfig,
+        "proposals": GuildProposalsConfig,
+        "faq": GuildFaqConfig,
+        "role_request": GuildRoleRequestConfig,
+        "multiplers": GuildMultipliersConfig,
     }  # type: ignore
     return config_types[name]
 
@@ -109,10 +120,10 @@ async def get_specified_guild_config(  # noqa: UP047
 
 async def get_guild_rules(
     session: AsyncSession, *, guild_id: int
-) -> Rules | None:
+) -> GuildRules | None:
     """Get the guild rules from the database."""
-    stmt = select(MainGuildConfig.guild_rules).where(
-        MainGuildConfig.guild_id == guild_id
+    stmt = select(GuildRulesConfig.guild_rules).where(
+        GuildRulesConfig.guild_id == guild_id
     )
     result = await session.execute(stmt)
 
@@ -633,7 +644,7 @@ async def get_latest_user_role_request(
 
 async def get_fraction_roles(
     session: AsyncSession, *, guild_id: int
-) -> list[str]:
+) -> list[int]:
     """Get the list of fraction roles for a guild."""
 
     stmt = select(GuildModerationConfig.fraction_roles_access_roles_ids).where(
@@ -643,7 +654,7 @@ async def get_fraction_roles(
 
     result = roles.scalar_one_or_none()
 
-    return list(result.keys()) if result else []
+    return [role.role_id for role in result] if result else []
 
 
 async def get_user_infractions(
@@ -998,8 +1009,8 @@ async def get_organization_roles_full_json(
     session: AsyncSession, *, guild_id: int
 ) -> dict[str, OrgRoleWithoutTagAnnot] | None:
     """Get the list of organization roles for a guild."""
-    stmt = select(MainGuildConfig.organizational_roles).where(
-        MainGuildConfig.guild_id == guild_id
+    stmt = select(GuildRoleRequestConfig.organizational_roles).where(
+        GuildRoleRequestConfig.guild_id == guild_id
     )
     result = await session.execute(stmt)
     return cast(
@@ -1011,8 +1022,8 @@ async def get_illegal_roles_full_json(
     session: AsyncSession, *, guild_id: int
 ) -> dict[str, OrgRoleWithoutTagAnnot] | None:
     """Get the list of organization roles for a guild."""
-    stmt = select(MainGuildConfig.illegal_roles).where(
-        MainGuildConfig.guild_id == guild_id
+    stmt = select(GuildOrgRolesConfig.illegal_roles).where(
+        GuildOrgRolesConfig.guild_id == guild_id
     )
     result = await session.execute(stmt)
     return cast(
@@ -1026,9 +1037,10 @@ async def get_organization_roles_ids(
     """Get the list of organization and illegal roles IDs for a guild."""
     stmt = (
         select(
-            MainGuildConfig.organizational_roles, MainGuildConfig.illegal_roles
+            GuildOrgRolesConfig.organizational_roles,
+            GuildOrgRolesConfig.illegal_roles,
         )
-        .where(MainGuildConfig.guild_id == guild_id)
+        .where(GuildOrgRolesConfig.guild_id == guild_id)
         .limit(1)
     )
 
@@ -1094,7 +1106,8 @@ async def get_mute_type(session: AsyncSession, *, guild_id: int) -> str | None:
         GuildModerationConfig.guild_id == guild_id
     )
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    scalar = result.scalar_one_or_none()
+    return scalar.value if scalar else None
 
 
 async def get_or_create_temp_multiplier(

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import discord
 
-from src.infra.db.models._enums import TicketStateEnum
+from src.utils._enums import TicketStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

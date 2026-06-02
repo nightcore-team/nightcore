@@ -15,7 +15,7 @@ from discord.ui import (
     TextDisplay,
 )
 
-from src.infra.db.models._enums import ShopOrderStateEnum
+from src.utils._enums import ShopOrderStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

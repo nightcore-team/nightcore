@@ -20,7 +20,6 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.operations import (
     get_latest_user_role_request,
     get_organization_roles_ids,
@@ -42,6 +41,7 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role_from_sequence,
 )
+from src.utils._enums import RoleRequestStateEnum
 
 logger = logging.getLogger(__name__)
 

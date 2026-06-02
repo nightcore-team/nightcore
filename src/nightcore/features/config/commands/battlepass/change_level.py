@@ -8,7 +8,6 @@ from discord.interactions import Interaction
 from sqlalchemy.orm import attributes
 
 from src.config.config import config
-from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.operations import (
     get_battlepass_level,
     get_case_by_id,
@@ -25,6 +24,7 @@ from src.nightcore.features.config._groups import (
 from src.nightcore.features.config.utils.autocomplete import (
     reward_depends_on_type_autocomplete,
 )
+from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

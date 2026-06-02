@@ -26,7 +26,15 @@ class ChannelCacheEntry:
 
 
 @dataclass(frozen=True, slots=True)
+class MemberCacheEntry:
+    id: str
+    roles: list[int]
+    administrator: bool
+
+
+@dataclass(frozen=True, slots=True)
 class GuildStateSnapshot:
     guild: GuildCacheEntry
     roles: list[RoleCacheEntry]
     channels: list[ChannelCacheEntry]
+    members: list[MemberCacheEntry]

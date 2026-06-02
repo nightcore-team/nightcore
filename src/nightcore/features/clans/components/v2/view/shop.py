@@ -23,7 +23,6 @@ from src.infra.db.models import (
     GuildLoggingConfig,
     GuildNotificationsConfig,
 )
-from src.infra.db.models._enums import ChannelType, ShopOrderStateEnum
 from src.infra.db.operations import (
     get_clan_by_name,
     get_shop_order_state,
@@ -41,6 +40,7 @@ from src.nightcore.features.clans.events.dto import (
 )
 from src.nightcore.utils import discord_ts, has_any_role_from_sequence
 from src.nightcore.utils.types import MessageComponentType
+from src.utils._enums import ChannelType, ShopOrderStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

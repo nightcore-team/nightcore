@@ -11,7 +11,6 @@ from src.infra.db.models import (
     GuildLoggingConfig,
     TempRole,
 )
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel, get_temp_role
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -29,6 +28,7 @@ from src.nightcore.utils.permissions import (
     check_required_permissions,
 )
 from src.nightcore.utils.time_utils import parse_duration
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

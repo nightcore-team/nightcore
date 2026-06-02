@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildFaqConfig
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.components.embed.success import SuccessMoveEmbed
 from src.nightcore.features.faq._groups import faq as faq_group
@@ -38,7 +38,7 @@ async def send_faq_pages(
 
     outcome = ""
     async with specified_guild_config(
-        bot, guild.id, MainGuildConfig, _create=True
+        bot, guild.id, GuildFaqConfig, _create=True
     ) as (
         guild_config,
         _,

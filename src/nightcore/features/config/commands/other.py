@@ -8,7 +8,7 @@ from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
-from src.infra.db.models.guild import MainGuildConfig
+from src.infra.db.models import GuildRoleRequestConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import other as other_group
@@ -39,8 +39,6 @@ logger = logging.getLogger(__name__)
 )  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.OTHER_CONFIG_ACCESS)
 @app_commands.describe(
-    rules_channel="Канал для правил",
-    proposal_channel="Канал для предложений",
     illegal_roles="Роли нелегалов. Формат: org name, tag, role_id | org name, tag, role_id | ...",  # noqa: E501
     organizational_roles="Организационные роли. Формат: org name, tag, role_id | org name, tag, role_id | ...",  # noqa: E501
     role_request_channel="Канал для проверки запросов на роли",
@@ -84,7 +82,7 @@ async def setup(
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
-        config_type=MainGuildConfig,
+        config_type=GuildRoleRequestConfig,
         _create=True,
     ) as (guild_config, _):
         changes = apply_field_changes(guild_config, specs)  # type: ignore

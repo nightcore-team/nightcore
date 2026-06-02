@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildLoggingConfig, MainGuildConfig
-from src.infra.db.models._enums import ChannelType
+from src.infra.db.models import GuildLoggingConfig, GuildRoleRequestConfig
 from src.infra.db.operations import (
     create_punish,
     get_specified_channel,
 )
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -68,7 +68,7 @@ class RolesChangeEvent(Cog):
                     rr_channel_id = await get_specified_channel(
                         session,
                         guild_id=data.moderator.guild.id,
-                        config_type=MainGuildConfig,
+                        config_type=GuildRoleRequestConfig,
                         channel_type=ChannelType.ROLE_REQUESTS,
                     )
 

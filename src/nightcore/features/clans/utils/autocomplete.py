@@ -99,10 +99,10 @@ async def clans_shop_autocomplete(
     except ConfigMissingError:
         return result
 
-    for item, price in shop_items.items():
+    for item in shop_items:
         result.append(
             app_commands.Choice(
-                name=f"{item} — цена: {price}", value=f"{item}"
+                name=f"{item} — цена: {item.cost}", value=f"{item}"
             )
         )
 

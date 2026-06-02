@@ -5,15 +5,15 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from src.infra.db.models._enums import CaseDropTypeEnum
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.battlepass_level import BattlepassLevel
-from src.infra.db.models.guild import GuildEconomyConfig
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
     get_specified_guild_config,
 )
+from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

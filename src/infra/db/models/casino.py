@@ -13,14 +13,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.infra.db.models._enums import (
+from src.infra.db.models._mixins import IdIntegerMixin
+from src.infra.db.models.base import Base
+from src.utils._enums import (
     CasinoBetResultTypeEnum,
     CasinoGameStateEnum,
     CasinoGameTypeEnum,
     CasinoPlayersTypeEnum,
 )
-from src.infra.db.models._mixins import IdIntegerMixin
-from src.infra.db.models.base import Base
 
 if TYPE_CHECKING:
     from src.infra.db.models.user import User

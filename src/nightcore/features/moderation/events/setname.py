@@ -7,7 +7,6 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     create_punish,
     get_specified_channel,
@@ -17,6 +16,7 @@ from src.nightcore.features.moderation.events import UserSetNameEventData
 from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
 )
+from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from discord import Color, Embed, Guild
 
 from src.infra.db.models._annot import CaseDropAnnot
-from src.infra.db.models._enums import ItemChangeActionEnum
+from src.utils._enums import ItemChangeActionEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

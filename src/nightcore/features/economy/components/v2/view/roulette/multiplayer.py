@@ -23,10 +23,10 @@ if TYPE_CHECKING:
     from src.infra.db.models._annot import CasinoBetAnnot
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models._enums import (
+from src.nightcore.features.economy.utils.casino import COLORS
+from src.utils._enums import (
     CasinoGameStateEnum,
 )
-from src.nightcore.features.economy.utils.casino import COLORS
 
 
 class MultiplayerRouletteViewV2(LayoutView):

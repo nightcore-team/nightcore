@@ -13,9 +13,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.infra.db.models._enums import ClanMemberRoleEnum
 from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.utils._enums import ClanMemberRoleEnum
 
 
 class Clan(IdIntegerMixin, Base, CreatedAtMixin):

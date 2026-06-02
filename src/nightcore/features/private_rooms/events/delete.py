@@ -6,13 +6,13 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig, PrivateRoomState
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.private_rooms.components.embed import (
     PrivateRoomLogEmbed,
 )
 from src.nightcore.utils import ensure_messageable_channel_exists
+from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
 

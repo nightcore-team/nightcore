@@ -8,12 +8,12 @@ import discord
 from discord import Guild
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models._enums import ChannelType
-from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_specified_channel  # type: ignore
 from src.infra.redis.serializers import serialize_channel
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import ensure_messageable_channel_exists
+from src.utils._enums import ChannelType
 
 from ._utils.overwrites import build_permission_changes_field  # type: ignore
 

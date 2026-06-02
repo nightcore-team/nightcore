@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import ClanMemberRoleEnum
 from src.infra.db.operations import get_clan_member
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.clans._groups import clan as clan_main_group
@@ -15,6 +14,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ClanMemberRoleEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

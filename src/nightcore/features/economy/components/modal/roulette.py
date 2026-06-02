@@ -11,12 +11,12 @@ from discord.interactions import Interaction
 from discord.ui import Label, Modal, Select, TextInput
 
 from src.infra.db.models import CasinoBet, GuildEconomyConfig
-from src.infra.db.models._enums import CasinoGameStateEnum
 from src.infra.db.operations import (
     get_casino_game_by_message_id,
     get_or_create_user,
     get_specified_field,
 )
+from src.utils._enums import CasinoGameStateEnum
 
 if TYPE_CHECKING:
     from src.infra.db.models._annot import CasinoBetAnnot

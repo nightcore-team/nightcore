@@ -16,7 +16,6 @@ if TYPE_CHECKING:
         RoleRequestStateView,
     )
 
-from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.operations import get_latest_user_role_request
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -24,6 +23,7 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.role_requests.utils import (
     send_role_request_dm,
 )
+from src.utils._enums import RoleRequestStateEnum
 
 logger = logging.getLogger(__name__)
 

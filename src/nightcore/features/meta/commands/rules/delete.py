@@ -6,7 +6,7 @@ from typing import Any, cast
 
 from discord import Guild, Interaction, app_commands
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildRulesConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.meta.utils import (
@@ -38,7 +38,7 @@ async def delete_chapter_or_rule(
     guild = cast(Guild, interaction.guild)
 
     async with specified_guild_config(
-        bot=bot, guild_id=guild.id, config_type=MainGuildConfig, _create=True
+        bot=bot, guild_id=guild.id, config_type=GuildRulesConfig, _create=True
     ) as (guild_config, _):
         rules_data = cast(
             dict[str, Any], guild_config.guild_rules or {"chapters": []}

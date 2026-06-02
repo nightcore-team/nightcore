@@ -14,7 +14,6 @@ from src.infra.db.models import (
 from src.infra.db.models import (
     GuildModerationConfig,
 )
-from src.infra.db.models._enums import ChangeStatTypeEnum
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -29,6 +28,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ChangeStatTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

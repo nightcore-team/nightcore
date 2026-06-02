@@ -10,11 +10,6 @@ from sqlalchemy.orm import attributes
 from src.config.config import config
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models._annot import CaseDropAnnot
-from src.infra.db.models._enums import (
-    CaseDropTypeEnum,
-    ChannelType,
-    ItemChangeActionEnum,
-)
 from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
@@ -39,6 +34,11 @@ from src.nightcore.utils.permissions import (
     check_required_permissions,
 )
 from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
+from src.utils._enums import (
+    CaseDropTypeEnum,
+    ChannelType,
+    ItemChangeActionEnum,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

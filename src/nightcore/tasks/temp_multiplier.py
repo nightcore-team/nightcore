@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildLevelsConfig
-from src.infra.db.models._enums import MultiplierTypeEnum
+from src.infra.db.models import GuildMultipliersConfig
 from src.infra.db.operations import (
     get_all_expired_temp_multipliers,
     get_specified_guild_config,
 )
+from src.utils._enums import MultiplierTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -56,7 +56,7 @@ class ResetTempMultiplierTask(Cog):
                     guild_config = await get_specified_guild_config(
                         session,
                         guild_id=guild_id,
-                        config_type=GuildLevelsConfig,
+                        config_type=GuildMultipliersConfig,
                     )
 
                     if guild_config is None:

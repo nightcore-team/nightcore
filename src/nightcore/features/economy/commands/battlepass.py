@@ -9,7 +9,6 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.operations import (
     get_case_by_id,
@@ -26,6 +25,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
