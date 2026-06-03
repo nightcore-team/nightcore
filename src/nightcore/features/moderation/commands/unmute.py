@@ -28,6 +28,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ConfigMuteTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -69,7 +70,11 @@ class UnMute(Cog):
             mute_type = guild_config.mute_type
             mute_role_id = guild_config.mute_role_id
 
-        if mute_type == "role":
+        mute_type = (
+            ConfigMuteTypeEnum.TIMEOUT if mute_type is None else mute_type
+        )
+
+        if mute_type == ConfigMuteTypeEnum.ROLE:
             if not guild.me.guild_permissions.manage_roles:
                 return await interaction.response.send_message(
                     embed=MissingPermissionsEmbed(
@@ -80,7 +85,7 @@ class UnMute(Cog):
                     ephemeral=True,
                 )
 
-        elif mute_type == "timeout":  # noqa: SIM102
+        elif mute_type == ConfigMuteTypeEnum.TIMEOUT:  # noqa: SIM102
             if not guild.me.guild_permissions.moderate_members:
                 return await interaction.response.send_message(
                     embed=MissingPermissionsEmbed(
@@ -103,7 +108,7 @@ class UnMute(Cog):
             )
 
         match mute_type:
-            case "role":
+            case ConfigMuteTypeEnum.ROLE:
                 mrole = None
                 if mute_role_id:
                     mrole = await ensure_role_exists(guild, mute_role_id)
@@ -151,7 +156,7 @@ class UnMute(Cog):
                                 ephemeral=True,
                             )
 
-            case "timeout":
+            case ConfigMuteTypeEnum.TIMEOUT:
                 if member.is_timed_out():
                     try:
                         await member.timeout(None, reason=reason)

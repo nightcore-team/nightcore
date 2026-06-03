@@ -91,7 +91,7 @@ class GuildStateRepository:
     async def mark_ready(self) -> None:
         """Mark the cached Discord state as ready for API reads."""
 
-        await self.redis.set(self._ready_key, "1")
+        await self.redis.set(self._ready_key, "1", ex=10)
 
     async def mark_not_ready(self) -> None:
         """Mark the cached Discord state as not ready for API reads."""

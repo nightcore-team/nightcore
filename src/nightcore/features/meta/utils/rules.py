@@ -5,7 +5,6 @@ from typing import Any
 from discord import Color, Embed
 
 from src.config.config import config
-from src.infra.db.models._annot import Chapter, Rule, Rules
 
 
 def parse_clause(clause: str) -> list[int]:

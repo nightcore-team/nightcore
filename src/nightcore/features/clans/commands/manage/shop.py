@@ -12,7 +12,11 @@ from src.infra.db.models import (
     GuildClansConfig,
     ShopOrderState,
 )
-from src.infra.db.operations import get_clan_member, get_specified_field
+from src.infra.db.operations import (
+    get_clan_member,
+    get_economy_shop_item_by_name,
+    get_specified_field,
+)
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -79,22 +83,25 @@ async def shop(
         ]:
             outcome = "missing_permissions"
 
-        icost = guild_config.clan_shop_items.get(iname, None)
-        if icost is None:
-            outcome = "invalid_item"
+        selected_item = await get_economy_shop_item_by_name(
+            session, guild_id=guild.id, name=iname
+        )
+
+        if selected_item is None:
+            outcome = "unknown_item"
 
         if not outcome:
             # get clan
             clan = cast(Clan, clan_member.clan)  # type: ignore
 
             if not (
-                clan.coins > icost  # type: ignore
+                clan.coins > selected_item.cost  # type: ignore
             ):  # (icost can't be None here)
                 outcome = "insufficient_funds"
             else:
                 outcome = "success"
 
-    if outcome == "invalid_item":
+    if outcome == "unknown_item":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка покупки",
@@ -200,9 +207,9 @@ async def shop(
             clan_name=clan.name,
             clan_role_id=clan.role_id,
             clan_balance_before=clan.coins,
-            clan_balance_after=clan.coins - icost,  # type: ignore
+            clan_balance_after=clan.coins - selected_item.cost,  # type: ignore
             item_name=iname,
-            item_price=icost,
+            item_price=selected_item.cost,  # type: ignore
         )
 
         try:
@@ -261,7 +268,7 @@ async def shop(
             clan.name,
             iname,
             clan.coins,  # type: ignore
-            clan.coins - icost,  # type: ignore
+            clan.coins - selected_item.cost,  # type: ignore
         )
 
         return

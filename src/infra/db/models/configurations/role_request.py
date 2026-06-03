@@ -1,15 +1,14 @@
-from sqlalchemy import BigInteger, ForeignKey, String, UniqueConstraint
+from sqlalchemy import BigInteger, Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.utils._enums import OrganizationalRoleTypeEnum
 
 
 class GuildOrganizationalRole(IdIntegerMixin, Base):
     __table_args__ = (
-        UniqueConstraint(
-            "guild_id", "role_id", "tag", "name", name="uq_guild_role_name_tag"
-        ),
+        UniqueConstraint("guild_id", "role_id", name="uq_guild_role"),
     )
 
     guild_id: Mapped[int] = mapped_column(
@@ -20,6 +19,15 @@ class GuildOrganizationalRole(IdIntegerMixin, Base):
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     tag: Mapped[str] = mapped_column(String, nullable=False)
+    type: Mapped[OrganizationalRoleTypeEnum] = mapped_column(
+        Enum(
+            OrganizationalRoleTypeEnum,
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in x],  # type: ignore
+            validate_strings=True,
+        ),
+        nullable=False,
+    )
 
 
 class GuildRoleRequestConfig(IdIntegerMixin, Base):

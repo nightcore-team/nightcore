@@ -9,16 +9,16 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildRoleRequestConfig
 from src.infra.db.operations import (
-    get_illegal_roles_full_json,
     get_latest_user_role_request,
     get_or_create_user,
-    get_organization_roles_full_json,
+    get_organization_role_by_role_id,
     get_specified_channel,
 )
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.role_requests.components.modal import (
     SendRoleRequestModal,
 )
+from src.nightcore.services.config import specified_guild_config
 from src.utils._enums import ChannelType, RoleRequestStateEnum
 
 from ..check_role_request import CheckRoleRequestView
@@ -47,92 +47,66 @@ async def handle_role_select_button_callback(
 
     bot = interaction.client
 
-    option_parts: list[int, str] = interaction.data.get("values")[0].split(  # type: ignore
-        ","
-    )
-    selected_role_id = int(option_parts[0])
-    selected_role_tag = option_parts[1]
+    selected_option: str = interaction.data.get("values")[0]  # type: ignore
+
+    selected_role_id = int(selected_option)  # type: ignore
 
     outcome = ""
-    org_options: list[SelectOption] = []
-    ill_options: list[SelectOption] = []
     check_role_request_channel_id = 0
     requested_role: Role | None = None
     channel = None
     org_illegal_roles_ids: list[int] = []
 
-    async with bot.uow.start() as session:
-        try:
-            org_roles = await get_organization_roles_full_json(
-                session, guild_id=guild.id
-            )
-            ill_roles = await get_illegal_roles_full_json(
-                session, guild_id=guild.id
+    try:
+        async with specified_guild_config(
+            bot, guild_id=guild.id, config_type=GuildRoleRequestConfig
+        ) as (guild_config, session):
+            dbuser, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=user.id
             )
 
-            if not org_roles and not ill_roles:
-                outcome = "no_org_roles"
+            if dbuser.role_request_ban:
+                outcome = "user_banned"
             else:
-                if org_roles:
-                    org_options = [
-                        SelectOption(
-                            label=v["name"], value=f"{v['role_id']},{k}"
-                        )
-                        for k, v in org_roles.items()
-                    ]
-                    org_illegal_roles_ids.extend(
-                        [v["role_id"] for v in org_roles.values()]
-                    )
-
-                if ill_roles:
-                    ill_options = [
-                        SelectOption(
-                            label=v["name"], value=f"{v['role_id']},{k}"
-                        )
-                        for k, v in ill_roles.items()
-                    ]
-                    org_illegal_roles_ids.extend(
-                        [v["role_id"] for v in ill_roles.values()]
-                    )
-
-                dbuser, _ = await get_or_create_user(
+                last_rr = await get_latest_user_role_request(
                     session, guild_id=guild.id, user_id=user.id
                 )
 
-                if dbuser.role_request_ban:
-                    outcome = "user_banned"
+                if last_rr and last_rr.state == RoleRequestStateEnum.PENDING:
+                    outcome = "pending_request_exists"
                 else:
-                    last_rr = await get_latest_user_role_request(
-                        session, guild_id=guild.id, user_id=user.id
+                    check_role_request_channel_id = (
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildRoleRequestConfig,
+                            channel_type=ChannelType.ROLE_REQUESTS,
+                        )
                     )
 
-                    if (
-                        last_rr
-                        and last_rr.state == RoleRequestStateEnum.PENDING
-                    ):
-                        outcome = "pending_request_exists"
+                    if not check_role_request_channel_id:
+                        outcome = "channel_not_configured"
                     else:
-                        check_role_request_channel_id = (
-                            await get_specified_channel(
+                        selected_org_role = (
+                            await get_organization_role_by_role_id(
                                 session,
                                 guild_id=guild.id,
-                                config_type=GuildRoleRequestConfig,
-                                channel_type=ChannelType.ROLE_REQUESTS,
+                                role_id=selected_option,  # type: ignore
                             )
                         )
 
-                        if not check_role_request_channel_id:
-                            outcome = "channel_not_configured"
+                        if selected_org_role is None:
+                            outcome = "unknown_option"
                         else:
                             outcome = "success"
-        except Exception as e:
-            logger.error(
-                "Error handling role selection for user %s in guild %s: %s",
-                user.id,
-                guild.id,
-                e,
-            )
-            outcome = "error"
+    except Exception as e:
+        logger.error(
+            "Error handling role selection for user %s in guild %s: %s",
+            user.id,
+            guild.id,
+            e,
+        )
+        outcome = "error"
 
     if outcome == "error":
         return await interaction.response.send_message(
@@ -145,11 +119,11 @@ async def handle_role_select_button_callback(
             ephemeral=True,
         )
 
-    if outcome == "no_org_roles":
+    if outcome == "unknown_option":
         return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Не удалось отправить запрос роли",
-                "Организационные роли не настроены на этом сервере.",
+                "Выбрана неизвестная роль, не существующая в конфигурации.",
                 bot.user.name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
@@ -254,7 +228,7 @@ async def handle_role_select_button_callback(
             role=requested_role,
             bot=bot,
             all_roles_ids=org_illegal_roles_ids,
-            selected_role_tag=cast(str, selected_role_tag),
+            selected_role_tag=selected_org_role.tag,  # type: ignore
             view=CheckRoleRequestView,
         )
     )

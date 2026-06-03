@@ -137,6 +137,7 @@ def create_bot(
         "src.nightcore.tasks.clan_reputation",
         "src.nightcore.tasks.temp_role",
         "src.nightcore.tasks.temp_multiplier",
+        "src.nightcore.tasks.update_redis_state",
     ]
 
     return Nightcore(

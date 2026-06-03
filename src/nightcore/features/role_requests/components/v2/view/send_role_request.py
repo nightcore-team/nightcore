@@ -1,6 +1,7 @@
 """View for sending role requests."""
 
 import logging
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
@@ -245,7 +246,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         user = cast(Member, interaction.user)
 
         outcome = ""
-        org_roles_ids: list[int] = []
+        org_roles_ids: Sequence[int] = []
 
         async with view.bot.uow.start() as session:
             org_roles_ids = await get_organization_roles_ids(

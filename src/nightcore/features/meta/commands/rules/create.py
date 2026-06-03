@@ -8,7 +8,6 @@ from discord import Guild, Interaction, app_commands
 
 from src.config.config import config
 from src.infra.db.models import GuildRulesConfig
-from src.infra.db.models._annot import Chapter, Rule
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.meta.utils import (
