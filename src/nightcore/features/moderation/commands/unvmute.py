@@ -101,12 +101,14 @@ class UnVMute(Cog):
                 ephemeral=True,
             )
 
+        await interaction.response.defer(thinking=True)
+
         mrole = None
         if mute_role_id:
             mrole = await ensure_role_exists(guild, mute_role_id)
 
         if not mute_role_id or mrole is None:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     f"Роль мута с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
@@ -119,7 +121,7 @@ class UnVMute(Cog):
             has_role = has_any_role(member, mrole.id)
 
             if not has_role:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка снятия блокировки",
                         "Роль мута не найдена у этого пользователя.",
@@ -138,7 +140,7 @@ class UnVMute(Cog):
                         member.id,
                         e,
                     )
-                    return await interaction.response.send_message(
+                    return await interaction.followup.send(
                         embed=ErrorEmbed(
                             "Ошибка снятия блокировки",
                             "Не удалось удалить роль мута у пользователя.",
@@ -147,8 +149,6 @@ class UnVMute(Cog):
                         ),
                         ephemeral=True,
                     )
-
-        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             view=PunishViewV2(

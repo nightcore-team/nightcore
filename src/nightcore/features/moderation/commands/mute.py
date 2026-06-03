@@ -158,6 +158,8 @@ class Mute(Cog):
                 ephemeral=True,
             )
 
+        await interaction.response.defer(thinking=True)
+
         end_time = calculate_end_time(parsed_duration)
 
         match mute_type:
@@ -167,7 +169,7 @@ class Mute(Cog):
                     # Try cache first
                     mrole = await ensure_role_exists(guild, mute_role_id)
                     if mrole is None:
-                        return await interaction.response.send_message(
+                        return await interaction.followup.send(
                             embed=ErrorEmbed(
                                 "Роль блокировки не найдена",
                                 f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
@@ -177,7 +179,7 @@ class Mute(Cog):
                             ephemeral=True,
                         )
                 else:
-                    return await interaction.response.send_message(
+                    return await interaction.followup.send(
                         embed=ErrorEmbed(
                             "Роль блокировки не найдена",
                             f"Роль блокировки с ID {mute_role_id} не настроена.",  # noqa: E501
@@ -194,7 +196,7 @@ class Mute(Cog):
                         await member.add_roles(mrole, reason=reason)  # type: ignore
                     except Exception as e:
                         logger.exception("Failed to add role: %s", e)
-                        return await interaction.response.send_message(
+                        return await interaction.followup.send(
                             embed=ErrorEmbed(
                                 "Ошибка добавления роли",
                                 "Не удалось добавить роль блокировки пользователю.",  # noqa: E501
@@ -204,7 +206,7 @@ class Mute(Cog):
                             ephemeral=True,
                         )
                 else:
-                    return await interaction.response.send_message(
+                    return await interaction.followup.send(
                         embed=ErrorEmbed(
                             "Ошибка блокировки",
                             f"У {member.mention} уже есть блокировка чата.",
@@ -219,7 +221,7 @@ class Mute(Cog):
                     if not member.is_timed_out():
                         await member.timeout(end_time, reason=reason)
                     else:
-                        return await interaction.response.send_message(
+                        return await interaction.followup.send(
                             embed=ErrorEmbed(
                                 "Ошибка блокировки",
                                 f"{member.mention} уже в тайм-ауте.",
@@ -231,7 +233,7 @@ class Mute(Cog):
 
                 except Exception as e:
                     logger.exception("Failed to timeout member: %s", e)
-                    return await interaction.response.send_message(
+                    return await interaction.followup.send(
                         embed=ErrorEmbed(
                             "Ошибка тайм-аута",
                             "Не удалось установить тайм-аут пользователю.",
@@ -241,7 +243,7 @@ class Mute(Cog):
                         ephemeral=True,
                     )
             case _:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Неизвестный тип блокировки",
                         "Тип блокировки должен быть 'role' или 'timeout'.",
@@ -250,8 +252,6 @@ class Mute(Cog):
                     ),
                     ephemeral=True,
                 )
-
-        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             view=PunishViewV2(

@@ -147,6 +147,8 @@ class VMute(Cog):
                 ephemeral=True,
             )
 
+        await interaction.response.defer(thinking=True)
+
         end_time = calculate_end_time(parsed_duration)
 
         if mute_role_id is None:
@@ -155,7 +157,7 @@ class VMute(Cog):
         # Try cache first
         mrole = await ensure_role_exists(guild, mute_role_id)
         if mrole is None:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     f"Не удалось найти роль блокировки с ID {mute_role_id} на этом сервере.",  # noqa: E501
@@ -172,7 +174,7 @@ class VMute(Cog):
                 await member.add_roles(mrole, reason=reason)  # type: ignore
             except Exception as e:
                 logger.exception("Failed to add role: %s", e)
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка блокировки",
                         "Не удалось добавить роль мута пользователю.",
@@ -182,7 +184,7 @@ class VMute(Cog):
                     ephemeral=True,
                 )
         else:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     f"{member.mention} уже заблокирован.",
@@ -208,8 +210,6 @@ class VMute(Cog):
                     guild.id,
                     e,
                 )
-
-        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             view=PunishViewV2(
