@@ -14,7 +14,7 @@ from src.utils._enums import MessageCountTypeEnum
 
 class GuildLevel(IdIntegerMixin, Base):
     __table_args__ = (
-        UniqueConstraint("guild_id", "level", name="uq_guild_level"),
+        UniqueConstraint("guild_id", "level", name="uq_level_guild_level"),
     )
 
     guild_id: Mapped[int] = mapped_column(
@@ -28,7 +28,7 @@ class GuildLevel(IdIntegerMixin, Base):
 
 class GuildBonusRole(IdIntegerMixin, Base):
     __table_args__ = (
-        UniqueConstraint("guild_id", "role_id", name="uq_guild_role"),
+        UniqueConstraint("guild_id", "role_id", name="uq_bonus_guild_role"),
     )
 
     guild_id: Mapped[int] = mapped_column(

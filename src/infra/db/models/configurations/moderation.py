@@ -16,7 +16,7 @@ from src.utils._enums import ConfigMuteTypeEnum
 
 class GuildFractionRole(IdIntegerMixin, Base):
     __table_args__ = (
-        UniqueConstraint("guild_id", "role_id", name="uq_guild_role"),
+        UniqueConstraint("guild_id", "role_id", name="uq_fraction_guild_role"),
     )
 
     guild_id: Mapped[int] = mapped_column(
