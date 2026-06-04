@@ -1,3 +1,5 @@
+"""Database models for guild rules configuration."""
+
 from sqlalchemy import BigInteger, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -6,7 +8,7 @@ from src.infra.db.models.base import Base
 
 
 class GuildRulesSubRule(IdIntegerMixin, Base):
-    guild_id: Mapped[int] = mapped_column(
+    rule_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("guildrulesrule.id", ondelete="CASCADE"),
         nullable=False,
@@ -15,7 +17,7 @@ class GuildRulesSubRule(IdIntegerMixin, Base):
 
 
 class GuildRulesRule(IdIntegerMixin, Base):
-    guild_id: Mapped[int] = mapped_column(
+    chapter_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("guildruleschapter.id", ondelete="CASCADE"),
         nullable=False,
@@ -30,7 +32,7 @@ class GuildRulesRule(IdIntegerMixin, Base):
 
 
 class GuildRulesChapter(IdIntegerMixin, Base):
-    guild_id: Mapped[int] = mapped_column(
+    rules_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("guildrules.id", ondelete="CASCADE"),
         nullable=False,

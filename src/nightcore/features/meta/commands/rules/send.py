@@ -5,14 +5,10 @@ from typing import cast
 
 from discord import Embed, Guild, Interaction
 
-from src.infra.db.models import GuildRulesConfig
+from src.infra.db.operations import get_guild_rules
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.meta.utils import (
-    build_rules_embeds,
-    convert_dict_to_rules,
-)
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.meta.utils import build_rules_embeds
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -35,20 +31,11 @@ async def send_rules(
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    async with specified_guild_config(
-        bot=bot, guild_id=guild.id, config_type=GuildRulesConfig, _create=True
-    ) as (guild_config, _):
-        rules_data = cast(
-            dict[str, object], guild_config.guild_rules or {"chapters": []}
-        )
+    async with bot.uow.start(readonly=True) as session:
+        rules = await get_guild_rules(session, guild_id=guild.id)
 
-    # json -> dataclass
-    rules = convert_dict_to_rules(rules_data)
-
-    chapters = rules.chapters
-
-    if not chapters:
-        await interaction.response.send_message(
+    if rules is None or not rules.chapters:
+        return await interaction.response.send_message(
             embed=ErrorEmbed(
                 "Ошибка отправки правил",
                 "Правила отсутствуют",
@@ -57,23 +44,35 @@ async def send_rules(
             ),
             ephemeral=True,
         )
-        return
+
+    chapters = rules.chapters
+
+    if not chapters:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка отправки правил",
+                "Правила отсутствуют",
+                bot.user.display_name,  # type: ignore
+                bot.user.avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
+        )
 
     await interaction.response.defer(thinking=True)
     messages: list[list[Embed]] = []
 
     # build and send embeds
-    for chapter in chapters:
-        title = f"{chapter.number}. {chapter.title}"
+    for i, chapter in enumerate(chapters, start=1):
+        title = f"{i}. {chapter.text}"
         text_lines: list[str] = []
 
-        for rule in chapter.rules:
+        for j, rule in enumerate(chapter.rules, start=1):
             # main rule
-            text_lines.append(f"{rule.number}. {rule.text}")
+            text_lines.append(f"{i}.{j}. {rule.text}")
 
-            # subrule
-            for subrule in rule.subrules:
-                text_lines.append(f"{subrule.number}. {subrule.text}")
+            # subrules
+            for k, subrule in enumerate(rule.subrules, start=1):
+                text_lines.append(f"{i}.{j}.{k}. {subrule.text}")
 
         embeds_chunk = build_rules_embeds(title, text_lines)
         messages.extend(embeds_chunk)

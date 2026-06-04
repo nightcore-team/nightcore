@@ -56,7 +56,11 @@ from src.infra.db.models.configurations.economy import GuildEconomyShopItem
 from src.infra.db.models.configurations.role_request import (
     GuildOrganizationalRole,
 )
-from src.infra.db.models.configurations.rules import GuildRules
+from src.infra.db.models.configurations.rules import (
+    GuildRules,
+    GuildRulesChapter,
+    GuildRulesRule,
+)
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
@@ -127,8 +131,14 @@ async def get_guild_rules(
     session: AsyncSession, *, guild_id: int
 ) -> GuildRules | None:
     """Get the guild rules from the database."""
-    stmt = select(GuildRulesConfig.guild_rules).where(
-        GuildRulesConfig.guild_id == guild_id
+    stmt = (
+        select(GuildRulesConfig.guild_rules)
+        .where(GuildRulesConfig.guild_id == guild_id)
+        .options(
+            selectinload(GuildRules.chapters)
+            .selectinload(GuildRulesChapter.rules)
+            .selectinload(GuildRulesRule.subrules)
+        )
     )
     result = await session.execute(stmt)
 
