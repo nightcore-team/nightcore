@@ -15,7 +15,13 @@ from src.infra.db.models.base import Base
 
 class GuildClanShopItem(IdIntegerMixin, Base):
     __table_args__ = (
-        UniqueConstraint("guild_id", "name", name="uq_guild_name"),
+        UniqueConstraint(
+            "guild_id",
+            "name",
+            name="uq_guild_name",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
     )
 
     guild_id: Mapped[int] = mapped_column(

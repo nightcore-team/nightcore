@@ -84,7 +84,7 @@ class ShopMessage(Cog):
             options: list[SelectOption] = [
                 SelectOption(
                     label=item.name,
-                    value=f"{item},{item.cost}",
+                    value=f"{item.name},{item.cost}",
                 )
                 for item in shop_items
             ]

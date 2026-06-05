@@ -54,6 +54,7 @@ from src.infra.db.models.color import Color
 from src.infra.db.models.configurations.clans import GuildClanShopItem
 from src.infra.db.models.configurations.economy import GuildEconomyShopItem
 from src.infra.db.models.configurations.levels import GuildLevel
+from src.infra.db.models.configurations.moderation import GuildFractionRole
 from src.infra.db.models.configurations.role_request import (
     GuildOrganizationalRole,
 )
@@ -133,8 +134,8 @@ async def get_guild_rules(
 ) -> GuildRules | None:
     """Get the guild rules from the database."""
     stmt = (
-        select(GuildRulesConfig.guild_rules)
-        .where(GuildRulesConfig.guild_id == guild_id)
+        select(GuildRules)
+        .where(GuildRules.guild_id == guild_id)
         .options(
             selectinload(GuildRules.chapters)
             .selectinload(GuildRulesChapter.rules)
@@ -660,17 +661,15 @@ async def get_latest_user_role_request(
 
 async def get_fraction_roles(
     session: AsyncSession, *, guild_id: int
-) -> list[int]:
+) -> Sequence[int]:
     """Get the list of fraction roles for a guild."""
 
-    stmt = select(GuildModerationConfig.fraction_roles_access_roles_ids).where(
+    stmt = select(GuildFractionRole.role_id).where(
         GuildModerationConfig.guild_id == guild_id
     )
     roles = await session.execute(stmt)
 
-    result = roles.scalar_one_or_none()
-
-    return [role.role_id for role in result] if result else []
+    return roles.scalars().all()
 
 
 async def get_user_infractions(

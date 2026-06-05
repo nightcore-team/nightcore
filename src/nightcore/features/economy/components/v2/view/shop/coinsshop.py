@@ -118,7 +118,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 )
 
                 if not outcome:
-                    if not (buyer.coins > float(price)):
+                    if not (buyer.coins >= float(price)):
                         outcome = "insufficient_funds"
                     else:
                         outcome = "success"
@@ -296,7 +296,7 @@ class CoinsShopViewV2(LayoutView):
             for item in shop_items:
                 container.add_item(
                     TextDisplay[Self](
-                        f"**{item}**\n> Цена: **{int(item.cost):.0f} {coin_name}**\n"  # noqa: E501
+                        f"**{item.name}**\n> Цена: **{int(item.cost):.0f} {coin_name}**\n"  # noqa: E501
                     )
                 )
                 container.add_item(Separator[Self]())

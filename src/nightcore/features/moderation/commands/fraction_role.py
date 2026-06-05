@@ -10,6 +10,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
+from src.infra.db.models.configurations.moderation import GuildFractionRole
 from src.infra.db.operations import (
     get_specified_field,
 )
@@ -73,6 +74,18 @@ class FractionRole(Cog):
     ) -> None:
         """Assigns a fraction role to a user."""
 
+        try:
+            role_id = int(role)
+        except ValueError:
+            return await interaction.followup.send(
+                embed=ErrorEmbed(
+                    "Ошибка выдачи роли",
+                    "Выбранная роль не найдена.",
+                    self.bot.user.name,  # type: ignore
+                    self.bot.user.display_avatar.url,  # type: ignore
+                ),
+            )
+
         guild = cast(Guild, interaction.guild)
         author = cast(Member, interaction.user)
 
@@ -97,15 +110,16 @@ class FractionRole(Cog):
             if not moderation_access_roles:
                 raise FieldNotConfiguredError("доступ к модерации")
 
-            # Fraction roles config (dict: role_id -> [access_role_ids])
-            fraction_roles: dict[str, list[int]] = await get_specified_field(
+            fraction_roles: list[
+                GuildFractionRole
+            ] = await get_specified_field(
                 session,
                 guild_id=guild.id,
                 config_type=GuildModerationConfig,
                 field_name="fraction_roles_access_roles_ids",
             )
 
-        if role not in fraction_roles:
+        if not any(role_id == item.role_id for item in fraction_roles):
             return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка выдачи роли",
@@ -115,8 +129,14 @@ class FractionRole(Cog):
                 )
             )
 
+        access_roles: list[int] = []
+
+        for item in fraction_roles:
+            if item.role_id == role_id:
+                access_roles = item.access_roles
+
         has_access = has_any_role_from_sequence(
-            author, moderation_access_roles + fraction_roles.get(role, [])
+            author, moderation_access_roles + access_roles
         )
 
         if not has_access:
@@ -127,7 +147,7 @@ class FractionRole(Cog):
                 ),
             )
 
-        target_role = await ensure_role_exists(guild, int(role))
+        target_role = await ensure_role_exists(guild, role_id)
 
         if target_role is None:
             return await interaction.followup.send(

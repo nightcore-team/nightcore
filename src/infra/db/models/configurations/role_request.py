@@ -1,4 +1,11 @@
-from sqlalchemy import BigInteger, Enum, ForeignKey, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Enum,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    and_,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -38,13 +45,21 @@ class GuildRoleRequestConfig(IdIntegerMixin, Base):
         GuildOrganizationalRole,
         lazy="selectin",
         cascade="all, delete-orphan",
-        primaryjoin="and_(GuildRoleRequestConfig.guild_id == GuildOrganizationalRole.guild_id, GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.ILLEGAL)",  # noqa: E501
+        primaryjoin=lambda: and_(
+            GuildRoleRequestConfig.guild_id
+            == GuildOrganizationalRole.guild_id,
+            GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.LEGAL,
+        ),
     )
     organizational_roles: Mapped[list[GuildOrganizationalRole]] = relationship(
         GuildOrganizationalRole,
         lazy="selectin",
         cascade="all, delete-orphan",
-        primaryjoin="and_(GuildRoleRequestConfig.guild_id == GuildOrganizationalRole.guild_id, GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.LEGAL)",  # noqa: E501
+        primaryjoin=lambda: and_(
+            GuildRoleRequestConfig.guild_id
+            == GuildOrganizationalRole.guild_id,
+            GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.LEGAL,
+        ),
     )
     check_role_requests_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True

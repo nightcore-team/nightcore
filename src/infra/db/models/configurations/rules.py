@@ -47,7 +47,14 @@ class GuildRulesChapter(IdIntegerMixin, Base):
 
 
 class GuildRules(IdIntegerMixin, Base):
-    __table_args__ = (UniqueConstraint("guild_id", name="uq_guild"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "guild_id",
+            name="uq_guild",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
+    )
 
     guild_id: Mapped[int] = mapped_column(
         BigInteger,

@@ -199,7 +199,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['guild_id'], ['guildlevelsconfig.guild_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('guild_id', 'role_id', name='uq_bonus_guild_role')
+    sa.UniqueConstraint('guild_id', 'role_id', name='uq_bonus_guild_role', deferrable=True, initially="DEFERRED")
     )
     op.create_table('guildclanshopitem',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
@@ -208,7 +208,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['guild_id'], ['guildclansconfig.guild_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('guild_id', 'name', name='uq_guild_name')
+    sa.UniqueConstraint('guild_id', 'name', name='uq_guild_name', deferrable=True, initially="DEFERRED")
     )
     # === migrate clan shop items from guildclansconfig ===
     try:
@@ -252,7 +252,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['guild_id'], ['guildeconomyconfig.guild_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('guild_id', 'name', name='uq_economy_guild_name')
+    sa.UniqueConstraint('guild_id', 'name', name='uq_economy_guild_name', deferrable=True, initially="DEFERRED")
     )
     # === migrate economy shop items from guildeconomyconfig ===
     try:
@@ -296,7 +296,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['guild_id'], ['guildmoderationconfig.guild_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('guild_id', 'role_id', name='uq_fraction_guild_role')
+    sa.UniqueConstraint('guild_id', 'role_id', name='uq_fraction_guild_role', deferrable=True, initially="DEFERRED")
     )
     op.create_table('guildlevel',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
@@ -305,7 +305,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['guild_id'], ['guildlevelsconfig.guild_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('guild_id', 'level', name='uq_level_guild_level')
+    sa.UniqueConstraint('guild_id', 'level', name='uq_level_guild_level', deferrable=True, initially="DEFERRED")
     )
     # === migrate level and bonus role mappings from guildlevelsconfig ===
     connection = op.get_bind()
@@ -375,8 +375,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['guild_id'], ['guildrolerequestconfig.guild_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('guild_id', 'role_id', name='uq_org_guild_role')
-    )
+    sa.UniqueConstraint('guild_id', 'role_id', name='uq_org_guild_role', deferrable=True, initially="DEFERRED",))
 
     # === migrate organizational and illegal roles from mainguildconfig ===
     try:
@@ -454,8 +453,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['guild_id'], ['guildrulesconfig.guild_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('guild_id', name='uq_guild')
-    )
+    sa.UniqueConstraint('guild_id', name='uq_guild', deferrable=True, initially="DEFERRED",))
     op.create_table('guildruleschapter',
     sa.Column('rules_id', sa.BigInteger(), nullable=False),
     sa.Column('text', sa.String(), nullable=False),

@@ -33,6 +33,7 @@ async def send_rules(
 
     async with bot.uow.start(readonly=True) as session:
         rules = await get_guild_rules(session, guild_id=guild.id)
+        session.expunge_all()
 
     if rules is None or not rules.chapters:
         return await interaction.response.send_message(
