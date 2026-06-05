@@ -38,11 +38,13 @@ class GuildRoleRequestConfig(IdIntegerMixin, Base):
         GuildOrganizationalRole,
         lazy="selectin",
         cascade="all, delete-orphan",
+        primaryjoin="and_(GuildRoleRequestConfig.guild_id == GuildOrganizationalRole.guild_id, GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.ILLEGAL)",  # noqa: E501
     )
     organizational_roles: Mapped[list[GuildOrganizationalRole]] = relationship(
         GuildOrganizationalRole,
         lazy="selectin",
         cascade="all, delete-orphan",
+        primaryjoin="and_(GuildRoleRequestConfig.guild_id == GuildOrganizationalRole.guild_id, GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.LEGAL)",  # noqa: E501
     )
     check_role_requests_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True

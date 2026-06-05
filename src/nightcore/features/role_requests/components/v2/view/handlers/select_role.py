@@ -15,6 +15,7 @@ from src.infra.db.operations import (
     get_specified_channel,
 )
 from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.modal import (
     SendRoleRequestModal,
 )
@@ -98,6 +99,29 @@ async def handle_role_select_button_callback(
                         if selected_org_role is None:
                             outcome = "unknown_option"
                         else:
+                            org_options = [
+                                SelectOption(
+                                    label=item.name,
+                                    value=str(item.role_id)
+                                    + ","
+                                    + str(item.tag),
+                                )
+                                for item in guild_config.organizational_roles
+                            ]
+
+                            if len(org_options) < 1:
+                                FieldNotConfiguredError("organizational_roles")
+
+                            ill_options = [
+                                SelectOption(
+                                    label=item.name,
+                                    value=str(item.role_id)
+                                    + ","
+                                    + str(item.tag),
+                                )
+                                for item in guild_config.illegal_roles
+                            ]
+
                             outcome = "success"
     except Exception as e:
         logger.error(
@@ -180,8 +204,8 @@ async def handle_role_select_button_callback(
                     interaction.message.edit(  # type: ignore
                         view=view(
                             bot,
-                            org_options=org_options,
-                            ill_options=ill_options if ill_options else None,
+                            org_options=org_options,  # type: ignore
+                            ill_options=ill_options if ill_options else None,  # type: ignore
                         )
                     ),
                 )
@@ -204,8 +228,8 @@ async def handle_role_select_button_callback(
                     interaction.message.edit(  # type: ignore
                         view=view(
                             bot,
-                            org_options=org_options,
-                            ill_options=ill_options if ill_options else None,
+                            org_options=org_options,  # type: ignore
+                            ill_options=ill_options if ill_options else None,  # type: ignore
                         )
                     ),
                 )
@@ -244,8 +268,8 @@ async def handle_role_select_button_callback(
         interaction.message.edit(  # type: ignore
             view=view(
                 bot,
-                org_options=org_options,
-                ill_options=ill_options if ill_options else None,
+                org_options=org_options,  # type: ignore
+                ill_options=ill_options if ill_options else None,  # type: ignore
             )
         )
     )

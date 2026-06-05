@@ -53,6 +53,7 @@ from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
 from src.infra.db.models.configurations.clans import GuildClanShopItem
 from src.infra.db.models.configurations.economy import GuildEconomyShopItem
+from src.infra.db.models.configurations.levels import GuildLevel
 from src.infra.db.models.configurations.role_request import (
     GuildOrganizationalRole,
 )
@@ -1391,3 +1392,32 @@ async def get_organization_role_by_role_id(
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
+
+
+async def get_guild_level(
+    session: AsyncSession, guild_id: int, level: int
+) -> GuildLevel | None:
+    stmt = (
+        select(GuildLevel)
+        .where(GuildLevel.guild_id == guild_id, GuildLevel.level <= level)
+        .order_by(GuildLevel.level.desc())
+        .limit(1)
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_guild_level_role_ids(
+    session: AsyncSession, guild_id: int
+) -> Sequence[int]:
+    stmt = (
+        select(GuildLevel.role_id)
+        .where(GuildLevel.guild_id == guild_id)
+        .distinct()
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()

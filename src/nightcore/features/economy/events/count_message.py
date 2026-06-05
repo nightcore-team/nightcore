@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Sequence
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, Message, Role
@@ -11,9 +11,10 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.models import GuildLevelsConfig, GuildMultipliersConfig
 from src.infra.db.models.configurations.levels import (
     GuildBonusRole,
-    GuildLevel,
 )
 from src.infra.db.operations import (
+    get_guild_level,
+    get_guild_level_role_ids,
     get_or_create_user,
     get_specified_guild_config,
 )
@@ -38,52 +39,15 @@ class CountMessageEvent(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    def _get_role_for_level(
-        self,
-        level: int,
-        level_roles: dict[str, int],
-    ) -> int | None:
-        """Get role ID for current level."""
-        if not level_roles:
-            return None
-
-        if str(level) in level_roles:
-            return level_roles[str(level)]
-
-        available_levels = sorted(map(int, level_roles))
-        suitable_levels = [lvl for lvl in available_levels if lvl <= level]
-
-        if not suitable_levels:
-            return None
-
-        closest_level = max(suitable_levels)
-        return level_roles[str(closest_level)]
-
     async def _handle_level_role(
         self,
         guild: Guild,
         member: Member,
         new_level: int,
-        level_roles: list[GuildLevel],
+        target_role_id: int,
+        all_level_role_ids: Sequence[int],
     ) -> None:
         """Handle level role assignment/removal."""
-
-        if not level_roles:
-            logger.info(
-                "[economy/levelup] No level roles configured for guild %s",
-                guild.id,
-            )
-            return
-
-        target_role_id = self._get_role_for_level(new_level, level_roles)
-
-        if not target_role_id:
-            logger.info(
-                "[economy/levelup] No role available for level %s in guild %s",
-                new_level,
-                guild.id,
-            )
-            return
 
         target_role = await ensure_role_exists(guild, target_role_id)
         if not target_role:
@@ -104,8 +68,6 @@ class CountMessageEvent(Cog):
             return
 
         try:
-            all_level_role_ids = set(level_roles.values())
-
             # find user roles to remove
             roles_to_remove: list[Role | None] = cast(
                 list[Role | None],
@@ -231,9 +193,9 @@ class CountMessageEvent(Cog):
                 levels_config.bonus_access_roles_ids
             )
 
-            if has_any_role_from_sequence(author, bonus_roles):
-                bonus_roles_int = {int(k): v for item in bonus_roles}
+            bonus_roles_int = [item.role_id for item in bonus_roles]
 
+            if has_any_role_from_sequence(author, bonus_roles_int):
                 user_bonus_roles = [
                     role_id
                     for role_id in bonus_roles_int
@@ -271,11 +233,16 @@ class CountMessageEvent(Cog):
                 user.coins += coins_multiplier
                 user.battle_pass_points += battlepass_multiplier
 
-            level_roles = levels_config.level_roles
+            new_level = await get_guild_level(
+                session, guild_id=guild.id, level=user.level
+            )
+            all_level_role_ids = await get_guild_level_role_ids(
+                session, guild_id=guild.id
+            )
 
         gather_list: list[Awaitable[None]] = []
 
-        if is_level_up:
+        if is_level_up and new_level is not None:
             logger.info(
                 "[economy/levelup] User %s reached level %s in guild %s",
                 author.id,
@@ -287,8 +254,9 @@ class CountMessageEvent(Cog):
                 self._handle_level_role(
                     guild=guild,
                     member=author,
-                    new_level=new_level,
-                    level_roles=level_roles,
+                    new_level=new_level.level,
+                    target_role_id=new_level.role_id,
+                    all_level_role_ids=all_level_role_ids,
                 )
             )
 
@@ -298,7 +266,7 @@ class CountMessageEvent(Cog):
                         guild=guild,
                         notifications_channel_id=levelup_channel_id,
                         member=author,
-                        new_level=new_level,
+                        new_level=new_level.level,
                         exp_to_level=exp_to_level,
                     )
                 )
