@@ -660,7 +660,9 @@ def upgrade() -> None:
     op.drop_table('guildmetaconfig')
     op.drop_column('guildclansconfig', 'clan_shop_items')
     op.drop_column('guildeconomyconfig', 'economy_shop_items')
-    op.add_column('guildforumconfig', sa.Column('is_active', sa.Boolean(), nullable=False))
+    op.add_column('guildforumconfig', sa.Column('is_active', sa.Boolean(), nullable=True))
+    op.execute(sa.text("UPDATE guildforumconfig SET is_active = false WHERE is_active IS NULL"))
+    op.alter_column('guildforumconfig', 'is_active', nullable=False)
     op.alter_column('guildforumconfig', 'section_id',
                existing_type=sa.INTEGER(),
                nullable=True)
