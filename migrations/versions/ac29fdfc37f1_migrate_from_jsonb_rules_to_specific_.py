@@ -177,6 +177,41 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('guild_id')
     )
+    # === migrate proposals from mainguildconfig into guildproposalsconfig ===
+    connection = op.get_bind()
+    try:
+        multiplier_rows = cast(
+            list[dict[str, Any]],
+            connection.execute(
+                sa.text(
+                    "SELECT guild_id, create_proposal_channel_id, proposals_count FROM mainguildconfig"
+                )
+            ).mappings().all(),
+        )
+    except Exception:
+        multiplier_rows = []
+
+    migrated_multiplier_rows = 0
+    for row in multiplier_rows:
+        try:
+            connection.execute(
+                sa.text(
+                    "INSERT INTO guildproposalsconfig (guild_id, create_proposal_channel_id, proposals_count) "
+                    "VALUES (:guild_id, :create_proposal_channel_id, :proposals_count)"
+                ),
+                {
+                    "guild_id": cast(int, row["guild_id"]),
+                    "create_proposal_channel_id": cast(int, row.get("create_proposal_channel_id")),
+                    "proposals_count": cast(int, row["proposals_count"]),
+                },
+            )
+            migrated_multiplier_rows += 1
+        except Exception:
+            continue
+
+    if migrated_multiplier_rows:
+        print(f"Migrated {migrated_multiplier_rows} guild multipliers rows")
+
     op.create_table('guildrolerequestconfig',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('check_role_requests_channel_id', sa.BigInteger(), nullable=True),
@@ -184,6 +219,41 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('guild_id')
     )
+
+    # === migrate proposals from guildlevelsconfig into guildrolerequestconfig ===
+    connection = op.get_bind()
+    try:
+        multiplier_rows = cast(
+            list[dict[str, Any]],
+            connection.execute(
+                sa.text(
+                    "SELECT guild_id, check_role_requests_channel_id FROM mainguildconfig"
+                )
+            ).mappings().all(),
+        )
+    except Exception:
+        multiplier_rows = []
+
+    migrated_multiplier_rows = 0
+    for row in multiplier_rows:
+        try:
+            connection.execute(
+                sa.text(
+                    "INSERT INTO guildrolerequestconfig (guild_id, check_role_requests_channel_id) "
+                    "VALUES (:guild_id, :check_role_requests_channel_id)"
+                ),
+                {
+                    "guild_id": cast(int, row["guild_id"]),
+                    "check_role_requests_channel_id": cast(int, row.get("create_proposal_channel_id")),
+                },
+            )
+            migrated_multiplier_rows += 1
+        except Exception:
+            continue
+
+    if migrated_multiplier_rows:
+        print(f"Migrated {migrated_multiplier_rows} guild multipliers rows")
+
     op.create_table('guildrulesconfig',
     sa.Column('guild_id', sa.BigInteger(), nullable=False),
     sa.Column('rules_channel_id', sa.BigInteger(), nullable=True),
