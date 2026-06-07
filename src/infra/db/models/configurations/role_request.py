@@ -48,7 +48,7 @@ class GuildRoleRequestConfig(IdIntegerMixin, Base):
         primaryjoin=lambda: and_(
             GuildRoleRequestConfig.guild_id
             == GuildOrganizationalRole.guild_id,
-            GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.LEGAL,
+            GuildOrganizationalRole.type == OrganizationalRoleTypeEnum.ILLEGAL,
         ),
     )
     organizational_roles: Mapped[list[GuildOrganizationalRole]] = relationship(
