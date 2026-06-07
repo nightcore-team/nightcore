@@ -80,6 +80,17 @@ EOT
         env         = true
       }
 
+      template {
+        data = <<EOT
+{{ with secret "secret/data/keydb" }}
+REDIS_PASSWORD={{ .Data.data.password }}
+REDIS_HOST={{ .Data.data.host }}
+{{ end }}
+EOT
+        destination = "secrets/keydb.env"
+        env         = true
+      }
+
       logs {
         max_files     = 3
         max_file_size = 10
