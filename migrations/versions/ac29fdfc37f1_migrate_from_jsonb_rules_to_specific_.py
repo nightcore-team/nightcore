@@ -672,6 +672,9 @@ def upgrade() -> None:
     op.alter_column('guildforumconfig', 'role_id',
                existing_type=sa.BIGINT(),
                nullable=True)
+    op.alter_column(
+        "guildforumconfig", "prefix_id", existing_type=sa.Integer(), nullable=True
+    )
     op.drop_constraint(op.f('guildforumconfig_prefix_id_key'), 'guildforumconfig', type_='unique')
     op.alter_column('guildlevelsconfig', 'count_messages_type',
                existing_type=sa.VARCHAR(),
@@ -721,6 +724,9 @@ def downgrade() -> None:
     op.alter_column('guildforumconfig', 'section_id',
                existing_type=sa.INTEGER(),
                nullable=False)
+    op.alter_column(
+        "guildforumconfig", "prefix_id", existing_type=sa.Integer(), nullable=False
+    )
     op.drop_column('guildforumconfig', 'is_active')
     op.add_column('guildeconomyconfig', sa.Column('economy_shop_items', postgresql.JSON(astext_type=sa.Text()), server_default=sa.text("'{}'::json"), autoincrement=False, nullable=False))
     op.add_column('guildclansconfig', sa.Column('clan_shop_items', postgresql.JSON(astext_type=sa.Text()), autoincrement=False, nullable=False))
