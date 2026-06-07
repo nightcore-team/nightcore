@@ -131,3 +131,6 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
             cascade="all, delete-orphan",
         )
     )
+    inactive_channel_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )  #

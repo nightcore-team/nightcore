@@ -26,7 +26,6 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
-from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

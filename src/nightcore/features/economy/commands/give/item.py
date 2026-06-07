@@ -7,7 +7,6 @@ from discord import Guild, Role, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models._enums import CaseDropTypeEnum
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
     get_case_by_id,
@@ -24,6 +23,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

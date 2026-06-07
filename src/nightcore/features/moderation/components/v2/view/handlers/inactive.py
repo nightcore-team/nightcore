@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING
 from discord.interactions import Interaction
 from nightforo.types.thread.params import ThreadCreateParams
 
-from src.infra.db.models._enums import InactiveRequestStateEnum
-from src.infra.db.models.guild import GuildModerationConfig
+from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import (
     get_guild_forum_config,
     get_specified_guild_config,
@@ -24,6 +23,7 @@ from src.nightcore.features.moderation.utils.content import (
 )
 from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.utils.object import cast_guild, cast_message
+from src.utils._enums import InactiveRequestStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

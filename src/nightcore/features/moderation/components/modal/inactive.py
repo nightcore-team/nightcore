@@ -7,8 +7,7 @@ from discord import SelectOption, TextStyle
 from discord.interactions import Interaction
 from discord.ui import Label, Modal, Select, TextInput
 
-from src.infra.db.models._enums import InactiveRequestStateEnum
-from src.infra.db.models.guild import GuildModerationConfig
+from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import (
     get_guild_forum_config,
     get_specified_guild_config,
@@ -24,6 +23,7 @@ from src.nightcore.features.moderation.components.v2 import (
 )
 from src.nightcore.utils import ensure_messageable_channel_exists
 from src.nightcore.utils.object import cast_guild
+from src.utils._enums import InactiveRequestStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

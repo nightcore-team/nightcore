@@ -23,6 +23,9 @@ class GuildForumConfig(IdIntegerMixin, Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
+    prefix_id: Mapped[int | None] = mapped_column(
+        Boolean, nullable=True, default=False
+    )
 
     @property
     def available(self) -> bool:  # noqa: D102

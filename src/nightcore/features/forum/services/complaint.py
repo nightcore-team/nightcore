@@ -15,7 +15,7 @@ from nightforo import (
 )
 
 from src.infra.api.forum.utils import extract_discord_id
-from src.infra.db.models.guild import GuildForumConfig
+from src.infra.db.models import GuildForumConfig
 from src.infra.db.operations import (
     get_or_create_processed_thread,
 )
@@ -38,17 +38,13 @@ class ForumComplaintProcessor:
         self.bot = bot
         self._api = forum_api
 
-    async def process_servers(
-        self, servers: Sequence[GuildForumConfig]
-    ) -> None:
+    async def process_servers(self, servers: Sequence[GuildForumConfig]) -> None:
         """Process complaints for a given server."""
         logger.info(
             "[forum] Starting complaint processing",
         )
         try:
-            threads_resp = await self._api.get_threads(
-                ThreadsGetParams(prefix_id=0)
-            )
+            threads_resp = await self._api.get_threads(ThreadsGetParams(prefix_id=0))
             logger.info(
                 "[forum] Fetched %s total threads from API",
                 len(threads_resp.threads),
@@ -80,6 +76,9 @@ class ForumComplaintProcessor:
                     )
 
                 if processed_thread is not None:
+                    continue
+
+                if not config.available or not config.channel_id:
                     continue
 
                 await self._process_single_thread(config, thread)
@@ -152,9 +151,7 @@ class ForumComplaintProcessor:
         logger.info(
             "[forum] PostCreateParams created: thread_id=%s, message=%s, dict=%s",  # noqa: E501
             post_create_params.thread_id,
-            post_create_params.message[:100]
-            if post_create_params.message
-            else None,
+            post_create_params.message[:100] if post_create_params.message else None,
             post_create_params.model_dump(exclude_none=True),
         )
 
@@ -179,9 +176,7 @@ class ForumComplaintProcessor:
         )
 
         try:
-            await self._api.update_thread(
-                thread.thread_id, update_thread_params
-            )
+            await self._api.update_thread(thread.thread_id, update_thread_params)
             logger.info(
                 "[forum] Successfully updated thread %s (prefix_id=6, sticky=True)",  # noqa: E501
                 thread.thread_id,
@@ -193,9 +188,7 @@ class ForumComplaintProcessor:
             return
 
         try:
-            channel = await ensure_messageable_channel_exists(
-                guild, server.channel_id
-            )
+            channel = await ensure_messageable_channel_exists(guild, server.channel_id)  # type: ignore
             if not channel:
                 logger.info(
                     "[forum] Channel with ID %s not found in guild %s",
@@ -236,9 +229,7 @@ class ForumComplaintProcessor:
             result[config] = [
                 t
                 for t in threads
-                if t.node_id == config.section_id
-                and t.prefix_id == 0
-                and t.sticky == 0
+                if t.node_id == config.section_id and t.prefix_id == 0 and t.sticky == 0
             ]
 
         return result
