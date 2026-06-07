@@ -64,23 +64,6 @@ class Clear(Cog):
         channel = interaction.channel
 
         try:
-            self.bot.dispatch(
-                "message_clear",
-                data=MessageClearEventData(
-                    moderator=interaction.user,  # type: ignore
-                    category=self.__class__.__name__.lower(),
-                    channel_cleared_id=channel.id,  # type: ignore
-                    amount=amount,
-                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
-                ),
-            )
-        except Exception as e:
-            logger.exception(
-                "[event] - Failed to dispatch user_punish event: %s", e
-            )
-            return
-
-        try:
             await channel.purge(  # type: ignore
                 limit=amount,
                 check=lambda m: m.author == user if user else True,  # type: ignore
@@ -106,6 +89,18 @@ class Clear(Cog):
             ),
             ephemeral=True,
         )
+
+        self.bot.dispatch(
+            "message_clear",
+            data=MessageClearEventData(
+                moderator=interaction.user,  # type: ignore
+                category=self.__class__.__name__.lower(),
+                channel_cleared_id=channel.id,  # type: ignore
+                amount=amount,
+                created_at=discord.utils.utcnow().astimezone(tz=UTC),
+            ),
+        )
+
         logger.info(
             "[command] - invoked user=%s guild=%s channel=%s cleared_messages=%s",  # noqa: E501
             interaction.user.id,

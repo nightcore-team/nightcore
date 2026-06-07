@@ -147,10 +147,12 @@ class Voteban(Cog):
                     ephemeral=True,
                 )
 
+        await interaction.response.defer(thinking=True)
+
         parsed_duration = parse_duration(duration)
 
         if not parsed_duration:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                     self.bot.user.name,  # type: ignore
@@ -165,7 +167,7 @@ class Voteban(Cog):
             tmp_delete_messages_per = parse_duration(delete_messages_per)
 
             if tmp_delete_messages_per is None:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ValidationErrorEmbed(
                         "Неверная продолжительность удаления сообщений. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
                         self.bot.user.name,  # type: ignore
@@ -174,7 +176,7 @@ class Voteban(Cog):
                 )
 
             if tmp_delete_messages_per > config.bot.DELETE_MESSAGES_SECONDS:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ValidationErrorEmbed(
                         f"Продолжительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
                         self.bot.user.name,  # type: ignore
@@ -188,7 +190,7 @@ class Voteban(Cog):
             guild, ban_request_channel_id
         )
         if not channel:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
                     "канал",
                     self.bot.user.name,  # type: ignore
@@ -196,7 +198,6 @@ class Voteban(Cog):
                 ),
                 ephemeral=True,
             )
-        await interaction.response.defer(thinking=True, ephemeral=True)
 
         view = BanRequestViewV2(
             author_id=interaction.user.id,

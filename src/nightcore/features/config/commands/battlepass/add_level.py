@@ -107,7 +107,7 @@ async def add_level(
         drop_id=-1,
         name=reward_type.to_str(),
         amount=reward_amount,
-    )
+    )  # type: ignore
 
     if not outcome:
         async with bot.uow.start() as session:

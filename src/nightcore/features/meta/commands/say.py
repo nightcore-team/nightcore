@@ -9,7 +9,6 @@ from discord.interactions import Interaction
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.config.config import config as project_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -23,7 +22,7 @@ class Say(Cog):
     @app_commands.command(
         name="say", description="Отправить сообщение от бота"
     )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)  # type: ignore
     async def say(
         self,
         interaction: Interaction["Nightcore"],
@@ -31,10 +30,6 @@ class Say(Cog):
         image: Attachment | None = None,
     ) -> None:
         """Send a message displaying the bot's current latency."""
-
-        if interaction.user.id not in project_config.bot.DEVELOPER_IDS:
-            raise app_commands.MissingPermissions(["developer_access"])
-
         await interaction.channel.send(text, file=image)  # type: ignore
 
         await interaction.response.send_message(

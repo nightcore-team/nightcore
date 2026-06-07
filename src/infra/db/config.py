@@ -2,6 +2,7 @@
 
 from pydantic import AliasChoices, Field, PostgresDsn, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
+from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from src.config.env import BaseEnvConfig
@@ -69,12 +70,10 @@ class Config(BaseEnvConfig):
     ) -> AsyncEngine:
         if isinstance(v, AsyncEngine):
             return v
+
         return create_async_engine(
             url=info.data.get("POSTGRES_DATABASE_URI"),  # type: ignore
             echo=info.data.get("POSTGRES_ECHO"),
-            echo_pool=info.data.get("POSTGRES_ECHO_POOL"),
-            max_overflow=info.data.get("POSTGRES_POOL_MAX_OVERFLOW"),
-            pool_size=info.data.get("POSTGRES_POOL_SIZE"),
-            pool_timeout=info.data.get("POSTGRES_POOL_TIMEOUT"),
+            poolclass=NullPool,
             pool_pre_ping=info.data.get("POSTGRES_POOL_PRE_PING"),
         )

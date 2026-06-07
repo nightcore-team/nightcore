@@ -55,6 +55,7 @@ def create_bot(
         "src.nightcore.features.moderation.commands.rrban",
         "src.nightcore.features.moderation.commands.unrrban",
         "src.nightcore.features.moderation.commands.notify",
+        "src.nightcore.features.moderation.commands.inactive",
         # moderation events
         "src.nightcore.features.moderation.events.kick",
         "src.nightcore.features.moderation.events.roles_change",
@@ -127,6 +128,8 @@ def create_bot(
         "src.nightcore.features.private_rooms.events.delete",
         # === compbuilder
         "src.nightcore.features.compbuilder",
+        # === forum
+        "src.nightcore.features.forum",
         # === tasks
         "src.nightcore.tasks.unpunish",
         "src.nightcore.tasks.multiplayer_roulette",

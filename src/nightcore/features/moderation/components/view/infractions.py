@@ -1,8 +1,8 @@
 """View for paginating infractions."""
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from discord import ButtonStyle, ClientUser, User
+from discord import ButtonStyle, User
 from discord.colour import Color
 from discord.embeds import Embed
 from discord.interactions import Interaction
@@ -48,7 +48,7 @@ class InfractionsView(View):
         )
         embed.set_footer(
             text=f"Page {self.current_page + 1} / {len(self.pages)}",
-            icon_url=cast(ClientUser, self.bot.user).display_avatar.url,
+            icon_url=self.bot.user.display_avatar.url,
         )
         return embed
 

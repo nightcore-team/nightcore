@@ -43,6 +43,7 @@ class CaseDropAnnot(TypedDict):
     name: str
     amount: int
     chance: int
+    is_color_compensation: bool | None
 
 
 class FAQPageAnnot(TypedDict):
@@ -59,6 +60,7 @@ class BattlepassRewardAnnot(TypedDict):
     drop_id: int
     name: str
     amount: int
+    is_color_compensation: bool | None
 
 
 class BattlepassLevelAnnot(TypedDict):

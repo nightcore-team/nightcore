@@ -21,6 +21,7 @@ from src.infra.db.models import (
     GuildClansConfig,
     GuildEconomyConfig,
     GuildFaqConfig,
+    GuildForumConfig,
     GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
@@ -95,6 +96,7 @@ GuildT = TypeVar(
     GuildFaqConfig,
     GuildRulesConfig,
     GuildMultipliersConfig,
+    GuildForumConfig,
 )
 
 
@@ -116,6 +118,7 @@ def get_config_type_by_name(name: str) -> type[GuildT]:
         "faq": GuildFaqConfig,
         "role_request": GuildRoleRequestConfig,
         "multiplers": GuildMultipliersConfig,
+        "forum": GuildForumConfig,
     }  # type: ignore
     return config_types[name]
 
@@ -186,10 +189,12 @@ async def get_moderation_access_roles(
 
 async def get_all_pending_notifications(
     session: AsyncSession,
+    now: datetime,
 ) -> Sequence[NotifyState]:
     """Get all pending notifications."""
     stmt = select(NotifyState).where(
-        NotifyState.state == NotifyStateEnum.PENDING
+        NotifyState.state == NotifyStateEnum.PENDING,
+        NotifyState.end_time < now,
     )
     result = await session.scalars(stmt)
     return result.all()
@@ -1286,11 +1291,10 @@ async def get_user_casino_bet_by_game_id(
 
 
 async def get_active_casino_games(
-    session: AsyncSession, *, guild_id: int, dt: datetime
+    session: AsyncSession, *, dt: datetime
 ) -> Sequence[CasinoGame]:
     """Get all active casino games for a guild."""
     stmt = select(CasinoGame).where(
-        CasinoGame.guild_id == guild_id,
         CasinoGame.state == CasinoGameStateEnum.PENDING,
         CasinoGame.end_time <= dt,
     )
@@ -1386,6 +1390,47 @@ async def get_organization_role_by_role_id(
     stmt = select(GuildOrganizationalRole).where(
         GuildOrganizationalRole.guild_id == guild_id,
         GuildOrganizationalRole.role_id == role_id,
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_forum_guilds(
+    session: AsyncSession,
+) -> Sequence[GuildForumConfig]:
+    """Get all forum configurations."""
+
+    stmt = select(GuildForumConfig)
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_active_forum_guilds(
+    session: AsyncSession,
+) -> Sequence[GuildForumConfig]:
+    """Get all forum configurations."""
+
+    stmt = select(GuildForumConfig).where(
+        GuildForumConfig.channel_id != None,  # noqa: E711
+        GuildForumConfig.section_id != None,  # noqa: E711
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_guild_forum_config(
+    session: AsyncSession, *, guild_id: int
+) -> GuildForumConfig | None:
+    """Get the forum configuration for a guild."""
+
+    stmt = select(GuildForumConfig).where(
+        GuildForumConfig.guild_id == guild_id
     )
 
     result = await session.execute(stmt)

@@ -63,10 +63,12 @@ class UnBan(Cog):
                 ephemeral=True,
             )
 
+        await interaction.response.defer(thinking=True)
+
         try:
             await guild.fetch_ban(user)
         except discord.NotFound:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     f"<@{user.id}> не забанен на этом сервере.",
@@ -100,7 +102,7 @@ class UnBan(Cog):
                 await guild.unban(user, reason=reason)
             except discord.HTTPException as e:
                 logger.exception("Failed to unban user: %s", e)
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка снятия блокировки",
                         f"Не удалось снять блокировку с <@{user.id}>.",
@@ -109,8 +111,6 @@ class UnBan(Cog):
                     ),
                     ephemeral=True,
                 )
-
-        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             view=PunishViewV2(

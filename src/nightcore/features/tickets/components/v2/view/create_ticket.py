@@ -230,9 +230,6 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 overwrites = new_tickets_category.overwrites
                 overwrites[user] = discord.PermissionOverwrite(
                     view_channel=True,
-                    send_messages=True,
-                    attach_files=True,
-                    read_message_history=True,
                 )
 
                 channel = await guild.create_text_channel(

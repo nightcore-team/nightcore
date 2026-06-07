@@ -1,9 +1,6 @@
 """Utility functions for tasks."""
 
 from datetime import UTC, datetime
-from typing import cast
-
-from discord import ClientUser
 
 from src.infra.db.models import TempPunish
 from src.nightcore.bot import Nightcore
@@ -22,7 +19,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 category=active_punish.category,
                 mute_type="default",
                 guild_id=active_punish.guild_id,
-                moderator_id=cast(ClientUser, bot.user).id,
+                moderator_id=bot.user.id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
                 created_at=datetime.now(UTC),
@@ -35,7 +32,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 category=active_punish.category,
                 mute_type="mpmute",
                 guild_id=active_punish.guild_id,
-                moderator_id=cast(ClientUser, bot.user).id,
+                moderator_id=bot.user.id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
                 created_at=datetime.now(UTC),
@@ -48,7 +45,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 category=active_punish.category,
                 mute_type="vmute",
                 guild_id=active_punish.guild_id,
-                moderator_id=cast(ClientUser, bot.user).id,
+                moderator_id=bot.user.id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
                 created_at=datetime.now(UTC),
@@ -60,7 +57,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 mode="expired",
                 category=active_punish.category,
                 guild_id=active_punish.guild_id,
-                moderator_id=cast(ClientUser, bot.user).id,
+                moderator_id=bot.user.id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
                 created_at=datetime.now(UTC),
@@ -72,7 +69,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 mode="expired",
                 category=active_punish.category,
                 guild_id=active_punish.guild_id,
-                moderator_id=cast(ClientUser, bot.user).id,
+                moderator_id=bot.user.id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
                 created_at=datetime.now(UTC),
@@ -84,7 +81,7 @@ def handle_infraction_type_event(active_punish: TempPunish, bot: Nightcore):
                 mode="expired",
                 category=active_punish.category,
                 guild_id=active_punish.guild_id,
-                moderator_id=cast(ClientUser, bot.user).id,
+                moderator_id=bot.user.id,
                 user_id=active_punish.user_id,
                 reason="Punish expired",
                 created_at=datetime.now(UTC),

@@ -121,6 +121,8 @@ class Kick(Cog):
                 ephemeral=True,
             )
 
+        await interaction.response.defer(thinking=True)
+
         try:
             self.bot.dispatch(
                 "user_kicked",
@@ -144,7 +146,7 @@ class Kick(Cog):
             await guild.kick(member, reason=reason)
         except Exception as e:
             logger.warning("[command] - Failed to kick user: %s", e)
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=ErrorEmbed(
                     "Ошибка кика",  # type: ignore
                     "Не удалось кикнуть пользователя.",
@@ -153,8 +155,6 @@ class Kick(Cog):
                 ),
                 ephemeral=True,
             )
-
-        await interaction.response.defer(thinking=True)
 
         await interaction.followup.send(
             view=PunishViewV2(

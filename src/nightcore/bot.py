@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 import discord
-from aiohttp import TCPConnector
-from discord import app_commands
+import discordhealthcheck  # type: ignore
+from discord import ClientUser, app_commands
 from discord.ext.commands import Bot  # type: ignore
 from nightforo import Client as XenforoClient
 
@@ -36,6 +36,7 @@ from src.nightcore.features.tickets.components.v2 import (
 )
 from src.nightcore.utils import log_tree_summary
 from src.nightcore.utils.image_builder.cache import ImageCache
+from src.nightcore.utils.lock_manager import AsyncioLockManager
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,8 @@ class GuildOnlyTree(app_commands.CommandTree):
 
 
 class Nightcore(Bot):
+    user: ClientUser  # type: ignore
+
     def __init__(
         self,
         *,
@@ -78,6 +81,8 @@ class Nightcore(Bot):
         self.guild_state_repository = guild_state_repository
         self.apis = CustomAPICollection()
         self.images_cache = ImageCache()
+        self.config = config
+        self.lock_manager = AsyncioLockManager()
 
         super().__init__(
             command_prefix=".",
@@ -94,16 +99,6 @@ class Nightcore(Bot):
 
         async with self:
             await self.start(config.bot.BOT_TOKEN)
-
-    @property
-    def _http_connector(self) -> TCPConnector:
-        return TCPConnector(
-            limit=100,  # max 100 connections
-            ttl_dns_cache=300,  # Cache DNS for 5 minutes
-            enable_cleanup_closed=True,
-            force_close=False,  # Don't close connection after each request  # noqa: E501
-            keepalive_timeout=60,  # Keep connection alive for 60 seconds
-        )
 
     async def _reset_users_voice_activity(self) -> None:
         """Reset users' voice activity status in the database on startup."""
@@ -229,9 +224,10 @@ class Nightcore(Bot):
         """Setup hook called when the bot is ready to start."""
         logger.info("[setup] Setup hook started...")
 
-        await self.load_extensions()
+        logger.info("[healthcheck] Running discord health check...")
+        self.healthcheck_server = await discordhealthcheck.start(self)
 
-        self.http.connector = self._http_connector
+        await self.load_extensions()
 
         commands = self.tree.get_commands()
 

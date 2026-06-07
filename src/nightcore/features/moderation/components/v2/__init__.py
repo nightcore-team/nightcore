@@ -1,5 +1,6 @@
 from .view import (
     BanRequestViewV2,
+    InactiveRequestViewV2,
     InfractionsViewV2,
     NotifyViewV2,
     PrepareNotifyViewV2,
@@ -8,6 +9,7 @@ from .view import (
 
 __all__ = (
     "BanRequestViewV2",
+    "InactiveRequestViewV2",
     "InfractionsViewV2",
     "NotifyViewV2",
     "PrepareNotifyViewV2",

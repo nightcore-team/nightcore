@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 CLEAR_COLOR_ID: Final[int] = -1
 
-_commands: Final[dict[str, int]] = {"add_reward": 1}
+_commands: Final[dict[str, int]] = {"add_reward": 1, "item": 1}
 
 
 async def reward_depends_on_type_autocomplete(

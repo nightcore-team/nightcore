@@ -22,3 +22,4 @@ class Config(BaseEnvConfig):
         566255833684508672,
         451359852418039808,
     ]
+    INACTIVE_FORUM_NODE_ID: int = 20

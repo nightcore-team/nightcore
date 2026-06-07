@@ -266,3 +266,9 @@ class MessageCountTypeEnum(Enum):
 class OrganizationalRoleTypeEnum(Enum):
     ILLEGAL = "illegal"
     LEGAL = "legal"
+
+
+class InactiveRequestStateEnum(Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"

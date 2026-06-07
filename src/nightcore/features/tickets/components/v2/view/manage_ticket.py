@@ -26,6 +26,8 @@ from discord.ui import (
     button,
 )
 
+from src.nightcore.utils.lock_manager import AsyncioLockTypeEnum
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -38,7 +40,6 @@ from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
 from src.nightcore.features.tickets.events.dto import TicketChangeEventData
 from src.nightcore.utils import (
     discord_ts,
-    ensure_member_exists,
     ensure_messageable_channel_exists,
 )
 from src.nightcore.utils.permissions import (
@@ -127,7 +128,12 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         pinned_tickets_category_id = 0
         logging_channel_id: int | None = None
 
-        async with view.bot.uow.start() as session:
+        async with (
+            view.bot.lock_manager.acquire(
+                AsyncioLockTypeEnum.TicketManageAction, interaction.channel_id
+            ),
+            view.bot.uow.start() as session,
+        ):
             ticket_state = await get_latest_user_ticket(
                 session, guild_id=guild.id, channel_id=channel.id
             )
@@ -226,17 +232,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ephemeral=True,
                 )
 
-            overwrites = channel.overwrites
-            overwrites[user] = discord.PermissionOverwrite(
-                read_message_history=True,
-                read_messages=True,
-                send_messages=True,
-                attach_files=True,
-            )
-
             await channel.edit(
                 category=cast(CategoryChannel, pinned_tickets_category),
-                overwrites=channel.overwrites,
             )
 
             await interaction.followup.send(
@@ -285,7 +282,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         view = cast(ManageTicketViewV2, self.view)
         guild = cast(Guild, interaction.guild)
         channel = cast(TextChannel, interaction.channel)
-        user = cast(Member, interaction.user)
 
         await interaction.response.defer()
 
@@ -321,8 +317,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 # Save ticket data
                 ticket_author_id = ticket.author_id
 
-                # Update ticket state to OPENED (not PINNED)
-                ticket.state = TicketStateEnum.OPENED
+                # Update ticket state to PINNED
+                ticket.state = TicketStateEnum.PINNED
                 ticket.updated_at = datetime.now(UTC)
 
                 # Get pinned tickets category ID (ticket will be moved here and reopened)  # noqa: E501
@@ -406,30 +402,14 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ephemeral=True,
                 )
 
-            # Update channel permissions to grant ticket author access
-            ticket_author = await ensure_member_exists(guild, ticket_author_id)
-            moderator = await ensure_member_exists(guild, ticket.moderator_id)  # type: ignore
             overwrites = channel.overwrites
 
-            if ticket_author:
-                overwrites[ticket_author] = discord.PermissionOverwrite(
-                    read_messages=True,
-                    send_messages=True,
-                    attach_files=True,
-                    read_message_history=True,
-                )
-            if moderator:
-                overwrites[moderator] = discord.PermissionOverwrite(
-                    read_messages=True,
-                    send_messages=True,
-                    attach_files=True,
-                    read_message_history=True,
-                )
-            overwrites[user] = discord.PermissionOverwrite(
-                send_messages=True,
+            overwrites[guild.default_role] = discord.PermissionOverwrite(
                 read_messages=True,
+                send_messages=True,
                 attach_files=True,
                 read_message_history=True,
+                view_channel=False,
             )
 
             await channel.edit(
@@ -591,16 +571,11 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ephemeral=True,
                 )
 
-            ticket_author = await ensure_member_exists(guild, ticket_author_id)
             overwrites = channel.overwrites
 
-            if ticket_author:
-                overwrites[ticket_author] = discord.PermissionOverwrite(
-                    read_messages=False,
-                    send_messages=False,
-                )
-            overwrites[user] = discord.PermissionOverwrite(
+            overwrites[guild.default_role] = discord.PermissionOverwrite(
                 send_messages=False,
+                view_channel=False,
             )
 
             await channel.edit(
