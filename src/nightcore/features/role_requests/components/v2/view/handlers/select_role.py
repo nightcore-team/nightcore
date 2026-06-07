@@ -92,7 +92,7 @@ async def handle_role_select_button_callback(
                             await get_organization_role_by_role_id(
                                 session,
                                 guild_id=guild.id,
-                                role_id=selected_option,  # type: ignore
+                                role_id=selected_role_id,
                             )
                         )
 
@@ -101,10 +101,7 @@ async def handle_role_select_button_callback(
                         else:
                             org_options = [
                                 SelectOption(
-                                    label=item.name,
-                                    value=str(item.role_id)
-                                    + ","
-                                    + str(item.tag),
+                                    label=item.name, value=str(item.role_id)
                                 )
                                 for item in guild_config.organizational_roles
                             ]
@@ -114,10 +111,7 @@ async def handle_role_select_button_callback(
 
                             ill_options = [
                                 SelectOption(
-                                    label=item.name,
-                                    value=str(item.role_id)
-                                    + ","
-                                    + str(item.tag),
+                                    label=item.name, value=str(item.role_id)
                                 )
                                 for item in guild_config.illegal_roles
                             ]

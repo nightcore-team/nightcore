@@ -53,7 +53,7 @@ class Rrmessage(Cog):
             org_options = [
                 SelectOption(
                     label=item.name,
-                    value=str(item.role_id) + "," + str(item.tag),
+                    value=str(item.role_id),
                 )
                 for item in guild_config.organizational_roles
             ]
@@ -64,7 +64,7 @@ class Rrmessage(Cog):
             ill_options = [
                 SelectOption(
                     label=item.name,
-                    value=str(item.role_id) + "," + str(item.tag),
+                    value=str(item.role_id),
                 )
                 for item in guild_config.illegal_roles
             ]
