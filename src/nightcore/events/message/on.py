@@ -17,8 +17,9 @@ from src.infra.db.operations import (
     get_specified_field,
 )
 from src.nightcore.bot import Nightcore
+from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import has_any_role
-from src.utils._enums import ChannelType
+from src.utils._enums import ChannelType, MessageCountTypeEnum
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,12 @@ class OnMessageEvent(Cog):
             return
 
         else:
-            async with self.bot.uow.start() as session:
+            async with specified_guild_config(
+                bot=self.bot,
+                guild_id=guild.id,
+                config_type=GuildLevelsConfig,
+                _create=True,
+            ) as (levels_config, session):
                 proposal_channel_id = await get_specified_channel(
                     session,
                     guild_id=guild.id,
@@ -53,19 +59,16 @@ class OnMessageEvent(Cog):
                         guild.id,
                     )
 
-                count_messages_type = await get_specified_field(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildLevelsConfig,
-                    field_name="count_messages_type",
+                count_messages_type = (
+                    levels_config.count_messages_type
+                    if levels_config.count_messages_type
+                    else MessageCountTypeEnum.CHANNEL_ONLY
                 )
 
-                count_messages_channel_id = await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildLevelsConfig,
-                    channel_type=ChannelType.COUNT_MESSAGES,
+                count_messages_channel_id = (
+                    levels_config.count_messages_channel_id
                 )
+
                 count_moderation_messages_channel_id = (
                     await get_specified_channel(
                         session,
@@ -97,7 +100,7 @@ class OnMessageEvent(Cog):
                 self.bot.dispatch("create_proposal", message)
                 return
 
-            if count_messages_type == "channel_only":
+            if count_messages_type == MessageCountTypeEnum.CHANNEL_ONLY:
                 if message.channel.id == count_messages_channel_id:
                     self.bot.dispatch("count_message", message)
                 if message.channel.id == count_moderation_messages_channel_id:
@@ -115,7 +118,7 @@ class OnMessageEvent(Cog):
                             guild.id,
                         )
 
-            elif count_messages_type == "all":
+            elif count_messages_type == MessageCountTypeEnum.ALL:
                 self.bot.dispatch("count_message", message)
 
                 if trackable_moderation_role_id:

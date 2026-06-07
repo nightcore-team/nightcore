@@ -188,7 +188,7 @@ class CountMessageEvent(Cog):
             )
 
             # check bonus multiplier
-            bonus_multiplier = 1
+            bonus_coins = 0
             bonus_roles: list[GuildBonusRole] = (
                 levels_config.bonus_access_roles_ids
             )
@@ -198,19 +198,15 @@ class CountMessageEvent(Cog):
             if has_any_role_from_sequence(author, bonus_roles_int):
                 user_bonus_roles = [
                     role_id
-                    for role_id in bonus_roles_int
+                    for role_id in bonus_roles
                     if role_id in [role.id for role in author.roles]
                 ]
 
                 if user_bonus_roles:
-                    highest_bonus_role_id = max(
-                        user_bonus_roles, key=lambda r: bonus_roles_int[r]
+                    highest_bonus_role = max(
+                        user_bonus_roles, key=lambda r: r.coins
                     )
-                    bonus_multiplier += bonus_roles_int[highest_bonus_role_id]
-
-            exp_multiplier *= bonus_multiplier
-            coins_multiplier *= bonus_multiplier
-            battlepass_multiplier *= bonus_multiplier
+                    bonus_coins += highest_bonus_role.coins
 
             # count user exp and coins
             new_current_exp = user.current_exp + exp_multiplier
@@ -230,7 +226,7 @@ class CountMessageEvent(Cog):
             if is_level_up:
                 exp_to_level = user.exp_to_level - user.current_exp
             else:
-                user.coins += coins_multiplier
+                user.coins += coins_multiplier + bonus_coins
                 user.battle_pass_points += battlepass_multiplier
 
             new_level = await get_guild_level(
