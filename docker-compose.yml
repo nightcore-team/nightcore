@@ -54,9 +54,6 @@ services:
     container_name: nightcore-redis
     restart: no
 
-    ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
-
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -87,17 +84,13 @@ services:
     restart: unless-stopped
     command:
       - --api.dashboard=true
-      - --api.insecure=false
+      - --api.insecure=true
 
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=nightcore-network
 
       - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
-      - --entrypoints.websecure.address=:443
 
       - --log.level=INFO
       - --accesslog=true
@@ -113,10 +106,3 @@ services:
 
     networks:
       - nightcore-network
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.sdfgdfgdfg.tech`)"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.traefik-dashboard.tls=true"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
