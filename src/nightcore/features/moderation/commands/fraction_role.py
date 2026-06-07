@@ -10,10 +10,6 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
-from src.infra.db.models.configurations.moderation import GuildFractionRole
-from src.infra.db.operations import (
-    get_specified_field,
-)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -102,7 +98,7 @@ class FractionRole(Cog):
 
         async with specified_guild_config(
             self.bot, guild.id, GuildModerationConfig
-        ) as (moderation_config, session):
+        ) as (moderation_config, _):
             # Moderation access roles
             moderation_access_roles = (
                 moderation_config.moderation_access_roles_ids
@@ -110,14 +106,7 @@ class FractionRole(Cog):
             if not moderation_access_roles:
                 raise FieldNotConfiguredError("доступ к модерации")
 
-            fraction_roles: list[
-                GuildFractionRole
-            ] = await get_specified_field(
-                session,
-                guild_id=guild.id,
-                config_type=GuildModerationConfig,
-                field_name="fraction_roles_access_roles_ids",
-            )
+            fraction_roles = moderation_config.fraction_roles_access_roles_ids
 
         if not any(role_id == item.role_id for item in fraction_roles):
             return await interaction.followup.send(
