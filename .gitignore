@@ -210,4 +210,7 @@ __marimo__/
 # Stubs
 typings/
 
-t.py
+# Redis
+.redisinsight
+
+.DS_Store

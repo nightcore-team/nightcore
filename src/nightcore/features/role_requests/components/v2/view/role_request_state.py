@@ -16,8 +16,8 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models._enums import RoleRequestStateEnum
 from src.nightcore.utils import discord_ts
+from src.utils._enums import RoleRequestStateEnum
 
 
 class LinksActionRow(ActionRow["RoleRequestStateView"]):

@@ -7,8 +7,7 @@ from discord import Guild, Member, app_commands
 from discord.app_commands.checks import Cooldown
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import ChannelType
-from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.special_events.valentine._groups import (
     valentine as valentine_group,
@@ -22,6 +21,7 @@ from src.nightcore.features.special_events.valentine.events.dto.valentine_send i
 from src.nightcore.features.special_events.valentine.utils.valentine_image import (  # noqa: E501
     generate_valentine_image,
 )
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

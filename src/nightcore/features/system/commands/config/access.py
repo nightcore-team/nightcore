@@ -8,8 +8,7 @@ from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import MetaConfigAccessTypeEnum
-from src.infra.db.models.meta import GuildMetaConfig
+from src.infra.db.models import GuildAccessConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.system._groups import config as config_system_group
@@ -26,6 +25,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import MetaConfigAccessTypeEnum
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ async def setup_access(
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
-        config_type=GuildMetaConfig,
+        config_type=GuildAccessConfig,
         _create=True,
     ) as (guild_config, _):  # type: ignore
         try:
@@ -163,7 +163,7 @@ async def update_config_access(
     async with specified_guild_config(
         cast(Nightcore, interaction.client),
         cast(Guild, interaction.guild).id,
-        config_type=GuildMetaConfig,
+        config_type=GuildAccessConfig,
         _create=True,
     ) as (guild_config, _):
         if system.value == "all":

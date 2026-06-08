@@ -9,7 +9,6 @@ from discord import Guild, Message
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models._enums import CasinoGameStateEnum
 from src.infra.db.operations import (
     get_casino_game_by_message_id,
     get_specified_field,
@@ -18,6 +17,7 @@ from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.economy.components.v2 import (
     MultiplayerRouletteViewV2,
 )
+from src.utils._enums import CasinoGameStateEnum
 
 if TYPE_CHECKING:
     from src.infra.db.models._annot import CasinoBetAnnot

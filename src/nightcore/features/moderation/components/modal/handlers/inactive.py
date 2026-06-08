@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, cast
 
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import InactiveRequestStateEnum
 from src.nightcore.features.moderation.utils.content import (
     parse_author_id_from_components,
     parse_inactive_text_from_components,
     parse_nickname_from_components,
 )
 from src.nightcore.utils.object import cast_guild, cast_message
+from src.utils._enums import InactiveRequestStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

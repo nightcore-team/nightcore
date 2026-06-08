@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models import GuildLoggingConfig, GuildTicketsConfig
-from src.infra.db.models._enums import ChannelType, TicketStateEnum
 from src.infra.db.operations import (
     get_latest_user_ticket,
     get_specified_channel,
@@ -47,6 +46,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ChannelType, TicketStateEnum
 
 logger = logging.getLogger(__name__)
 

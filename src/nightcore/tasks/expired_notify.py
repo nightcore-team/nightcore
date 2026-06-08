@@ -9,11 +9,11 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildNotificationsConfig, NotifyState
-from src.infra.db.models._enums import ChannelType, NotifyStateEnum
 from src.infra.db.operations import (
     get_all_pending_notifications,
     get_specified_channel,
 )
+from src.utils._enums import ChannelType, NotifyStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

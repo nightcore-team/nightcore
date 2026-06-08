@@ -8,7 +8,7 @@ from discord import Guild, app_commands
 from discord.embeds import Embed
 from discord.interactions import Interaction
 
-from src.infra.db.models.guild import GuildInfomakerConfig
+from src.infra.db.models import GuildInfomakerConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import NoOptionsSuppliedEmbed
 from src.nightcore.features.config._groups import (

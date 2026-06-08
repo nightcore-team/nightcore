@@ -6,7 +6,6 @@ from typing import cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import MetaConfigAccessTypeEnum
 from src.infra.db.operations import get_config_type_by_name
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.system._groups import config as config_system_group
@@ -17,6 +16,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import MetaConfigAccessTypeEnum
 
 logger = logging.getLogger(__name__)
 

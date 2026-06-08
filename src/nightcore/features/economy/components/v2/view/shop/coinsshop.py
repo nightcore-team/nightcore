@@ -29,10 +29,11 @@ from src.infra.db.models import (
     GuildEconomyConfig,
     ShopOrderState,
 )
-from src.infra.db.models._enums import ShopOrderStateEnum
+from src.infra.db.models.configurations.economy import GuildEconomyShopItem
 from src.infra.db.operations import get_or_create_user, get_specified_field
 from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
 from src.nightcore.services.config import specified_guild_config
+from src.utils._enums import ShopOrderStateEnum
 
 from .order import CoinsShopOrderViewV2
 
@@ -65,18 +66,18 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
         interaction: Interaction["Nightcore"],
         guild: Guild,
         coin_name: str | None,
-        shop_items: dict[str, int],
+        shop_items: list[GuildEconomyShopItem],
     ) -> None:
         """Update the main shop view after an item selection."""
         bot = interaction.client
 
         options = [
             SelectOption(
-                label=item,
-                description=f"Цена: {price:.0f} {coin_name}",
-                value=f"{item},{price}",
+                label=item.name,
+                description=f"Цена: {item.cost:.0f} {coin_name}",
+                value=f"{item},{item.cost}",
             )
-            for item, price in shop_items.items()
+            for item in shop_items
         ]
 
         view = CoinsShopViewV2(bot, guild.name, coin_name, shop_items, options)
@@ -117,7 +118,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 )
 
                 if not outcome:
-                    if not (buyer.coins > float(price)):
+                    if not (buyer.coins >= float(price)):
                         outcome = "insufficient_funds"
                     else:
                         outcome = "success"
@@ -265,7 +266,7 @@ class CoinsShopViewV2(LayoutView):
         bot: "Nightcore",
         guild_name: str | None = None,
         coin_name: str | None = None,
-        shop_items: dict[str, int] | None = None,
+        shop_items: list[GuildEconomyShopItem] | None = None,
         options: list[SelectOption] | None = None,
     ):
         super().__init__(timeout=None)
@@ -292,10 +293,10 @@ class CoinsShopViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         if shop_items:
-            for item, price in shop_items.items():
+            for item in shop_items:
                 container.add_item(
                     TextDisplay[Self](
-                        f"**{item}**\n> Цена: **{int(price):.0f} {coin_name}**\n"  # noqa: E501
+                        f"**{item.name}**\n> Цена: **{int(item.cost):.0f} {coin_name}**\n"  # noqa: E501
                     )
                 )
                 container.add_item(Separator[Self]())

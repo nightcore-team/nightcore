@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models import GuildNotificationsConfig
-from src.infra.db.models._enums import ChannelType, RoleRequestStateEnum
 from src.infra.db.operations import (
     get_latest_user_role_request,
     get_specified_channel,
@@ -42,6 +41,7 @@ from src.nightcore.utils import (
     ensure_member_exists,
     ensure_role_exists,
 )
+from src.utils._enums import ChannelType, RoleRequestStateEnum
 
 from .role_request_state import RoleRequestStateView
 

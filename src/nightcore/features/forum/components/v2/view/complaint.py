@@ -45,14 +45,12 @@ class ComplaintViewV2(LayoutView):
         bot: "Nightcore",
         url: str,
         moderator_id: int,
-        ping_role_id: int,
+        ping_role_id: int | None,
         reason: str,
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self](
-            accent_color=Color.from_str("#ffffff")
-        )  # 9300d2
+        container = Container[Self](accent_color=Color.from_str("#ffffff"))  # 9300d2
 
         container.add_item(
             TextDisplay[Self](
@@ -84,9 +82,11 @@ class ComplaintViewV2(LayoutView):
 
         now = datetime.now(UTC)
 
+        ping = "| <@&{ping_role_id}>" if ping_role_id else ""
+
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)} | <@&{ping_role_id}>"  # type: ignore  # noqa: E501
+                f"-# Powered by {bot.user.name} in {discord_ts(now)} {ping}"
             )
         )
 

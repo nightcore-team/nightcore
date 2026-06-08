@@ -14,12 +14,7 @@ from discord import (
 )
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import (
-    ChannelType,
-    ClanManageActionEnum,
-    ClanMemberRoleEnum,
-)
-from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     create_clan_member,
     get_clan_by_id,
@@ -47,6 +42,11 @@ from src.nightcore.utils.object import safe_delete_channel
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
+)
+from src.utils._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
 )
 
 if TYPE_CHECKING:

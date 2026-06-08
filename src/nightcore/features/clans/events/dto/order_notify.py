@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from discord import Color, Embed, Guild
 
-from src.infra.db.models._enums import ShopOrderStateEnum
 from src.nightcore.events.dto.base import BaseEventDTO
+from src.utils._enums import ShopOrderStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

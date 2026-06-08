@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildFaqConfig
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ async def faq_autocomplete(
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
     async with specified_guild_config(
-        interaction.client, guild.id, MainGuildConfig
+        interaction.client, guild.id, GuildFaqConfig
     ) as (guild_config, _):
         faq = guild_config.faq or []
 

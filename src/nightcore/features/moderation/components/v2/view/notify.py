@@ -27,11 +27,10 @@ from discord.ui import (
 
 from src.infra.db.models import (
     GuildNotificationsConfig,
+    GuildRulesConfig,
     GuildTicketsConfig,
-    MainGuildConfig,
     NotifyState,
 )
-from src.infra.db.models._enums import ChannelType, NotifyStateEnum
 from src.infra.db.operations import (
     get_specified_channel,
     get_user_notify_by_end_time,
@@ -52,6 +51,7 @@ from src.nightcore.utils.permissions import (
     check_required_permissions,
 )
 from src.nightcore.utils.types import MessageComponentType
+from src.utils._enums import ChannelType, NotifyStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -112,7 +112,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 rules_channel := await get_specified_channel(
                     session,
                     guild_id=guild.id,
-                    config_type=MainGuildConfig,
+                    config_type=GuildRulesConfig,
                     channel_type=ChannelType.RULES_CHANNEL,
                 )
             ):

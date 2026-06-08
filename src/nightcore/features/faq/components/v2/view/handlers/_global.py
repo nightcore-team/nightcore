@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildFaqConfig
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.faq.utils.pages import build_faq_page_components
 from src.nightcore.services.config import specified_guild_config
@@ -29,7 +29,7 @@ async def handle_faq_global_button_callback(
 
     outcome = ""
     async with specified_guild_config(
-        bot, guild.id, MainGuildConfig, _create=True
+        bot, guild.id, GuildFaqConfig, _create=True
     ) as (
         guild_config,
         _,

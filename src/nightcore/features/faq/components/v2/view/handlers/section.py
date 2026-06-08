@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildFaqConfig
 from src.infra.db.models._annot import FAQPageAnnot
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.services.config import specified_guild_config
@@ -30,7 +30,7 @@ async def handle_faq_button_callback(
 
     faq_page: FAQPageAnnot | None = None
     outcome = ""
-    async with specified_guild_config(bot, guild.id, MainGuildConfig) as (
+    async with specified_guild_config(bot, guild.id, GuildFaqConfig) as (
         guild_config,
         _,
     ):

@@ -12,7 +12,6 @@ from discord import Object
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models._enums import RoleRequestStateEnum
 from src.nightcore.features.moderation.components.v2.view.punish import (
     PunishViewV2,
 )
@@ -28,6 +27,7 @@ from src.nightcore.features.moderation.events.dto.base import (
 from src.nightcore.features.role_requests.components.v2 import (
     RoleRequestStateView,
 )
+from src.utils._enums import RoleRequestStateEnum
 
 logger = logging.getLogger(__name__)
 

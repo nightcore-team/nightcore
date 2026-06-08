@@ -15,7 +15,7 @@ from discord.ui import (
     TextDisplay,
 )
 
-from src.infra.db.models._enums import InactiveRequestStateEnum
+from src.utils._enums import InactiveRequestStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

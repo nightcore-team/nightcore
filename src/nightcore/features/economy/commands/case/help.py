@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild
 from discord.interactions import Interaction
 
-from src.infra.db.models.guild import GuildEconomyConfig
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_guild_cases
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseHelpViewV2

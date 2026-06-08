@@ -1,6 +1,7 @@
 """View for sending role requests."""
 
 import logging
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
@@ -20,7 +21,6 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.operations import (
     get_latest_user_role_request,
     get_organization_roles_ids,
@@ -42,6 +42,7 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role_from_sequence,
 )
+from src.utils._enums import RoleRequestStateEnum
 
 logger = logging.getLogger(__name__)
 
@@ -245,7 +246,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
         user = cast(Member, interaction.user)
 
         outcome = ""
-        org_roles_ids: list[int] = []
+        org_roles_ids: Sequence[int] = []
 
         async with view.bot.uow.start() as session:
             org_roles_ids = await get_organization_roles_ids(

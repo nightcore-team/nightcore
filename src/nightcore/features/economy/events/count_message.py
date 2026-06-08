@@ -2,15 +2,22 @@
 
 import asyncio
 import logging
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Sequence
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, Message, Role
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildLevelsConfig
-from src.infra.db.operations import get_or_create_user
-from src.nightcore.services.config import specified_guild_config
+from src.infra.db.models import GuildLevelsConfig, GuildMultipliersConfig
+from src.infra.db.models.configurations.levels import (
+    GuildBonusRole,
+)
+from src.infra.db.operations import (
+    get_guild_level,
+    get_guild_level_role_ids,
+    get_or_create_user,
+    get_specified_guild_config,
+)
 from src.nightcore.utils import (
     ensure_messageable_channel_exists,
     ensure_role_exists,
@@ -32,52 +39,15 @@ class CountMessageEvent(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    def _get_role_for_level(
-        self,
-        level: int,
-        level_roles: dict[str, int],
-    ) -> int | None:
-        """Get role ID for current level."""
-        if not level_roles:
-            return None
-
-        if str(level) in level_roles:
-            return level_roles[str(level)]
-
-        available_levels = sorted(map(int, level_roles))
-        suitable_levels = [lvl for lvl in available_levels if lvl <= level]
-
-        if not suitable_levels:
-            return None
-
-        closest_level = max(suitable_levels)
-        return level_roles[str(closest_level)]
-
     async def _handle_level_role(
         self,
         guild: Guild,
         member: Member,
         new_level: int,
-        level_roles: dict[str, int],
+        target_role_id: int,
+        all_level_role_ids: Sequence[int],
     ) -> None:
         """Handle level role assignment/removal."""
-
-        if not level_roles:
-            logger.info(
-                "[economy/levelup] No level roles configured for guild %s",
-                guild.id,
-            )
-            return
-
-        target_role_id = self._get_role_for_level(new_level, level_roles)
-
-        if not target_role_id:
-            logger.info(
-                "[economy/levelup] No role available for level %s in guild %s",
-                new_level,
-                guild.id,
-            )
-            return
 
         target_role = await ensure_role_exists(guild, target_role_id)
         if not target_role:
@@ -98,8 +68,6 @@ class CountMessageEvent(Cog):
             return
 
         try:
-            all_level_role_ids = set(level_roles.values())
-
             # find user roles to remove
             roles_to_remove: list[Role | None] = cast(
                 list[Role | None],
@@ -185,9 +153,17 @@ class CountMessageEvent(Cog):
         is_level_up = False
         new_level = 0
 
-        async with specified_guild_config(
-            self.bot, guild.id, config_type=GuildLevelsConfig
-        ) as (guild_config, session):
+        async with self.bot.uow.start() as session:
+            multiplers_config = await get_specified_guild_config(
+                session, config_type=GuildMultipliersConfig, guild_id=guild.id
+            )
+            levels_config = await get_specified_guild_config(
+                session, config_type=GuildLevelsConfig, guild_id=guild.id
+            )
+
+            if multiplers_config is None or levels_config is None:
+                return
+
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
@@ -196,43 +172,41 @@ class CountMessageEvent(Cog):
 
             user.messages_count += 1
 
-            levelup_channel_id = guild_config.level_notify_channel_id
+            levelup_channel_id = levels_config.level_notify_channel_id
 
             exp_multiplier = (
-                guild_config.temp_exp_multiplier
-                or guild_config.base_exp_multiplier
+                multiplers_config.temp_exp_multiplier
+                or multiplers_config.base_exp_multiplier
             )
             coins_multiplier = (
-                guild_config.temp_coins_multiplier
-                or guild_config.base_coins_multiplier
+                multiplers_config.temp_coins_multiplier
+                or multiplers_config.base_coins_multiplier
             )
             battlepass_multiplier = (
-                guild_config.temp_battlepass_multiplier
-                or guild_config.base_battlepass_multiplier
+                multiplers_config.temp_battlepass_multiplier
+                or multiplers_config.base_battlepass_multiplier
             )
 
             # check bonus multiplier
-            bonus_multiplier = 1
-            bonus_roles: dict[int, int] = guild_config.bonus_access_roles_ids
+            bonus_coins = 0
+            bonus_roles: list[GuildBonusRole] = (
+                levels_config.bonus_access_roles_ids
+            )
 
-            if has_any_role_from_sequence(author, list(map(int, bonus_roles))):
-                bonus_roles_int = {int(k): v for k, v in bonus_roles.items()}
+            bonus_roles_int = [item.role_id for item in bonus_roles]
 
+            if has_any_role_from_sequence(author, bonus_roles_int):
                 user_bonus_roles = [
                     role_id
-                    for role_id in bonus_roles_int
+                    for role_id in bonus_roles
                     if role_id in [role.id for role in author.roles]
                 ]
 
                 if user_bonus_roles:
-                    highest_bonus_role_id = max(
-                        user_bonus_roles, key=lambda r: bonus_roles_int[r]
+                    highest_bonus_role = max(
+                        user_bonus_roles, key=lambda r: r.coins
                     )
-                    bonus_multiplier += bonus_roles_int[highest_bonus_role_id]
-
-            exp_multiplier *= bonus_multiplier
-            coins_multiplier *= bonus_multiplier
-            battlepass_multiplier *= bonus_multiplier
+                    bonus_coins += highest_bonus_role.coins
 
             # count user exp and coins
             new_current_exp = user.current_exp + exp_multiplier
@@ -252,14 +226,19 @@ class CountMessageEvent(Cog):
             if is_level_up:
                 exp_to_level = user.exp_to_level - user.current_exp
             else:
-                user.coins += coins_multiplier
+                user.coins += coins_multiplier + bonus_coins
                 user.battle_pass_points += battlepass_multiplier
 
-            level_roles = guild_config.level_roles
+            new_level = await get_guild_level(
+                session, guild_id=guild.id, level=user.level
+            )
+            all_level_role_ids = await get_guild_level_role_ids(
+                session, guild_id=guild.id
+            )
 
         gather_list: list[Awaitable[None]] = []
 
-        if is_level_up:
+        if is_level_up and new_level is not None:
             logger.info(
                 "[economy/levelup] User %s reached level %s in guild %s",
                 author.id,
@@ -271,8 +250,9 @@ class CountMessageEvent(Cog):
                 self._handle_level_role(
                     guild=guild,
                     member=author,
-                    new_level=new_level,
-                    level_roles=level_roles,
+                    new_level=new_level.level,
+                    target_role_id=new_level.role_id,
+                    all_level_role_ids=all_level_role_ids,
                 )
             )
 
@@ -282,7 +262,7 @@ class CountMessageEvent(Cog):
                         guild=guild,
                         notifications_channel_id=levelup_channel_id,
                         member=author,
-                        new_level=new_level,
+                        new_level=new_level.level,
                         exp_to_level=exp_to_level,
                     )
                 )

@@ -11,6 +11,8 @@ dependencies = [
     "asyncpg>=0.30.0",
     "chat-exporter>=2.8.4",
     "colorlog>=6.10.1",
+    "discord-py>=2.7.1",
+    "nightforo>=1.1.5",
     "discord-py",
     "discordhealthcheck>=0.1.1",
     "nightforo>=1.1.9",
@@ -19,15 +21,14 @@ dependencies = [
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "pynacl>=1.6.1",
+    "redis>=6.4.0",
     "regex>=2026.5.9",
     "sqlalchemy[asyncio]>=2.0.42",
+    "uvicorn>=0.41.0",
 ]
 
 [dependency-groups]
 dev = ["ruff>=0.12.7", "pytest>=9.0.2"]
-
-[tool.uv.sources]
-discord-py = { git = "https://github.com/Rapptz/discord.py.git" }
 
 # ================================= RUFF
 [tool.ruff]

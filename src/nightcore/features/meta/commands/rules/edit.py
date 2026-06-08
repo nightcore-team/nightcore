@@ -1,20 +1,15 @@
 """Command to edit chapters or rules."""
 
-import json
 import logging
 from typing import cast
 
 from discord import Guild, Interaction, app_commands
 
 from src.config.config import config
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.operations import get_guild_rules
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.meta.utils import (
-    convert_dict_to_rules,
-    parse_clause,
-)
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.meta.utils import parse_clause
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -54,15 +49,19 @@ async def edit_chapter_or_rule(
 
     guild = cast(Guild, interaction.guild)
 
-    async with specified_guild_config(
-        bot=bot, guild_id=guild.id, config_type=MainGuildConfig, _create=True
-    ) as (guild_config, _):
-        rules_data = cast(
-            dict[str, object], guild_config.guild_rules or {"chapters": []}
-        )
+    async with bot.uow.start() as session:
+        rules = await get_guild_rules(session, guild_id=guild.id)
 
-        # json -> dataclass
-        rules = convert_dict_to_rules(rules_data)
+        if rules is None:
+            return await interaction.response.send_message(
+                embed=ErrorEmbed(
+                    "Ошибка изменения главы или правила",
+                    "Правила отсутствуют",
+                    bot.user.display_name,  # type: ignore
+                    bot.user.avatar.url,  # type: ignore
+                ),
+                ephemeral=True,
+            )
 
         message = ""
 
@@ -76,7 +75,7 @@ async def edit_chapter_or_rule(
                     raise ValueError(
                         "Название главы не может быть длиннее 256 символов"
                     )
-                rules.chapters[ch_index].title = text
+                rules.chapters[ch_index].text = text
                 message = "Название главы изменено"
 
             # 2 level: change rule text
@@ -84,14 +83,14 @@ async def edit_chapter_or_rule(
                 ch_index, rule_index = indexes[0] - 1, indexes[1] - 1
                 if ch_index >= len(rules.chapters):
                     raise IndexError("Указанной главы не существует")
-                r = rules.chapters[ch_index].rules
-                if rule_index >= len(r):
+                chapter_rules = rules.chapters[ch_index].rules
+                if rule_index >= len(chapter_rules):
                     raise IndexError("Указанного правила не существует")
                 if len(text) > config.bot.EMBED_DESCRIPTION_LIMIT:
                     raise ValueError(
                         f"Текст правила не может быть длиннее {config.bot.EMBED_DESCRIPTION_LIMIT} символов"  # noqa: E501
                     )
-                r[rule_index].text = text
+                chapter_rules[rule_index].text = text
                 message = "Правило изменено"
 
             # 3 level: change subrule text
@@ -99,10 +98,10 @@ async def edit_chapter_or_rule(
                 ch_index, rule_index, sub_index = [i - 1 for i in indexes]
                 if ch_index >= len(rules.chapters):
                     raise IndexError("Указанной главы не существует")
-                r = rules.chapters[ch_index].rules
-                if rule_index >= len(r):
+                chapter_rules = rules.chapters[ch_index].rules
+                if rule_index >= len(chapter_rules):
                     raise IndexError("Указанного правила не существует")
-                subrules = r[rule_index].subrules
+                subrules = chapter_rules[rule_index].subrules
                 if sub_index >= len(subrules):
                     raise IndexError("Указанного подпункта не существует")
                 if len(text) > config.bot.EMBED_DESCRIPTION_LIMIT:
@@ -117,12 +116,8 @@ async def edit_chapter_or_rule(
                     "Поддерживаются только до 3 уровней вложенности"
                 )
 
-            guild_config.guild_rules = json.loads(
-                json.dumps(rules, default=lambda o: o.__dict__)
-            )
-
         except (IndexError, ValueError) as e:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка изменения главы или правила",
                     str(e),
@@ -131,7 +126,6 @@ async def edit_chapter_or_rule(
                 ),
                 ephemeral=True,
             )
-            return
 
     await interaction.response.send_message(
         embed=SuccessMoveEmbed(

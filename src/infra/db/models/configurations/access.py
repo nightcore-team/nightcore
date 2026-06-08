@@ -1,22 +1,41 @@
-"""Meta configuration model for guild config access management."""
-
-from sqlalchemy import ARRAY, BigInteger
+from sqlalchemy import (
+    ARRAY,
+    BigInteger,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
 
 
-class GuildMetaConfig(IdIntegerMixin, Base):
-    """Meta configuration for guild configs access roles."""
-
+class GuildAccessConfig(IdIntegerMixin, Base):
     guild_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, unique=True
     )
 
-    # Access to MainGuildConfig
-    other_config_access_roles_ids: Mapped[list[int] | None] = mapped_column(
+    # Access to GuildForumConfig
+    forum_config_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
+    )
+
+    # Access to GuildOrgRolesConfig
+    org_roles_config_access_roles_ids: Mapped[list[int] | None] = (
+        mapped_column(ARRAY(BigInteger), nullable=True)
+    )
+
+    # Access to GuildProposalConfig
+    proposal_config_access_roles_ids: Mapped[list[int] | None] = mapped_column(
+        ARRAY(BigInteger), nullable=True
+    )
+
+    # Access to GuildRulesConfig
+    rules_config_access_roles_ids: Mapped[list[int] | None] = mapped_column(
+        ARRAY(BigInteger), nullable=True
+    )
+
+    # Access to GuildMultiplersConfig
+    multiplers_config_access_roles_ids: Mapped[list[int] | None] = (
+        mapped_column(ARRAY(BigInteger), nullable=True)
     )
 
     # Access to GuildLoggingConfig
@@ -55,9 +74,9 @@ class GuildMetaConfig(IdIntegerMixin, Base):
     )
 
     # Access to GuildTicketsConfig
-    # tickets_config_access_roles_ids: Mapped[list[int] | None] = mapped_column(  # noqa: E501
-    #     ARRAY(BigInteger), nullable=True
-    # )
+    tickets_config_access_roles_ids: Mapped[list[int] | None] = mapped_column(
+        ARRAY(BigInteger), nullable=True
+    )
 
     # Access to GuildInfomakerConfig
     infomaker_config_access_roles_ids: Mapped[list[int] | None] = (

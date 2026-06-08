@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models._enums import ChannelType, ClanManageActionEnum
-from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_clan_by_id, get_specified_channel
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
     ClanManageNotifyDTO,
 )
+from src.utils._enums import ChannelType, ClanManageActionEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

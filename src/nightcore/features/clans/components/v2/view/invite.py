@@ -19,13 +19,7 @@ from discord.ui import (
 )
 from sqlalchemy.exc import IntegrityError
 
-from src.infra.db.models import Clan
-from src.infra.db.models._enums import (
-    ChannelType,
-    ClanManageActionEnum,
-    ClanMemberRoleEnum,
-)
-from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.models import Clan, GuildLoggingConfig
 from src.infra.db.operations import (
     create_clan_member,
     get_specified_channel,
@@ -33,6 +27,11 @@ from src.infra.db.operations import (
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
     ClanManageNotifyDTO,
+)
+from src.utils._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
 )
 
 if TYPE_CHECKING:

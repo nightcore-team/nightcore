@@ -17,18 +17,22 @@ from src.infra.db.models import (
     Clan,
     ClanMember,
     CustomComponent,
+    GuildAccessConfig,
     GuildClansConfig,
     GuildEconomyConfig,
+    GuildFaqConfig,
     GuildForumConfig,
     GuildInfomakerConfig,
     GuildLevelsConfig,
     GuildLoggingConfig,
-    GuildMetaConfig,
     GuildModerationConfig,
+    GuildMultipliersConfig,
     GuildNotificationsConfig,
     GuildPrivateChannelsConfig,
+    GuildProposalsConfig,
+    GuildRoleRequestConfig,
+    GuildRulesConfig,
     GuildTicketsConfig,
-    MainGuildConfig,
     ModerationMessage,
     NotifyState,
     PrivateRoomState,
@@ -44,10 +48,28 @@ from src.infra.db.models import (
 )
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
-    OrgRoleWithoutTagAnnot,
-    Rules,
 )
-from src.infra.db.models._enums import (
+from src.infra.db.models.battlepass_level import BattlepassLevel
+from src.infra.db.models.case import Case
+from src.infra.db.models.color import Color
+from src.infra.db.models.configurations.clans import GuildClanShopItem
+from src.infra.db.models.configurations.economy import GuildEconomyShopItem
+from src.infra.db.models.configurations.levels import GuildLevel
+from src.infra.db.models.configurations.moderation import GuildFractionRole
+from src.infra.db.models.configurations.role_request import (
+    GuildOrganizationalRole,
+)
+from src.infra.db.models.configurations.rules import (
+    GuildRules,
+    GuildRulesChapter,
+    GuildRulesRule,
+)
+from src.infra.db.models.processed_forum_thread import ProcessedForumThread
+from src.infra.db.models.user import UserCase
+from src.infra.db.utils import (
+    build_base_filters as _build_base_moderstats_filters,
+)
+from src.utils._enums import (
     CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
@@ -55,14 +77,6 @@ from src.infra.db.models._enums import (
     NotifyStateEnum,
     RoleRequestStateEnum,
     TicketStateEnum,
-)
-from src.infra.db.models.battlepass_level import BattlepassLevel
-from src.infra.db.models.case import Case
-from src.infra.db.models.color import Color
-from src.infra.db.models.processed_forum_thread import ProcessedForumThread
-from src.infra.db.models.user import UserCase
-from src.infra.db.utils import (
-    build_base_filters as _build_base_moderstats_filters,
 )
 
 GuildT = TypeVar(
@@ -75,9 +89,13 @@ GuildT = TypeVar(
     GuildPrivateChannelsConfig,
     GuildNotificationsConfig,
     GuildTicketsConfig,
-    MainGuildConfig,
     GuildInfomakerConfig,
-    GuildMetaConfig,
+    GuildAccessConfig,
+    GuildProposalsConfig,
+    GuildRoleRequestConfig,
+    GuildFaqConfig,
+    GuildRulesConfig,
+    GuildMultipliersConfig,
     GuildForumConfig,
 )
 
@@ -85,7 +103,7 @@ GuildT = TypeVar(
 def get_config_type_by_name(name: str) -> type[GuildT]:
     """Get the guild configuration type by its name."""
     config_types: dict[str, type[GuildT]] = {
-        "meta": GuildMetaConfig,
+        "access": GuildAccessConfig,
         "clans": GuildClansConfig,
         "economy": GuildEconomyConfig,
         "infomaker": GuildInfomakerConfig,
@@ -93,9 +111,13 @@ def get_config_type_by_name(name: str) -> type[GuildT]:
         "logging": GuildLoggingConfig,
         "moderation": GuildModerationConfig,
         "notifications": GuildNotificationsConfig,
-        "other": MainGuildConfig,
         "private_channels": GuildPrivateChannelsConfig,
         "tickets": GuildTicketsConfig,
+        "rules": GuildRulesConfig,
+        "proposals": GuildProposalsConfig,
+        "faq": GuildFaqConfig,
+        "role_request": GuildRoleRequestConfig,
+        "multiplers": GuildMultipliersConfig,
         "forum": GuildForumConfig,
     }  # type: ignore
     return config_types[name]
@@ -112,10 +134,16 @@ async def get_specified_guild_config(  # noqa: UP047
 
 async def get_guild_rules(
     session: AsyncSession, *, guild_id: int
-) -> Rules | None:
+) -> GuildRules | None:
     """Get the guild rules from the database."""
-    stmt = select(MainGuildConfig.guild_rules).where(
-        MainGuildConfig.guild_id == guild_id
+    stmt = (
+        select(GuildRules)
+        .where(GuildRules.guild_id == guild_id)
+        .options(
+            selectinload(GuildRules.chapters)
+            .selectinload(GuildRulesChapter.rules)
+            .selectinload(GuildRulesRule.subrules)
+        )
     )
     result = await session.execute(stmt)
 
@@ -638,17 +666,15 @@ async def get_latest_user_role_request(
 
 async def get_fraction_roles(
     session: AsyncSession, *, guild_id: int
-) -> list[str]:
+) -> Sequence[int]:
     """Get the list of fraction roles for a guild."""
 
-    stmt = select(GuildModerationConfig.fraction_roles_access_roles_ids).where(
+    stmt = select(GuildFractionRole.role_id).where(
         GuildModerationConfig.guild_id == guild_id
     )
     roles = await session.execute(stmt)
 
-    result = roles.scalar_one_or_none()
-
-    return list(result.keys()) if result else []
+    return roles.scalars().all()
 
 
 async def get_user_infractions(
@@ -999,69 +1025,6 @@ async def get_total_users_count(session: AsyncSession) -> int:
     return cast(int, await session.scalar(stmt))
 
 
-async def get_organization_roles_full_json(
-    session: AsyncSession, *, guild_id: int
-) -> dict[str, OrgRoleWithoutTagAnnot] | None:
-    """Get the list of organization roles for a guild."""
-    stmt = select(MainGuildConfig.organizational_roles).where(
-        MainGuildConfig.guild_id == guild_id
-    )
-    result = await session.execute(stmt)
-    return cast(
-        dict[str, OrgRoleWithoutTagAnnot] | None, result.scalar_one_or_none()
-    )
-
-
-async def get_illegal_roles_full_json(
-    session: AsyncSession, *, guild_id: int
-) -> dict[str, OrgRoleWithoutTagAnnot] | None:
-    """Get the list of organization roles for a guild."""
-    stmt = select(MainGuildConfig.illegal_roles).where(
-        MainGuildConfig.guild_id == guild_id
-    )
-    result = await session.execute(stmt)
-    return cast(
-        dict[str, OrgRoleWithoutTagAnnot] | None, result.scalar_one_or_none()
-    )
-
-
-async def get_organization_roles_ids(
-    session: AsyncSession, *, guild_id: int
-) -> list[int]:
-    """Get the list of organization and illegal roles IDs for a guild."""
-    stmt = (
-        select(
-            MainGuildConfig.organizational_roles, MainGuildConfig.illegal_roles
-        )
-        .where(MainGuildConfig.guild_id == guild_id)
-        .limit(1)
-    )
-
-    row = (await session.execute(stmt)).one_or_none()
-    if not row:
-        return []
-
-    organizational_roles, illegal_roles = row
-
-    ids: list[int] = []
-    for roles in (organizational_roles, illegal_roles):
-        if roles:
-            for value in roles.values():
-                role_id = value.get("role_id")
-                if role_id is not None:
-                    ids.append(role_id)
-
-    # Preserve original order while removing duplicates
-    seen: set[int] = set()
-    unique_ids: list[int] = []
-    for r in ids:
-        if r not in seen:
-            seen.add(r)
-            unique_ids.append(r)
-
-    return unique_ids
-
-
 async def get_mute_role(session: AsyncSession, *, guild_id: int) -> int | None:
     """Get the mute role for a guild."""
     stmt = select(GuildModerationConfig.mute_role_id).where(
@@ -1099,7 +1062,8 @@ async def get_mute_type(session: AsyncSession, *, guild_id: int) -> str | None:
         GuildModerationConfig.guild_id == guild_id
     )
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    scalar = result.scalar_one_or_none()
+    return scalar.value if scalar else None
 
 
 async def get_or_create_temp_multiplier(
@@ -1383,12 +1347,77 @@ async def reset_users_voice_activity(session: AsyncSession) -> int:
     return result.rowcount or 0
 
 
+async def get_clan_shop_item_by_name(
+    session: AsyncSession, *, guild_id: int, name: str
+) -> GuildClanShopItem | None:
+    stmt = select(GuildClanShopItem).where(
+        GuildClanShopItem.guild_id == guild_id, GuildClanShopItem.name == name
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_economy_shop_item_by_name(
+    session: AsyncSession, *, guild_id: int, name: str
+) -> GuildEconomyShopItem | None:
+    stmt = select(GuildEconomyShopItem).where(
+        GuildEconomyShopItem.guild_id == guild_id,
+        GuildEconomyShopItem.name == name,
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_organization_roles_ids(
+    session: AsyncSession, *, guild_id: int
+) -> Sequence[int]:
+    stmt = select(GuildOrganizationalRole.role_id).where(
+        GuildOrganizationalRole.guild_id == guild_id
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_organization_role_by_role_id(
+    session: AsyncSession, *, guild_id: int, role_id: int
+) -> GuildOrganizationalRole | None:
+    stmt = select(GuildOrganizationalRole).where(
+        GuildOrganizationalRole.guild_id == guild_id,
+        GuildOrganizationalRole.role_id == role_id,
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
 async def get_forum_guilds(
     session: AsyncSession,
 ) -> Sequence[GuildForumConfig]:
     """Get all forum configurations."""
 
     stmt = select(GuildForumConfig)
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_active_forum_guilds(
+    session: AsyncSession,
+) -> Sequence[GuildForumConfig]:
+    """Get all forum configurations."""
+
+    stmt = select(GuildForumConfig).where(
+        GuildForumConfig.channel_id != None,  # noqa: E711
+        GuildForumConfig.section_id != None,  # noqa: E711
+    )
 
     result = await session.execute(stmt)
 
@@ -1407,3 +1436,32 @@ async def get_guild_forum_config(
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
+
+
+async def get_guild_level(
+    session: AsyncSession, guild_id: int, level: int
+) -> GuildLevel | None:
+    stmt = (
+        select(GuildLevel)
+        .where(GuildLevel.guild_id == guild_id, GuildLevel.level <= level)
+        .order_by(GuildLevel.level.desc())
+        .limit(1)
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_guild_level_role_ids(
+    session: AsyncSession, guild_id: int
+) -> Sequence[int]:
+    stmt = (
+        select(GuildLevel.role_id)
+        .where(GuildLevel.guild_id == guild_id)
+        .distinct()
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()

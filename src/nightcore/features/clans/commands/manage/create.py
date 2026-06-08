@@ -10,13 +10,7 @@ from discord.interactions import Interaction
 from sqlalchemy.exc import IntegrityError
 
 from src.config.config import config
-from src.infra.db.models import GuildClansConfig
-from src.infra.db.models._enums import (
-    ChannelType,
-    ClanManageActionEnum,
-    ClanMemberRoleEnum,
-)
-from src.infra.db.models.guild import GuildLoggingConfig
+from src.infra.db.models import GuildClansConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     create_clan,
     create_clan_member,
@@ -39,6 +33,11 @@ from src.nightcore.utils.object import ensure_category_exists
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
+)
+from src.utils._enums import (
+    ChannelType,
+    ClanManageActionEnum,
+    ClanMemberRoleEnum,
 )
 
 if TYPE_CHECKING:
@@ -159,7 +158,7 @@ async def create(
         # Check if it's a clan name conflict or member already in clan
         if "uq_member_guild_user" in error_msg:
             user_message = (
-                f"Пользователь {leader.mention} уже состоит в другом клане."  # noqa: E501
+                f"Пользователь {leader.mention} уже состоит в другом клане."
             )
         elif (
             "uq_clan_guild_name" in error_msg

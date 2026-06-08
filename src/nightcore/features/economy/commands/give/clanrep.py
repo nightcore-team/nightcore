@@ -6,7 +6,6 @@ from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     get_clan_by_id,
     get_specified_channel,
@@ -24,6 +23,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

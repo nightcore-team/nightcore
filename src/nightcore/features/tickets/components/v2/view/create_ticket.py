@@ -26,7 +26,6 @@ from src.infra.db.models import (
     GuildTicketsConfig,
     TicketState,
 )
-from src.infra.db.models._enums import ChannelType, TicketStateEnum
 from src.infra.db.operations import (
     get_latest_user_ticket,
     get_or_create_user,
@@ -40,6 +39,7 @@ from src.nightcore.components.embed import (
 )
 from src.nightcore.features.tickets.events.dto import TicketChangeEventData
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
+from src.utils._enums import ChannelType, TicketStateEnum
 
 from .manage_ticket import ManageTicketViewV2
 

@@ -5,9 +5,9 @@ from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, Enum, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._enums import MultiplierTypeEnum
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.utils._enums import MultiplierTypeEnum
 
 
 class TempEconomyMultiplier(IdIntegerMixin, Base):

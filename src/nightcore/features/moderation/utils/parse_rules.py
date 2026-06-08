@@ -1,6 +1,11 @@
 """Utilities for parsing and finding rules in a structured ruleset."""
 
-from src.infra.db.models._annot import Chapter, Rule, Rules
+from src.infra.db.models.configurations.rules import (
+    GuildRules,
+    GuildRulesChapter,
+    GuildRulesRule,
+    GuildRulesSubRule,
+)
 
 
 def parse_clause(v: str) -> bool:
@@ -11,8 +16,10 @@ def parse_clause(v: str) -> bool:
 
 
 def find_rule_by_index(
-    rules: Rules, index: str
-) -> tuple[Rule | Chapter | None, str | None]:
+    rules: GuildRules, index: str
+) -> tuple[
+    GuildRulesRule | GuildRulesSubRule | GuildRulesChapter | None, str | None
+]:
     """Find a rule or chapter by its index in the rules structure and return the item with its canonical index string.
 
     Returns:

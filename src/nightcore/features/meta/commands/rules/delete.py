@@ -1,19 +1,14 @@
 """Command to delete chapters or rules."""
 
-import json
 import logging
-from typing import Any, cast
+from typing import cast
 
 from discord import Guild, Interaction, app_commands
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.operations import get_guild_rules
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.meta.utils import (
-    convert_dict_to_rules,
-    parse_clause,
-)
-from src.nightcore.services.config import specified_guild_config
+from src.nightcore.features.meta.utils import parse_clause
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -37,37 +32,37 @@ async def delete_chapter_or_rule(
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
 
-    async with specified_guild_config(
-        bot=bot, guild_id=guild.id, config_type=MainGuildConfig, _create=True
-    ) as (guild_config, _):
-        rules_data = cast(
-            dict[str, Any], guild_config.guild_rules or {"chapters": []}
+    # load ORM rules
+    indexes = parse_clause(clause)
+    if not indexes:
+        return await interaction.response.send_message(
+            embed=ErrorEmbed(
+                "Ошибка удаления главы или правила",
+                "Неверный ввод пункта правил или главы",
+                bot.user.display_name,  # type: ignore
+                bot.user.avatar.url,  # type: ignore
+            ),
+            ephemeral=True,
         )
 
-        # json -> dataclass
-        rules = convert_dict_to_rules(rules_data)
-
-        # parse clause
-        indexes = parse_clause(clause)
-        if not indexes:
-            await interaction.response.send_message(
+    async with bot.uow.start() as session:
+        rules = await get_guild_rules(session, guild_id=guild.id)
+        if rules is None:
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка удаления главы или правила",
-                    "Неверный ввод пункта правил или главы",
+                    "Правила отсутствуют",
                     bot.user.display_name,  # type: ignore
                     bot.user.avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
-            return
 
-        # delete chapter/rule/subrule
         try:
             if len(indexes) == 1:
-                # delete chapter
                 ch_index = indexes[0] - 1
                 if ch_index >= len(rules.chapters):
-                    await interaction.response.send_message(
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Ошибка удаления главы",
                             "Указанной главы не существует",
@@ -76,16 +71,15 @@ async def delete_chapter_or_rule(
                         ),
                         ephemeral=True,
                     )
-                    return
 
-                del rules.chapters[ch_index]
+                # delete chapter ORM instance
+                chapter = rules.chapters[ch_index]
+                await session.delete(chapter)
                 message = "Глава успешно удалена!"
 
             elif len(indexes) == 2:
-                # delete rule in chapter
                 ch_index = indexes[0] - 1
                 rule_index = indexes[1] - 1
-
                 if ch_index >= len(rules.chapters):
                     await interaction.response.send_message(
                         embed=ErrorEmbed(
@@ -97,7 +91,8 @@ async def delete_chapter_or_rule(
                         ephemeral=True,
                     )
                     return
-                if rule_index >= len(rules.chapters[ch_index].rules):
+                chapter = rules.chapters[ch_index]
+                if rule_index >= len(chapter.rules):
                     await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Ошибка удаления правила",
@@ -109,17 +104,17 @@ async def delete_chapter_or_rule(
                     )
                     return
 
-                del rules.chapters[ch_index].rules[rule_index]
+                rule = chapter.rules[rule_index]
+                await session.delete(rule)
                 message = "Правило успешно удалено!"
 
             elif len(indexes) == 3:
-                # delete subrule in rule
                 ch_index = indexes[0] - 1
                 rule_index = indexes[1] - 1
                 subrule_index = indexes[2] - 1
 
                 if ch_index >= len(rules.chapters):
-                    await interaction.response.send_message(
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Ошибка удаления главы",
                             "Указанной главы не существует",
@@ -128,9 +123,10 @@ async def delete_chapter_or_rule(
                         ),
                         ephemeral=True,
                     )
-                    return
-                if rule_index >= len(rules.chapters[ch_index].rules):
-                    await interaction.response.send_message(
+
+                chapter = rules.chapters[ch_index]
+                if rule_index >= len(chapter.rules):
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Ошибка удаления правила",
                             "Указанного правила не существует",
@@ -139,11 +135,10 @@ async def delete_chapter_or_rule(
                         ),
                         ephemeral=True,
                     )
-                    return
-                if subrule_index >= len(
-                    rules.chapters[ch_index].rules[rule_index].subrules
-                ):
-                    await interaction.response.send_message(
+
+                rule = chapter.rules[rule_index]
+                if subrule_index >= len(rule.subrules):
+                    return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Ошибка удаления подправила",
                             "Указанного подправила не существует",
@@ -152,17 +147,13 @@ async def delete_chapter_or_rule(
                         ),
                         ephemeral=True,
                     )
-                    return
 
-                del (
-                    rules.chapters[ch_index]
-                    .rules[rule_index]
-                    .subrules[subrule_index]
-                )
+                sub = rule.subrules[subrule_index]
+                await session.delete(sub)
                 message = "Подправило успешно удалено!"
 
             else:
-                await interaction.response.send_message(
+                return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Ошибка удаления подправила",
                         "Глубже третьего уровня нельзя удалять!",
@@ -171,10 +162,9 @@ async def delete_chapter_or_rule(
                     ),
                     ephemeral=True,
                 )
-                return
 
         except Exception:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка при удалении",
                     "Произошла ошибка при удалении",
@@ -183,19 +173,6 @@ async def delete_chapter_or_rule(
                 ),
                 ephemeral=True,
             )
-            return
-
-        # renumerate all rules
-        for i, chapter in enumerate(rules.chapters, start=1):
-            chapter.number = i
-            for j, rule in enumerate(chapter.rules, start=1):
-                rule.number = f"{i}.{j}"
-                for k, subrule in enumerate(rule.subrules, start=1):
-                    subrule.number = f"{i}.{j}.{k}"
-
-        guild_config.guild_rules = json.loads(
-            json.dumps(rules, default=lambda o: o.__dict__)
-        )
 
     await interaction.response.send_message(
         embed=SuccessMoveEmbed(

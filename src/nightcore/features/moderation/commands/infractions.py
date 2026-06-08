@@ -9,12 +9,12 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildNotificationsConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import (
     count_user_infractions_last_7_days,
     get_specified_channel,
     get_user_infractions,
 )
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

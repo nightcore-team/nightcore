@@ -9,7 +9,6 @@ from discord import Guild
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import (
@@ -17,6 +16,7 @@ from src.nightcore.utils import (
     discord_ts,
     ensure_messageable_channel_exists,
 )
+from src.utils._enums import ChannelType
 
 from ._utils.overwrites import build_channel_overwrites_file  # type: ignore
 
@@ -31,6 +31,19 @@ class DeleteChannelHandler(Cog):
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         """Handle guild channel delete event."""
         guild = cast(Guild, channel.guild)  # type: ignore
+
+        try:
+            await self.bot.guild_state_repository.delete_channel(
+                guild_id=str(guild.id),
+                channel_id=str(channel.id),
+            )
+        except Exception as e:
+            logger.error(
+                "[redis] Failed to evict deleted channel %s in guild %s: %s",
+                channel.id,
+                guild.id,
+                e,
+            )
 
         async with self.bot.uow.start() as session:
             if not (

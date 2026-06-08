@@ -27,6 +27,8 @@ services:
     depends_on:
       nightcore-db:
         condition: service_healthy
+      nightcore-redis:
+        condition: service_healthy
 
   nightcore-db:
     image: postgres:16-alpine
@@ -43,6 +45,64 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+    networks:
+      - nightcore-network
+
+  nightcore-redis:
+    image: redis:7-alpine
+    container_name: nightcore-redis
+    restart: no
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+    networks:
+      - nightcore-network
+
+  nightcore-redisinsight:
+    image: redis/redisinsight:latest
+    container_name: nightcore-redisinsight
+    restart: no
+
+    ports:
+      - "${REDIS_INSIGHT_PORT}:${REDIS_INSIGHT_PORT}"
+
+    depends_on:
+      nightcore-redis:
+        condition: service_healthy
+
+    networks:
+      - nightcore-network
+
+  traefik:
+    image: traefik:v3.7.1
+    container_name: nightcore-traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=nightcore-network
+
+      - --entrypoints.web.address=:80
+
+      - --log.level=INFO
+      - --accesslog=true
+      - --accesslog.format=json
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme.json:/acme.json
 
     networks:
       - nightcore-network

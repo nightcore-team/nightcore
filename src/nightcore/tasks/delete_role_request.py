@@ -8,8 +8,8 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import RoleRequestState
-from src.infra.db.models._enums import RoleRequestStateEnum
 from src.infra.db.operations import get_role_requests_to_delete
+from src.utils._enums import RoleRequestStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

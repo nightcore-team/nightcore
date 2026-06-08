@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from discord import AppCommandOptionType, Guild
 from discord.app_commands import Transformer
 from discord.interactions import Interaction
 
-from src.infra.db.models._annot import Chapter
+from src.infra.db.models.configurations.rules import GuildRulesChapter
 from src.infra.db.operations import get_guild_rules
-from src.nightcore.features.meta.utils import convert_dict_to_rules
 
 from ..parse_rules import find_rule_by_index, parse_clause
 
@@ -49,16 +48,14 @@ class StringToRuleTransformer(Transformer["Nightcore"]):
             return value
 
         async with bot.uow.start(readonly=True) as session:
-            rules_dict = await get_guild_rules(
+            rules = await get_guild_rules(
                 session,
                 guild_id=guild.id,
             )
 
-        rules = convert_dict_to_rules(cast(dict[str, Any], rules_dict))
-
         rule, index = find_rule_by_index(rules, value)  # type: ignore
 
-        if isinstance(rule, Chapter):
+        if isinstance(rule, GuildRulesChapter):
             return value
 
         if rule and index:

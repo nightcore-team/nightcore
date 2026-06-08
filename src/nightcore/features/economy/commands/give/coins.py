@@ -7,7 +7,6 @@ from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_or_create_user, get_specified_channel
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -22,6 +21,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

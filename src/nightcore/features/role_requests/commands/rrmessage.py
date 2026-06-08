@@ -7,9 +7,8 @@ from discord import Guild, SelectOption, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.infra.db.operations import (
-    get_illegal_roles_full_json,
-    get_organization_roles_full_json,
+from src.infra.db.models.configurations.role_request import (
+    GuildRoleRequestConfig,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.v2 import (
@@ -19,6 +18,7 @@ from src.nightcore.features.role_requests.components.v2 import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -47,30 +47,26 @@ class Rrmessage(Cog):
 
         ill_options = None
 
-        async with self.bot.uow.start() as session:
-            if not (
-                org_roles := await get_organization_roles_full_json(
-                    session, guild_id=guild.id
+        async with specified_guild_config(
+            self.bot, guild.id, config_type=GuildRoleRequestConfig
+        ) as (guild_config, _):
+            org_options = [
+                SelectOption(
+                    label=item.name,
+                    value=str(item.role_id),
                 )
-            ):
-                raise FieldNotConfiguredError("организационные роли")
+                for item in guild_config.organizational_roles
+            ]
 
-            ill_roles = await get_illegal_roles_full_json(
-                session, guild_id=guild.id
-            )
+            if len(org_options) < 1:
+                FieldNotConfiguredError("organizational_roles")
 
-        org_options = [
-            SelectOption(
-                label=v["name"], value=str(v["role_id"]) + "," + str(k)
-            )
-            for k, v in org_roles.items()
-        ]
-        if ill_roles:
             ill_options = [
                 SelectOption(
-                    label=v["name"], value=str(v["role_id"]) + "," + str(k)
+                    label=item.name,
+                    value=str(item.role_id),
                 )
-                for k, v in ill_roles.items()
+                for item in guild_config.illegal_roles
             ]
 
         await interaction.channel.send(  # type: ignore

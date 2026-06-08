@@ -3,9 +3,9 @@
 from sqlalchemy import BigInteger, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._enums import ShopOrderStateEnum
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.utils._enums import ShopOrderStateEnum
 
 
 class ShopOrderState(IdIntegerMixin, Base):

@@ -7,10 +7,10 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
+from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,19 @@ class LeaveMemberEvent(Cog):
     async def on_member_remove(self, member: discord.Member):
         """Handle member leave event."""
         guild = member.guild
+
+        try:
+            await self.bot.guild_state_repository.delete_member(
+                guild_id=str(guild.id),
+                member_id=str(member.id),
+            )
+        except Exception as e:
+            logger.error(
+                "[redis] Failed to delete cached member %s in guild %s: %s",
+                member.id,
+                guild.id,
+                e,
+            )
 
         async with self.bot.uow.start() as session:
             if not (

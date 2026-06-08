@@ -6,7 +6,7 @@ from typing import cast
 from discord import AllowedMentions, Guild, Message
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import MainGuildConfig
+from src.infra.db.models import GuildProposalsConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.proposals.components.v2 import (
     ProposalViewV2,
@@ -40,7 +40,7 @@ class CreateProposalEvent(Cog):
             return
 
         async with specified_guild_config(
-            self.bot, guild.id, MainGuildConfig
+            self.bot, guild.id, GuildProposalsConfig
         ) as (guild_config, _):
             proposals_count = guild_config.proposals_count
 

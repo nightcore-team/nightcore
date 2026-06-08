@@ -11,8 +11,8 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.raw_models import RawBulkMessageDeleteEvent, RawMessageDeleteEvent
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.models._enums import ChannelType
 from src.infra.db.operations import get_specified_channel, get_specified_field
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
