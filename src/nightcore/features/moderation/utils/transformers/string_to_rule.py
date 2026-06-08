@@ -48,10 +48,8 @@ class StringToRuleTransformer(Transformer["Nightcore"]):
             return value
 
         async with bot.uow.start(readonly=True) as session:
-            rules = await get_guild_rules(
-                session,
-                guild_id=guild.id,
-            )
+            rules = await get_guild_rules(session, guild_id=guild.id)
+            session.expunge_all()
 
         rule, index = find_rule_by_index(rules, value)  # type: ignore
 
