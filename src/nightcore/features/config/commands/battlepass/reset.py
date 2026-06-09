@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @battlepass_group.command(
     name="reset", description="Сбросить боевой пропуск у пользователей"
 )  # type: ignore
-@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def reset(
     interaction: Interaction[Nightcore],
 ):

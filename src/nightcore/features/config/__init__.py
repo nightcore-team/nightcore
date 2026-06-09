@@ -8,35 +8,13 @@ if TYPE_CHECKING:
 from ._groups import config as config_group
 
 # SIDE-EFFECT IMPORTS
-from .commands import (
-    clans,
-    economy,
-    infomaker,
-    levels,
-    logging,
-    moderstats,
-    notifications,
-    other,
-    private_channels,
-    tickets,
-)
 from .commands.battlepass import add_level, change_level, delete_level, reset
 
 __all__ = (
     "add_level",
     "change_level",
-    "clans",
     "delete_level",
-    "economy",
-    "infomaker",
-    "levels",
-    "logging",
-    "moderstats",
-    "notifications",
-    "other",
-    "private_channels",
     "reset",
-    "tickets",
 )
 
 

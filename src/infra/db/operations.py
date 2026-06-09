@@ -1344,7 +1344,7 @@ async def reset_users_voice_activity(session: AsyncSession) -> int:
 
     result = await session.execute(stmt)
 
-    return result.rowcount or 0
+    return result.rowcount or 0  # type: ignore
 
 
 async def get_clan_shop_item_by_name(

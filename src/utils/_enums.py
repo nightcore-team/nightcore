@@ -116,68 +116,6 @@ class ClanManageActionEnum(Enum):
     KICK_MEMBER = "Исключение участника"
 
 
-class MetaConfigAccessTypeEnum(Enum):
-    """Enumeration for meta config access types."""
-
-    LOGGING = "logging_config_access_roles_ids"
-    ECONOMY = "economy_config_access_roles_ids"
-    LEVELS = "levels_config_access_roles_ids"
-    CLANS = "clans_config_access_roles_ids"
-    PRIVATE_CHANNELS = "private_channels_config_access_roles_ids"
-    MODERATION = "moderation_config_access_roles_ids"
-    NOTIFICATIONS = "notifications_config_access_roles_ids"
-    INFOMAKER = "infomaker_config_access_roles_ids"
-    FORUM = "forum_config_access_roles_ids"
-    ROLE_REQUEST = "org_roles_config_access_roles_ids"
-    PROPOSALS = "proposal_config_access_roles_ids"
-    RULES = "rules_config_access_roles_ids"
-    MULTIPLERS = "multiplers_config_access_roles_ids"
-
-    @classmethod
-    def all_values(cls) -> list[str]:
-        """Get all enum values."""
-        return [choice.value for choice in cls]
-
-    @classmethod
-    def from_choice(cls, choice: str) -> "MetaConfigAccessTypeEnum":
-        """Get enum member from choice string."""
-        mapping = {
-            "clans": cls.CLANS,
-            "economy": cls.ECONOMY,
-            "levels": cls.LEVELS,
-            "logging": cls.LOGGING,
-            "moderation": cls.MODERATION,
-            "notifications": cls.NOTIFICATIONS,
-            "private_channels": cls.PRIVATE_CHANNELS,
-            "infomaker": cls.INFOMAKER,
-            "proposals": cls.PROPOSALS,
-            "rules": cls.RULES,
-            "role_request": cls.ROLE_REQUEST,
-            "forum": cls.FORUM,
-            "multiplers": cls.MULTIPLERS,
-        }
-        return mapping[choice]
-
-    @classmethod
-    def choices(cls) -> list[tuple[str, str]]:
-        """Get list of choices for Discord bot commands."""
-        return [
-            ("Кланы", "clans"),
-            ("Экономика", "economy"),
-            ("Уровни", "levels"),
-            ("Логирование", "logging"),
-            ("Модерация", "moderation"),
-            ("Уведомления", "notifications"),
-            ("Приватные каналы", "private_channels"),
-            ("Множители", "multiplers"),
-            ("Правила", "rules"),
-            ("Предложения", "proposals"),
-            ("Форум", "forum"),
-            ("Запрос ролей", "role_request"),
-            ("Инфомейкер", "infomaker"),
-        ]
-
-
 class CaseDropTypeEnum(Enum):
     EXP = 0
     COINS = 1

@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
     new_reward_amount="Новое количество",
 )
 @app_commands.autocomplete(new_reward=reward_depends_on_type_autocomplete)
-@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def change_level(
     interaction: Interaction["Nightcore"],
     level: app_commands.Range[int, 1, 1000000],

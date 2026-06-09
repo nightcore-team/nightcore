@@ -12,8 +12,6 @@ def create_bot(
     """Create and return an instance of the Nightcore bot."""
 
     cog_modules = [
-        # system
-        "src.nightcore.features.system",
         # meta
         "src.nightcore.features.meta.commands.copy",
         "src.nightcore.features.meta.commands.say",

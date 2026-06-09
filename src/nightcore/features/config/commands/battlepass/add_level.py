@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
     before_level="Номер уровня для добавления нового перед ним",
 )
 @app_commands.autocomplete(reward=reward_depends_on_type_autocomplete)
-@check_required_permissions(PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS)
+@check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def add_level(
     interaction: Interaction["Nightcore"],
     exp_required: app_commands.Range[int, 1, 1000000],

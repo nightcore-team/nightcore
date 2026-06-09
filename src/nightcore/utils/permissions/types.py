@@ -3,7 +3,6 @@
 from enum import Enum
 
 from src.infra.db.models import (
-    GuildAccessConfig,
     GuildClansConfig,
     GuildEconomyConfig,
     GuildModerationConfig,
@@ -15,15 +14,6 @@ class PermissionsFlagEnum(str, Enum):
 
     NONE = "nonetype"
     BOT_ACCESS = "bot_access"
-    OTHER_CONFIG_ACCESS = "config_access"
-    CLANS_CONFIG_ACCESS = "clans_config_access"
-    ECONOMY_CONFIG_ACCESS = "economy_config_access"
-    MODERATION_CONFIG_ACCESS = "moderation_config_access"
-    LOGGING_CONFIG_ACCESS = "logging_config_access"
-    LEVELS_CONFIG_ACCESS = "levels_config_access"
-    NOTIFICATIONS_CONFIG_ACCESS = "notifications_config_access"
-    PRIVATE_CHANNELS_CONFIG_ACCESS = "private_channels_config_access"
-    INFOMAKER_CONFIG_ACCESS = "infomaker_config_access"
     ADMINISTRATOR = "administrator"
     HEAD_MODERATION_ACCESS = "head_moderation_access"
     MODERATION_ACCESS = "moderation_access"
@@ -64,50 +54,5 @@ PERMISSION_CONFIG_MAP: dict[PermissionsFlagEnum, tuple[type, str, str]] = {
         GuildEconomyConfig,
         "economy_access_roles_ids",
         "доступ к экономике",
-    ),
-    PermissionsFlagEnum.OTHER_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "other_config_access_roles_ids",
-        "доступ к настройке остальной конфигурации",
-    ),
-    PermissionsFlagEnum.LOGGING_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "logging_config_access_roles_ids",
-        "доступ к настройке системы логов",
-    ),
-    PermissionsFlagEnum.ECONOMY_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "economy_config_access_roles_ids",
-        "доступ к настройке системы экономики",
-    ),
-    PermissionsFlagEnum.LEVELS_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "levels_config_access_roles_ids",
-        "доступ к настройке системы уровней",
-    ),
-    PermissionsFlagEnum.NOTIFICATIONS_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "notifications_config_access_roles_ids",
-        "доступ к настройке системы уведомлений",
-    ),
-    PermissionsFlagEnum.PRIVATE_CHANNELS_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "private_channels_config_access_roles_ids",
-        "доступ к настройке системы приватных каналов",
-    ),
-    PermissionsFlagEnum.INFOMAKER_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "infomaker_config_access_roles_ids",
-        "доступ к настройке системы инфомейкера",
-    ),
-    PermissionsFlagEnum.CLANS_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "clans_config_access_roles_ids",
-        "доступ к настройке системы кланов",
-    ),
-    PermissionsFlagEnum.MODERATION_CONFIG_ACCESS: (
-        GuildAccessConfig,
-        "moderation_config_access_roles_ids",
-        "доступ к настройке системы модерации",
     ),
 }
