@@ -75,7 +75,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
             SelectOption(
                 label=item.name,
                 description=f"Цена: {item.cost:.0f} {coin_name}",
-                value=f"{item},{item.cost}",
+                value=f"{item.name},{item.cost}",
             )
             for item in shop_items
         ]
