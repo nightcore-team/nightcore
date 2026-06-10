@@ -151,7 +151,7 @@ class CountMessageEvent(Cog):
         author = cast(Member, message.author)
 
         is_level_up = False
-        new_level = 0
+        new_level_int = 0
 
         async with self.bot.uow.start() as session:
             multiplers_config = await get_specified_guild_config(
@@ -215,10 +215,12 @@ class CountMessageEvent(Cog):
             # keep total exp; exp_to_level is the threshold for next level
             while new_current_exp >= user.exp_to_level:
                 is_level_up = True
-                new_level = user.level + 1
-                user.level = new_level
+                new_level_int = user.level + 1
+                user.level = new_level_int
 
-                user.exp_to_level = calculate_user_exp_to_level(new_level + 1)
+                user.exp_to_level = calculate_user_exp_to_level(
+                    new_level_int + 1
+                )
                 user.coins += coins_multiplier
                 user.battle_pass_points += 100
 
@@ -230,7 +232,7 @@ class CountMessageEvent(Cog):
                 user.battle_pass_points += battlepass_multiplier
 
             new_level = await get_guild_level(
-                session, guild_id=guild.id, level=user.level
+                session, guild_id=guild.id, level=new_level_int
             )
             all_level_role_ids = await get_guild_level_role_ids(
                 session, guild_id=guild.id
@@ -238,23 +240,24 @@ class CountMessageEvent(Cog):
 
         gather_list: list[Awaitable[None]] = []
 
-        if is_level_up and new_level is not None:
+        if is_level_up:
             logger.info(
                 "[economy/levelup] User %s reached level %s in guild %s",
                 author.id,
-                new_level,
+                new_level_int,
                 guild.id,
             )
 
-            gather_list.append(
-                self._handle_level_role(
-                    guild=guild,
-                    member=author,
-                    new_level=new_level.level,
-                    target_role_id=new_level.role_id,
-                    all_level_role_ids=all_level_role_ids,
+            if new_level is not None:
+                gather_list.append(
+                    self._handle_level_role(
+                        guild=guild,
+                        member=author,
+                        new_level=new_level.level,
+                        target_role_id=new_level.role_id,
+                        all_level_role_ids=all_level_role_ids,
+                    )
                 )
-            )
 
             if levelup_channel_id:
                 gather_list.append(
@@ -262,10 +265,11 @@ class CountMessageEvent(Cog):
                         guild=guild,
                         notifications_channel_id=levelup_channel_id,
                         member=author,
-                        new_level=new_level.level,
+                        new_level=new_level_int,
                         exp_to_level=exp_to_level,
                     )
                 )
+
         if gather_list:
             await asyncio.gather(*gather_list)
         else:
