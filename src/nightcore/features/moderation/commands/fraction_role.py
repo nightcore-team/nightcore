@@ -73,13 +73,14 @@ class FractionRole(Cog):
         try:
             role_id = int(role)
         except ValueError:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка выдачи роли",
                     "Выбранная роль не найдена.",
                     self.bot.user.name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
+                ephemeral=True,
             )
 
         guild = cast(Guild, interaction.guild)
