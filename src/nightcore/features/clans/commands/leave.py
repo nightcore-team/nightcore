@@ -8,12 +8,12 @@ from discord.interactions import Interaction
 
 from src.infra.db.operations import get_clan_member
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.clans._groups import clan as clan_main_group
-from src.nightcore.utils import ensure_role_exists
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.clans._groups import clan as clan_main_group
+from src.nightcore.utils import ensure_role_exists
 from src.utils._enums import ClanMemberRoleEnum
 
 if TYPE_CHECKING:
