@@ -8,11 +8,11 @@ from discord import Embed, Guild, Interaction
 from src.infra.db.operations import get_guild_rules
 from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.meta.utils import build_rules_embeds
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.meta.utils import build_rules_embeds
 
 from ._groups import rules as rules_group
 

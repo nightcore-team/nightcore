@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
     Concatenate,
-    ParamSpec,
-    TypeVar,
     cast,
     overload,
 )
@@ -25,28 +23,32 @@ if TYPE_CHECKING:
 
 from .patch_methods import patch_interaction_send_methods
 
-P = ParamSpec("P")
-T = TypeVar("T")
-CogT = TypeVar("CogT", bound="Cog")
-
 logger = logging.getLogger(__name__)
 
 
 @overload
 def time_executing[**P, T](
-    func: Callable[Concatenate[Interaction[Nightcore], P], Awaitable[T]],
-) -> Callable[Concatenate[Interaction[Nightcore], P], Awaitable[T]]: ...
+    func: Callable[
+        Concatenate[Interaction[Nightcore], P], Coroutine[Any, Any, T]
+    ],
+) -> Callable[
+    Concatenate[Interaction[Nightcore], P], Coroutine[Any, Any, T]
+]: ...
 
 
 @overload
 def time_executing[CogT: "Cog", **P, T](
-    func: Callable[Concatenate[CogT, Interaction[Nightcore], P], Awaitable[T]],
-) -> Callable[Concatenate[CogT, Interaction[Nightcore], P], Awaitable[T]]: ...
+    func: Callable[
+        Concatenate[CogT, Interaction[Nightcore], P], Coroutine[Any, Any, T]
+    ],
+) -> Callable[
+    Concatenate[CogT, Interaction[Nightcore], P], Coroutine[Any, Any, T]
+]: ...
 
 
 def time_executing(
-    func: Callable[..., Awaitable[Any]],
-) -> Callable[..., Awaitable[Any]]:
+    func: Callable[..., Coroutine[Any, Any, Any]],
+) -> Callable[..., Coroutine[Any, Any, Any]]:
     """Measure and log the execution time of a command.
 
     Automatically extracts the `Interaction` from the decorated function's

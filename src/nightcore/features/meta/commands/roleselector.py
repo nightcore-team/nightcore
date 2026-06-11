@@ -13,11 +13,11 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.components.embed import ErrorEmbed
-from src.nightcore.features.meta.components.modal import RoleSelectorModal
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.meta.components.modal import RoleSelectorModal
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +29,14 @@ class RoleSelector(Cog):
     @app_commands.command(
         name="role_selector",
         description="Отправить селект компонент с указанными ролями",
-    )  # type: ignore
+    )
     @app_commands.describe(
         title="Заголовок селектора ролей (необязательно)",
         description="Описание селектора ролей (необязательно)",
         image_url="URL изображения для селектора ролей (необязательно)",
         color="Цвет акцента для селектора ролей в формате HEX (необязательно)",
     )
-    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
     async def role_selector(
         self,
         interaction: Interaction[Nightcore],
@@ -57,8 +57,8 @@ class RoleSelector(Cog):
                 embed=ErrorEmbed(
                     "Ошибка предпросмотра компонента",
                     "Указанный цвет недействителен. Пожалуйста, используйте правильный HEX формат.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 )
             )
 

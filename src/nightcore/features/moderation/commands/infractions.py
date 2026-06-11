@@ -22,14 +22,14 @@ if TYPE_CHECKING:
 from src.nightcore.components.embed import (
     ErrorEmbed,
 )
-from src.nightcore.features.moderation.components.v2 import (
-    InfractionsViewV2,
-)
-from src.nightcore.features.moderation.utils import build_infraction_pages
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.moderation.components.v2 import (
+    InfractionsViewV2,
+)
+from src.nightcore.features.moderation.utils import build_infraction_pages
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class Infractions(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="infractions",
         description="Посмотреть список нарушений пользователя",
     )
@@ -47,7 +47,7 @@ class Infractions(Cog):
         user="Пользователь для проверки нарушений",
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def infractions(
         self,
         interaction: Interaction,
@@ -104,8 +104,8 @@ class Infractions(Cog):
                 embed=ErrorEmbed(
                     "Ошибка отправки нарушений",
                     "Не удалось отправить компонент нарушений.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
             )
 

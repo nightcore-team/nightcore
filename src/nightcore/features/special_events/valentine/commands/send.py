@@ -43,7 +43,7 @@ def _get_cooldown_key(
 ) -> tuple[int, int]:
     """Get the cooldown key for interaction."""
     guild_id = interaction.guild.id if interaction.guild else 0
-    return (guild_id, interaction.user.id)  # type: ignore
+    return (guild_id, interaction.user.id)
 
 
 def _reset_cooldown_for_interaction(
@@ -73,7 +73,7 @@ def _get_valentine_cooldown(
     return _valentine_cooldowns[key]
 
 
-@valentine_group.command(name="send", description="Отправить валентинку")  # type: ignore
+@valentine_group.command(name="send", description="Отправить валентинку")
 @app_commands.checks.dynamic_cooldown(
     _get_valentine_cooldown,
     key=_get_cooldown_key,
@@ -84,7 +84,7 @@ def _get_valentine_cooldown(
     text="Текст на валентинке (1-20 символов)",
     is_anonymous="Отправить валентинку анонимно",
 )
-@check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+@check_required_permissions(PermissionsFlagEnum.NONE)
 @app_commands.choices(
     where_to_send=[
         app_commands.Choice(name="В текущий чат", value="channel"),
@@ -116,8 +116,8 @@ async def send_valentine(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
                 "Очень приятно, но Вы не можете отправить валентинку мне.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -128,8 +128,8 @@ async def send_valentine(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
                 "Вы не можете отправить валентинку самому себе.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -168,8 +168,8 @@ async def send_valentine(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
                 "Произошла ошибка при отправке валентинки.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -207,8 +207,8 @@ async def send_valentine(
             embed=ErrorEmbed(
                 "Ошибка отправки валентинки",
                 "Произошла ошибка при отправке валентинки.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -217,7 +217,7 @@ async def send_valentine(
     dto = ValentineSendEventDTO(
         guild=guild,
         event_type="send",
-        logging_channel_id=logging_channel_id,  # type: ignore
+        logging_channel_id=logging_channel_id,
         user_id=interaction.user.id,
         reciever_id=user.id,
         text=text,

@@ -15,13 +15,13 @@ from src.infra.db.operations import (
     get_specified_guild_config,
 )
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
-from src.nightcore.features.economy._groups import give as give_group
-from src.nightcore.features.economy.utils.autocomplete import (
-    reward_depends_on_type_autocomplete,
-)
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
+)
+from src.nightcore.features.economy._groups import give as give_group
+from src.nightcore.features.economy.utils.autocomplete import (
+    reward_depends_on_type_autocomplete,
 )
 from src.utils._enums import CaseDropTypeEnum
 

@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 @battlepass_group.command(
     name="delete_level", description="Удалить уровень боевого пропуска"
-)  # type: ignore
+)
 @app_commands.describe(
     level="Уровень, который нужно удалить",
 )

@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Callable, Coroutine, Sequence
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    Concatenate,
-    ParamSpec,
-    TypeVar,
     cast,
-    overload,
 )
 
 from discord import Guild, Interaction, Member, app_commands
@@ -22,7 +18,6 @@ from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.utils import has_any_role_from_sequence
 
 if TYPE_CHECKING:
-    from discord.ext.commands import Cog  # type: ignore
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from src.infra.db.operations import GuildT
@@ -30,32 +25,13 @@ if TYPE_CHECKING:
 
 from .types import PERMISSION_CONFIG_MAP, PermissionsFlagEnum
 
-P = ParamSpec("P")
-T = TypeVar("T")
-CogT = TypeVar("CogT", bound="Cog")
-
-
-@overload
-def check_required_permissions(  # type: ignore
-    permissions_flag: PermissionsFlagEnum,
-) -> Callable[
-    [Callable[Concatenate[Interaction[Nightcore], P], Awaitable[T]]],
-    Callable[Concatenate[Interaction[Nightcore], P], Awaitable[T]],
-]: ...
-
-
-@overload
-def check_required_permissions(  # type: ignore
-    permissions_flag: PermissionsFlagEnum,
-) -> Callable[
-    [Callable[Concatenate[CogT, Interaction[Nightcore], P], Awaitable[T]]],
-    Callable[Concatenate[CogT, Interaction[Nightcore], P], Awaitable[T]],
-]: ...
-
 
 def check_required_permissions(
     permissions_flag: PermissionsFlagEnum,
-) -> Callable[[Callable[..., Awaitable[Any]]], Callable[..., Awaitable[Any]]]:
+) -> Callable[
+    [Callable[..., Coroutine[Any, Any, Any]]],
+    Callable[..., Coroutine[Any, Any, Any]],
+]:
     """Decorator to check for required permissions before executing a command.
 
     Args:
@@ -81,19 +57,21 @@ def check_required_permissions(
     """
 
     def decorator(
-        func: Callable[..., Awaitable[Any]],
-    ) -> Callable[..., Awaitable[Any]]:
+        func: Callable[..., Coroutine[Any, Any, Any]],
+    ) -> Callable[..., Coroutine[Any, Any, Any]]:
         @wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             interaction: Interaction[Nightcore] | None = None
 
             for arg in args:
                 if isinstance(arg, Interaction):
-                    interaction = arg  # type: ignore
+                    interaction = cast(Interaction[Nightcore], arg)
                     break
 
             if not interaction and "interaction" in kwargs:
-                interaction = kwargs["interaction"]
+                interaction = cast(
+                    Interaction[Nightcore], kwargs["interaction"]
+                )
 
             if not interaction:
                 raise ValueError(

@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 @battlepass_group.command(
     name="change_level", description="Изменить уровень боевого пропуска"
-)  # type: ignore
+)
 @app_commands.describe(
     new_required_exp="Новое количество EXP для этого уровня",
     new_reward_type="Новый тип награды",

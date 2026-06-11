@@ -43,7 +43,7 @@ class Ticketban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="ticketban",
         description="Заблокировать пользователю создание тикетов",
     )
@@ -53,7 +53,7 @@ class Ticketban(Cog):
         duration="Длительность блокировки",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def ticketban(
         self,
         interaction: Interaction,
@@ -76,8 +76,8 @@ class Ticketban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -88,8 +88,8 @@ class Ticketban(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -127,8 +127,8 @@ class Ticketban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки тикетов",
                     "Не удалось заблокировать пользователя.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 )
             )
 
@@ -137,8 +137,8 @@ class Ticketban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -147,8 +147,8 @@ class Ticketban(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Этот пользователь уже имеет блокировку на создание тикетов.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -181,7 +181,7 @@ class Ticketban(Cog):
                 bot=self.bot,
                 user_id=member.id,
                 punish_type="ticketban",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 duration=duration,
                 mode="server",

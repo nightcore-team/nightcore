@@ -22,7 +22,7 @@ from src.nightcore.decorators.permissions import (
 logger = logging.getLogger(__name__)
 
 
-@faq_group.command(  # type: ignore
+@faq_group.command(
     name="add_page",
     description="Добавить новую страницу в FAQ",
 )

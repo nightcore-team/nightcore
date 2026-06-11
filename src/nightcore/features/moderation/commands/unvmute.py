@@ -13,6 +13,10 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserUnmutedEventData
 from src.nightcore.features.moderation.utils.transformers import (
@@ -23,10 +27,6 @@ from src.nightcore.utils import (
     compare_top_roles,
     ensure_role_exists,
     has_any_role,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ class UnVMute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="unvmute",
         description="Снять пользователю блокировку голосовых каналов",
     )
@@ -48,7 +48,7 @@ class UnVMute(Cog):
         user="Пользователь для размута",
         reason="Причина размута пользователя",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def unvmute(
         self,
         interaction: Interaction,
@@ -73,8 +73,8 @@ class UnVMute(Cog):
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав для размута участников.",
                 ),
                 ephemeral=True,
@@ -85,8 +85,8 @@ class UnVMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     "Вы не можете размутить меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -94,8 +94,8 @@ class UnVMute(Cog):
         if not compare_top_roles(guild, member):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "Я не могу размутить этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -112,8 +112,8 @@ class UnVMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     f"Роль мута с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -125,8 +125,8 @@ class UnVMute(Cog):
                     embed=ErrorEmbed(
                         "Ошибка снятия блокировки",
                         "Роль мута не найдена у этого пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -144,8 +144,8 @@ class UnVMute(Cog):
                         embed=ErrorEmbed(
                             "Ошибка снятия блокировки",
                             "Не удалось удалить роль мута у пользователя.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                         ephemeral=True,
                     )
@@ -155,7 +155,7 @@ class UnVMute(Cog):
                 bot=self.bot,
                 user_id=member.id,
                 punish_type="unvmute",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 mode="server",
             )

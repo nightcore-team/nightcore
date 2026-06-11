@@ -9,22 +9,22 @@ from discord.interactions import Interaction
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
 from src.nightcore.features.compbuilder.components.modal import (
     CreateComponentModal,
 )
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 
 
 @builder_group.command(
     name="create",
     description="Создать новый компонент",
-)  # type: ignore
+)
 @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
 async def create(interaction: Interaction[Nightcore]):
     """Create a new custom component."""

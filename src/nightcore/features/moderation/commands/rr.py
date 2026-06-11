@@ -30,11 +30,11 @@ from src.nightcore.features.moderation.events import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class Rr(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="rr",
         description="Удалить организационную роль у пользователя",
     )
@@ -52,7 +52,7 @@ class Rr(Cog):
         user="Пользователь, у которого нужно удалить роль",
         reason="Причина удаления роли",
     )
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def rr(
         self,
         interaction: Interaction["Nightcore"],
@@ -97,8 +97,8 @@ class Rr(Cog):
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав для удаления ролей.",
                 ),
                 ephemeral=True,
@@ -109,8 +109,8 @@ class Rr(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия роли",
                     "Вы не можете удалить роли у меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -127,8 +127,8 @@ class Rr(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия роли",
                     "У пользователя нет организационных ролей.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -155,8 +155,8 @@ class Rr(Cog):
                     embed=ErrorEmbed(
                         "Ошибка снятия роли",
                         "Не удалось снять роль с пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -185,8 +185,8 @@ class Rr(Cog):
                 embed=SuccessMoveEmbed(
                     "Роль удалена",
                     f"Роль {role.mention} успешно снята с {member.mention}.{f' Причина: {reason}' if reason else ''}",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 )
             )
         else:

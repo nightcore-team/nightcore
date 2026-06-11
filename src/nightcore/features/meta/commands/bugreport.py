@@ -10,12 +10,12 @@ from discord.ext.commands import Cog  # type: ignore
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.features.meta.components.modal.bugreport import (
-    BugReportModal,
-)
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
+)
+from src.nightcore.features.meta.components.modal.bugreport import (
+    BugReportModal,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,11 +25,11 @@ class BugReport(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="bug_report",
         description="Отправить отчет об ошибке",
     )
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def bug_report(
         self,
         interaction: discord.Interaction["Nightcore"],

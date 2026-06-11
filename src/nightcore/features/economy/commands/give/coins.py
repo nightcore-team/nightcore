@@ -12,15 +12,15 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:

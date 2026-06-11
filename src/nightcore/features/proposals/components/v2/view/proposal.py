@@ -43,8 +43,8 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         custom_id="proposal:approve",
         style=ButtonStyle.grey,
         emoji="<:check:1442915033079353404>",
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
     async def approve_proposal(
         self,
         interaction: Interaction["Nightcore"],
@@ -56,20 +56,20 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         view.moderator_id = interaction.user.id
         message = cast(Message, interaction.message)
 
-        for container in interaction.message.components:  # type: ignore
-            for item in container.children:  # type: ignore
-                if item.id == 2:  # type: ignore
-                    view.proposals_count = extract_id_from_str(item.content)  # type: ignore
-                if item.id == 4:  # type: ignore
-                    view.user_id = extract_id_from_str(item.content)  # type: ignore
+        for container in interaction.message.components:
+            for item in container.children:
+                if item.id == 2:
+                    view.proposals_count = extract_id_from_str(item.content)
+                if item.id == 4:
+                    view.user_id = extract_id_from_str(item.content)
 
-                if item.id == 5:  # type: ignore
-                    view.description = item.content.replace("```", "")  # type: ignore
+                if item.id == 5:
+                    view.description = item.content.replace("```", "")
 
         updated_view = ProposalViewV2(
             bot=view.bot,
             proposals_count=view.proposals_count,
-            description=view.description,  # type: ignore
+            description=view.description,
             user_id=view.user_id,
             status="Одобрено",
             color=Color.green(),
@@ -88,8 +88,8 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         custom_id="proposal:decline",
         style=ButtonStyle.grey,
         emoji="<:failed:1442915170320912506>",
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
     async def decline_proposal(
         self,
         interaction: Interaction["Nightcore"],
@@ -101,20 +101,20 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         view.moderator_id = interaction.user.id
         message = cast(Message, interaction.message)
 
-        for container in interaction.message.components:  # type: ignore
-            for item in container.children:  # type: ignore
-                if item.id == 2:  # type: ignore
-                    view.proposals_count = extract_id_from_str(item.content)  # type: ignore
-                if item.id == 4:  # type: ignore
-                    view.user_id = extract_id_from_str(item.content)  # type: ignore
+        for container in interaction.message.components:
+            for item in container.children:
+                if item.id == 2:
+                    view.proposals_count = extract_id_from_str(item.content)
+                if item.id == 4:
+                    view.user_id = extract_id_from_str(item.content)
 
-                if item.id == 5:  # type: ignore
-                    view.description = item.content.replace("```", "")  # type: ignore
+                if item.id == 5:
+                    view.description = item.content.replace("```", "")
 
         updated_view = ProposalViewV2(
             bot=view.bot,
             proposals_count=view.proposals_count,
-            description=view.description,  # type: ignore
+            description=view.description,
             user_id=view.user_id,
             status="Отклонено",
             color=Color.red(),
@@ -161,7 +161,7 @@ class ProposalViewV2(LayoutView):
         if self.actions:
             for item in self.actions.children:
                 if isinstance(item, Button):
-                    item.disabled = True  # type: ignore
+                    item.disabled = True
 
     def make_component(self, disable_all: bool = False) -> Self:
         """Create view."""
@@ -197,7 +197,7 @@ class ProposalViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"
             )
         )
 
@@ -227,8 +227,8 @@ class ProposalViewV2(LayoutView):
         if not interaction.response.is_done():
             await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.name,
+                    interaction.client.user.display_avatar.url,
                     f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -236,8 +236,8 @@ class ProposalViewV2(LayoutView):
         else:
             await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.name,
+                    interaction.client.user.display_avatar.url,
                     f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -273,7 +273,7 @@ class AdditionalProposalAnswerViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Powered by {bot.user.name} in {discord_ts(now)}"
             )
         )
 

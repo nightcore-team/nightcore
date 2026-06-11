@@ -23,6 +23,10 @@ from src.nightcore.components.embed import (
     MissingPermissionsEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
 from src.nightcore.services.config import specified_guild_config
@@ -31,10 +35,6 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role,
     has_any_role_from_sequence,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 
@@ -45,7 +45,7 @@ class Mute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="mute", description="Заблокировать чат пользователю"
     )
     @app_commands.guild_only()
@@ -54,7 +54,7 @@ class Mute(Cog):
         duration="Длительность блокировки",
         reason="Причина блокировки",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def mute(
         self,
         interaction: Interaction,
@@ -73,8 +73,8 @@ class Mute(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -99,8 +99,8 @@ class Mute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать чат модераторам.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -110,8 +110,8 @@ class Mute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать чат администраторам.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -124,8 +124,8 @@ class Mute(Cog):
             if not guild.me.guild_permissions.manage_roles:
                 return await interaction.response.send_message(
                     embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                         "У меня нет прав для блокировки чата участников.",
                     ),
                     ephemeral=True,
@@ -135,8 +135,8 @@ class Mute(Cog):
             if not guild.me.guild_permissions.moderate_members:
                 return await interaction.response.send_message(
                     embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                         "У меня нет прав для блокировки чата участников.",
                     ),
                     ephemeral=True,
@@ -147,8 +147,8 @@ class Mute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать чат мне.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -156,8 +156,8 @@ class Mute(Cog):
         if not compare_top_roles(guild, member):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "Я не могу заблокировать чат этому пользователю, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -178,8 +178,8 @@ class Mute(Cog):
                             embed=ErrorEmbed(
                                 "Роль блокировки не найдена",
                                 f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
+                                self.bot.user.name,
+                                self.bot.user.display_avatar.url,
                             ),
                             ephemeral=True,
                         )
@@ -188,8 +188,8 @@ class Mute(Cog):
                         embed=ErrorEmbed(
                             "Роль блокировки не найдена",
                             f"Роль блокировки с ID {mute_role_id} не настроена.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                         ephemeral=True,
                     )
@@ -198,15 +198,15 @@ class Mute(Cog):
 
                 if not has_role:
                     try:
-                        await member.add_roles(mrole, reason=reason)  # type: ignore
+                        await member.add_roles(mrole, reason=reason)
                     except Exception as e:
                         logger.exception("Failed to add role: %s", e)
                         return await interaction.followup.send(
                             embed=ErrorEmbed(
                                 "Ошибка добавления роли",
                                 "Не удалось добавить роль блокировки пользователю.",  # noqa: E501
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
+                                self.bot.user.name,
+                                self.bot.user.display_avatar.url,
                             ),
                             ephemeral=True,
                         )
@@ -215,8 +215,8 @@ class Mute(Cog):
                         embed=ErrorEmbed(
                             "Ошибка блокировки",
                             f"У {member.mention} уже есть блокировка чата.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                         ephemeral=True,
                     )
@@ -230,8 +230,8 @@ class Mute(Cog):
                             embed=ErrorEmbed(
                                 "Ошибка блокировки",
                                 f"{member.mention} уже в тайм-ауте.",
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
+                                self.bot.user.name,
+                                self.bot.user.display_avatar.url,
                             ),
                             ephemeral=True,
                         )
@@ -242,8 +242,8 @@ class Mute(Cog):
                         embed=ErrorEmbed(
                             "Ошибка тайм-аута",
                             "Не удалось установить тайм-аут пользователю.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                         ephemeral=True,
                     )
@@ -252,8 +252,8 @@ class Mute(Cog):
                     embed=ErrorEmbed(
                         "Неизвестный тип блокировки",
                         "Тип блокировки должен быть 'role' или 'timeout'.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )

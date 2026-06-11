@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@clan_main_group.command(name="leave", description="Покинуть клан")  # type: ignore
+@clan_main_group.command(name="leave", description="Покинуть клан")
 @check_required_permissions(PermissionsFlagEnum.NONE)
 async def leave(interaction: Interaction["Nightcore"]):
     """Leave from clan."""

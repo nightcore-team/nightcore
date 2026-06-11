@@ -16,15 +16,15 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.features.economy.utils import guild_colors_autocomplete
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 from src.utils._enums import ChannelType
 

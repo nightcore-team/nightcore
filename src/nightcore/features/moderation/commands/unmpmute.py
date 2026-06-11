@@ -13,6 +13,10 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserUnmutedEventData
 from src.nightcore.features.moderation.utils.transformers import (
@@ -23,10 +27,6 @@ from src.nightcore.utils import (
     compare_top_roles,
     ensure_role_exists,
     has_any_role,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ class UnMpMute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="unmpmute",
         description="Разблокировать пользователя на торговой площадке сервера",
     )
@@ -48,7 +48,7 @@ class UnMpMute(Cog):
         reason="Причина разблокировки пользователя",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def unmpmute(
         self,
         interaction: Interaction,
@@ -77,8 +77,8 @@ class UnMpMute(Cog):
         ):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав для разблокировки участников.",
                 ),
                 ephemeral=True,
@@ -89,8 +89,8 @@ class UnMpMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     "Вы не можете снять блокировку с меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -98,8 +98,8 @@ class UnMpMute(Cog):
         if not compare_top_roles(guild, member):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "Я не могу разблокировать этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -116,8 +116,8 @@ class UnMpMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -129,8 +129,8 @@ class UnMpMute(Cog):
                     embed=ErrorEmbed(
                         "Ошибка снятия блокировки",
                         "Роль блокировки не найдена у этого пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -148,8 +148,8 @@ class UnMpMute(Cog):
                         embed=ErrorEmbed(
                             "Ошибка снятия блокировки",
                             "Не удалось снять роль блокировки торг. площадки с пользователя.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                         ephemeral=True,
                     )
@@ -159,7 +159,7 @@ class UnMpMute(Cog):
                 bot=self.bot,
                 user_id=member.id,
                 punish_type="unmpmute",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 mode="server",
             )

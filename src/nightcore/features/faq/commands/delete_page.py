@@ -22,7 +22,7 @@ from src.nightcore.decorators.permissions import (
 )
 
 
-@faq_group.command(  # type: ignore
+@faq_group.command(
     name="delete_page",
     description="Удалить существующую страницу в FAQ",
 )

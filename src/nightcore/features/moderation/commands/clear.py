@@ -31,7 +31,7 @@ class Clear(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="clear", description="Очистить сообщения в канале"
     )
     @app_commands.describe(
@@ -39,7 +39,7 @@ class Clear(Cog):
         user="Пользователь, чьи сообщения нужно очистить (необязательно)",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def clear(
         self,
         interaction: Interaction,
@@ -52,8 +52,8 @@ class Clear(Cog):
         if not guild.me.guild_permissions.manage_messages:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет разрешения на управление сообщениями.",
                 ),
                 ephemeral=True,
@@ -74,8 +74,8 @@ class Clear(Cog):
                 embed=ErrorEmbed(
                     "Ошибка очистки сообщений",
                     "Не удалось очистить сообщения в текущем канале.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -84,8 +84,8 @@ class Clear(Cog):
             embed=SuccessMoveEmbed(
                 "Сообщения очищены",
                 f"Успешно очищено {amount} сообщений из канала {'от ' + user.mention if user else ''}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
+                self.bot.user.name,
+                self.bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )

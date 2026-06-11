@@ -27,7 +27,7 @@ class Balance(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="balance",
         description="Проверить баланс пользователя.",
     )
@@ -35,7 +35,7 @@ class Balance(Cog):
     @app_commands.describe(
         user="Пользователь, чей баланс нужно проверить. По умолчанию - вы сами"
     )
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def balance(
         self, interaction: Interaction["Nightcore"], user: User | None = None
     ):

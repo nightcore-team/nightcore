@@ -83,7 +83,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
 
     async def callback(self, interaction: Interaction):
         """Handles the selection of profile parts."""
-        values: list[str] = interaction.data.get("values", [])  # type: ignore
+        values: list[str] = interaction.data.get("values", [])
         guild = cast(Guild, interaction.guild)
 
         view = cast("PrepareNotifyViewV2", self.view)
@@ -103,8 +103,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     embed=ErrorEmbed(
                         "Ошибка отправки оповещения",
                         "Канал оповещений не настроен.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
+                        view.bot.user.display_name,
+                        view.bot.user.display_avatar.url,
                     )
                 )
 
@@ -120,8 +120,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     embed=ErrorEmbed(
                         "Ошибка отправки оповещения",
                         "Канал с правилами не настроен.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
+                        view.bot.user.display_name,
+                        view.bot.user.display_avatar.url,
                     )
                 )
 
@@ -137,8 +137,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     embed=ErrorEmbed(
                         "Ошибка отправки оповещения",
                         "Канал создания тикетов не настроен.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
+                        view.bot.user.display_name,
+                        view.bot.user.display_avatar.url,
                     )
                 )
 
@@ -149,8 +149,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
             return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
                     "channel",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -169,7 +169,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
         )
 
         try:
-            message = await notifications_channel.send(view=nview)  # type: ignore
+            message = await notifications_channel.send(view=nview)
         except Exception as e:
             logger.exception(
                 "[notify] Failed to send notify message in guild %s: %s",
@@ -180,8 +180,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 embed=ErrorEmbed(
                     title="Ошибка отправки сообщения",
                     description="Не удалось отправить сообщение в канал оповещений.",  # noqa: E501
-                    footer_text=view.bot.user.display_name,  # type: ignore
-                    footer_icon_url=view.bot.user.display_avatar.url,  # type: ignore
+                    footer_text=view.bot.user.display_name,
+                    footer_icon_url=view.bot.user.display_avatar.url,
                 )
             )
 
@@ -190,7 +190,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 guild_id=guild.id,
                 user_id=view.user_id,
                 moderator_id=interaction.user.id,
-                message_id=message.id,  # type: ignore
+                message_id=message.id,
                 state=NotifyStateEnum.PENDING,
                 end_time=view.end_time,
             )
@@ -203,8 +203,8 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 description=(
                     f"Оповещение для пользователя <@{view.user_id}> было успешно отправлено."  # noqa: E501
                 ),
-                footer_text=view.bot.user.display_name,  # type: ignore
-                footer_icon_url=view.bot.user.display_avatar.url,  # type: ignore
+                footer_text=view.bot.user.display_name,
+                footer_icon_url=view.bot.user.display_avatar.url,
             )
         )
 
@@ -246,7 +246,7 @@ class PrepareNotifyViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"
             )
         )
 
@@ -269,7 +269,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
                 style=ButtonStyle.link,
                 emoji="<:29909ticket:1442924723528007700>",
                 label="Задать вопрос",
-                url=f"https://discord.com/channels/{self.guild_id}/{self.create_ticket_channel_id}",  # type: ignore
+                url=f"https://discord.com/channels/{self.guild_id}/{self.create_ticket_channel_id}",
             )
         )
 
@@ -278,8 +278,8 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
         emoji="<:failed:1442915170320912506>",
         label="Отозвать оповещение",
         custom_id="notify:revoke",
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def revoke(
         self, interaction: Interaction, button: Button["NotifyViewV2"]
     ):
@@ -292,7 +292,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
         view.guild_id = guild.id
 
         for component in message.components:
-            for item in component.children:  # type: ignore
+            for item in component.children:
                 if isinstance(item, TextDisplayOverride):
                     match item.id:
                         case 8:
@@ -300,7 +300,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
                                 float(
                                     extract_str_by_pattern(
                                         item.content, r"<t:(\d+):[A-Za-z]>"
-                                    )  # type: ignore
+                                    )
                                 ),
                                 tz=UTC,
                             )
@@ -375,8 +375,8 @@ class NotifyViewV2(LayoutView):
         if not interaction.response.is_done():
             await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.name,
+                    interaction.client.user.display_avatar.url,
                     f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -384,8 +384,8 @@ class NotifyViewV2(LayoutView):
         else:
             await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.name,
+                    interaction.client.user.display_avatar.url,
                     f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -396,7 +396,7 @@ class NotifyViewV2(LayoutView):
         if self.actions:
             for item in self.actions.children:
                 if isinstance(item, Button):
-                    item.disabled = True  # type: ignore
+                    item.disabled = True
 
     def rebuild_component(
         self, components: list[MessageComponentType], disabled: bool = False
@@ -404,7 +404,7 @@ class NotifyViewV2(LayoutView):
         """Rebuilds the notify view component from existing components."""
 
         for component in components:
-            for item in component.children:  # type: ignore
+            for item in component.children:
                 if isinstance(item, TextDisplayOverride):
                     match item.id:
                         case 2:
@@ -430,7 +430,7 @@ class NotifyViewV2(LayoutView):
                                 float(
                                     extract_str_by_pattern(
                                         item.content, r"<t:(\d+):[A-Za-z]>"
-                                    )  # type: ignore
+                                    )
                                 ),
                                 tz=UTC,
                             )
@@ -438,9 +438,9 @@ class NotifyViewV2(LayoutView):
                             ...
 
                 if isinstance(item, ActionRowOverride):
-                    for btn in item.children:  # type: ignore
+                    for btn in item.children:
                         if btn.id == 12:
-                            self.create_ticket_channel_id = btn.url[-19:-1]  # type: ignore
+                            self.create_ticket_channel_id = btn.url[-19:-1]
 
         view = self.make_component(disabled=disabled)
 
@@ -486,14 +486,14 @@ class NotifyViewV2(LayoutView):
         if self.end_time:
             container.add_item(
                 TextDisplay[Self](
-                    f"Оповещение истекает через: {discord_ts(self.end_time, 'R')}"  # type: ignore  # noqa: E501
+                    f"Оповещение истекает через: {discord_ts(self.end_time, 'R')}"  # noqa: E501
                 )
             )
             container.add_item(Separator[Self]())
 
         self.actions = NotifyButtonsActionRow(
             guild_id=self.guild_id,
-            create_ticket_channel_id=self.create_ticket_channel_id,  # type: ignore
+            create_ticket_channel_id=self.create_ticket_channel_id,
         )
         container.add_item(self.actions)
         container.add_item(Separator[Self]())
@@ -503,7 +503,7 @@ class NotifyViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"
             )
         )
 
@@ -544,7 +544,7 @@ class NotifyTimedOutViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"
             )
         )
 

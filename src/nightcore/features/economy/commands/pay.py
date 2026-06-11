@@ -22,11 +22,11 @@ from src.utils._enums import ChannelType
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import ensure_member_exists
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils import ensure_member_exists
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +35,14 @@ class Pay(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(name="pay", description="Отправить перевод коинов")  # type: ignore
+    @app_commands.command(name="pay", description="Отправить перевод коинов")
     @app_commands.describe(
         user="Пользователь, которому нужно отправить перевод",
         amount="Сумма коинов для перевода",
         comment="Комментарий к переводу",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def pay(
         self,
         interaction: Interaction,
@@ -58,8 +58,8 @@ class Pay(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Сумма должна быть положительным числом.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -67,8 +67,8 @@ class Pay(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Вы не можете перевести коинов боту.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -77,8 +77,8 @@ class Pay(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Вы не можете перевести коинов самому себе.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -88,8 +88,8 @@ class Pay(Cog):
             return await interaction.response.send_message(
                 embed=EntityNotFoundEmbed(
                     "пользователь",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -137,8 +137,8 @@ class Pay(Cog):
                 embed=ErrorEmbed(
                     "Ошибка перевода",
                     "У вас недостаточно коинов для перевода.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -148,8 +148,8 @@ class Pay(Cog):
                 embed=SuccessMoveEmbed(
                     "Успешный перевод",
                     f"Вы успешно перевели пользователю {member.mention} {amount} {coin_name or 'коинов'}.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )

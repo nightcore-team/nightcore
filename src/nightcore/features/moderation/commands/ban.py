@@ -50,14 +50,14 @@ class Ban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="ban", description="Забанить пользователя на сервере"
     )
     @app_commands.describe(
         user="Пользователь для бана", reason="Причина бана пользователя"
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.BAN_ACCESS)
     async def ban(
         self,
         interaction: Interaction,
@@ -89,8 +89,8 @@ class Ban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка бана пользователя",
                     "Вы не можете забанить модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -103,8 +103,8 @@ class Ban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка бана пользователя",
                     "Вы не можете забанить администраторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -112,8 +112,8 @@ class Ban(Cog):
         if not guild.me.guild_permissions.ban_members:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав на бан участников.",
                 ),
                 ephemeral=True,
@@ -124,8 +124,8 @@ class Ban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка бана пользователя",
                     "Вы не можете забанить меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -133,8 +133,8 @@ class Ban(Cog):
         if not compare_top_roles(guild, member):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "Я не могу забанить этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -146,8 +146,8 @@ class Ban(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -161,8 +161,8 @@ class Ban(Cog):
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
                         "Неверная длительность удаления сообщений. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -171,8 +171,8 @@ class Ban(Cog):
                 return await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
                         f"Длительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -198,7 +198,7 @@ class Ban(Cog):
                     guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,
-                    end_time=end_time,  # type: ignore
+                    end_time=str(end_time) if end_time else None,
                     delete_messages_per=delete_messages_per,
                 )
                 try:
@@ -213,7 +213,7 @@ class Ban(Cog):
                     await send_punish_dm_message(
                         self.bot,
                         guild_name=guild.name,
-                        event_data=data,  # type: ignore
+                        event_data=data,
                     )
                 except Exception as e:
                     logger.warning(
@@ -240,8 +240,8 @@ class Ban(Cog):
                     embed=ErrorEmbed(
                         "Ошибка бана пользователя",
                         "Не удалось забанить пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -251,7 +251,7 @@ class Ban(Cog):
                         bot=self.bot,
                         user_id=member.id,
                         punish_type="ban",
-                        moderator_id=interaction.user.id,  # type: ignore
+                        moderator_id=interaction.user.id,
                         duration=duration,
                         reason=reason,
                         mode="server",
@@ -262,8 +262,8 @@ class Ban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка бана пользователя",
                     f"{user.mention} уже забанен на этом сервере.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -291,8 +291,8 @@ async def _ban_request_callback(
             embed=ErrorEmbed(
                 "Ошибка отправки запроса на бан",
                 "Пользователь не найден на сервере.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -320,12 +320,12 @@ async def _ban_request_callback(
     has_moder_role = any(
         interaction.user.get_role(role_id)  # type: ignore
         for role_id in moderation_access_roles
-    )
+    )  # type: ignore
     if not has_moder_role:
         return await interaction.response.send_message(
             embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -337,8 +337,8 @@ async def _ban_request_callback(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Вы не можете забанить модераторов.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -347,8 +347,8 @@ async def _ban_request_callback(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Вы не можете забанить администраторов.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -356,8 +356,8 @@ async def _ban_request_callback(
     if not guild.me.guild_permissions.ban_members:
         return await interaction.response.send_message(
             embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
                 "У меня нет прав на бан участников.",
             ),
             ephemeral=True,
@@ -367,8 +367,8 @@ async def _ban_request_callback(
         return await interaction.response.send_message(
             embed=ValidationErrorEmbed(
                 "Вы не можете забанить меня.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -376,8 +376,8 @@ async def _ban_request_callback(
     if not compare_top_roles(guild, member):
         return await interaction.response.send_message(
             embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
                 "Я не могу забанить этого пользователя, потому что у него роль выше моей.",  # noqa: E501
             ),
             ephemeral=True,
@@ -400,17 +400,17 @@ async def _ban_request_callback(
             embed=ErrorEmbed(
                 "Ошибка отправки запроса на бан",
                 "Канал для отправки запросов на бан не найден.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+                client.user.name,
+                client.user.display_avatar.url,
             )
         )
 
     modal = BanFormModal(
         target=user,
-        moderator=interaction.user,  # type: ignore
+        moderator=interaction.user,
         bot=client,
         ping_role=role,
-        channel=channel,  # type: ignore
+        channel=channel,
         ban_access_roles_ids=ban_access_roles,
         moderation_access_roles_ids=moderation_access_roles,
     )

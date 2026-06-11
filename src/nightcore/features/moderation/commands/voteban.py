@@ -20,6 +20,10 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2 import (
     BanRequestViewV2,
@@ -35,10 +39,6 @@ from src.nightcore.utils import (
     ensure_role_exists,
     has_any_role_from_sequence,
 )
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 from src.nightcore.utils.time_utils import parse_duration
 
 if TYPE_CHECKING:
@@ -51,7 +51,7 @@ class Voteban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="voteban",
         description="Отправить запрос на голосование по бану пользователя",
     )
@@ -62,7 +62,7 @@ class Voteban(Cog):
         duration="Продолжительность бана (например, 1h, 1d, 7d)",
         delete_messages_per="Удалять сообщения за последний период времени (например, 1h, 1d, 7d)",  # noqa: E501
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def voteban(
         self,
         interaction: Interaction,
@@ -104,8 +104,8 @@ class Voteban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка отправки запроса на блокировку",
                     "Вы не можете заблокировать меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -116,8 +116,8 @@ class Voteban(Cog):
                     embed=ErrorEmbed(
                         "Ошибка отправки запроса на блокировку",
                         "Вы не можете заблокировать администраторов.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -131,8 +131,8 @@ class Voteban(Cog):
                     embed=ErrorEmbed(
                         "Ошибка отправки запроса на блокировку",
                         "Вы не можете заблокировать модераторов.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -140,8 +140,8 @@ class Voteban(Cog):
             if not compare_top_roles(guild, member):
                 return await interaction.response.send_message(
                     embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                         "Я не могу забанить этого пользователя, потому что у него роль выше, чем у меня.",  # noqa: E501
                     ),
                     ephemeral=True,
@@ -155,8 +155,8 @@ class Voteban(Cog):
             return await interaction.followup.send(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -170,8 +170,8 @@ class Voteban(Cog):
                 return await interaction.followup.send(
                     embed=ValidationErrorEmbed(
                         "Неверная продолжительность удаления сообщений. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                 )
 
@@ -179,8 +179,8 @@ class Voteban(Cog):
                 return await interaction.followup.send(
                     embed=ValidationErrorEmbed(
                         f"Продолжительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                 )
 
@@ -193,8 +193,8 @@ class Voteban(Cog):
             return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
                     "канал",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -216,16 +216,14 @@ class Voteban(Cog):
         )
 
         try:
-            message = await channel.send(  # type: ignore
-                view=view
-            )
+            message = await channel.send(view=view)  # type: ignore
 
             await interaction.followup.send(
                 embed=SuccessMoveEmbed(
                     "Запрос на бан отправлен",
                     f"Ваш [запрос на бан]({message.jump_url}) для {user.mention} было успешно отправлено.",  # noqa: E501 # type: ignore
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
             )
 
@@ -240,8 +238,8 @@ class Voteban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка отправки запроса на блокировку",
                     "Не удалось отправить сообщение с запросом на блокировку.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 )
             )
 

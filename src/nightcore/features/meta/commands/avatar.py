@@ -3,7 +3,7 @@
 import logging
 
 import discord
-from discord import Embed, User, app_commands
+from discord import Embed, Member, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -20,39 +20,37 @@ class Avatar(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="avatar", description="Получить аватар пользователя"
     )
     @app_commands.describe(user="Пользователь, чей аватар нужно получить")
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def avatar(
         self,
         interaction: Interaction,
-        user: User | None = None,
+        user: User | Member | None = None,
         ephemeral: bool = True,
     ):
         """Send a message displaying the user's avatar."""
 
         if user is None:
-            user = interaction.user  # type: ignore
+            user = interaction.user
 
         await interaction.response.send_message(
             embed=Embed(
-                title=f"Аватар пользователя {user.display_name}",  # type: ignore
+                title=f"Аватар пользователя {user.display_name}",
                 color=discord.Color.blurple(),
             ).set_image(
-                url=user.avatar.url  # type: ignore
-                if user.avatar  # type: ignore
-                else user.default_avatar.url  # type: ignore
+                url=user.avatar.url if user.avatar else user.default_avatar.url
             ),
             ephemeral=ephemeral,
         )
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s",
-            interaction.user.id,  # type: ignore
+            interaction.user.id,
             interaction.guild.id if interaction.guild else None,
-            user.id,  # type: ignore
+            user.id,
         )
 
 

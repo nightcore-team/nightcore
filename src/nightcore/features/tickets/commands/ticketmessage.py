@@ -9,12 +9,12 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildTicketsConfig
 from src.nightcore.bot import Nightcore
-from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
+from src.nightcore.services.config import specified_guild_config
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +23,12 @@ class Ticketmessage(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="ticketmessage",
         description="Отправить сообщение с созданием тикета.",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
     async def ticketmessage(
         self,
         interaction: Interaction,

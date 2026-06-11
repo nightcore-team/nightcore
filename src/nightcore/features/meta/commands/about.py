@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 import discord
-import psutil  # type: ignore
+import psutil
 from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.utils import snowflake_time
@@ -16,11 +16,11 @@ from src.infra.db.operations import get_total_users_count
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.features.meta.components.v2.view.about import AboutViewV2
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.meta.components.v2.view.about import AboutViewV2
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +29,11 @@ class About(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="about",
         description="Информация о боте",
     )
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def about(
         self,
         interaction: discord.Interaction["Nightcore"],
@@ -62,7 +62,7 @@ class About(Cog):
         view = AboutViewV2(
             bot=self.bot,
             total_members=total_members,
-            created_at=snowflake_time(self.bot.user.id),  # type: ignore
+            created_at=snowflake_time(self.bot.user.id),
             memory_usage=f"{mem_bytes / (1024 * 1024):.2f} MB",
             uptime=f"{hours}h {minutes}m",
         )

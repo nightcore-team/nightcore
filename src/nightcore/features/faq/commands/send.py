@@ -21,7 +21,7 @@ from src.nightcore.decorators.permissions import (
 )
 
 
-@faq_group.command(  # type: ignore
+@faq_group.command(
     name="send",
     description="Отправить представление с страницами FAQ",
 )

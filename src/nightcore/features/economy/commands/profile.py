@@ -28,7 +28,7 @@ class Profile(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="profile",
         description="Посмотреть профиль пользователя.",
     )
@@ -36,7 +36,7 @@ class Profile(Cog):
     @app_commands.describe(
         user="Пользователь, чей профиль нужно посмотреть. По умолчанию - вы сами."  # noqa: E501
     )
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def profile(
         self, interaction: Interaction["Nightcore"], user: User | None = None
     ):

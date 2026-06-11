@@ -32,9 +32,9 @@ class Reward(Cog):
 
     @app_commands.command(
         name="reward", description="Забрать ежедневную награду."
-    )  # type: ignore
+    )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def reward(self, interaction: Interaction["Nightcore"]) -> None:
         """Claim your daily reward."""
 
@@ -72,37 +72,40 @@ class Reward(Cog):
                     outcome = "success"
 
         if outcome == "no_reward_configured":
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения ежедневной награды",
                     "Ежедневная награда не настроена на этом сервере.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "reward_too_early":
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка получения ежедневной награды",
                     f"Вы уже получали свою ежедневную награду. \n> Следующая награда: {discord_ts(next_reward)}",  # noqa: E501 # type: ignore
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
+            return
 
         elif outcome == "success":
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Успешно получена ежедневная награда",
                     f"Вы получили свою ежедневную награду: {reward_coins} {coin_name or 'коинов'}",  # type: ignore  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
+            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s",

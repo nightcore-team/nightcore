@@ -11,12 +11,12 @@ from discord.interactions import Interaction
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.features.meta.components.v2 import RoleMembersViewV2
-from src.nightcore.features.meta.utils import build_rolemembers_pages
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.meta.components.v2 import RoleMembersViewV2
+from src.nightcore.features.meta.utils import build_rolemembers_pages
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +25,13 @@ class RoleMembers(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="rolemembers",
         description="Получить список участников с определённой ролью",
     )
     @app_commands.describe(role="Роль, участников которой нужно получить")
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def role_members(
         self,
         interaction: Interaction,
@@ -57,7 +57,7 @@ class RoleMembers(Cog):
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s",
-            interaction.user.id,  # type: ignore
+            interaction.user.id,
             interaction.guild.id if interaction.guild else None,
             role.id,
         )

@@ -10,14 +10,14 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.meta.utils import (
     ACTION_CHOICES,
     DUO_ACTIONS,
     build_action_embed,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class Action(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="action",
         description="Сделать действие с пользователем",
     )
@@ -40,7 +40,7 @@ class Action(Cog):
         user="Выберите пользователя для действия",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def action(
         self, interaction: Interaction, action: str, user: Member | None = None
     ):
@@ -51,8 +51,8 @@ class Action(Cog):
                 await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
                         "Вы должны указать пользователя для этого действия!",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -63,8 +63,8 @@ class Action(Cog):
                 await interaction.response.send_message(
                     embed=ValidationErrorEmbed(
                         "Вы не можете выполнить это действие на себе.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )

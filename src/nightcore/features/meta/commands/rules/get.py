@@ -3,15 +3,15 @@
 from discord import Interaction, app_commands
 
 from src.nightcore.bot import Nightcore
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.meta.components.v2.view.rules_get import (
     RulesGetViewV2,
 )
 from src.nightcore.features.moderation.utils.transformers.string_to_rule import (  # noqa: E501
     StringToRuleTransformer,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 
 from ._groups import rules as rules_group

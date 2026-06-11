@@ -8,15 +8,15 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_guild_cases
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseHelpViewV2
 from src.nightcore.features.economy.utils.case import format_cases_rewards
 from src.nightcore.features.economy.utils.pages import build_cases_help_pages
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

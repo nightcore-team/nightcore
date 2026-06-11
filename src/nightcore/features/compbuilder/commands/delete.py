@@ -13,15 +13,15 @@ if TYPE_CHECKING:
 
 from src.infra.db.operations import get_custom_component_by_id
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
 from src.nightcore.features.compbuilder.utils.autocomplete import (
     components_autocomplete,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 @builder_group.command(
     name="delete",
     description="Удалить существующий компонент",
-)  # type: ignore
+)
 @app_commands.describe(
     component="Выберите компонент для удаления",
 )

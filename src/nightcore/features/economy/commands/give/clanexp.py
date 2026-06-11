@@ -14,13 +14,13 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
 )
-from src.nightcore.features.clans.events.dto import AwardNotificationEventDTO
-from src.nightcore.features.clans.utils import clans_autocomplete
-from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.clans.events.dto import AwardNotificationEventDTO
+from src.nightcore.features.clans.utils import clans_autocomplete
+from src.nightcore.features.economy._groups import give as give_group
 from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:

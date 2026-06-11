@@ -39,13 +39,13 @@ class Kick(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="kick",
         description="Кикнуть пользователя с сервера",
     )
     @app_commands.guild_only()
     @app_commands.describe(user="Пользователь для кика", reason="Причина кика")
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def kick(
         self,
         interaction: Interaction,
@@ -73,8 +73,8 @@ class Kick(Cog):
                 embed=ErrorEmbed(
                     "Ошибка кика пользователя",
                     "Вы не можете кикнуть модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -84,8 +84,8 @@ class Kick(Cog):
                 embed=ErrorEmbed(
                     "Ошибка кика пользователя",
                     "Вы не можете кикнуть администраторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -93,8 +93,8 @@ class Kick(Cog):
         if not guild.me.guild_permissions.kick_members:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав для кика участников.",
                 ),
                 ephemeral=True,
@@ -105,8 +105,8 @@ class Kick(Cog):
                 embed=ErrorEmbed(
                     "Ошибка кика пользователя",
                     "Вы не можете кикнуть меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -114,8 +114,8 @@ class Kick(Cog):
         if not compare_top_roles(guild, member):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "Я не могу кикнуть этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -148,10 +148,10 @@ class Kick(Cog):
             logger.warning("[command] - Failed to kick user: %s", e)
             return await interaction.followup.send(
                 embed=ErrorEmbed(
-                    "Ошибка кика",  # type: ignore
+                    "Ошибка кика",
                     "Не удалось кикнуть пользователя.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -161,7 +161,7 @@ class Kick(Cog):
                 bot=self.bot,
                 user_id=member.id,
                 punish_type="kick",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 mode="server",
             )

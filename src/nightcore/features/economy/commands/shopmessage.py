@@ -12,12 +12,12 @@ from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.configurations.economy import GuildEconomyShopItem
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.components.embed.success import SuccessMoveEmbed
-from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
-from src.nightcore.services.config import specified_guild_config
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
+from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -30,12 +30,12 @@ class ShopMessage(Cog):
     def __init__(self, bot: "Nightcore"):
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="shopmessage",
         description="Отправить компонент магазина.",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
     async def shopmessage(self, interaction: Interaction["Nightcore"]):
         """Send shop view."""
 
@@ -63,8 +63,8 @@ class ShopMessage(Cog):
                 embed=ErrorEmbed(
                     "Ошибка отправки сообщения магазина",
                     "Название коина не настроено на этом сервере.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -75,8 +75,8 @@ class ShopMessage(Cog):
                     embed=ErrorEmbed(
                         "Ошибка отправки сообщения магазина",
                         "В магазине нет доступных товаров.",
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.display_name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -111,8 +111,8 @@ class ShopMessage(Cog):
                 embed=SuccessMoveEmbed(
                     "Отправка магазина",
                     "Сообщение магазина успешно отправлено.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )

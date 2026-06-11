@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 @valentine_group.command(
     name="top",
     description="Показать топ 10 пользователей на сервере по отправленным/полученным валентинкам",  # noqa: E501
-)  # type: ignore
+)
 @app_commands.describe(sort_by="Критерий сортировки топа пользователей")
 @app_commands.choices(
     sort_by=[
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
     ]
 )
 @app_commands.guild_only()
-@check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def top(
     interaction: Interaction["Nightcore"],
     sort_by: app_commands.Choice[str],

@@ -20,6 +20,10 @@ from src.nightcore.components.embed import (
     MissingPermissionsEmbed,
     SuccessMoveEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
@@ -31,10 +35,6 @@ from src.nightcore.utils import (
     has_any_role,
     has_any_role_from_sequence,
 )
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class FractionRole(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="fraction_role",
         description="Выдать пользователю фракционную роль.",
     )
@@ -60,7 +60,7 @@ class FractionRole(Cog):
         ]
     )
     @app_commands.autocomplete(role=fraction_roles_autocomplete)
-    @check_required_permissions(PermissionsFlagEnum.UNSAFE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.UNSAFE)
     async def fraction_role(
         self,
         interaction: Interaction,
@@ -73,15 +73,16 @@ class FractionRole(Cog):
         try:
             role_id = int(role)
         except ValueError:
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 embed=ErrorEmbed(
                     "Ошибка выдачи роли",
                     "Выбранная роль не найдена.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
+            return
 
         guild = cast(Guild, interaction.guild)
         author = cast(Member, interaction.user)
@@ -91,8 +92,8 @@ class FractionRole(Cog):
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав для выдачи ролей пользователям.",
                 ),
             )
@@ -114,8 +115,8 @@ class FractionRole(Cog):
                 embed=ErrorEmbed(
                     "Ошибка выдачи роли",
                     "Роль не найдена в списке фракционных ролей.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 )
             )
 
@@ -132,8 +133,8 @@ class FractionRole(Cog):
         if not has_access:
             return await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
             )
 
@@ -143,8 +144,8 @@ class FractionRole(Cog):
             return await interaction.followup.send(
                 embed=EntityNotFoundEmbed(
                     "фракционная роль",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
             )
 
@@ -157,8 +158,8 @@ class FractionRole(Cog):
                         embed=ErrorEmbed(
                             "Ошибка выдачи роли",
                             f"{user.mention} уже имеет роль {target_role.mention}.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                     )
 
@@ -170,8 +171,8 @@ class FractionRole(Cog):
                         embed=ErrorEmbed(
                             "Ошибка выдачи роли",
                             "Не удалось выдать роль пользователю.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                     )
 
@@ -179,8 +180,8 @@ class FractionRole(Cog):
                     embed=SuccessMoveEmbed(
                         "Выдача роли",
                         f"Роль {target_role.mention} была выдана пользователю {user.mention}.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                 )
 
@@ -190,8 +191,8 @@ class FractionRole(Cog):
                         embed=ErrorEmbed(
                             "Ошибка снятия роли",
                             f"{user.mention} не имеет роль {target_role.mention}.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                     )
 
@@ -203,8 +204,8 @@ class FractionRole(Cog):
                         embed=ErrorEmbed(
                             "Ошибка снятия роли",
                             f"Не удалось снять {target_role.mention} у {user.mention}.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            self.bot.user.name,
+                            self.bot.user.display_avatar.url,
                         ),
                     )
 
@@ -212,8 +213,8 @@ class FractionRole(Cog):
                     embed=SuccessMoveEmbed(
                         "Снятие роли",
                         f"Роль {target_role.mention} была снята у пользователя {user.mention}.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                 )
 
@@ -222,8 +223,8 @@ class FractionRole(Cog):
                     embed=ErrorEmbed(
                         "Недопустимый вариант",
                         "Вариант должен быть 'Добавить' или 'Удалить'.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                 )
 

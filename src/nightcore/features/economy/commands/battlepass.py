@@ -37,12 +37,12 @@ class Battlepass(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="battlepass",
         description="Взаимодействие с баттлпасом сервера.",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def claim(self, interaction: Interaction[Nightcore]):
         """Claim your battlepass rewards."""
 
@@ -78,8 +78,8 @@ class Battlepass(Cog):
                 embed=ErrorEmbed(
                     "Ошибка получения уровня баттлпаса",
                     "Баттлпас не настроен на этом сервере.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
+                    bot.user.display_name,
+                    bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )

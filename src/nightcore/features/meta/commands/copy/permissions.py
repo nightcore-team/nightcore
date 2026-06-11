@@ -12,12 +12,12 @@ from discord import (
 from discord.abc import GuildChannel
 from discord.interactions import Interaction
 
-from src.nightcore.features.meta.commands.copy._groups import (
-    copy as copy_group,
-)
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
+)
+from src.nightcore.features.meta.commands.copy._groups import (
+    copy as copy_group,
 )
 
 if TYPE_CHECKING:
@@ -31,14 +31,14 @@ logger = logging.getLogger(__name__)
 @copy_group.command(
     name="permissions",
     description="Перенести права из одного канала в другой",
-)  # type: ignore
+)
 @app_commands.describe(
     from_channel="Канал из которого нужно перенести права",
     role_or_user="Роль или юзер, чьи права нужно перенести",
     to_channel="Канал в который нужно перенести права",
 )
 @app_commands.guild_only()
-@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)  # type: ignore
+@check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
 async def copy_permissions(
     interaction: Interaction["Nightcore"],
     from_channel: GuildChannel,
@@ -59,8 +59,8 @@ async def copy_permissions(
             embed=ErrorEmbed(
                 "Ошибка копирования прав",
                 "Для выбранного пользователя или роли не заданы права в канале!",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -77,8 +77,8 @@ async def copy_permissions(
             embed=ErrorEmbed(
                 "Ошибка копирования прав",
                 "У бота нет прав для управления правами в целевом канале.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -94,8 +94,8 @@ async def copy_permissions(
             embed=ErrorEmbed(
                 "Ошибка копирования прав",
                 "Произошла ошибка при копировании прав!",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
@@ -105,8 +105,8 @@ async def copy_permissions(
         embed=SuccessMoveEmbed(
             "Права скопированы",
             f"Права для {target_mention} успешно скопированы из {from_channel.mention} в {to_channel.mention}.",  # noqa: E501
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
+            bot.user.display_name,
+            bot.user.display_avatar.url,
         ),
         ephemeral=True,
     )

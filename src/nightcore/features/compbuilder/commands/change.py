@@ -12,6 +12,10 @@ if TYPE_CHECKING:
 
 from src.infra.db.operations import get_custom_component_by_id
 from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
@@ -21,16 +25,12 @@ from src.nightcore.features.compbuilder.components.modal import (
 from src.nightcore.features.compbuilder.utils.autocomplete import (
     components_autocomplete,
 )
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 
 
 @builder_group.command(
     name="change",
     description="Изменить существующий компонент",
-)  # type: ignore
+)
 @app_commands.autocomplete(component=components_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
 async def change(

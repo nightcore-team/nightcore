@@ -28,7 +28,7 @@ class Top(Cog):
 
     @app_commands.command(
         name="top", description="Показать топ 10 пользователей на сервере"
-    )  # type: ignore
+    )
     @app_commands.describe(sort_by="Критерий сортировки топа пользователей")
     @app_commands.choices(
         sort_by=[
@@ -40,7 +40,7 @@ class Top(Cog):
         ]
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def top(
         self,
         interaction: Interaction["Nightcore"],

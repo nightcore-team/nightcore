@@ -18,6 +18,10 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
 from src.nightcore.features.moderation.utils.transformers import (
@@ -25,10 +29,6 @@ from src.nightcore.features.moderation.utils.transformers import (
 )
 from src.nightcore.utils import (
     has_any_role_from_sequence,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 from src.nightcore.utils.time_utils import parse_duration
 
@@ -42,7 +42,7 @@ class Rrban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="rrban",
         description="Заблокировать пользователю возможность запрашивать роли",
     )
@@ -50,7 +50,7 @@ class Rrban(Cog):
     @app_commands.describe(
         user="Пользователь для блокировки", reason="Причина блокировки"
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def rrban(
         self,
         interaction: Interaction,
@@ -71,8 +71,8 @@ class Rrban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать запрос ролей для меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -83,8 +83,8 @@ class Rrban(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -105,8 +105,8 @@ class Rrban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать запрос ролей для модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -117,8 +117,8 @@ class Rrban(Cog):
                     embed=ErrorEmbed(
                         "Ошибка блокировки",
                         "Этот пользователь уже заблокирован на запрос ролей.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -142,8 +142,8 @@ class Rrban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки на запрос ролей",
                     "Не удалось заблокировать пользователю запрос ролей.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 )
             )
 
@@ -176,7 +176,7 @@ class Rrban(Cog):
                 bot=self.bot,
                 user_id=member.id,
                 punish_type="rrban",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 duration=duration,
                 mode="server",

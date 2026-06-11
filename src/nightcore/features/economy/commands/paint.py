@@ -34,11 +34,11 @@ class Paint(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(name="paint", description="Применить на себя цвет")  # type: ignore
+    @app_commands.command(name="paint", description="Применить на себя цвет")
     @app_commands.autocomplete(color_id=user_colors_autocomplete)
     @app_commands.describe(color_id="Цвет, который вы хотите применить")
     @app_commands.rename(color_id="color")
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     @app_commands.guild_only()
     async def paint(
         self,
@@ -56,8 +56,8 @@ class Paint(Cog):
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
                     "У меня недостаточно прав для управления ролями.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -93,8 +93,8 @@ class Paint(Cog):
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
                     "Вы уже применили на себя этот цвет.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -104,8 +104,8 @@ class Paint(Cog):
                 embed=ErrorEmbed(
                     "Ошибка сброса цвета",
                     "У вас нет активного цвета для сброса.",
-                    interaction.client.user.display_name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.display_name,
+                    interaction.client.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -115,8 +115,8 @@ class Paint(Cog):
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
                     "У вас нет этого цвета в инвентаре.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -126,8 +126,8 @@ class Paint(Cog):
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
                     "Роль цвета не найдена на сервере.",
-                    interaction.client.user.display_name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.display_name,
+                    interaction.client.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -137,8 +137,8 @@ class Paint(Cog):
                 embed=ErrorEmbed(
                     "Ошибка выдачи цвета",
                     "Произошла ошибка при применении цвета",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -148,8 +148,8 @@ class Paint(Cog):
                 embed=SuccessMoveEmbed(
                     "Изменение цвета",
                     success_description,  # type: ignore
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.display_name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )

@@ -1,3 +1,5 @@
+"""Command to add forum configuration for the guild."""
+
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -5,11 +7,11 @@ from discord import Guild, Interaction
 from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildForumConfig
-from src.nightcore.features.forum._groups import forum as forum_group
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.forum._groups import forum as forum_group
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -19,12 +21,14 @@ logger = logging.getLogger(__name__)
 
 @forum_group.command(
     name="add", description="Настроить конфигурацию для гильдии"
-)  # type: ignore
+)
 @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)
 async def forum_add(
     interaction: Interaction["Nightcore"],
     section_id: int,
 ):
+    """Set up the forum configuration for the guild."""
+
     guild = cast(Guild, interaction.guild)
 
     try:

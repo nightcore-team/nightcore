@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
-from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class Notify(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="notify", description="Отправить оповещение пользователю"
     )
     @app_commands.guild_only()
@@ -40,7 +40,7 @@ class Notify(Cog):
         duration="Длительность оповещения",
         reason="Причина оповещения (номер правила или текст)",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def notify(
         self,
         interaction: Interaction["Nightcore"],
@@ -60,8 +60,8 @@ class Notify(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )

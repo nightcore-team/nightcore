@@ -19,14 +19,14 @@ from src.nightcore.components.embed import (
     SuccessMoveEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     has_any_role,
-)
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
 )
 from src.utils._enums import ChangeStatTypeEnum
 
@@ -40,7 +40,7 @@ class ChangeStat(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="changestat", description="Изменить статистику модератора"
     )
     @app_commands.describe(
@@ -64,7 +64,7 @@ class ChangeStat(Cog):
         ]
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
     async def changestat(
         self,
         interaction: Interaction,
@@ -83,8 +83,8 @@ class ChangeStat(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Пожалуйста, укажите корректное число.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -111,8 +111,8 @@ class ChangeStat(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Этот пользователь не является модератором для получения статистики.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -145,8 +145,8 @@ class ChangeStat(Cog):
                 embed=ErrorEmbed(
                     "Ошибка изменения статистики",
                     "Не удалось изменить статистику модератора.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -156,8 +156,8 @@ class ChangeStat(Cog):
                 embed=SuccessMoveEmbed(
                     "Статистика модератора успешно изменена",
                     f"Статистика модератора {moderator.mention} была изменена: {type.name}, {amount}.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )

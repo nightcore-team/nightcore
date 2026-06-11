@@ -21,8 +21,8 @@ class Say(Cog):
 
     @app_commands.command(
         name="say", description="Отправить сообщение от бота"
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)
     async def say(
         self,
         interaction: Interaction["Nightcore"],

@@ -22,8 +22,8 @@ class Join(Cog):
 
     @app_commands.command(
         name="join", description="Заставить бота зайти в голосовой канал"
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.UNSAFE)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.UNSAFE)
     async def join(
         self,
         interaction: Interaction["Nightcore"],

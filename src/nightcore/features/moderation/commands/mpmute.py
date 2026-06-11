@@ -15,6 +15,10 @@ from src.nightcore.components.embed import (
     MissingPermissionsEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.commands.ban import (
     StringToRuleTransformer,
@@ -28,10 +32,6 @@ from src.nightcore.utils import (
     has_any_role,
     has_any_role_from_sequence,
 )
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 
 if TYPE_CHECKING:
@@ -44,7 +44,7 @@ class MpMute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="mpmute",
         description="Заблокировать пользователя на торговой площадке сервера",
     )
@@ -54,7 +54,7 @@ class MpMute(Cog):
         duration="Длительность блокировки",
         reason="Причина блокировки",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def mute(
         self,
         interaction: Interaction,
@@ -89,8 +89,8 @@ class MpMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать торговую площадку модераторам.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -100,8 +100,8 @@ class MpMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать торговую площадку администраторам.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -109,8 +109,8 @@ class MpMute(Cog):
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав для управления ролями.",
                 ),
                 ephemeral=True,
@@ -121,8 +121,8 @@ class MpMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать торговую площадку мне.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -130,8 +130,8 @@ class MpMute(Cog):
         if not compare_top_roles(guild, member):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "Я не могу заблокировать этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -143,8 +143,8 @@ class MpMute(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -158,8 +158,8 @@ class MpMute(Cog):
                 embed=ErrorEmbed(
                     "Роль блокировки не найдена",
                     f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -168,15 +168,15 @@ class MpMute(Cog):
 
         if not has_role:
             try:
-                await member.add_roles(mrole, reason=reason)  # type: ignore
+                await member.add_roles(mrole, reason=reason)
             except Exception as e:
                 logger.exception("Failed to add role: %s", e)
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
                         "Ошибка выдачи роли",
                         "Не удалось выдать роль блокировки торговой площадки пользователю.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -185,8 +185,8 @@ class MpMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     f"{member.mention} уже заблокирован на торговой площадке.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -198,7 +198,7 @@ class MpMute(Cog):
                 bot=self.bot,
                 user_id=member.id,
                 punish_type="mpmute",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 duration=duration,
                 mode="server",
@@ -218,7 +218,7 @@ class MpMute(Cog):
                     guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,
-                    end_time=end_time,  # type: ignore
+                    end_time=str(end_time) if end_time else None,
                 ),
             )
         except Exception as e:

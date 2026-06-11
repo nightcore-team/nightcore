@@ -1,3 +1,5 @@
+"""Command to delete forum configuration for the guild."""
+
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -5,11 +7,11 @@ from discord import Guild, Interaction
 
 from src.infra.db.models import GuildForumConfig
 from src.infra.db.operations import get_specified_guild_config
-from src.nightcore.features.forum._groups import forum as forum_group
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.features.forum._groups import forum as forum_group
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -19,11 +21,13 @@ logger = logging.getLogger(__name__)
 
 @forum_group.command(
     name="delete", description="Удалить конфигурацию для гильдии"
-)  # type: ignore
+)
 @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)
 async def forum_delete(
     interaction: Interaction["Nightcore"],
 ):
+    """Delete the forum configuration for the guild."""
+
     guild = cast(Guild, interaction.guild)
 
     outcome = ""

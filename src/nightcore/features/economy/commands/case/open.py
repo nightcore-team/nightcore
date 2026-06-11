@@ -15,6 +15,10 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
@@ -24,10 +28,6 @@ from src.nightcore.features.economy.utils.case import (
     give_reward_by_type,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 from src.utils._enums import ChannelType
 

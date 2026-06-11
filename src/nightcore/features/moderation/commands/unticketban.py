@@ -33,7 +33,7 @@ class Unticketban(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="unticketban",
         description="Снять бан на создание тикетов с пользователя",
     )
@@ -41,7 +41,7 @@ class Unticketban(Cog):
     @app_commands.describe(
         user="Пользователь для снятия бана", reason="Причина снятия бана"
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def unticketban(
         self,
         interaction: Interaction,
@@ -58,8 +58,8 @@ class Unticketban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     "Вы не можете снять блокировку с меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -94,8 +94,8 @@ class Unticketban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     "Данный пользователь не имеет блокировки на создание тикетов.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -105,8 +105,8 @@ class Unticketban(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     "Не удалось снять тикет бан с пользователя.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -118,7 +118,7 @@ class Unticketban(Cog):
                 bot=self.bot,
                 user_id=user.id,
                 punish_type="unticketban",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 mode="server",
             )

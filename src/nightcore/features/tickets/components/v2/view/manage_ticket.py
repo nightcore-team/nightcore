@@ -84,7 +84,7 @@ class TicketStateViewV2(LayoutView):
         now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)} | <@{author_id}>"  # type: ignore  # noqa: E501
+                f"-# Powered by {bot.user.name} in {discord_ts(now)} | <@{author_id}>"  # noqa: E501
             )
         )
         self.add_item(container)
@@ -99,8 +99,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         label="Закрепить",
         emoji="<:paperclip1:1442914563321368737>",
         custom_id="ticket:pin",
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def pin_ticket(
         self, interaction: Interaction, button: Button["ManageTicketViewV2"]
     ):
@@ -117,8 +117,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             return await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
                     "У меня нет прав на управление каналами.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -182,8 +182,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось закрепить тикет",
                     "Тикет не найден для этого пользователя.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -193,8 +193,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось закрепить тикет",
                     "Вы не можете закрепить закрытый тикет.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -204,8 +204,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось закрепить тикет",
                     "Этот тикет уже закреплен другим модератором.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -226,8 +226,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     embed=ErrorEmbed(
                         "Не удалось закрепить тикет",
                         "Категория закрепленных тикетов не найдена.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
+                        view.bot.user.name,
+                        view.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -270,8 +270,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         label="Открыть",
         emoji="<:unlock:1442914794377187448>",
         custom_id="ticket:reopen",
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
     async def reopen_ticket(
         self,
         interaction: Interaction["Nightcore"],
@@ -289,8 +289,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             return await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
                     "У меня нет прав на управление каналами.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -351,8 +351,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось открыть тикет",
                     "Тикет не найден для этого пользователя.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -362,8 +362,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось открыть тикет",
                     "Вы не можете открыть уже открытый тикет. Просто закрепите его.",  # noqa: E501
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -373,8 +373,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось открыть тикет",
                     "Этот тикет уже закреплен другим модератором.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -396,8 +396,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     embed=ErrorEmbed(
                         "Не удалось открыть тикет",
                         "Категория закрепленных тикетов настроена неправильно.",  # noqa: E501
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
+                        view.bot.user.name,
+                        view.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -451,8 +451,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         label="Закрыть",
         emoji="<:lock4:1442914715025276988>",
         custom_id="ticket:close",
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    )
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def close_ticket(
         self,
         interaction: Interaction["Nightcore"],
@@ -471,8 +471,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             return await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
                     "У меня нет прав на управление каналами.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -532,8 +532,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось закрыть тикет",
                     "Тикет не найден для этого пользователя.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -543,8 +543,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 embed=ErrorEmbed(
                     "Не удалось закрыть тикет",
                     "Этот тикет уже закрыт.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    view.bot.user.name,
+                    view.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -565,8 +565,8 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     embed=ErrorEmbed(
                         "Не удалось закрыть тикет",
                         "Категория закрытых тикетов не найдена.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
+                        view.bot.user.name,
+                        view.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -646,7 +646,7 @@ class ManageTicketViewV2(LayoutView):
         now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)} | <@&{ping_role_id}>"  # type: ignore  # noqa: E501
+                f"-# Powered by {self.bot.user.name} in {discord_ts(now)} | <@&{ping_role_id}>"  # noqa: E501
             )
         )
 
@@ -671,8 +671,8 @@ class ManageTicketViewV2(LayoutView):
         if not interaction.response.is_done():
             await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.name,
+                    interaction.client.user.display_avatar.url,
                     f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -680,8 +680,8 @@ class ManageTicketViewV2(LayoutView):
         else:
             await interaction.followup.send(
                 embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
+                    interaction.client.user.name,
+                    interaction.client.user.display_avatar.url,
                     f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
                 ),
                 ephemeral=True,

@@ -3,7 +3,7 @@
 import logging
 
 import discord
-from discord import Embed, User, app_commands
+from discord import Embed, Member, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -20,23 +20,23 @@ class Banner(Cog):
     def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="banner", description="Получить баннер пользователя"
     )
     @app_commands.describe(user="Пользователь, чей баннер нужно получить")
-    @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.NONE)
     async def banner(
         self,
         interaction: Interaction,
-        user: User | None = None,
+        user: User | Member | None = None,
         ephemeral: bool = True,
     ):
         """Send a message displaying the user's banner."""
 
         if user is None:
-            u = interaction.user  # type: ignore
+            u = interaction.user
         else:
-            u = self.bot.get_user(user.id)  # type: ignore
+            u = self.bot.get_user(user.id)
             if u is None:
                 try:
                     u = await self.bot.fetch_user(user.id)
@@ -50,11 +50,9 @@ class Banner(Cog):
         if u.banner:
             await interaction.response.send_message(
                 embed=Embed(
-                    title=f"Баннер пользователя {user.display_name}",  # type: ignore
+                    title=f"Баннер пользователя {u.display_name}",
                     color=discord.Color.blurple(),
-                ).set_image(
-                    url=u.banner.url  # type: ignore
-                ),
+                ).set_image(url=u.banner.url),
                 ephemeral=ephemeral,
             )
 
@@ -63,11 +61,12 @@ class Banner(Cog):
                 "У пользователя нет баннера.",
                 ephemeral=True,
             )
+
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s",
-            interaction.user.id,  # type: ignore
+            interaction.user.id,
             interaction.guild.id if interaction.guild else None,
-            user.id,  # type: ignore
+            u.id,
         )
 
 

@@ -45,7 +45,7 @@ class VMute(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="vmute",
         description="Выдать пользователю блокировку голосовых каналов.",
     )
@@ -54,7 +54,7 @@ class VMute(Cog):
         user="Пользователь для блокировки",
         reason="Причина блокировки пользователя",
     )
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def vmute(
         self,
         interaction: Interaction,
@@ -87,8 +87,8 @@ class VMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -98,8 +98,8 @@ class VMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать администраторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -107,8 +107,8 @@ class VMute(Cog):
         if not guild.me.guild_permissions.manage_roles:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав для блокировки участников.",
                 ),
                 ephemeral=True,
@@ -119,8 +119,8 @@ class VMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -128,8 +128,8 @@ class VMute(Cog):
         if not compare_top_roles(guild, member):
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "Я не могу заблокировать этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
@@ -141,8 +141,8 @@ class VMute(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -161,8 +161,8 @@ class VMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     f"Не удалось найти роль блокировки с ID {mute_role_id} на этом сервере.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -171,15 +171,15 @@ class VMute(Cog):
 
         if not has_role:
             try:
-                await member.add_roles(mrole, reason=reason)  # type: ignore
+                await member.add_roles(mrole, reason=reason)
             except Exception as e:
                 logger.exception("Failed to add role: %s", e)
                 return await interaction.followup.send(
                     embed=ErrorEmbed(
                         "Ошибка блокировки",
                         "Не удалось добавить роль мута пользователю.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -188,8 +188,8 @@ class VMute(Cog):
                 embed=ErrorEmbed(
                     "Ошибка блокировки",
                     f"{member.mention} уже заблокирован.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -236,7 +236,7 @@ class VMute(Cog):
                     guild_name=guild.name,
                     duration=parsed_duration,
                     original_duration=duration,
-                    end_time=end_time,  # type: ignore
+                    end_time=str(end_time) if end_time else None,
                 ),
             )
         except Exception as e:

@@ -34,14 +34,14 @@ class UnBan(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="unban", description="Разбанить пользователя на сервере"
     )
     @app_commands.describe(
         user="Пользователь для разбана", reason="Причина разбана пользователя"
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.UNBAN_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.UNBAN_ACCESS)
     async def unban(
         self,
         interaction: Interaction,
@@ -56,8 +56,8 @@ class UnBan(Cog):
         if not guild.me.guild_permissions.ban_members:
             return await interaction.response.send_message(
                 embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                     "У меня нет прав на разбан участников.",
                 ),
                 ephemeral=True,
@@ -72,8 +72,8 @@ class UnBan(Cog):
                 embed=ErrorEmbed(
                     "Ошибка снятия блокировки",
                     f"<@{user.id}> не забанен на этом сервере.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -106,8 +106,8 @@ class UnBan(Cog):
                     embed=ErrorEmbed(
                         "Ошибка снятия блокировки",
                         f"Не удалось снять блокировку с <@{user.id}>.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )
@@ -117,7 +117,7 @@ class UnBan(Cog):
                 bot=self.bot,
                 user_id=user.id,
                 punish_type="unban",
-                moderator_id=interaction.user.id,  # type: ignore
+                moderator_id=interaction.user.id,
                 reason=reason,
                 mode="server",
             )

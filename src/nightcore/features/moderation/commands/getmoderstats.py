@@ -17,6 +17,10 @@ from src.nightcore.components.embed import (
     ErrorEmbed,
     ValidationErrorEmbed,
 )
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2.view.getmoderstats import (  # noqa: E501
     MultiplyGetModerStatsViewV2,
@@ -31,10 +35,6 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     get_all_members_with_specified_role,
 )
-from src.nightcore.decorators.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 from src.nightcore.utils.time_utils import compare_date_range
 
 if TYPE_CHECKING:
@@ -47,7 +47,7 @@ class GetModerationStats(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
-    @app_commands.command(  # type: ignore
+    @app_commands.command(
         name="getmoderstat", description="Получить статистику модерации"
     )
     @app_commands.describe(
@@ -57,7 +57,7 @@ class GetModerationStats(Cog):
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
     @app_commands.guild_only()
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
+    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     async def getmoderstats(
         self,
         interaction: Interaction,
@@ -81,14 +81,14 @@ class GetModerationStats(Cog):
             return await interaction.response.send_message(
                 embed=ValidationErrorEmbed(
                     str(e),
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
 
         outcome = ""
-        trackable_moderation_role: int = 0
+        trackable_moderation_role: int | None = 0
         grouped: dict[int, ModerationInfractionsDataAnnot] = {}
         scores: dict[str, float] = {}
 
@@ -99,9 +99,12 @@ class GetModerationStats(Cog):
         ) as (guild_config, session):
             trackable_moderation_role = (
                 guild_config.trackable_moderation_role_id
-            )  # type: ignore
+            )
 
-            if not trackable_moderation_role:
+            if (
+                trackable_moderation_role is None
+                or trackable_moderation_role == 0
+            ):
                 outcome = "no_trackable_moderation_role"
             else:
                 scores = await get_moderstats_dict(session, guild_id=guild.id)
@@ -113,8 +116,9 @@ class GetModerationStats(Cog):
         if member:
             moderators.append(member)
         else:
-            moderators = await get_all_members_with_specified_role(  # type: ignore
-                guild, trackable_moderation_role
+            moderators = await get_all_members_with_specified_role(
+                guild,
+                trackable_moderation_role,  # type: ignore
             )
 
         if not moderators:
@@ -122,8 +126,8 @@ class GetModerationStats(Cog):
                 embed=ErrorEmbed(
                     "Ошибка получения статистики.",
                     "Не удалось найти модераторов с отслеживаемой ролью.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    self.bot.user.name,
+                    self.bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
@@ -160,8 +164,8 @@ class GetModerationStats(Cog):
                     embed=ErrorEmbed(
                         "Ошибка получения статистики.",
                         "Не удалось найти статистику модерации за указанный период.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        self.bot.user.name,
+                        self.bot.user.display_avatar.url,
                     ),
                     ephemeral=True,
                 )

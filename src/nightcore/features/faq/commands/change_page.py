@@ -25,7 +25,7 @@ from src.nightcore.decorators.permissions import (
 logger = logging.getLogger(__name__)
 
 
-@faq_group.command(  # type: ignore
+@faq_group.command(
     name="change_page",
     description="Изменить существующую страницу в FAQ",
 )
