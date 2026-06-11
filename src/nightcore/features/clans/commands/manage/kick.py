@@ -20,7 +20,7 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageNotifyDTO,
 )
 from src.nightcore.utils import ensure_member_exists, ensure_role_exists
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

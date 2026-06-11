@@ -21,7 +21,7 @@ from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.features.economy.utils import guild_colors_autocomplete
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

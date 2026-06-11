@@ -15,7 +15,7 @@ from src.nightcore.features.meta.utils import (
     DUO_ACTIONS,
     build_action_embed,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

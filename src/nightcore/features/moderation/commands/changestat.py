@@ -24,7 +24,7 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
     has_any_role,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

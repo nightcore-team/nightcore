@@ -14,7 +14,7 @@ from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.components.embed.success import SuccessMoveEmbed
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

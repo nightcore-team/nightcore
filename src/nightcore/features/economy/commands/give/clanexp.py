@@ -17,7 +17,7 @@ from src.nightcore.components.embed import (
 from src.nightcore.features.clans.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.features.economy._groups import give as give_group
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

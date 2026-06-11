@@ -15,7 +15,7 @@ from discord.interactions import Interaction
 from src.nightcore.features.meta.commands.copy._groups import (
     copy as copy_group,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

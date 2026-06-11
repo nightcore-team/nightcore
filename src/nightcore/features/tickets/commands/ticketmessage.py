@@ -11,7 +11,7 @@ from src.infra.db.models import GuildTicketsConfig
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

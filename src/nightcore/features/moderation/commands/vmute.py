@@ -33,7 +33,7 @@ from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

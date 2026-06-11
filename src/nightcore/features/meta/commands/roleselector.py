@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.meta.components.modal import RoleSelectorModal
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

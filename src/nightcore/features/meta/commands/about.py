@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.features.meta.components.v2.view.about import AboutViewV2
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

@@ -15,6 +15,10 @@ from src.infra.db.operations import (
     get_or_create_user,
 )
 from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.decorators.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.nightcore.features.economy.components.v2 import (
     BattlepassClaimViewV2,
 )
@@ -22,10 +26,6 @@ from src.nightcore.features.economy.utils.case import (
     format_single_battlepass_level_reward,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

@@ -26,7 +26,7 @@ from src.nightcore.features.proposals.components.modal import (
 )
 from src.nightcore.features.tickets.utils import extract_id_from_str
 from src.nightcore.utils import discord_ts
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

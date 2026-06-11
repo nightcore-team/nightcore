@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 from src.nightcore.features.meta.components.modal.bugreport import (
     BugReportModal,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

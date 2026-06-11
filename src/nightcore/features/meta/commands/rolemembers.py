@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from src.nightcore.features.meta.components.v2 import RoleMembersViewV2
 from src.nightcore.features.meta.utils import build_rolemembers_pages
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

@@ -19,7 +19,7 @@ from src.nightcore.features.compbuilder._groups import (
 from src.nightcore.features.compbuilder.utils.autocomplete import (
     components_autocomplete,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildForumConfig
 from src.nightcore.features.forum._groups import forum as forum_group
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

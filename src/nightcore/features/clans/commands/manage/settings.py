@@ -39,7 +39,7 @@ from src.nightcore.utils import (
     ensure_role_exists,
 )
 from src.nightcore.utils.object import safe_delete_channel
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

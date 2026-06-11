@@ -9,7 +9,7 @@ from src.nightcore.features.meta.components.v2.view.rules_get import (
 from src.nightcore.features.moderation.utils.transformers.string_to_rule import (  # noqa: E501
     StringToRuleTransformer,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

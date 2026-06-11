@@ -21,7 +21,7 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
     ClanManageNotifyDTO,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

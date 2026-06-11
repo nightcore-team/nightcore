@@ -24,7 +24,7 @@ from src.nightcore.features.economy.utils.case import (
     give_reward_by_type,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

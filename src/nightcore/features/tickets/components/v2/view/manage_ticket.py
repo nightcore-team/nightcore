@@ -42,7 +42,7 @@ from src.nightcore.utils import (
     discord_ts,
     ensure_messageable_channel_exists,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

@@ -26,7 +26,7 @@ from src.nightcore.features.moderation.utils.transformers import (
 from src.nightcore.utils import (
     has_any_role_from_sequence,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

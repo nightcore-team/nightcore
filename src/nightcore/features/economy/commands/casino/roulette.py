@@ -31,7 +31,7 @@ from src.nightcore.features.economy.utils.casino import (
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_messageable_channel_exists
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

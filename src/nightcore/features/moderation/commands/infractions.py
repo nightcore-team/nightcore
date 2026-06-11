@@ -26,7 +26,7 @@ from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
 from src.nightcore.features.moderation.utils import build_infraction_pages
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

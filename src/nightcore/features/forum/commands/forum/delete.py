@@ -6,7 +6,7 @@ from discord import Guild, Interaction
 from src.infra.db.models import GuildForumConfig
 from src.infra.db.operations import get_specified_guild_config
 from src.nightcore.features.forum._groups import forum as forum_group
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

@@ -18,7 +18,7 @@ from src.nightcore.components.embed import (
     ValidationErrorEmbed,
 )
 from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

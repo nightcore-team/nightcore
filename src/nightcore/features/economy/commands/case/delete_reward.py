@@ -24,7 +24,7 @@ from src.nightcore.features.economy.events.dto.item_change import (
 from src.nightcore.features.economy.utils.autocomplete import (
     guild_cases_autocomplete,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

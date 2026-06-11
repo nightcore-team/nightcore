@@ -25,7 +25,7 @@ from src.nightcore.features.economy.utils.autocomplete import (
     user_colors_autocomplete,
 )
 from src.nightcore.utils import ensure_member_exists
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

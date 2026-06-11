@@ -13,7 +13,7 @@ from src.nightcore.features.economy.components.v2 import CaseHelpViewV2
 from src.nightcore.features.economy.utils.case import format_cases_rewards
 from src.nightcore.features.economy.utils.pages import build_cases_help_pages
 from src.nightcore.services.config import specified_guild_config
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

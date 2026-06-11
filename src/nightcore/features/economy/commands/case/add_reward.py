@@ -29,7 +29,7 @@ from src.nightcore.features.economy.utils.autocomplete import (
     guild_cases_autocomplete,
     reward_depends_on_type_autocomplete,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

@@ -30,7 +30,7 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
 )
 from src.nightcore.utils import safe_delete_role
 from src.nightcore.utils.object import ensure_category_exists
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

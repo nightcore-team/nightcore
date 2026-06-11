@@ -19,7 +19,7 @@ from src.nightcore.features.meta.utils.winter_holidays import (
     get_all_holidays,
     parse_timezone,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

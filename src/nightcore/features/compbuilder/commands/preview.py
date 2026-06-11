@@ -22,7 +22,7 @@ from src.nightcore.features.compbuilder.components.modal import (
 from src.nightcore.features.compbuilder.utils.autocomplete import (
     components_autocomplete,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

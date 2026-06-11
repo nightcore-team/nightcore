@@ -11,7 +11,7 @@ from src.nightcore.components.embed.error import ErrorEmbed
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.components.v2 import ClanInviteViewV2
 from src.nightcore.features.clans.utils.autocomplete import clans_autocomplete
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

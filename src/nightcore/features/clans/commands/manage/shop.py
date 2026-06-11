@@ -26,7 +26,7 @@ from src.nightcore.features.clans.components.v2 import ClanShopViewV2
 from src.nightcore.features.clans.utils import clans_shop_autocomplete
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_messageable_channel_exists
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

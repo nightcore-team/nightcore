@@ -30,7 +30,7 @@ from src.nightcore.utils import (
     safe_delete_channel,
     safe_delete_role,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

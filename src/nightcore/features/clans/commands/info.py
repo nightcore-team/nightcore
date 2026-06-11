@@ -12,7 +12,7 @@ from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.features.clans.components.v2 import ClanInfoViewV2
 from src.nightcore.features.clans.utils import clans_autocomplete
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

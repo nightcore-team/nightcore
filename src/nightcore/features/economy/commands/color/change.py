@@ -23,7 +23,7 @@ from src.nightcore.features.economy.utils.autocomplete import (
     guild_colors_autocomplete,
 )
 from src.nightcore.utils.object import compare_top_roles
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )

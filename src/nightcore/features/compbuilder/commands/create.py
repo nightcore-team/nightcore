@@ -15,7 +15,7 @@ from src.nightcore.features.compbuilder._groups import (
 from src.nightcore.features.compbuilder.components.modal import (
     CreateComponentModal,
 )
-from src.nightcore.utils.permissions import (
+from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
