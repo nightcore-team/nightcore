@@ -29,6 +29,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +38,7 @@ logger = logging.getLogger(__name__)
     name="reset", description="Сбросить боевой пропуск у пользователей"
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def reset(
     interaction: Interaction[Nightcore],
 ):

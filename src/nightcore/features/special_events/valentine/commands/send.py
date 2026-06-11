@@ -32,6 +32,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 # Cooldown mapping that tracks buckets
@@ -97,6 +99,7 @@ def _get_valentine_cooldown(
     text="текст",
     is_anonymous="анонимно",
 )
+@time_executing
 async def send_valentine(
     interaction: Interaction["Nightcore"],
     user: Member,

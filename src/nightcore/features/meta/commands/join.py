@@ -16,6 +16,9 @@ from src.nightcore.decorators.permissions import (
 )
 
 
+from src.nightcore.decorators.time_executing import time_executing
+
+
 class Join(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
@@ -24,6 +27,7 @@ class Join(Cog):
         name="join", description="Заставить бота зайти в голосовой канал"
     )
     @check_required_permissions(PermissionsFlagEnum.UNSAFE)
+    @time_executing
     async def join(
         self,
         interaction: Interaction["Nightcore"],

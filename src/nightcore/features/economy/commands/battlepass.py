@@ -19,6 +19,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy.components.v2 import (
     BattlepassClaimViewV2,
 )
@@ -43,6 +44,7 @@ class Battlepass(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def claim(self, interaction: Interaction[Nightcore]):
         """Claim your battlepass rewards."""
 

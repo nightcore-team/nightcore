@@ -15,6 +15,9 @@ from src.nightcore.decorators.permissions import (
 )
 
 
+from src.nightcore.decorators.time_executing import time_executing
+
+
 class Say(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
@@ -23,6 +26,7 @@ class Say(Cog):
         name="say", description="Отправить сообщение от бота"
     )
     @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)
+    @time_executing
     async def say(
         self,
         interaction: Interaction["Nightcore"],

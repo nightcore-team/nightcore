@@ -17,6 +17,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -29,6 +31,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(clan="Клан, информацию о котором вы хотите посмотреть.")
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def info(interaction: Interaction["Nightcore"], clan: str):
     """Get information about a clan."""
 

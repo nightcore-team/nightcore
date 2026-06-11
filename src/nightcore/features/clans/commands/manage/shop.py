@@ -30,6 +30,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.utils._enums import ClanMemberRoleEnum, ShopOrderStateEnum
 
 if TYPE_CHECKING:
@@ -46,6 +47,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.autocomplete(item=clans_shop_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def shop(
     interaction: Interaction["Nightcore"],
     item: str,

@@ -26,6 +26,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.utils import ensure_member_exists
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ class Pay(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def pay(
         self,
         interaction: Interaction,

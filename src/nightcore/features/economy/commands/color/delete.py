@@ -19,6 +19,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import color as color_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 @app_commands.rename(color_id="color")
 @app_commands.autocomplete(color_id=guild_colors_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def delete_color(
     interaction: Interaction["Nightcore"],
     color_id: app_commands.Transform[int, StrToIntTransformer],

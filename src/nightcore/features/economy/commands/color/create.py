@@ -21,6 +21,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import color as color_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
@@ -38,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 @color_group.command(name="create", description="Создать цвет")  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def create_color(
     interaction: Interaction["Nightcore"],
     role: discord.Role,

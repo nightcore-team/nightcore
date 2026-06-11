@@ -20,6 +20,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,6 +32,7 @@ logger = logging.getLogger(__name__)
     level="Уровень, который нужно удалить",
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def delete_level(
     interaction: Interaction["Nightcore"],
     level: app_commands.Range[int, 1, 1000000],

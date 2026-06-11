@@ -15,6 +15,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -34,6 +36,7 @@ logger = logging.getLogger(__name__)
     ]
 )
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def clan_top(
     interaction: Interaction["Nightcore"],
     sort_by: app_commands.Choice[str] | None = None,

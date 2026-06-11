@@ -15,6 +15,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
     name="list", description="Посмотреть список всех кланов"
 )
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def list_clans(interaction: Interaction["Nightcore"]):
     """Get a list of all clans."""
 

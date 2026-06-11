@@ -14,6 +14,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.components.modal.bugreport import (
     BugReportModal,
 )
@@ -30,6 +31,7 @@ class BugReport(Cog):
         description="Отправить отчет об ошибке",
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def bug_report(
         self,
         interaction: discord.Interaction["Nightcore"],

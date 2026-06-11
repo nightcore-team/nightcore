@@ -34,6 +34,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
@@ -53,6 +54,7 @@ class Rr(Cog):
         reason="Причина удаления роли",
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def rr(
         self,
         interaction: Interaction["Nightcore"],

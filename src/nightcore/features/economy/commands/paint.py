@@ -27,6 +27,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +42,7 @@ class Paint(Cog):
     @app_commands.rename(color_id="color")
     @check_required_permissions(PermissionsFlagEnum.NONE)
     @app_commands.guild_only()
+    @time_executing
     async def paint(
         self,
         interaction: Interaction["Nightcore"],

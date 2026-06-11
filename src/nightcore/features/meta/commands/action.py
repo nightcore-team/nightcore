@@ -14,6 +14,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.utils import (
     ACTION_CHOICES,
     DUO_ACTIONS,
@@ -41,6 +42,7 @@ class Action(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def action(
         self, interaction: Interaction, action: str, user: Member | None = None
     ):

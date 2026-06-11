@@ -22,6 +22,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.services.config import specified_guild_config
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ class Rrmessage(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+    @time_executing
     async def rrmessage(
         self,
         interaction: Interaction["Nightcore"],

@@ -24,6 +24,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.utils._enums import (
     ChannelType,
     ClanManageActionEnum,
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.describe(user="Пользователь, которого хотите кикнуть")
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def kick(
     interaction: Interaction["Nightcore"],
     user: User,

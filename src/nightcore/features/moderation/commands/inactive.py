@@ -14,6 +14,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.moderation.components.modal import (
     InactiveFormModal,
 )
@@ -28,6 +29,7 @@ class Inactive(Cog):
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
     @app_commands.checks.cooldown(1, 300, key=lambda i: i.user.id)
+    @time_executing
     async def inactive(self, interaction: Interaction["Nightcore"]):
         """Send an inactive request."""
         guild = cast(Guild, interaction.guild)

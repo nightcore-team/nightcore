@@ -8,13 +8,14 @@ from discord.interactions import Interaction
 
 from src.infra.db.operations import get_clan_by_id, get_clan_member
 from src.nightcore.components.embed.error import ErrorEmbed
-from src.nightcore.features.clans._groups import manage as clan_manage_group
-from src.nightcore.features.clans.components.v2 import ClanInviteViewV2
-from src.nightcore.features.clans.utils.autocomplete import clans_autocomplete
 from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
+from src.nightcore.features.clans._groups import manage as clan_manage_group
+from src.nightcore.features.clans.components.v2 import ClanInviteViewV2
+from src.nightcore.features.clans.utils.autocomplete import clans_autocomplete
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
     clan="Клан, в который вы хотите пригласить пользователя.",
 )
 @check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
+@time_executing
 async def moder_invite(
     interaction: Interaction["Nightcore"],
     clan: str,

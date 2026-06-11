@@ -16,6 +16,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
@@ -38,6 +39,7 @@ logger = logging.getLogger(__name__)
     amount="Количество очков батлпасса для выдачи",
     reason="Причина выдачи очков батлпасса (необязательно)",
 )
+@time_executing
 async def give_bp_exp(
     interaction: Interaction["Nightcore"],
     user: User,

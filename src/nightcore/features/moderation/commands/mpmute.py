@@ -19,6 +19,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.commands.ban import (
     StringToRuleTransformer,
@@ -55,6 +56,7 @@ class MpMute(Cog):
         reason="Причина блокировки",
     )
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def mute(
         self,
         interaction: Interaction,

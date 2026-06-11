@@ -12,6 +12,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseHelpViewV2
 from src.nightcore.features.economy.utils.case import format_cases_rewards
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 @case_group.command(name="help", description="Узнать информацию о кейсах")  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def case_help(
     interaction: Interaction["Nightcore"],
 ):

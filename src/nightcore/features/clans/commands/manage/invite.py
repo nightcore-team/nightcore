@@ -15,6 +15,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.utils._enums import ClanMemberRoleEnum
 
 if TYPE_CHECKING:
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.describe(user="Пользователь, которого хотите пригласить.")
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def invite(
     interaction: Interaction["Nightcore"],
     user: Member,

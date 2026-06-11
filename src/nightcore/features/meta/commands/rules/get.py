@@ -7,6 +7,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.components.v2.view.rules_get import (
     RulesGetViewV2,
 )
@@ -22,6 +23,7 @@ from ._groups import rules as rules_group
     clause="Номер пункта (например, '1' для главы, '1.1' для правила, '1.1.1' для подпункта)"  # noqa: E501
 )
 @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+@time_executing
 async def get_rules(
     interaction: Interaction["Nightcore"],
     clause: app_commands.Transform[

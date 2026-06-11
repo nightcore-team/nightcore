@@ -18,6 +18,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedCase,
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 @case_group.command(name="create", description="Создать кейс")  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def create_case(
     interaction: Interaction["Nightcore"],
     case_name: app_commands.Range[str, 5, 100],

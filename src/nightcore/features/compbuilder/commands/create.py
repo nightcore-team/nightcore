@@ -13,6 +13,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
@@ -26,6 +27,7 @@ from src.nightcore.features.compbuilder.components.modal import (
     description="Создать новый компонент",
 )
 @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+@time_executing
 async def create(interaction: Interaction[Nightcore]):
     """Create a new custom component."""
 

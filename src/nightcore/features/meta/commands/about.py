@@ -20,6 +20,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.components.v2.view.about import AboutViewV2
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class About(Cog):
         description="Информация о боте",
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def about(
         self,
         interaction: discord.Interaction["Nightcore"],

@@ -35,6 +35,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -50,6 +52,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.autocomplete(reward=reward_depends_on_type_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def add_level(
     interaction: Interaction["Nightcore"],
     exp_required: app_commands.Range[int, 1, 1000000],

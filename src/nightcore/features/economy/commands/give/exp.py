@@ -16,6 +16,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
     reason="Причина выдачи опыта (необязательно)",
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def give_exp(
     interaction: Interaction["Nightcore"],
     user: User,

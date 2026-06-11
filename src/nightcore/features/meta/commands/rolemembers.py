@@ -15,6 +15,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.components.v2 import RoleMembersViewV2
 from src.nightcore.features.meta.utils import build_rolemembers_pages
 
@@ -32,6 +33,7 @@ class RoleMembers(Cog):
     @app_commands.describe(role="Роль, участников которой нужно получить")
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def role_members(
         self,
         interaction: Interaction,

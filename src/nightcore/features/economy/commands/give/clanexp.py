@@ -18,6 +18,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.clans.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.features.economy._groups import give as give_group
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
+@time_executing
 async def give_clanexp(
     interaction: Interaction["Nightcore"],
     clan: str,

@@ -24,6 +24,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +42,7 @@ class Clear(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def clear(
         self,
         interaction: Interaction,

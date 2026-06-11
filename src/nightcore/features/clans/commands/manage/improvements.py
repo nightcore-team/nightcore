@@ -26,6 +26,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.utils._enums import (
     ChannelType,
     ClanManageActionEnum,
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
 @app_commands.describe(improvement="Улучшение, которое нужно применить.")
 @app_commands.autocomplete(improvement=clans_improvements_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def improvements(
     interaction: Interaction["Nightcore"],
     improvement: str,

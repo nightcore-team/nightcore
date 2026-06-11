@@ -13,6 +13,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.tickets.components.v2 import CreateTicketViewV2
 from src.nightcore.services.config import specified_guild_config
 
@@ -29,6 +30,7 @@ class Ticketmessage(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+    @time_executing
     async def ticketmessage(
         self,
         interaction: Interaction,

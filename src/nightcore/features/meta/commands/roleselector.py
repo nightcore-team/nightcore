@@ -17,6 +17,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.components.modal import RoleSelectorModal
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ class RoleSelector(Cog):
         color="Цвет акцента для селектора ролей в формате HEX (необязательно)",
     )
     @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
+    @time_executing
     async def role_selector(
         self,
         interaction: Interaction[Nightcore],

@@ -16,6 +16,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.commands.copy._groups import (
     copy as copy_group,
 )
@@ -39,6 +40,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.guild_only()
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@time_executing
 async def copy_permissions(
     interaction: Interaction["Nightcore"],
     from_channel: GuildChannel,

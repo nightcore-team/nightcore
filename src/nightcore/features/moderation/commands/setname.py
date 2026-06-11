@@ -20,6 +20,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.moderation.events import (
     UserSetNameEventData,
 )
@@ -52,6 +53,7 @@ class Setname(Cog):
         nickname="Новый никнейм пользователя (оставьте пустым, чтобы восстановить оригинальный)",  # noqa: E501
     )
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def setname(
         self,
         interaction: Interaction,

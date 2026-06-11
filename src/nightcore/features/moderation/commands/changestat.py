@@ -23,6 +23,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import (
@@ -65,6 +66,7 @@ class ChangeStat(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
+    @time_executing
     async def changestat(
         self,
         interaction: Interaction,

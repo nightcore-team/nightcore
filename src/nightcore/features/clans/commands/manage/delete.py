@@ -35,6 +35,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,6 +48,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
+@time_executing
 async def delete(interaction: Interaction["Nightcore"], clan: str):
     """Delete an existing clan."""
     bot = interaction.client

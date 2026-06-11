@@ -32,6 +32,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.utils._enums import ChannelType, ClanManageActionEnum
 
 if TYPE_CHECKING:
@@ -49,6 +50,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.autocomplete(clan=clans_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
+@time_executing
 async def create_channel(interaction: Interaction["Nightcore"], clan: str):
     """Create a text channel for an existing clan."""
     bot = interaction.client

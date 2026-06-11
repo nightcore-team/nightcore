@@ -16,6 +16,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.components.v2.view.winter_holidays import (
     WinterHolidaysViewV2,
 )
@@ -43,6 +44,7 @@ class WinterHolidays(Cog):
         ]
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def winter_holidays(
         self,
         interaction: Interaction[Nightcore],

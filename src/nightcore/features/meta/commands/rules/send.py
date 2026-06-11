@@ -12,6 +12,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.meta.utils import build_rules_embeds
 
 from ._groups import rules as rules_group
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
     name="send", description="Отправить правила в текущий канал"
 )  # type: ignore
 @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
+@time_executing
 async def send_rules(
     interaction: Interaction["Nightcore"],
 ):

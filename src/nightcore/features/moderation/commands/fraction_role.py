@@ -24,6 +24,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import (
     RolesChangeEventData,
@@ -61,6 +62,7 @@ class FractionRole(Cog):
     )
     @app_commands.autocomplete(role=fraction_roles_autocomplete)
     @check_required_permissions(PermissionsFlagEnum.UNSAFE)
+    @time_executing
     async def fraction_role(
         self,
         interaction: Interaction,

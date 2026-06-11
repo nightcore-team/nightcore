@@ -16,6 +16,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
 from src.nightcore.services.config import specified_guild_config
 
@@ -36,6 +37,7 @@ class ShopMessage(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+    @time_executing
     async def shopmessage(self, interaction: Interaction["Nightcore"]):
         """Send shop view."""
 

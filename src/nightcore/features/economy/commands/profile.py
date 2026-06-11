@@ -21,6 +21,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +39,7 @@ class Profile(Cog):
         user="Пользователь, чей профиль нужно посмотреть. По умолчанию - вы сами."  # noqa: E501
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def profile(
         self, interaction: Interaction["Nightcore"], user: User | None = None
     ):

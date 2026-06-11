@@ -21,11 +21,15 @@ from src.nightcore.decorators.permissions import (
 )
 
 
+from src.nightcore.decorators.time_executing import time_executing
+
+
 @faq_group.command(
     name="send",
     description="Отправить представление с страницами FAQ",
 )
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@time_executing
 async def send_faq_pages(
     interaction: Interaction["Nightcore"],
     text: str | None = None,

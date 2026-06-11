@@ -20,6 +20,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +38,7 @@ class Balance(Cog):
         user="Пользователь, чей баланс нужно проверить. По умолчанию - вы сами"
     )
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def balance(
         self, interaction: Interaction["Nightcore"], user: User | None = None
     ):

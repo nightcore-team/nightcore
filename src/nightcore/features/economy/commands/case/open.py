@@ -19,6 +19,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
@@ -46,6 +47,7 @@ logger = logging.getLogger(__name__)
 @app_commands.rename(case_id="case")
 @app_commands.autocomplete(case_id=user_cases_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def open_case(
     interaction: Interaction["Nightcore"],
     case_id: app_commands.Transform[int, StrToIntTransformer],

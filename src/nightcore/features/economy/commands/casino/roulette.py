@@ -22,6 +22,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import casino as casino_group
 from src.nightcore.features.economy.components.v2 import (
     MultiplayerRouletteViewV2,
@@ -72,6 +73,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.checks.cooldown(1, 15.0, key=lambda i: i.user.id)
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def roulette(
     interaction: Interaction["Nightcore"],
     type: app_commands.Choice[str],

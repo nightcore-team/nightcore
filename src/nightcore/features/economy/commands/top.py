@@ -19,6 +19,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,6 +43,7 @@ class Top(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def top(
         self,
         interaction: Interaction["Nightcore"],

@@ -25,6 +25,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.utils._enums import (
     ChannelType,
     ClanManageActionEnum,
@@ -52,6 +53,7 @@ logger = logging.getLogger(__name__)
     option="Выберите, хотите ли вы назначить или снять заместителя.",
 )
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def change_deputy(
     interaction: Interaction["Nightcore"],
     member: Member,

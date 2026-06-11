@@ -34,6 +34,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.utils._enums import (
     ChannelType,
     ClanManageActionEnum,
@@ -55,6 +56,7 @@ logger = logging.getLogger(__name__)
     create_channel="Создавать ли текстовый канал для клана (требуется указать категорию для каналов кланов в настройках).",  # noqa: E501
 )
 @check_required_permissions(PermissionsFlagEnum.CLANS_ACCESS)
+@time_executing
 async def create(
     interaction: Interaction["Nightcore"],
     name: app_commands.Range[str, 1, 100],

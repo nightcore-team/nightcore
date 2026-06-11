@@ -17,6 +17,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserUnmutedEventData
 from src.nightcore.features.moderation.utils.transformers import (
@@ -49,6 +50,7 @@ class UnMpMute(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def unmpmute(
         self,
         interaction: Interaction,

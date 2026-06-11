@@ -32,6 +32,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,6 +48,7 @@ class Kick(Cog):
     @app_commands.guild_only()
     @app_commands.describe(user="Пользователь для кика", reason="Причина кика")
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def kick(
         self,
         interaction: Interaction,

@@ -20,6 +20,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
@@ -44,6 +45,7 @@ logger = logging.getLogger(__name__)
 @app_commands.autocomplete(color_id=guild_colors_autocomplete)
 @app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def give_color(
     interaction: Interaction["Nightcore"],
     user: User,

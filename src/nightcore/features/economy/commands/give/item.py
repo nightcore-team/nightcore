@@ -19,6 +19,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.utils.autocomplete import (
     reward_depends_on_type_autocomplete,
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
 @app_commands.autocomplete(reward_id=reward_depends_on_type_autocomplete)
 @app_commands.rename(item_type="type", reward_id="reward")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def give_item(
     interaction: Interaction["Nightcore"],
     role: Role,

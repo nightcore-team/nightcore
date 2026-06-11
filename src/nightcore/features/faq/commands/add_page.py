@@ -19,6 +19,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
     description="Добавить новую страницу в FAQ",
 )
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@time_executing
 async def add_faq_page(
     interaction: Interaction["Nightcore"],
 ) -> None:

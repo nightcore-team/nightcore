@@ -22,6 +22,9 @@ from src.nightcore.decorators.permissions import (
 )
 
 
+from src.nightcore.decorators.time_executing import time_executing
+
+
 @faq_group.command(
     name="delete_page",
     description="Удалить существующую страницу в FAQ",
@@ -29,6 +32,7 @@ from src.nightcore.decorators.permissions import (
 @app_commands.describe(page="Страница FAQ для удаления")
 @app_commands.autocomplete(page=faq_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@time_executing
 async def delete_faq_page(
     interaction: Interaction["Nightcore"],
     page: str,

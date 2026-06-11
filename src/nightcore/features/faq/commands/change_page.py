@@ -22,6 +22,8 @@ from src.nightcore.decorators.permissions import (
     check_required_permissions,
 )
 
+from src.nightcore.decorators.time_executing import time_executing
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +34,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(page="Страница FAQ для изменения")
 @app_commands.autocomplete(page=faq_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ADMINISTRATOR)
+@time_executing
 async def change_faq_page(
     interaction: Interaction["Nightcore"],
     page: str,

@@ -26,6 +26,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
@@ -48,6 +49,7 @@ class Infractions(Cog):
         ephemeral="Скрыть ответ от других пользователей. По умолчанию: True",
     )
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def infractions(
         self,
         interaction: Interaction,

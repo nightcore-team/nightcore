@@ -12,6 +12,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.utils import ensure_role_exists
 from src.utils._enums import ClanMemberRoleEnum
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 @clan_main_group.command(name="leave", description="Покинуть клан")
 @check_required_permissions(PermissionsFlagEnum.NONE)
+@time_executing
 async def leave(interaction: Interaction["Nightcore"]):
     """Leave from clan."""
 

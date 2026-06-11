@@ -21,6 +21,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2.view.getmoderstats import (  # noqa: E501
     MultiplyGetModerStatsViewV2,
@@ -58,6 +59,7 @@ class GetModerationStats(Cog):
     )
     @app_commands.guild_only()
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def getmoderstats(
         self,
         interaction: Interaction,

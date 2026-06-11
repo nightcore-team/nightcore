@@ -11,6 +11,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.forum._groups import forum as forum_group
 
 if TYPE_CHECKING:
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
     name="add", description="Настроить конфигурацию для гильдии"
 )
 @check_required_permissions(PermissionsFlagEnum.BOT_ACCESS)
+@time_executing
 async def forum_add(
     interaction: Interaction["Nightcore"],
     section_id: int,

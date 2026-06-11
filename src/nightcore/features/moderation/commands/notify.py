@@ -21,6 +21,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
 from src.nightcore.utils.time_utils import calculate_end_time, parse_duration
 
@@ -41,6 +42,7 @@ class Notify(Cog):
         reason="Причина оповещения (номер правила или текст)",
     )
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+    @time_executing
     async def notify(
         self,
         interaction: Interaction["Nightcore"],

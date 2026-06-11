@@ -15,12 +15,16 @@ from src.nightcore.decorators.permissions import (
 )
 
 
+from src.nightcore.decorators.time_executing import time_executing
+
+
 class Ping(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
 
     @app_commands.command(name="ping", description="Посмотреть задержку бота")
     @check_required_permissions(PermissionsFlagEnum.NONE)
+    @time_executing
     async def ping(self, interaction: Interaction):
         """Send a message displaying the bot's current latency."""
 

@@ -15,6 +15,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
@@ -40,6 +41,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.autocomplete(component=components_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+@time_executing
 async def send(
     interaction: Interaction["Nightcore"],
     component: str,

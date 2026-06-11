@@ -20,6 +20,7 @@ from src.nightcore.decorators.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.decorators.time_executing import time_executing
 from src.nightcore.features.economy._groups import temp as temp_group
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.time_utils import parse_duration
@@ -48,6 +49,7 @@ logger = logging.getLogger(__name__)
     ]
 )
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
+@time_executing
 async def set_multiplier(
     interaction: Interaction["Nightcore"],
     multiplier_type: app_commands.Choice[str],
