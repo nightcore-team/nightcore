@@ -3,8 +3,11 @@
 from fastapi import status
 from fastapi.routing import APIRouter
 
-from ..dependencies import AccessServiceDependency, UserIdDependency
-from ..schemas.guild import GuildInfoSchema
+from src.nightcore.api.dependencies import (
+    AccessServiceDependency,
+    UserIdDependency,
+)
+from src.nightcore.api.schemas.guild import GuildInfoSchema
 
 router = APIRouter(prefix="/available-guilds")
 

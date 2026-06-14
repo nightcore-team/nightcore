@@ -53,9 +53,29 @@ class GuildStateService:
         )
 
     def get_roles(self, guild: discord.Guild) -> Sequence[RoleInfoSchema]:
+        """
+        Get the roles of a guild.
+
+        Args:
+            guild: The guild to get the roles from.
+
+        Returns:
+            A list of RoleInfoSchema objects representing the roles of the guild.
+        """  # noqa: E501
+
         return [RoleInfoSchema.from_discord(role) for role in guild.roles]
 
     def get_channels(self, guild: discord.Guild) -> list[ChannelInfoSchema]:
+        """
+        Get the channels of a guild.
+
+        Args:
+            guild: The guild to get the channels from.
+
+        Returns:
+            A list of ChannelInfoSchema objects representing the channels of the guild.
+        """  # noqa: E501
+
         return [
             ChannelInfoSchema.from_discord(channel)
             for channel in guild.channels
@@ -64,11 +84,34 @@ class GuildStateService:
     def get_member(
         self, guild: discord.Guild, user_id: int
     ) -> discord.Member | None:
+        """
+        Get a member of a guild by their user ID.
+
+        Args:
+            guild: The guild to get the member from.
+            user_id: The ID of the user to get the member for.
+
+        Returns:
+            A discord.Member object representing the member, or None if the member is not found.
+
+        """  # noqa: E501
+
         return guild.get_member(user_id)
 
     async def get_config(
         self, guild: discord.Guild, config_type: ConfigTypeEnum
     ) -> dict[str, Any]:
+        """
+        Get the configuration of a guild.
+
+        Args:
+            guild: The guild to get the configuration from.
+            config_type: The type of the configuration to get.
+
+        Returns:
+            A dictionary representing the configuration of the guild.
+        """
+
         type_ = CONFIG_MODEL_MAP.get(config_type)
 
         if type_ is None:
@@ -96,6 +139,19 @@ class GuildStateService:
         config_type: ConfigTypeEnum,
         data: dict[str, Any],
     ):
+        """
+        Update the configuration of a guild.
+
+        Args:
+            guild: The guild to update the configuration for.
+            config_type: The type of the configuration to update.
+            data: A dictionary representing the new configuration data.
+
+        Raises:
+            ValueError: If the config type is unknown.
+            LogicalError: If the pydantic model for the config type is not found.
+        """  # noqa: E501
+
         type_ = CONFIG_MODEL_MAP.get(config_type)
 
         if type_ is None:

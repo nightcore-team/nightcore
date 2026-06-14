@@ -22,7 +22,15 @@ class AccessService:
         self._uow = uow
 
     def get_user_guilds(self, user_id: int) -> list[GuildInfoSchema]:
-        """Get the guilds that the user belongs to."""
+        """
+        Get the guilds that a user is a member of.
+
+        Args:
+            user_id: The ID of the user to get the guilds for.
+
+        Returns:
+            A list of GuildInfoSchema objects representing the guilds that the user is a member of.
+        """  # noqa: E501
 
         return [
             GuildInfoSchema.from_discord(guild)
@@ -30,7 +38,7 @@ class AccessService:
             if guild.get_member(user_id) is not None
         ]
 
-    def has_administrator_access(
+    def _has_administrator_access(
         self,
         member: discord.Member,
     ) -> bool:
@@ -39,7 +47,15 @@ class AccessService:
     async def get_available_configurations(
         self, member: discord.Member
     ) -> list[str]:
-        """Get user-accessible configs for a specific guild."""
+        """
+        Get the available configurations for a user in a guild.
+
+        Args:
+            member: The member to get the available configurations for.
+
+        Returns:
+            A list of strings representing the available configurations.
+        """
 
         async with self._uow.start() as session:
             configurations = await get_available_guild_configs(
@@ -48,7 +64,7 @@ class AccessService:
                 roles=[role.id for role in member.roles],
             )
 
-        if self.has_administrator_access(member=member):
+        if self._has_administrator_access(member=member):
             configurations.append(ConfigTypeEnum.ACCESS.value)
 
         return configurations
@@ -58,9 +74,19 @@ class AccessService:
         member: discord.Member,
         config_type: ConfigTypeEnum,
     ) -> bool:
-        """Check whether the user has access to a specific config in a guild."""  # noqa: E501
+        """
+        Check if a user has access to a specific configuration in a guild.
+
+        Args:
+            member: The member to check the access for.
+            config_type: The type of the configuration to check access for.
+
+        Returns:
+            A boolean indicating whether the user has access to the configuration.
+        """  # noqa: E501
+
         if config_type == ConfigTypeEnum.ACCESS:
-            return self.has_administrator_access(member=member)
+            return self._has_administrator_access(member=member)
 
         async with self._uow.start() as session:
             return await has_guild_config_access(

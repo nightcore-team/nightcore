@@ -1,4 +1,4 @@
-"""API schemas."""
+"""Pydantic schemas for guild types."""
 
 import discord
 from pydantic import BaseModel

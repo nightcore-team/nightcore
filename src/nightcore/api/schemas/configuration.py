@@ -1,3 +1,5 @@
+"""Pydantic schemas for guild configurations."""
+
 from typing import Annotated, Any
 
 from pydantic import (

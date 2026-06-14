@@ -3,16 +3,15 @@
 from fastapi import HTTPException, status
 from fastapi.routing import APIRouter
 
-from src.utils._enums import ConfigTypeEnum
-
-from ..dependencies import (
+from src.nightcore.api.dependencies import (
     AccessServiceDependency,
     BotDependency,
     GuildStateServiceDependency,
     UserIdDependency,
 )
-from ..schemas import ChannelInfoSchema, RoleInfoSchema
-from ..schemas.configuration import ConfigUpdateBody
+from src.nightcore.api.schemas import ChannelInfoSchema, RoleInfoSchema
+from src.nightcore.api.schemas.configuration import ConfigUpdateBody
+from src.utils._enums import ConfigTypeEnum
 
 router = APIRouter(prefix="/guilds", tags=["Guild Endpoints"])
 

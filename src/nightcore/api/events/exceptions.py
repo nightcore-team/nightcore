@@ -20,6 +20,7 @@ async def unexpected_exception_handler(
 
 
 async def logical_error_handler(_: Request, exc: LogicalError) -> JSONResponse:
+    """Handle logical errors."""
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(exc)
@@ -27,8 +28,9 @@ async def logical_error_handler(_: Request, exc: LogicalError) -> JSONResponse:
 
 
 async def config_validation_error(
-    _: Request, exc: LogicalError
+    _: Request, exc: ConfigValidationError
 ) -> JSONResponse:
+    """Handle configuration validation errors."""
 
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content=str(exc)
