@@ -161,9 +161,6 @@ class CountMessageEvent(Cog):
                 session, config_type=GuildLevelsConfig, guild_id=guild.id
             )
 
-            if multiplers_config is None or levels_config is None:
-                return
-
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,

@@ -6,8 +6,7 @@ import signal
 from src.config.config import config
 from src.infra.db.session import get_async_sessionmaker
 from src.infra.db.uow import UnitOfWork
-from src.infra.redis.client import create_redis_client
-from src.infra.redis.repository import GuildStateRepository
+from src.nightcore.api.setup import create_api_server
 from src.nightcore.setup import create_bot
 from src.utils.logging.setup import setup_logging, stop_logging
 
@@ -16,21 +15,21 @@ async def main() -> None:
     """Main function to start the Nightcore bot."""
     logger = setup_logging()
     uow = UnitOfWork(get_async_sessionmaker(config.db.ENGINE))  # type: ignore
-    guild_state_repository = GuildStateRepository(create_redis_client())
-    await guild_state_repository.connect()
-    await guild_state_repository.mark_not_ready()
 
     bot = create_bot(
         uow=uow,
-        guild_state_repository=guild_state_repository,
     )
     bot_task = asyncio.create_task(bot.startup())
+
+    server = create_api_server(bot)
+    server_task = asyncio.create_task(server.serve())
 
     loop = asyncio.get_running_loop()
 
     def shutdown() -> None:
         logger.info("Shutdown signal received. Stopping Nightcore bot...")
         bot_task.cancel()
+        server_task.cancel()
 
     loop.add_signal_handler(
         signal.SIGTERM,
@@ -41,7 +40,14 @@ async def main() -> None:
     logger.info("Starting Nightcore bot...")
     logger.info("Starting API server...")
     try:
-        await bot_task
+        _, pending = await asyncio.wait(
+            [bot_task, server_task], return_when=asyncio.FIRST_COMPLETED
+        )
+
+        for task in pending:
+            task.cancel()
+
+        await asyncio.gather(*pending, return_exceptions=True)
     except asyncio.CancelledError:
         pass
     except Exception as e:
@@ -49,9 +55,9 @@ async def main() -> None:
     finally:
         if not bot_task.done():
             bot_task.cancel()
-        await asyncio.gather(bot_task, return_exceptions=True)
-        await guild_state_repository.mark_not_ready()
-        await guild_state_repository.close()
+        if not server_task.done():
+            server_task.cancel()
+        await asyncio.gather(bot_task, server_task, return_exceptions=True)
         logger.info("Nightcore bot has been stopped.")
         stop_logging()
 

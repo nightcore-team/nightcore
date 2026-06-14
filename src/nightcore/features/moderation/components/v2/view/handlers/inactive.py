@@ -7,12 +7,11 @@ from discord.interactions import Interaction
 from nightforo.types.thread.params import ThreadCreateParams
 
 from src.infra.db.models import GuildModerationConfig
+from src.infra.db.models.configurations.forum import GuildForumConfig
 from src.infra.db.operations import (
-    get_guild_forum_config,
     get_specified_guild_config,
 )
 from src.nightcore.exceptions import (
-    ConfigMissingError,
     FieldNotConfiguredError,
 )
 from src.nightcore.features.moderation.utils.content import (
@@ -67,13 +66,6 @@ async def handle_inactive_request_button_callback(
         guild_config = await get_specified_guild_config(
             session, config_type=GuildModerationConfig, guild_id=guild.id
         )
-
-    if guild_config is None:
-        logger.error(
-            "[inactive] Guild moderation config not found for guild_id=%s",
-            guild.id,
-        )
-        raise ConfigMissingError(guild.id)
 
     if interaction.user.id == author_id:
         return await interaction.response.send_message(
@@ -173,12 +165,10 @@ async def handle_inactive_request_approve_button(
 
     try:
         async with bot.uow.start() as session:
-            forum_config = await get_guild_forum_config(
-                session, guild_id=guild.id
+            forum_config = await get_specified_guild_config(
+                session, config_type=GuildForumConfig, guild_id=guild.id
             )
-            if forum_config is None:
-                raise ConfigMissingError(guild.id)
-            elif not forum_config.prefix_id:
+            if not forum_config.prefix_id:
                 raise FieldNotConfiguredError("префикс для неактива")
 
     except Exception as e:

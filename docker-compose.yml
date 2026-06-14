@@ -30,6 +30,15 @@ services:
       nightcore-redis:
         condition: service_healthy
 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard-backend.rule=Host(`${API_DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.dashboard-backend.priority=10"
+      - "traefik.http.routers.dashboard-backend.entrypoints=web"
+      - "traefik.http.routers.dashboard-backend.service=dashboard-backend"
+      - "traefik.http.services.dashboard-backend.loadbalancer.server.port=${API_PORT}"
+      - "traefik.http.routers.dashboard-backend.tls=false"
+
   nightcore-db:
     image: postgres:16-alpine
     container_name: nightcore-db
@@ -45,35 +54,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-
-    networks:
-      - nightcore-network
-
-  nightcore-redis:
-    image: redis:7-alpine
-    container_name: nightcore-redis
-    restart: no
-
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-    networks:
-      - nightcore-network
-
-  nightcore-redisinsight:
-    image: redis/redisinsight:latest
-    container_name: nightcore-redisinsight
-    restart: no
-
-    ports:
-      - "${REDIS_INSIGHT_PORT}:${REDIS_INSIGHT_PORT}"
-
-    depends_on:
-      nightcore-redis:
-        condition: service_healthy
 
     networks:
       - nightcore-network

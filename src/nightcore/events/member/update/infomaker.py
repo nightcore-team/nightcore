@@ -33,12 +33,6 @@ class InfomakerUpdateMemberEvent(Cog):
                 session, config_type=GuildInfomakerConfig, guild_id=guild.id
             )
 
-            if guild_config is None:
-                logger.info(
-                    f"[infomaker] Infomaker config not configured for guild {guild.id}"  # noqa: E501
-                )
-                return
-
         leader_roles_ids: list[int] = guild_config.leaders_roles_ids or []
         admin_roles_ids: list[int] = guild_config.admins_roles_ids or []
 

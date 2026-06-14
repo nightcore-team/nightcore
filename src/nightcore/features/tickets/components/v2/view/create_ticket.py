@@ -90,70 +90,59 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 guild_id=guild.id,
             )
 
-            if guild_config is None:
+            if not all(
+                [
+                    guild_config.create_ticket_ping_role_id,
+                    guild_config.new_tickets_category_id,
+                    guild_config.pinned_tickets_category_id,
+                    guild_config.closed_tickets_category_id,
+                ]
+            ):
                 logger.error(
-                    "Failed to find ticket guild config in guild %s",
+                    "Not all ticket categories are configured in guild %s",
                     guild.id,
                 )
                 outcome = "ticket_system_not_configured"
             else:
-                if not all(
-                    [
-                        guild_config.create_ticket_ping_role_id,
-                        guild_config.new_tickets_category_id,
-                        guild_config.pinned_tickets_category_id,
-                        guild_config.closed_tickets_category_id,
-                    ]
-                ):
-                    logger.error(
-                        "Not all ticket categories are configured in guild %s",
-                        guild.id,
-                    )
-                    outcome = "ticket_system_not_configured"
-                else:
-                    new_tickets_category_id = (
-                        guild_config.new_tickets_category_id
-                    )
-                    create_ticket_ping_role_id = (
-                        guild_config.create_ticket_ping_role_id
-                    )
+                new_tickets_category_id = guild_config.new_tickets_category_id
+                create_ticket_ping_role_id = (
+                    guild_config.create_ticket_ping_role_id
+                )
 
-                    dbuser, _ = await get_or_create_user(
+                dbuser, _ = await get_or_create_user(
+                    session, guild_id=guild.id, user_id=user.id
+                )
+
+                if dbuser.ticket_ban:
+                    outcome = "user_ticket_banned"
+                else:
+                    last_ticket = await get_latest_user_ticket(
                         session, guild_id=guild.id, user_id=user.id
                     )
 
-                    if dbuser.ticket_ban:
-                        outcome = "user_ticket_banned"
+                    if last_ticket and last_ticket.state not in [
+                        TicketStateEnum.CLOSED,
+                        TicketStateEnum.DELETED,
+                    ]:
+                        outcome = "user_has_open_ticket"
                     else:
-                        last_ticket = await get_latest_user_ticket(
-                            session, guild_id=guild.id, user_id=user.id
-                        )
+                        try:
+                            current_tickets_count = (
+                                guild_config.tickets_count + 1
+                            )
 
-                        if last_ticket and last_ticket.state not in [
-                            TicketStateEnum.CLOSED,
-                            TicketStateEnum.DELETED,
-                        ]:
-                            outcome = "user_has_open_ticket"
-                        else:
-                            try:
-                                current_tickets_count = (
-                                    guild_config.tickets_count + 1
-                                )
+                            guild_config.tickets_count = current_tickets_count
 
-                                guild_config.tickets_count = (
-                                    current_tickets_count
-                                )
+                            outcome = "ready_to_create"
 
-                                outcome = "ready_to_create"
-
-                            except Exception as e:
-                                logger.error(
-                                    "Failed to prepare ticket in guild %s, user %s: %s",  # noqa: E501
-                                    guild.id,
-                                    user.id,
-                                    e,
-                                )
-                                outcome = "ticket_creation_failed"
+                        except Exception as e:
+                            logger.error(
+                                "Failed to prepare ticket in guild %s, user %s: %s",  # noqa: E501
+                                guild.id,
+                                user.id,
+                                e,
+                            )
+                            outcome = "ticket_creation_failed"
 
             if outcome == "ready_to_create":
                 logging_channel_id = await get_specified_channel(

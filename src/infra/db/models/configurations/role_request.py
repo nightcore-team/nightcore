@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import (
     BigInteger,
     Enum,
@@ -64,3 +66,23 @@ class GuildRoleRequestConfig(IdIntegerMixin, Base):
     check_role_requests_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        if "organizational_roles" in config:
+            config["organizational_roles"] = [
+                GuildOrganizationalRole(
+                    **item, type=OrganizationalRoleTypeEnum.LEGAL
+                )
+                for item in config["organizational_roles"]
+            ]
+
+        if "illegal_roles" in config:
+            config["illegal_roles"] = [
+                GuildOrganizationalRole(
+                    **item, type=OrganizationalRoleTypeEnum.ILLEGAL
+                )
+                for item in config["illegal_roles"]
+            ]
+
+        return config

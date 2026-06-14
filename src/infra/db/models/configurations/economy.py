@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import (
     ARRAY,
     BigInteger,
@@ -61,3 +63,13 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     color_drop_compensation: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default=text("0")
     )
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        if "economy_shop_items" in config:
+            config["economy_shop_items"] = [
+                GuildEconomyShopItem(**item)
+                for item in config["economy_shop_items"]
+            ]
+
+        return config

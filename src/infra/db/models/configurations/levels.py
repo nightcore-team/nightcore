@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import (
     BigInteger,
     Enum,
@@ -85,3 +87,18 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
         nullable=True,
         default=MessageCountTypeEnum.ALL,
     )
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        if "level_roles" in config:
+            config["level_roles"] = [
+                GuildLevel(**item) for item in config["level_roles"]
+            ]
+
+        if "bonus_access_roles_ids" in config:
+            config["bonus_access_roles_ids"] = [
+                GuildBonusRole(**item)
+                for item in config["bonus_access_roles_ids"]
+            ]
+
+        return config

@@ -69,13 +69,10 @@ class CountVoiceActivityEvent(Cog):
                 guild_id=member.guild.id,
             )
 
-            if guild_config is None:
-                battlepass_multipler = 1
-            else:
-                battlepass_multipler = (
-                    guild_config.temp_battlepass_multiplier
-                    or guild_config.base_battlepass_multiplier
-                )
+            battlepass_multipler = (
+                guild_config.temp_battlepass_multiplier
+                or guild_config.base_battlepass_multiplier
+            )
 
             total_seconds = (now - user.temp_voice_activity).total_seconds()
 

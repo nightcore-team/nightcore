@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import (
     ARRAY,
     BigInteger,
@@ -134,3 +136,13 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
     inactive_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )  #
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        if "fraction_roles_access_roles_ids" in config:
+            config["fraction_roles_access_roles_ids"] = [
+                GuildFractionRole(**item)
+                for item in config["fraction_roles_access_roles_ids"]
+            ]
+
+        return config

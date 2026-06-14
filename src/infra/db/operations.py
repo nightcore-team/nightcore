@@ -2,12 +2,22 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
-from typing import Any, TypeVar, cast
+from typing import Any, Final, TypeVar, Union, cast
 
-from sqlalchemy import asc, exists, extract, func, literal, select, update
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import (
+    Boolean,
+    asc,
+    exists,
+    extract,
+    func,
+    literal,
+    select,
+    type_coerce,
+    update,
+)
+from sqlalchemy.dialects.postgresql import array, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
 from src.config.config import config
 from src.infra.db.models import (
@@ -73,6 +83,7 @@ from src.utils._enums import (
     CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
+    ConfigTypeEnum,
     MultiplierTypeEnum,
     NotifyStateEnum,
     RoleRequestStateEnum,
@@ -99,37 +110,127 @@ GuildT = TypeVar(
     GuildForumConfig,
 )
 
+ConfigType = Union[  # noqa: UP007
+    GuildClansConfig
+    | GuildEconomyConfig
+    | GuildLevelsConfig
+    | GuildLoggingConfig
+    | GuildModerationConfig
+    | GuildPrivateChannelsConfig
+    | GuildNotificationsConfig
+    | GuildTicketsConfig
+    | GuildInfomakerConfig
+    | GuildAccessConfig
+    | GuildRulesConfig
+    | GuildMultipliersConfig
+    | GuildProposalsConfig
+    | GuildRoleRequestConfig
+    | GuildForumConfig
+]
 
-def get_config_type_by_name(name: str) -> type[GuildT]:
-    """Get the guild configuration type by its name."""
-    config_types: dict[str, type[GuildT]] = {
-        "access": GuildAccessConfig,
-        "clans": GuildClansConfig,
-        "economy": GuildEconomyConfig,
-        "infomaker": GuildInfomakerConfig,
-        "levels": GuildLevelsConfig,
-        "logging": GuildLoggingConfig,
-        "moderation": GuildModerationConfig,
-        "notifications": GuildNotificationsConfig,
-        "private_channels": GuildPrivateChannelsConfig,
-        "tickets": GuildTicketsConfig,
-        "rules": GuildRulesConfig,
-        "proposals": GuildProposalsConfig,
-        "faq": GuildFaqConfig,
-        "role_request": GuildRoleRequestConfig,
-        "multiplers": GuildMultipliersConfig,
-        "forum": GuildForumConfig,
-    }  # type: ignore
-    return config_types[name]
+CONFIG_MODEL_MAP: dict[ConfigTypeEnum, type[Any]] = {
+    ConfigTypeEnum.ECONOMY: GuildEconomyConfig,
+    ConfigTypeEnum.LEVELS: GuildLevelsConfig,
+    ConfigTypeEnum.CLANS: GuildClansConfig,
+    ConfigTypeEnum.PRIVATE_CHANNELS: GuildPrivateChannelsConfig,
+    ConfigTypeEnum.MODERATION: GuildModerationConfig,
+    ConfigTypeEnum.NOTIFICATIONS: GuildNotificationsConfig,
+    ConfigTypeEnum.INFOMAKER: GuildInfomakerConfig,
+    ConfigTypeEnum.FORUM: GuildForumConfig,
+    ConfigTypeEnum.RULES: GuildRulesConfig,
+    ConfigTypeEnum.PROPOSALS: GuildProposalsConfig,
+    ConfigTypeEnum.MULTIPLERS: GuildMultipliersConfig,
+    ConfigTypeEnum.ROLE_REQUEST: GuildRoleRequestConfig,
+    ConfigTypeEnum.TICKETS: GuildTicketsConfig,
+    ConfigTypeEnum.LOGGING: GuildLoggingConfig,
+    ConfigTypeEnum.ACCESS: GuildAccessConfig,
+}
+
+_ACCESS_COLUMNS: Final[
+    dict[ConfigTypeEnum, InstrumentedAttribute[list[int] | None]]
+] = {
+    ConfigTypeEnum.LOGGING: GuildAccessConfig.logging_config_access_roles_ids,
+    ConfigTypeEnum.ECONOMY: GuildAccessConfig.economy_config_access_roles_ids,
+    ConfigTypeEnum.LEVELS: GuildAccessConfig.levels_config_access_roles_ids,
+    ConfigTypeEnum.CLANS: GuildAccessConfig.clans_config_access_roles_ids,
+    ConfigTypeEnum.PRIVATE_CHANNELS: GuildAccessConfig.private_channels_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.MODERATION: GuildAccessConfig.moderation_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.NOTIFICATIONS: GuildAccessConfig.notifications_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.INFOMAKER: GuildAccessConfig.infomaker_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.FORUM: GuildAccessConfig.forum_config_access_roles_ids,
+    ConfigTypeEnum.RULES: GuildAccessConfig.rules_config_access_roles_ids,
+    ConfigTypeEnum.PROPOSALS: GuildAccessConfig.proposal_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.MULTIPLERS: GuildAccessConfig.multiplers_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.ROLE_REQUEST: GuildAccessConfig.org_roles_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.TICKETS: GuildAccessConfig.tickets_config_access_roles_ids,
+}
 
 
 async def get_specified_guild_config(  # noqa: UP047
     session: AsyncSession, *, config_type: type[GuildT], guild_id: int
-) -> GuildT | None:
+) -> GuildT:
     """Get the guild configuration from the database."""
-    stmt = select(config_type).where(config_type.guild_id == guild_id)
+    get_stmt = select(config_type).where(config_type.guild_id == guild_id)
+    config = await session.scalar(get_stmt)
+
+    if config is not None:
+        return config
+
+    insert_stmt = (
+        insert(config_type)
+        .values(guild_id=guild_id)
+        .on_conflict_do_nothing()
+        .returning(config_type)
+    )
+
+    result = await session.execute(insert_stmt)
+    config = result.scalar_one_or_none()
+
+    if config is None:
+        config = await session.scalar(get_stmt)
+        return config  # type: ignore
+
+    return config
+
+
+async def get_available_guild_configs(
+    session: AsyncSession, *, guild_id: int, roles: list[int]
+) -> list[str]:
+
+    select_clauses = [
+        array(roles).overlap(column).label(config_type.value)
+        for config_type, column in _ACCESS_COLUMNS.items()
+    ]
+
+    stmt = select(*select_clauses).where(
+        GuildAccessConfig.guild_id == guild_id
+    )
+
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    row = result.mappings().first()
+
+    if row is None:
+        return []
+
+    return [key for key, value in row.items() if value]
+
+
+async def has_guild_config_access(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    roles: list[int],
+    config_type: ConfigTypeEnum,
+) -> bool:
+    target_column = _ACCESS_COLUMNS.get(config_type)
+    if target_column is None:
+        raise ValueError(f"Unknown config type: {config_type}")
+
+    stmt = select(
+        type_coerce(target_column.op("&&")(array(roles)), Boolean)
+    ).where(GuildAccessConfig.guild_id == guild_id)
+
+    return bool(await session.scalar(stmt))
 
 
 async def get_guild_rules(
@@ -1422,20 +1523,6 @@ async def get_active_forum_guilds(
     result = await session.execute(stmt)
 
     return result.scalars().all()
-
-
-async def get_guild_forum_config(
-    session: AsyncSession, *, guild_id: int
-) -> GuildForumConfig | None:
-    """Get the forum configuration for a guild."""
-
-    stmt = select(GuildForumConfig).where(
-        GuildForumConfig.guild_id == guild_id
-    )
-
-    result = await session.execute(stmt)
-
-    return result.scalar_one_or_none()
 
 
 async def get_guild_level(

@@ -1,5 +1,7 @@
 """Database models for guild rules configuration."""
 
+from typing import Any
+
 from sqlalchemy import BigInteger, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -83,3 +85,29 @@ class GuildRulesConfig(IdIntegerMixin, Base):
     rules_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        raw_rules = config.get("guild_rules")
+
+        if raw_rules is not None:
+            chapters: list[GuildRulesChapter] = []
+            for chapter_data in raw_rules.get("chapters", []):
+                rules: list[GuildRulesRule] = []
+                for rule_data in chapter_data.get("rules", []):
+                    subrules = [
+                        GuildRulesSubRule(text=sr["text"])
+                        for sr in rule_data.get("subrules", [])
+                    ]
+                    rules.append(
+                        GuildRulesRule(
+                            text=rule_data["text"], subrules=subrules
+                        )
+                    )
+                chapters.append(
+                    GuildRulesChapter(text=chapter_data["text"], rules=rules)
+                )
+
+            config["guild_rules"] = GuildRules(chapters=chapters)
+
+        return config

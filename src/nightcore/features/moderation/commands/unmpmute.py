@@ -67,7 +67,6 @@ class UnMpMute(Cog):
             self.bot,
             guild.id,
             GuildModerationConfig,
-            _create=False,
         ) as (guild_config, _):
             mute_role_id = guild_config.mpmute_role_id
 

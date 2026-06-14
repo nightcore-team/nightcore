@@ -77,7 +77,6 @@ class Ban(Cog):
             self.bot,
             guild.id,
             GuildModerationConfig,
-            _create=False,
         ) as (guild_config, _):
             moderation_access_roles = guild_config.moderation_access_roles_ids
 
