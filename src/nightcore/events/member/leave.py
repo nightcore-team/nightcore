@@ -24,19 +24,6 @@ class LeaveMemberEvent(Cog):
         """Handle member leave event."""
         guild = member.guild
 
-        try:
-            await self.bot.guild_state_repository.delete_member(
-                guild_id=str(guild.id),
-                member_id=str(member.id),
-            )
-        except Exception as e:
-            logger.error(
-                "[redis] Failed to delete cached member %s in guild %s: %s",
-                member.id,
-                guild.id,
-                e,
-            )
-
         async with self.bot.uow.start() as session:
             if not (
                 logging_members_channel_id := await get_specified_channel(

@@ -38,20 +38,6 @@ class DeleteRoleEvent(Cog):
 
         guild = role.guild
 
-        if not role.is_bot_managed():
-            try:
-                await self.bot.guild_state_repository.delete_role(
-                    guild_id=str(guild.id),
-                    role_id=str(role.id),
-                )
-            except Exception as e:
-                logger.error(
-                    "[redis] Failed to evict deleted role %s in guild %s: %s",
-                    role.id,
-                    guild.id,
-                    e,
-                )
-
         async with self.bot.uow.start() as session:
             roles_logging_channel_id = await get_specified_channel(
                 session,

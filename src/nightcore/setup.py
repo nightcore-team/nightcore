@@ -1,13 +1,11 @@
 """Setup module for creating and configuring the Nightcore bot instance."""
 
 from src.infra.db.uow import UnitOfWork
-from src.infra.redis.repository import GuildStateRepository
 from src.nightcore.bot import Nightcore
 
 
 def create_bot(
     uow: UnitOfWork,
-    guild_state_repository: GuildStateRepository,
 ) -> Nightcore:
     """Create and return an instance of the Nightcore bot."""
 
@@ -102,9 +100,6 @@ def create_bot(
         "src.nightcore.events.message.update",
         "src.nightcore.events.error",
         "src.nightcore.events.interaction",
-        "src.nightcore.events.guild.join",
-        "src.nightcore.events.guild.remove",
-        "src.nightcore.events.guild.update",
         "src.nightcore.events.channel.create",
         "src.nightcore.events.channel.delete",
         "src.nightcore.events.channel.update",
@@ -138,11 +133,9 @@ def create_bot(
         "src.nightcore.tasks.clan_reputation",
         "src.nightcore.tasks.temp_role",
         "src.nightcore.tasks.temp_multiplier",
-        "src.nightcore.tasks.update_redis_state",
     ]
 
     return Nightcore(
         cog_modules=cog_modules,
-        guild_state_repository=guild_state_repository,
         uow=uow,
     )

@@ -8,7 +8,6 @@ from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_specified_channel
-from src.infra.redis.serializers import serialize_member
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import ensure_messageable_channel_exists
 from src.utils._enums import ChannelType
@@ -29,19 +28,6 @@ class DefaultUpdateMemberEvent(Cog):
         """Handle default member update events."""
 
         guild = after.guild
-
-        try:
-            await self.bot.guild_state_repository.upsert_member(
-                guild_id=str(guild.id),
-                member=serialize_member(after),
-            )
-        except Exception as e:
-            logger.error(
-                "[redis] Failed to cache updated member %s in guild %s: %s",
-                after.id,
-                guild.id,
-                e,
-            )
 
         if not before:
             logger.debug("[logging] 'before' member is None.")

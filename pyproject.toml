@@ -21,7 +21,6 @@ dependencies = [
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "pynacl>=1.6.1",
-    "redis>=6.4.0",
     "regex>=2026.5.9",
     "sqlalchemy[asyncio]>=2.0.42",
     "uvicorn>=0.41.0",
