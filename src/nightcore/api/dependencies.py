@@ -1,20 +1,30 @@
-from typing import Annotated
+"""This module contains the dependencies for the API endpoints."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import HTTPException, Request, status
 from fastapi.params import Depends
 
-from src.infra.db.uow import UnitOfWork
 from src.nightcore.api.security.jwt import JWTTokenService
 from src.nightcore.api.services.access import AccessService
 from src.nightcore.api.services.guild_state import GuildStateService
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.infra.db.uow import UnitOfWork
+    from src.nightcore.bot import Nightcore
 
 
 def get_bot(request: Request) -> Nightcore:
+    """Dependency to inject the Nightcore to the endpoint.."""
+
     return request.app.state.bot
 
 
-async def get_uow(request: Request) -> UnitOfWork:
+def get_uow(request: Request) -> UnitOfWork:
+    """Dependency to inject the UnitOfWork to the endpoint."""
+
     uow = getattr(
         request.app.state,
         "uow",
@@ -31,6 +41,8 @@ async def get_uow(request: Request) -> UnitOfWork:
 
 
 def get_jwt_token_service(request: Request) -> JWTTokenService:
+    """Dependency to inject the JWTTokenService to the endpoint."""
+
     return JWTTokenService(request.app.state.config.jwt)
 
 
@@ -41,6 +53,8 @@ def get_user_id(
         Depends(get_jwt_token_service),
     ],
 ) -> int:
+    """Dependency to get the user ID from the request."""
+
     token = request.headers.get("Authorization")
 
     if token is None:
@@ -78,6 +92,8 @@ def get_access_service(
     uow: Annotated[UnitOfWork, Depends(get_uow)],
     bot: Annotated[Nightcore, Depends(get_bot)],
 ) -> AccessService:
+    """Dependency to inject the AccessService to the endpoint."""
+
     return AccessService(
         uow=uow,
         bot=bot,
@@ -88,6 +104,8 @@ def get_guild_state_service(
     uow: Annotated[UnitOfWork, Depends(get_uow)],
     bot: Annotated[Nightcore, Depends(get_bot)],
 ) -> GuildStateService:
+    """Dependency to inject the GuildStateService to the endpoint."""
+
     return GuildStateService(uow=uow, bot=bot)
 
 
