@@ -8,7 +8,9 @@ from src.infra.db.models.base import Base
 
 
 class PrivateRoomState(IdIntegerMixin, Base):
-    guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger, unique=True, nullable=False
+    )
     user_id: Mapped[int] = mapped_column(
         BigInteger, unique=True, nullable=False
     )

@@ -623,13 +623,26 @@ async def get_clan_by_name(
     return result.scalar_one_or_none()
 
 
-async def get_private_room_state(
-    session: AsyncSession, *, user_id: int
+async def get_private_room_state_by_channel(
+    session: AsyncSession, *, channel_id: int
 ) -> PrivateRoomState | None:
     """Get the private room state for a user."""
     stmt = (
         select(PrivateRoomState)
-        .where(PrivateRoomState.user_id == user_id)
+        .where(PrivateRoomState.channel_id == channel_id)
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def get_private_room_state_by_member(
+    session: AsyncSession, *, member_id: int
+) -> PrivateRoomState | None:
+    """Get the private room state for a user."""
+    stmt = (
+        select(PrivateRoomState)
+        .where(PrivateRoomState.user_id == member_id)
         .limit(1)
     )
     res = await session.execute(stmt)

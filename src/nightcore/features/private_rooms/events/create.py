@@ -1,6 +1,5 @@
 """Handle create private room events."""
 
-import asyncio
 import logging
 
 import discord
@@ -33,25 +32,24 @@ class CreatePrivateRoomEvent(Cog):
 
         category = channel.category
 
+        overwrite = {
+            member: discord.PermissionOverwrite(
+                manage_channels=True,
+                view_channel=True,
+                connect=True,
+                speak=True,
+                mute_members=True,
+                deafen_members=True,
+                move_members=True,
+            )
+        }
+
         try:
             channel = await guild.create_voice_channel(
-                name=f"{member.display_name}",
+                name=member.display_name,
                 category=category,
-                user_limit=channel.user_limit,
                 reason="Creating private room for user",
-            )
-            await channel.set_permissions(
-                member,
-                overwrite=discord.PermissionOverwrite(
-                    manage_channels=True,
-                    # manage_permissions=True,
-                    view_channel=True,
-                    connect=True,
-                    speak=True,
-                    mute_members=True,
-                    deafen_members=True,
-                    move_members=True,
-                ),
+                overwrites=overwrite,  # type: ignore
             )
 
         except Exception as e:
@@ -71,17 +69,16 @@ class CreatePrivateRoomEvent(Cog):
                 e,
             )
             try:
-                asyncio.create_task(
-                    channel.delete(
-                        reason="Rolling back private room creation due to DB error"  # noqa: E501
-                    )
+                await channel.delete(
+                    reason="Rolling back private room creation"
                 )
             except Exception as e:
                 logger.exception(
-                    "[private_rooms/event] Error deleting private room channel %s after DB failure: %s",  # noqa: E501
+                    "[private_rooms/event] Error deleting private room channel %s after DB failure: %s",
                     channel.id,
                     e,
                 )
+            return
 
         try:
             async with self.bot.uow.start() as session:
@@ -91,36 +88,35 @@ class CreatePrivateRoomEvent(Cog):
                     channel_id=channel.id,
                 )
                 session.add(private_room)
-                await session.flush()
+
+                log_channel_id = await get_specified_channel(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_PRIVATE_CHANNELS,
+                )
         except Exception as e:
             logger.error(
-                "[private_rooms/event] Error saving private room state for %s: %s",  # noqa: E501
+                "[private_rooms/event] Error saving private room state for %s: %s",
                 member,
                 e,
             )
             return
 
-        async with self.bot.uow.start() as session:
-            optional_log_channel_id = await get_specified_channel(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_PRIVATE_CHANNELS,
+        if log_channel_id is None:
+            logger.info(
+                "[logging] Logging channel (private_rooms) not configured for guild %s",
+                guild.id,
             )
-            if optional_log_channel_id is None:
-                logger.warning(
-                    "[logging] Logging channel (private_rooms) not configured for guild %s",  # noqa: E501
-                )
-                return
-            log_channel_id = optional_log_channel_id
+            return
 
         if not (
             log_channel := await ensure_messageable_channel_exists(
                 guild, log_channel_id
             )
         ):
-            logger.warning(
-                "[logging] Logging channel (private_rooms) not configured for guild %s",  # noqa: E501
+            logger.info(
+                "[logging] Logging channel (private_rooms) not exists in guild %s",
                 guild.id,
             )
             return
@@ -135,7 +131,7 @@ class CreatePrivateRoomEvent(Cog):
             await log_channel.send(embed=embed)  # type: ignore
         except Exception as e:
             logger.error(
-                "[private_rooms/event] Error sending log message for private room of %s: %s",  # noqa: E501
+                "[private_rooms/event] Error sending log message for private room of %s: %s",
                 member,
                 e,
             )
