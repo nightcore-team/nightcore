@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import discord
-from discord import app_commands
+from discord import AllowedMentions, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
@@ -53,6 +53,11 @@ class RoleMembers(Cog):
         await interaction.response.send_message(
             view=view,
             ephemeral=ephemeral,
+            allowed_mentions=AllowedMentions(
+                everyone=False,
+                users=False,
+                roles=False,
+            ),
         )
 
         logger.info(
