@@ -50,7 +50,9 @@ class ComplaintViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))  # 9300d2
+        container = Container[Self](
+            accent_color=Color.from_str("#ffffff")
+        )  # 9300d2
 
         container.add_item(
             TextDisplay[Self](
@@ -82,7 +84,7 @@ class ComplaintViewV2(LayoutView):
 
         now = datetime.now(UTC)
 
-        ping = "| <@&{ping_role_id}>" if ping_role_id else ""
+        ping = f"| <@&{ping_role_id}>" if ping_role_id else ""
 
         container.add_item(
             TextDisplay[Self](
