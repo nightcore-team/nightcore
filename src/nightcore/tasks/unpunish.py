@@ -32,6 +32,8 @@ class UnPunishTask(Cog):
     @tasks.loop(seconds=15)
     async def un_punish_task(self):
         """Task to unpunish users when their punishment duration ends."""
+        await self.bot.task_manager.sleep(__name__)
+
         try:
             logger.info("[task] - Running unpunish task")
 

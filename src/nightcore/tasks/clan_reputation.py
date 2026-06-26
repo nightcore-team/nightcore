@@ -36,6 +36,8 @@ class ClansPayDayTask(Cog):
     @tasks.loop(hours=1)
     async def add_clan_reputation_task(self):
         """Task to add reputation points to clans."""
+        await self.bot.task_manager.sleep(__name__)
+
         try:
             logger.info("[task] - Running add clan reputation task")
 

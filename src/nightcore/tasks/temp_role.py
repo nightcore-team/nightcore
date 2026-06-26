@@ -41,6 +41,8 @@ class DeleteTempRoleTask(Cog):
     @tasks.loop(seconds=60.0)
     async def delete_temp_role_task(self):
         """Task to delete temporary roles when their duration ends."""
+        await self.bot.task_manager.sleep(__name__)
+
         try:
             logger.info("[task] - Running delete temp role task")
             async with self.bot.uow.start() as session:

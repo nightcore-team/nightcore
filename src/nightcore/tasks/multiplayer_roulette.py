@@ -51,6 +51,7 @@ class MultiplayerRouletteTask(Cog):
 
     async def _process_single_game(self, game: CasinoGame):
         """Process a single casino game in its own transaction."""
+        await self.bot.task_manager.sleep(__name__)
 
         try:
             async with self.bot.uow.start() as session:

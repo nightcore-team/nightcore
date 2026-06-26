@@ -38,6 +38,8 @@ class CheckForumTask(Cog):
     @tasks.loop(seconds=60)
     async def check_forum_task(self):
         """Task to check the forum for new posts and updates."""
+        await self.bot.task_manager.sleep(__name__)
+
         try:
             logger.info("[task] - Running check forum task")
 

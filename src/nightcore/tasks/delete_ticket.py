@@ -48,6 +48,8 @@ class DeleteTicketTask(Cog):
     @tasks.loop(minutes=30)
     async def delete_ticket_task(self):
         """Task to delete tickets when their duration ends."""
+        await self.bot.task_manager.sleep(__name__)
+
         try:
             logger.info("[task] - Running delete ticket task")
             async with self.bot.uow.start() as session:

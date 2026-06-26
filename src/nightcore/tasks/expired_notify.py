@@ -51,6 +51,8 @@ class ExpiredNotifyTask(Cog):
     @tasks.loop(seconds=15)
     async def expired_notify_task(self):
         """Task to delete expired notifications."""
+        await self.bot.task_manager.sleep(__name__)
+
         try:
             logger.info("[task] - Running expired notify task")
             async with self.bot.uow.start() as session:

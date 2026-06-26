@@ -47,6 +47,8 @@ class DeleteRoleRequestTask(Cog):
     @tasks.loop(seconds=60.0)
     async def delete_role_request_task(self):
         """Task to delete role requests when their duration ends."""
+        await self.bot.task_manager.sleep(__name__)
+
         try:
             logger.info("[task] - Running delete role request task")
 
