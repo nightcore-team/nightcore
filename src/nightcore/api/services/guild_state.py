@@ -16,8 +16,6 @@ from src.nightcore.api.schemas.configuration import (
 )
 from src.nightcore.api.schemas.guild import ChannelInfoSchema, RoleInfoSchema
 from src.nightcore.api.utils.validators import (
-    ChannelInfo,
-    RoleInfo,
     ValidationContext,
 )
 from src.nightcore.bot import Nightcore
@@ -30,27 +28,9 @@ class GuildStateService:
         self._uow = uow
 
     async def _build_validation_context(
-        self, guild: discord.Guild
+        self, member: discord.Member
     ) -> ValidationContext:
-        roles_dict = {
-            role.id: RoleInfo(
-                administrator=role.permissions.administrator,
-            )
-            for role in guild.roles
-        }
-
-        channels_dict = {
-            channel.id: ChannelInfo(
-                type=channel.type.name,
-            )
-            for channel in guild.channels
-        }
-
-        return ValidationContext(
-            guild_id=guild.id,
-            roles=roles_dict,
-            channels=channels_dict,
-        )
+        return ValidationContext(bot=self._bot, interaction_member=member)
 
     def get_roles(self, guild: discord.Guild) -> Sequence[RoleInfoSchema]:
         """
@@ -80,23 +60,6 @@ class GuildStateService:
             ChannelInfoSchema.from_discord(channel)
             for channel in guild.channels
         ]
-
-    def get_member(
-        self, guild: discord.Guild, user_id: int
-    ) -> discord.Member | None:
-        """
-        Get a member of a guild by their user ID.
-
-        Args:
-            guild: The guild to get the member from.
-            user_id: The ID of the user to get the member for.
-
-        Returns:
-            A discord.Member object representing the member, or None if the member is not found.
-
-        """  # noqa: E501
-
-        return guild.get_member(user_id)
 
     async def get_config(
         self, guild: discord.Guild, config_type: ConfigTypeEnum
@@ -135,7 +98,7 @@ class GuildStateService:
 
     async def update_config(
         self,
-        guild: discord.Guild,
+        member: discord.Member,
         config_type: ConfigTypeEnum,
         data: dict[str, Any],
     ):
@@ -143,7 +106,7 @@ class GuildStateService:
         Update the configuration of a guild.
 
         Args:
-            guild: The guild to update the configuration for.
+            member: The user who initiated the configuration update.
             config_type: The type of the configuration to update.
             data: A dictionary representing the new configuration data.
 
@@ -162,7 +125,7 @@ class GuildStateService:
         if pydantic_type is None:
             raise LogicalError("Pydantic model not found for this config type")
 
-        context = await self._build_validation_context(guild)
+        context = await self._build_validation_context(member=member)
         validated_model = pydantic_type.model_validate(data, context=context)
 
         dump = validated_model.model_dump(exclude_unset=True)
@@ -173,7 +136,7 @@ class GuildStateService:
             config = await get_specified_guild_config(
                 session,
                 config_type=type_,
-                guild_id=guild.id,
+                guild_id=member.guild.id,
             )
 
             for k, v in nomalized.items():

@@ -4,26 +4,16 @@ Each validator receives the raw value and a :class:`ValidationContext`
 via *info.context* to look up roles and channels known for the guild.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, TypedDict
+from dataclasses import dataclass
+from typing import Any
 
+import discord
 from pydantic import (
     ValidationInfo,
 )
 
 from src.nightcore.api.domain.exceptions.base import ConfigValidationError
-
-
-class RoleInfo(TypedDict):
-    """Shape of a single role entry fed into the validation context."""
-
-    administrator: bool
-
-
-class ChannelInfo(TypedDict):
-    """Shape of a single channel entry fed into the validation context."""
-
-    type: str
+from src.nightcore.bot import Nightcore
 
 
 @dataclass
@@ -36,11 +26,8 @@ class ValidationContext:
         channels: Mapping of channel ID → channel info known for the guild.
     """
 
-    guild_id: int
-    roles: dict[int, RoleInfo] = field(default_factory=dict[int, RoleInfo])
-    channels: dict[int, ChannelInfo] = field(
-        default_factory=dict[int, ChannelInfo]
-    )
+    bot: Nightcore
+    interaction_member: discord.Member
 
 
 def validate_role_id(v: Any, info: ValidationInfo) -> int:
@@ -57,14 +44,19 @@ def validate_role_id(v: Any, info: ValidationInfo) -> int:
     Raises:
         ValueError: If the role is not found in the context.
     """
+
     value = int(v)
     ctx = info.context
 
     if not isinstance(ctx, ValidationContext):
         raise ValueError("Invalid validation context")
 
-    if value not in ctx.roles:
-        raise ValueError(f"Роль {value} не найдена в гильдии {ctx.guild_id}")
+    guild = ctx.interaction_member.guild
+
+    role = guild.get_role(value)
+
+    if not role:
+        raise ValueError(f"Роль {value} не найдена в гильдии {guild.id}")
 
     return value
 
@@ -84,18 +76,21 @@ def validate_role_no_adm_id(v: Any, info: ValidationInfo) -> int:
         ValueError: If the role is not found, or if the role has
             ``administrator`` set to ``True``.
     """
+
     value = int(v)
     ctx = info.context
 
     if not isinstance(ctx, ValidationContext):
         raise ValueError("Invalid validation context")
 
-    if value not in ctx.roles:
-        raise ValueError(f"Роль {value} не найдена в гильдии {ctx.guild_id}")
+    guild = ctx.interaction_member.guild
 
-    role = ctx.roles[value]
+    role = guild.get_role(value)
 
-    if role["administrator"]:
+    if not role:
+        raise ValueError(f"Роль {value} не найдена в гильдии {guild.id}")
+
+    if role.permissions.administrator:
         raise ValueError(
             "Нельзя использовать роль с правами администратора для этого поля"
         )
@@ -118,18 +113,21 @@ def validate_text_channel_id(v: Any, info: ValidationInfo) -> int:
         ValueError: If the channel is not found.
         ConfigValidationError: If the channel type is not ``"text"``.
     """
+
     value = int(v)
     ctx = info.context
 
     if not isinstance(ctx, ValidationContext):
         raise ValueError("Invalid validation context")
 
-    if value not in ctx.channels:
-        raise ValueError(f"Канал {value} не найден в гильдии {ctx.guild_id}")
+    guild = ctx.interaction_member.guild
 
-    channel = ctx.channels[value]
+    channel = guild.get_channel(value)
 
-    if channel["type"] != "text":
+    if not channel:
+        raise ValueError(f"Канал {value} не найден в гильдии {guild.id}")
+
+    if channel.type != discord.ChannelType.text:
         raise ConfigValidationError("Ожидался канал с типом текстовый")
 
     return value
@@ -150,20 +148,21 @@ def validate_voice_channel_id(v: Any, info: ValidationInfo) -> int:
         ConfigValidationError: If the channel is not found, or if its
             type is not ``"voice"``.
     """
+
     value = int(v)
     ctx = info.context
 
     if not isinstance(ctx, ValidationContext):
         raise ValueError("Invalid validation context")
 
-    if value not in ctx.channels:
-        raise ConfigValidationError(
-            f"Канал {value} не найден в гильдии {ctx.guild_id}"
-        )
+    guild = ctx.interaction_member.guild
 
-    channel = ctx.channels[value]
+    channel = guild.get_channel(value)
 
-    if channel["type"] != "voice":
+    if not channel:
+        raise ValueError(f"Канал {value} не найден в гильдии {guild.id}")
+
+    if channel.type != discord.ChannelType.voice:
         raise ConfigValidationError("Ожидался канал с типом голосовой")
 
     return value
@@ -184,20 +183,21 @@ def validate_category_id(v: Any, info: ValidationInfo) -> int:
         ConfigValidationError: If the channel is not found, or if its
             type is not ``"category"``.
     """
+
     value = int(v)
     ctx = info.context
 
     if not isinstance(ctx, ValidationContext):
         raise ValueError("Invalid validation context")
 
-    if value not in ctx.channels:
-        raise ConfigValidationError(
-            f"Канал {value} не найден в гильдии {ctx.guild_id}"
-        )
+    guild = ctx.interaction_member.guild
 
-    channel = ctx.channels[value]
+    channel = guild.get_channel(value)
 
-    if channel["type"] != "category":
+    if not channel:
+        raise ValueError(f"Канал {value} не найден в гильдии {guild.id}")
+
+    if channel.type != discord.ChannelType.category:
         raise ConfigValidationError("Ожидался канал с типом категория")
 
     return value

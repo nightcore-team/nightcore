@@ -214,7 +214,7 @@ async def patch_guild_configuration(
         )
 
     await guild_state_service.update_config(
-        guild=guild,
+        member=member,
         config_type=update_data.config_type,
         data=update_data.data,
     )
