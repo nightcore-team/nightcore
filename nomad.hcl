@@ -36,7 +36,7 @@ job "nightcore-bot" {
           "traefik.http.routers.dashboard-backend.service=dashboard-backend",
           "traefik.http.services.dashboard-backend.loadbalancer.server.port=5000",
           "traefik.http.routers.dashboard-backend.tls=true",
-          
+
           "traefik.http.middlewares.backend-ratelimit.ratelimit.average=2",
           "traefik.http.middlewares.backend-ratelimit.ratelimit.period=1s",
           "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=8",
@@ -113,6 +113,17 @@ JWT_PUBLIC={{ .Data.data.JWT_PUBLIC }}
 {{ end }}
 EOT
         destination = "secrets/bot.env"
+        env         = true
+      }
+
+      template {
+        data = <<EOT
+{{ with nomadVar "nomad/jobs/nightcore-bot" }}
+REDIS_PASSWORD={{ .REDIS_PASSWORD }}
+REDIS_HOST={{ .REDIS_HOST }}
+{{ end }}
+EOT
+        destination = "secrets/keydb.env"
         env         = true
       }
 
