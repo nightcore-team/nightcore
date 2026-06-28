@@ -82,9 +82,9 @@ EOT
 
       template {
         data = <<EOT
-{{ with secret "secret/data/keydb" }}
-REDIS_PASSWORD={{ .Data.data.password }}
-REDIS_HOST={{ .Data.data.host }}
+{{ with nomadVar "nomad/jobs/nightcore-bot" }}
+REDIS_PASSWORD={{ .REDIS_PASSWORD }}
+REDIS_HOST={{ .REDIS_HOST }}
 {{ end }}
 EOT
         destination = "secrets/keydb.env"
