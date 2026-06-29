@@ -14,7 +14,7 @@ from src.infra.db.models import (
 )
 from src.infra.db.operations import (
     get_clan_member,
-    get_economy_shop_item_by_name,
+    get_clan_shop_item_by_name,
     get_specified_field,
 )
 from src.nightcore.components.embed import (
@@ -83,7 +83,7 @@ async def shop(
         ]:
             outcome = "missing_permissions"
 
-        selected_item = await get_economy_shop_item_by_name(
+        selected_item = await get_clan_shop_item_by_name(
             session, guild_id=guild.id, name=iname
         )
 
