@@ -11,6 +11,7 @@ from src.infra.db.models import GuildLoggingConfig, GuildRoleRequestConfig
 from src.infra.db.operations import (
     create_punish,
     get_specified_channel,
+    get_specified_webhook,
 )
 from src.utils._enums import ChannelType
 
@@ -72,7 +73,7 @@ class RolesChangeEvent(Cog):
                         channel_type=ChannelType.ROLE_REQUESTS,
                     )
 
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=data.moderator.guild.id,
                     config_type=GuildLoggingConfig,
@@ -86,21 +87,12 @@ class RolesChangeEvent(Cog):
             )
             return
 
-        if logging_channel_id:
-            try:
-                await send_moderation_log(
-                    self.bot,
-                    channel_id=logging_channel_id,
-                    event_data=data,
-                )
-            except Exception as e:
-                logger.warning(
-                    "[event] on_roles_change - %s: Guild: %s, failed to send log message: %s, log embed: %s",  # noqa: E501
-                    data.category,
-                    data.moderator.guild.id,
-                    e,
-                    data.build_embed(self.bot).to_dict(),
-                )
+        if logging_webhook and logging_webhook.valid:
+            await send_moderation_log(
+                self.bot,
+                webhook=logging_webhook,
+                event_data=data,
+            )
 
         else:
             logger.info(

@@ -12,6 +12,7 @@ from discord import Object
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.nightcore.features.moderation.components.v2.view.punish import (
     PunishViewV2,
 )
@@ -27,6 +28,7 @@ from src.nightcore.features.moderation.events.dto.base import (
 from src.nightcore.features.role_requests.components.v2 import (
     RoleRequestStateView,
 )
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import RoleRequestStateEnum
 
 logger = logging.getLogger(__name__)
@@ -121,63 +123,37 @@ async def send_unpunish_dm_message(
         )
 
 
+def _extract_guild_id(event_data: ModerationBaseEventData) -> int:
+    guild_id = getattr(event_data, "guild_id", None)
+    if guild_id is not None:
+        return guild_id
+    moderator = getattr(event_data, "moderator", None)
+    if moderator is not None:
+        return moderator.guild.id
+    guild = getattr(event_data, "guild", None)
+    if guild is not None:
+        return guild.id
+    return 0
+
+
 async def send_moderation_log(
     bot: Nightcore,
     *,
-    channel_id: int,
+    webhook: DiscordWebhook,
     event_data: ModerationBaseEventData,
     attachments: Sequence[discord.File] | None = None,
 ) -> None:
-    """Send a moderation log message to the specified channel."""
-    channel = bot.get_channel(channel_id)
-    if channel is None:
-        try:
-            channel = await bot.fetch_channel(channel_id)
-        except discord.NotFound:
-            logger.info(
-                "[event] on_user_punish - %s: logging channel %s not found",
-                event_data.category,  # type: ignore
-                channel_id,
-            )
-            return
-        except discord.Forbidden:
-            logger.warning(
-                "[event] on_user_punish - %s: no permission for channel %s",
-                event_data.category,  # type: ignore
-                channel_id,
-            )
-            return
-        except discord.HTTPException as e:
-            logger.error(
-                "[event] on_user_punish - %s: HTTP error fetching channel %s: %s",  # noqa: E501
-                event_data.category,  # type: ignore
-                channel_id,
-                e,
-            )
-            return
+    """Send a moderation log message to the specified webhook."""
+    embed = event_data.build_embed(bot)
 
-    if not isinstance(channel, (discord.TextChannel | discord.Thread)):
-        logger.error(
-            "[event] on_user_punish - %s: channel %s not messageable (%s)",
-            event_data.category,  # type: ignore
-            channel.id,
-            type(channel).__name__,
-        )
-        return
-
-    try:
-        embed = event_data.build_embed(bot)
-        if attachments:
-            await channel.send(embed=embed, files=attachments)
-        else:
-            await channel.send(embed=embed)
-    except discord.HTTPException as e:
-        logger.error(
-            "[event] on_user_punish - %s: failed to send message to %s: %s",
-            event_data.category,  # type: ignore
-            channel.id,
-            e,
-        )
+    await send_to_webhook(
+        bot,
+        webhook,
+        embed,
+        context=event_data.category,  # type: ignore
+        guild_id=_extract_guild_id(event_data),
+        files=attachments,
+    )
 
 
 async def send_rr_channel_log(

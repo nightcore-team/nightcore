@@ -11,7 +11,7 @@ from src.infra.db.operations import (
     create_punish,
     create_temp_punish,
     get_latest_temp_punish,
-    get_specified_channel,
+    get_specified_webhook,
     set_user_field_upsert,
 )
 from src.nightcore.bot import Nightcore
@@ -91,26 +91,17 @@ class UserTicketbannedEvent(Cog):
                 )
                 return
 
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=data.moderator.guild.id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
-        if logging_channel_id:
-            try:
-                await send_moderation_log(
-                    self.bot, channel_id=logging_channel_id, event_data=data
-                )
-            except Exception as e:
-                logger.warning(
-                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
-                    data.category,
-                    data.moderator.guild.id,
-                    e,
-                    data.build_embed(self.bot).to_dict(),
-                )
+        if logging_webhook and logging_webhook.valid:
+            await send_moderation_log(
+                self.bot, webhook=logging_webhook, event_data=data
+            )
         else:
             logger.info(
                 "[event] on_user_ticketbanned - %s: Guild: %s, logging channel is not set",  # noqa: E501
@@ -193,26 +184,17 @@ class UserTicketbannedEvent(Cog):
                 )
                 return
 
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=data.guild_id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_MODERATION,
             )
 
-        if logging_channel_id:
-            try:
-                await send_moderation_log(
-                    self.bot, channel_id=logging_channel_id, event_data=data
-                )
-            except Exception as e:
-                logger.warning(
-                    "[un%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
-                    data.category,
-                    data.guild_id,
-                    e,
-                    data.build_embed(self.bot).to_dict(),
-                )
+        if logging_webhook and logging_webhook.valid:
+            await send_moderation_log(
+                self.bot, webhook=logging_webhook, event_data=data
+            )
         else:
             logger.info(
                 "[event] on_user_unticketbanned - %s: Guild: %s, logging channel is not set",  # noqa: E501
