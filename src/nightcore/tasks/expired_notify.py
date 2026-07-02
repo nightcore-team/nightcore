@@ -12,6 +12,7 @@ from src.infra.db.models import GuildNotificationsConfig, NotifyState
 from src.infra.db.operations import (
     get_all_pending_notifications,
     get_specified_channel,
+    get_specified_webhook,
 )
 from src.utils._enums import ChannelType, NotifyStateEnum
 
@@ -27,6 +28,7 @@ from src.nightcore.utils import (
     ensure_message_exists,
     ensure_messageable_channel_exists,
 )
+from src.nightcore.utils.webhook import send_to_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -75,11 +77,13 @@ class ExpiredNotifyTask(Cog):
                     continue
 
                 async with self.bot.uow.start() as session:
-                    moderation_notifications = await get_specified_channel(
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildNotificationsConfig,
-                        channel_type=ChannelType.MODERATION_NOTIFICATIONS,
+                    moderation_notifications_webhook = (
+                        await get_specified_webhook(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildNotificationsConfig,
+                            channel_type=ChannelType.MODERATION_NOTIFICATIONS,
+                        )
                     )
                     notifications = await get_specified_channel(
                         session,
@@ -88,9 +92,12 @@ class ExpiredNotifyTask(Cog):
                         channel_type=ChannelType.NOTIFICATIONS,
                     )
 
-                if not moderation_notifications:
+                if (
+                    not moderation_notifications_webhook
+                    or not moderation_notifications_webhook.valid
+                ):
                     logger.info(
-                        "[task] - Moderation notifications channel not set in guild %s, deleting notification",  # noqa: E501
+                        "[task] - Moderation notifications webhook not set in guild %s, deleting notification",  # noqa: E501
                         guild.id,
                     )
                     await self._delete_notification(notify)
@@ -100,20 +107,6 @@ class ExpiredNotifyTask(Cog):
                     logger.info(
                         "[task] - Notifications channel not set in guild %s, "
                         "deleting notification",
-                        guild.id,
-                    )
-                    await self._delete_notification(notify)
-                    continue
-
-                if not (
-                    moderation_notifications_channel
-                    := await ensure_messageable_channel_exists(
-                        guild, moderation_notifications
-                    )
-                ):
-                    logger.info(
-                        "[task] - Moderation notifications channel %s not found in guild %s, deleting notification",  # noqa: E501
-                        moderation_notifications,
                         guild.id,
                     )
                     await self._delete_notification(notify)
@@ -162,22 +155,19 @@ class ExpiredNotifyTask(Cog):
                         e,
                     )
 
-                try:
-                    asyncio.create_task(
-                        moderation_notifications_channel.send(  # type: ignore
-                            view=NotifyTimedOutViewV2(
-                                self.bot,
-                                notify.moderator_id,
-                                notification_message.jump_url,
-                            )
-                        )
+                asyncio.create_task(
+                    send_to_webhook(
+                        self.bot,
+                        moderation_notifications_webhook,
+                        NotifyTimedOutViewV2(
+                            self.bot,
+                            notify.moderator_id,
+                            notification_message.jump_url,
+                        ),
+                        context="expired_notify",
+                        guild_id=guild.id,
                     )
-                except Exception as e:
-                    logger.error(
-                        "[task] - Failed to send moderation notification in guild %s: %s",  # noqa: E501
-                        guild.id,
-                        e,
-                    )
+                )
 
                 try:
                     async with self.bot.uow.start() as session:

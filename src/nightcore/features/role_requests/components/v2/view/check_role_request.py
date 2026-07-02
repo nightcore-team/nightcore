@@ -22,12 +22,13 @@ from discord.ui import (
 )
 
 if TYPE_CHECKING:
+    from src.infra.db.models.discord_webhook import DiscordWebhook
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models import GuildNotificationsConfig
 from src.infra.db.operations import (
     get_latest_user_role_request,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
 from src.nightcore.features.moderation.events.dto import RolesChangeEventData
@@ -125,7 +126,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
             )
 
         outcome = ""
-        nightcore_notifications_channel_id: int | None = None
+        nightcore_notifications_webhook: DiscordWebhook | None = None
 
         async with bot.uow.start() as session:
             try:
@@ -144,8 +145,8 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                     last_rr.moderator_id = interaction.user.id
                     last_rr.updated_at = datetime.now(UTC)
 
-                    nightcore_notifications_channel_id = (
-                        await get_specified_channel(
+                    nightcore_notifications_webhook = (
+                        await get_specified_webhook(
                             session,
                             guild_id=guild.id,
                             config_type=GuildNotificationsConfig,
@@ -236,8 +237,9 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
             )
 
             await send_role_request_dm(
+                bot=bot,
                 moderator_id=interaction.user.id,
-                reserve_channel=nightcore_notifications_channel_id,
+                reserve_webhook=nightcore_notifications_webhook,
                 user=member,
                 state=RoleRequestStateEnum.APPROVED,
             )
@@ -326,7 +328,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
             )
 
         outcome = ""
-        nightcore_notifications_channel_id: int | None = None
+        nightcore_notifications_webhook: DiscordWebhook | None = None
 
         async with view.bot.uow.start() as session:
             try:
@@ -339,8 +341,8 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 if not last_rr:
                     outcome = "request_not_found"
                 else:
-                    nightcore_notifications_channel_id = (
-                        await get_specified_channel(
+                    nightcore_notifications_webhook = (
+                        await get_specified_webhook(
                             session,
                             guild_id=guild.id,
                             config_type=GuildNotificationsConfig,
@@ -390,7 +392,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 DeclineRoleRequestModal(
                     bot=view.bot,
                     user=member,
-                    nightcore_notifications_channel_id=nightcore_notifications_channel_id,
+                    nightcore_notifications_webhook=nightcore_notifications_webhook,
                     view=updated_view,
                     state_view=RoleRequestStateView,
                     message=interaction.message,  # type: ignore

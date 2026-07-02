@@ -8,6 +8,7 @@ import discord
 from discord.ui import Modal, TextInput
 
 if TYPE_CHECKING:
+    from src.infra.db.models.discord_webhook import DiscordWebhook
     from src.nightcore.bot import Nightcore
     from src.nightcore.features.role_requests.components.v2.view.check_role_request import (  # noqa: E501
         CheckRoleRequestView,
@@ -40,7 +41,7 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
         self,
         bot: "Nightcore",
         user: discord.Member,
-        nightcore_notifications_channel_id: int | None,
+        nightcore_notifications_webhook: "DiscordWebhook | None",
         view: "CheckRoleRequestView",
         state_view: type["RoleRequestStateView"],
         message: discord.Message,
@@ -48,8 +49,8 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
         super().__init__()
         self.user = user
         self.bot = bot
-        self.nightcore_notifications_channel_id = (
-            nightcore_notifications_channel_id
+        self.nightcore_notifications_webhook = (
+            nightcore_notifications_webhook
         )
         self.view = view
         self.state_view_type = state_view
@@ -142,8 +143,9 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
         await interaction.followup.send(view=state_view)
 
         await send_role_request_dm(
+            bot=self.bot,
             moderator_id=interaction.user.id,
-            reserve_channel=self.nightcore_notifications_channel_id,
+            reserve_webhook=self.nightcore_notifications_webhook,
             user=self.user,
             state=RoleRequestStateEnum.DENIED,
             reason=reason,

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 from src.nightcore.features.special_events.valentine.events.dto.valentine_send import (  # noqa: E501
     ValentineSendEventDTO,
 )
-from src.nightcore.utils.log import send_log_message
+from src.nightcore.utils.webhook import send_webhook_message
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class ValentineSendEvent(Cog):
     ):
         """Handle valentine send event."""
 
-        await send_log_message(self.bot, dto)
+        await send_webhook_message(self.bot, dto)
 
         logger.info(
             "[%s/log] - invoked user=%s guild=%s",

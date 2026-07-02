@@ -23,8 +23,8 @@ from src.nightcore.features.forum.components.v2 import ComplaintViewV2
 from src.nightcore.features.tickets.utils import extract_str_by_pattern
 from src.nightcore.utils import (
     ensure_member_exists,
-    ensure_messageable_channel_exists,
 )
+from src.nightcore.utils.webhook import send_to_webhook
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -84,7 +84,8 @@ class ForumComplaintProcessor:
 
                 if (
                     not config.available
-                    or not config.channel_id
+                    or not config.notify_webhook
+                    or not config.notify_webhook.valid
                     or not config.is_active
                 ):
                     continue
@@ -199,40 +200,30 @@ class ForumComplaintProcessor:
             )
             return
 
-        try:
-            channel = await ensure_messageable_channel_exists(
-                guild,
-                server.channel_id,  # type: ignore
-            )
-            if not channel:
-                logger.info(
-                    "[forum] Channel with ID %s not found in guild %s",
-                    server.channel_id,
-                    server.guild_id,
-                )
-                return
-
-            await channel.send(  # type: ignore
-                view=ComplaintViewV2(
-                    self.bot,
-                    url=thread.view_url if thread.view_url else "",
-                    moderator_id=discord_id if discord_id else 0,
-                    ping_role_id=server.role_id,
-                    reason=reason if reason else "Не указана",
-                )
-            )
+        if not server.notify_webhook:
             logger.info(
-                "[forum] Successfully sent Discord message for thread %s to channel %s",  # noqa: E501
-                thread.thread_id,
-                server.channel_id,
+                "[forum] Notify webhook not configured in guild %s",
+                server.guild_id,
             )
+            return
 
-        except Exception as e:
-            logger.exception(
-                "[forum] Failed to send Discord embed for thread %s: %s",
-                thread.thread_id,
-                e,
-            )
+        await send_to_webhook(
+            self.bot,
+            server.notify_webhook,
+            ComplaintViewV2(
+                self.bot,
+                url=thread.view_url if thread.view_url else "",
+                moderator_id=discord_id if discord_id else 0,
+                ping_role_id=server.role_id,
+                reason=reason if reason else "Не указана",
+            ),
+            context="forum/complaint",
+            guild_id=server.guild_id,
+        )
+        logger.info(
+            "[forum] Successfully sent Discord message for thread %s",
+            thread.thread_id,
+        )
 
     @staticmethod
     def _filter_threads(

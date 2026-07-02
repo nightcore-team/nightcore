@@ -26,7 +26,7 @@ from src.utils._enums import ChannelType
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.operations import get_or_create_user, get_specified_webhook
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -154,7 +154,7 @@ async def send_valentine(
             recipient.received_valentines += 1
             to_user_valentine_count = recipient.received_valentines
 
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -217,7 +217,7 @@ async def send_valentine(
     dto = ValentineSendEventDTO(
         guild=guild,
         event_type="send",
-        logging_channel_id=logging_channel_id,  # type: ignore
+        logging_webhook=logging_webhook,  # type: ignore
         user_id=interaction.user.id,
         reciever_id=user.id,
         text=text,
