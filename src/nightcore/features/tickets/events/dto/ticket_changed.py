@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import discord
 
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.utils._enums import TicketStateEnum
 
 if TYPE_CHECKING:
@@ -20,7 +21,7 @@ class TicketChangeEventData(TicketBaseEventData):
     author_id: int
     moderator_id: int | None
     state: TicketStateEnum
-    logging_channel_id: int | None = None
+    logging_webhook: DiscordWebhook | None = None
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the ticket event."""

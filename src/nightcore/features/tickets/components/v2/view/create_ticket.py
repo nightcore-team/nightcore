@@ -19,6 +19,7 @@ from discord.ui import (
 )
 
 if TYPE_CHECKING:
+    from src.infra.db.models.discord_webhook import DiscordWebhook
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models import (
@@ -29,8 +30,8 @@ from src.infra.db.models import (
 from src.infra.db.operations import (
     get_latest_user_ticket,
     get_or_create_user,
-    get_specified_channel,
     get_specified_guild_config,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -79,7 +80,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
         current_tickets_count = 0
         new_tickets_category_id = 0
         create_ticket_ping_role_id = 0
-        logging_channel_id: int | None = None
+        logging_webhook: "DiscordWebhook | None" = None
         new_channel_id = 0
         ticket_jump_url = ""
 
@@ -145,7 +146,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                             outcome = "ticket_creation_failed"
 
             if outcome == "ready_to_create":
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -272,7 +273,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     new_channel_id,
                 )
 
-            if logging_channel_id:
+            if logging_webhook and logging_webhook.valid:
                 view.bot.dispatch(
                     "ticket_changed",
                     data=TicketChangeEventData(
@@ -281,7 +282,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                         user.id,
                         None,
                         TicketStateEnum.OPENED,
-                        logging_channel_id,
+                        logging_webhook,
                     ),
                 )
 
