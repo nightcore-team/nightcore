@@ -13,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.infra.db.models.discord_webhook import DiscordWebhook
 
 
 class GuildClanShopItem(IdIntegerMixin, Base):
@@ -44,8 +45,17 @@ class GuildClansConfig(IdIntegerMixin, Base):
     create_clan_channel_category_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    clan_payday_channel_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
+    _clan_payday_webhook_id: Mapped[int | None] = mapped_column(
+        "clan_payday_webhook_id",
+        ForeignKey("discordwebhook.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    clan_payday_webhook: Mapped[DiscordWebhook | None] = relationship(
+        DiscordWebhook,
+        foreign_keys=[_clan_payday_webhook_id],
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
     clan_shop_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
@@ -77,5 +87,10 @@ class GuildClansConfig(IdIntegerMixin, Base):
             config["clan_shop_items"] = [
                 GuildClanShopItem(**item) for item in config["clan_shop_items"]
             ]
+
+        if "clan_payday_webhook" in config:
+            config["clan_payday_webhook"] = DiscordWebhook(
+                **config["clan_payday_webhook"]
+            )
 
         return config

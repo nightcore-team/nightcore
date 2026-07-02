@@ -74,6 +74,7 @@ from src.infra.db.models.configurations.rules import (
     GuildRulesChapter,
     GuildRulesRule,
 )
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
@@ -259,6 +260,19 @@ async def get_specified_channel(  # noqa: UP047
     channel_type: ChannelType,
 ) -> int | None:
     """Get the specified channel ID from the database."""
+    column = getattr(config_type, channel_type.value)
+    stmt = select(column).where(config_type.guild_id == guild_id)
+    return await session.scalar(stmt)
+
+
+async def get_specified_webhook(  # noqa: UP047
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_type: type[GuildT],
+    channel_type: ChannelType,
+) -> DiscordWebhook | None:
+    """Get the specified logging webhook from the database."""
     column = getattr(config_type, channel_type.value)
     stmt = select(column).where(config_type.guild_id == guild_id)
     return await session.scalar(stmt)
@@ -1516,7 +1530,7 @@ async def get_active_forum_guilds(
     """Get all forum configurations."""
 
     stmt = select(GuildForumConfig).where(
-        GuildForumConfig.channel_id != None,  # noqa: E711
+        GuildForumConfig.notify_webhook != None,  # noqa: E711
         GuildForumConfig.section_id != None,  # noqa: E711
     )
 

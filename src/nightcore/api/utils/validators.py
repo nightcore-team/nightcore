@@ -4,6 +4,7 @@ Each validator receives the raw value and a :class:`ValidationContext`
 via *info.context* to look up roles and channels known for the guild.
 """
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -199,5 +200,21 @@ def validate_category_id(v: Any, info: ValidationInfo) -> int:
 
     if channel.type != discord.ChannelType.category:
         raise ConfigValidationError("Ожидался канал с типом категория")
+
+    return value
+
+
+DISCORD_WEBHOOK_RE = re.compile(
+    r"^https://(?:ptb\.|canary\.)?discord(?:app)?\.com/api/webhooks/"
+    r"(?P<id>\d+)/(?P<token>[\w-]+)/?$"
+)
+
+
+def validate_discord_webhook(v: Any) -> str:
+    value = str(v).strip()
+
+    match = DISCORD_WEBHOOK_RE.match(value)
+    if not match:
+        raise ValueError(f"Invalid Discord webhook URL: {value!r}")
 
     return value

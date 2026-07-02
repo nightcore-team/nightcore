@@ -12,6 +12,7 @@ from pydantic import (
 
 from src.nightcore.api.utils.validators import (
     validate_category_id,
+    validate_discord_webhook,
     validate_role_id,
     validate_role_no_adm_id,
     validate_text_channel_id,
@@ -80,6 +81,10 @@ SelectMenuLabelString = Annotated[str, Field(max_length=100)]
 NickNameTagString = Annotated[str, Field(max_length=7)]
 TitleString = Annotated[str, Field(max_length=256)]
 EmbedDescriptionString = Annotated[str, Field(max_length=4096)]
+DiscordWebhookURL = Annotated[
+    str,
+    AfterValidator(validate_discord_webhook),
+]
 
 
 class BaseGuildConfig(BaseModel):
@@ -88,6 +93,11 @@ class BaseGuildConfig(BaseModel):
         populate_by_name=True,
         extra="ignore",
     )
+
+
+class DiscordWebhookSchema(BaseGuildConfig):
+    url: DiscordWebhookURL
+    valid: bool
 
 
 class GuildOrgRoleSchema(BaseGuildConfig):
@@ -134,18 +144,18 @@ class GuildProposalConfigSchema(BaseGuildConfig):
 
 
 class GuildLoggingConfigSchema(BaseGuildConfig):
-    bans_log_channel_id: DiscordTextChannelID | None = None
-    clans_log_channel_id: DiscordTextChannelID | None = None
-    members_log_channel_id: DiscordTextChannelID | None = None
-    messages_log_channel_id: DiscordTextChannelID | None = None
-    voices_log_channel_id: DiscordTextChannelID | None = None
-    moderation_log_channel_id: DiscordTextChannelID | None = None
-    tickets_log_channel_id: DiscordTextChannelID | None = None
-    roles_log_channel_id: DiscordTextChannelID | None = None
-    channels_log_channel_id: DiscordTextChannelID | None = None
-    reactions_log_channel_id: DiscordTextChannelID | None = None
-    private_rooms_log_channel_id: DiscordTextChannelID | None = None
-    economy_log_channel_id: DiscordTextChannelID | None = None
+    bans_log_webhook: DiscordWebhookSchema | None = None
+    clans_log_webhook: DiscordWebhookSchema | None = None
+    members_log_webhook: DiscordWebhookSchema | None = None
+    messages_log_webhook: DiscordWebhookSchema | None = None
+    voices_log_webhook: DiscordWebhookSchema | None = None
+    moderation_log_webhook: DiscordWebhookSchema | None = None
+    tickets_log_webhook: DiscordWebhookSchema | None = None
+    roles_log_webhook: DiscordWebhookSchema | None = None
+    channels_log_webhook: DiscordWebhookSchema | None = None
+    reactions_log_webhook: DiscordWebhookSchema | None = None
+    private_rooms_log_webhook: DiscordWebhookSchema | None = None
+    economy_log_webhook: DiscordWebhookSchema | None = None
     message_log_ignoring_channels_ids: DiscordChannelIDList | None = None
 
 
@@ -178,7 +188,7 @@ class GuildBonusRoleSchema(BaseGuildConfig):
 
 class GuildLevelsConfigSchema(BaseGuildConfig):
     count_messages_channel_id: DiscordTextChannelID | None = None
-    level_notify_channel_id: DiscordTextChannelID | None = None
+    level_notify_webhook: DiscordWebhookSchema | None = None
     bonus_access_roles_ids: list[GuildBonusRoleSchema] | None = None
     level_roles: list[GuildLevelRoleSchema] | None = None
     count_messages_type: MessageCountTypeEnum | None = None
@@ -200,7 +210,7 @@ class GuildClanShopItemSchema(BaseGuildConfig):
 
 class GuildClansConfigSchema(BaseGuildConfig):
     create_clan_channel_category_id: DiscordCategoryID | None = None
-    clan_payday_channel_id: DiscordTextChannelID | None = None
+    clan_payday_webhook: DiscordWebhookSchema | None = None
     clan_shop_channel_id: DiscordTextChannelID | None = None
     clan_shop_items: list[GuildClanShopItemSchema] | None = None
     clans_access_roles_ids: DiscordRoleIDList | None = None
@@ -254,8 +264,8 @@ class GuildModerationConfigSchema(BaseGuildConfig):
 
 class GuildNotificationsConfigSchema(BaseGuildConfig):
     notifications_channel_id: DiscordTextChannelID | None = None
-    notifications_for_moderation_channel_id: DiscordTextChannelID | None = None
-    notifications_from_bot_channel_id: DiscordTextChannelID | None = None
+    notifications_for_moderation_webhook: DiscordWebhookSchema | None = None
+    notifications_from_bot_webhook: DiscordWebhookSchema | None = None
 
 
 class GuildTicketsConfigSchema(BaseGuildConfig):
@@ -269,14 +279,14 @@ class GuildTicketsConfigSchema(BaseGuildConfig):
 class GuildInfomakerConfigSchema(BaseGuildConfig):
     admins_roles_ids: DiscordRoleIDList | None = None
     leaders_roles_ids: DiscordRoleIDList | None = None
-    admins_roles_logging_channel_id: DiscordTextChannelID | None = None
-    leaders_roles_logging_channel_id: DiscordTextChannelID | None = None
+    admins_roles_logging_webhook: DiscordWebhookSchema | None = None
+    leaders_roles_logging_webhook: DiscordWebhookSchema | None = None
 
 
 class GuildForumConfigSchema(BaseGuildConfig):
     is_active: bool = False
     role_id: DiscordRoleID | None = None
-    channel_id: DiscordTextChannelID | None = None
+    notify_webhook: DiscordWebhookSchema | None = None
     section_id: int | None = Field(exclude=True, default=None)
 
     @computed_field
