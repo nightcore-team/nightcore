@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models.case import Case
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_webhook
 from src.nightcore.components.embed import (
     ErrorEmbed,
 )
@@ -44,7 +44,7 @@ async def create_case(
     guild = cast(Guild, interaction.guild)
 
     outcome = ""
-    logging_channel_id = None
+    logging_webhook = None
 
     try:
         async with bot.uow.start() as session:
@@ -55,7 +55,7 @@ async def create_case(
 
             session.add(new_case)
 
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -108,7 +108,7 @@ async def create_case(
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
         event_type=ItemChangeActionEnum.CREATE.value,
-        logging_channel_id=logging_channel_id,
+        logging_webhook=logging_webhook,
         moderator_id=interaction.user.id,
         item_name=case_name,
         item=item,

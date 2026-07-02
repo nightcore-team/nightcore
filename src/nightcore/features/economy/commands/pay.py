@@ -8,7 +8,7 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.operations import get_or_create_user, get_specified_webhook
 from src.nightcore.components.embed import (
     EntityNotFoundEmbed,
     ErrorEmbed,
@@ -101,7 +101,7 @@ class Pay(Cog):
             guild_config,
             session,
         ):
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -158,7 +158,7 @@ class Pay(Cog):
                 dto=TransferCoinsEventDTO(
                     guild=guild,
                     event_type="transfer_coins",
-                    logging_channel_id=logging_channel_id,
+                    logging_webhook=logging_webhook,
                     sender_id=interaction.user.id,
                     receiver=member,
                     item_name=coin_name or "коины",

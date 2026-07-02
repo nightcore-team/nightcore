@@ -29,8 +29,8 @@ from src.infra.db.models import (
 from src.infra.db.operations import (
     get_or_create_user,
     get_shop_order_state,
-    get_specified_channel,
     get_specified_field,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -84,7 +84,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                 custom_id=view.custom_id,  # type: ignore
             )
 
-            economy_logging_channel_id = await get_specified_channel(
+            economy_logging_webhook = await get_specified_webhook(
                 session=session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -106,13 +106,11 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
             ):
                 outcome = "missing_permissions"
             else:
-                nightcore_notifications_channel_id = (
-                    await get_specified_channel(
-                        session=session,
-                        guild_id=guild.id,
-                        config_type=GuildNotificationsConfig,
-                        channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
-                    )
+                nightcore_notifications_webhook = await get_specified_webhook(
+                    session=session,
+                    guild_id=guild.id,
+                    config_type=GuildNotificationsConfig,
+                    channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
                 )
 
                 if not shop_order:
@@ -223,8 +221,8 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                 user_balance_before=cast(float, view.user_balance_before),
                 user_balance_after=cast(float, view.user_balance_after),
                 custom_id=cast(int, view.custom_id),
-                logging_channel_id=economy_logging_channel_id,
-                notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
+                logging_webhook=economy_logging_webhook,
+                notifications_webhook=nightcore_notifications_webhook,  # type: ignore
             ),
         )
 
@@ -261,7 +259,7 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                 custom_id=view.custom_id,  # type: ignore
             )
 
-            economy_logging_channel_id = await get_specified_channel(
+            economy_logging_webhook = await get_specified_webhook(
                 session=session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -283,13 +281,11 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
             ):
                 outcome = "missing_permissions"
             else:
-                nightcore_notifications_channel_id = (
-                    await get_specified_channel(
-                        session=session,
-                        guild_id=guild.id,
-                        config_type=GuildNotificationsConfig,
-                        channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
-                    )
+                nightcore_notifications_webhook = await get_specified_webhook(
+                    session=session,
+                    guild_id=guild.id,
+                    config_type=GuildNotificationsConfig,
+                    channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
                 )
 
                 if not shop_order:
@@ -374,8 +370,8 @@ class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
                     item_price=cast(float, view.item_price),
                     user_balance_after=cast(float, view.user_balance_after),
                     custom_id=cast(int, view.custom_id),
-                    logging_channel_id=economy_logging_channel_id,
-                    notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
+                    logging_webhook=economy_logging_webhook,
+                    notifications_webhook=nightcore_notifications_webhook,  # type: ignore
                 ),
             )
 

@@ -8,7 +8,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import Clan, GuildLoggingConfig
 from src.infra.db.operations import (
     get_clan_by_id,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -52,7 +52,7 @@ async def give_clanexp(
     db_clan: Clan | None = None
 
     async with bot.uow.start() as session:
-        logging_channel_id = await get_specified_channel(
+        logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -95,7 +95,7 @@ async def give_clanexp(
         dto=AwardNotificationEventDTO(
             guild=guild,
             event_type="give/clanexp",
-            logging_channel_id=logging_channel_id,
+            logging_webhook=logging_webhook,
             user_id=user.id,
             moderator_id=interaction.user.id,
             item_name="клановый опыт",

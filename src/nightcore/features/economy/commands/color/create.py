@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models.color import Color
 from src.infra.db.operations import (
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -48,7 +48,7 @@ async def create_color(
     guild = cast(Guild, interaction.guild)
     member = cast(Member, interaction.user)
 
-    logging_channel_id = None
+    logging_webhook = None
     outcome = ""
 
     if role.position >= member.top_role.position:
@@ -93,7 +93,7 @@ async def create_color(
 
             session.add(new_color)
 
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -145,7 +145,7 @@ async def create_color(
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
         event_type=ItemChangeActionEnum.CREATE.value,
-        logging_channel_id=logging_channel_id,
+        logging_webhook=logging_webhook,
         moderator_id=interaction.user.id,
         item_name=f"{role.mention} ({role.id})",
         item=item,

@@ -7,7 +7,7 @@ from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.operations import get_or_create_user, get_specified_webhook
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -63,29 +63,28 @@ async def give_bp_exp(
         )
 
     async with bot.uow.start() as session:
-        logging_channel_id = await get_specified_channel(
+        logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
             channel_type=ChannelType.LOGGING_ECONOMY,
         )
 
-        if not outcome:
-            try:
-                user_record, _ = await get_or_create_user(
-                    session, guild_id=guild.id, user_id=user.id
-                )
-                user_record.battle_pass_points += amount
-                outcome = "success"
+        try:
+            user_record, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=user.id
+            )
+            user_record.battle_pass_points += amount
+            outcome = "success"
 
-            except Exception as e:
-                logger.exception(
-                    "[give/bp_coins] Failed to give battlepass points to user %s in guild %s: %s",  # noqa: E501
-                    user.id,
-                    guild.id,
-                    e,
-                )
-                outcome = "give_bp_coins_error"
+        except Exception as e:
+            logger.exception(
+                "[give/bp_coins] Failed to give battlepass points to user %s in guild %s: %s",  # noqa: E501
+                user.id,
+                guild.id,
+                e,
+            )
+            outcome = "give_bp_coins_error"
 
     if outcome == "give_bp_coins_error":
         return await interaction.response.send_message(
@@ -115,7 +114,7 @@ async def give_bp_exp(
             dto=AwardNotificationEventDTO(
                 guild=guild,
                 event_type="give/bp_exp",
-                logging_channel_id=logging_channel_id,
+                logging_webhook=logging_webhook,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
                 item_name="очки батлпасса",

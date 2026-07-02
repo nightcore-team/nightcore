@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from discord import Color, Embed, Guild
 
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.nightcore.events.dto.base import BaseEventDTO
 
 if TYPE_CHECKING:
@@ -18,14 +19,14 @@ class AwardNotificationEventDTO(BaseEventDTO):
 
     guild: Guild
     event_type: str
-    logging_channel_id: int | None
+    logging_webhook: DiscordWebhook | None
     user_id: int
     moderator_id: int
     item_name: str
     amount: int
     reason: str | None
 
-    def build_log_embed(self, bot: "Nightcore") -> Embed:
+    def build_component(self, bot: "Nightcore") -> Embed:
         """Build and return the log embed for the event."""
 
         return (

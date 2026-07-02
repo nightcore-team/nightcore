@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     get_color_by_id,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -51,7 +51,7 @@ async def delete_color(
     guild = cast(Guild, interaction.guild)
 
     outcome = ""
-    logging_channel_id = None
+    logging_webhook = None
 
     try:
         async with bot.uow.start() as session:
@@ -64,7 +64,7 @@ async def delete_color(
             else:
                 await session.delete(color)
 
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -113,7 +113,7 @@ async def delete_color(
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
         event_type=ItemChangeActionEnum.DELETE,
-        logging_channel_id=logging_channel_id,
+        logging_webhook=logging_webhook,
         moderator_id=interaction.user.id,
         item_name=f"{color_name} ({color.role_id})",  # type: ignore
         item=item,

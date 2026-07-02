@@ -11,7 +11,7 @@ from src.infra.db.models import (
     GuildLoggingConfig,
     TempRole,
 )
-from src.infra.db.operations import get_specified_channel, get_temp_role
+from src.infra.db.operations import get_specified_webhook, get_temp_role
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -114,7 +114,7 @@ async def give_role(
 
     outcome = ""
     async with bot.uow.start() as session:
-        logging_channel_id = await get_specified_channel(
+        logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -205,7 +205,7 @@ async def give_role(
         dto=AwardNotificationEventDTO(
             guild=guild,
             event_type="temp/role",
-            logging_channel_id=logging_channel_id,
+            logging_webhook=logging_webhook,
             user_id=user.id,
             moderator_id=interaction.user.id,
             item_name=f"временная роль (`{role.id}`)",

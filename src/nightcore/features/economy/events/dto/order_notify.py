@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from discord import Color, Embed, Guild
 
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.nightcore.events.dto.base import BaseEventDTO
 from src.utils._enums import ShopOrderStateEnum
 
@@ -25,10 +26,10 @@ class CoinsShopOrderNotifyDTO(BaseEventDTO):
     item_price: float
     custom_id: int
     state: ShopOrderStateEnum
-    logging_channel_id: int | None
-    notifications_channel_id: int | None
+    logging_webhook: DiscordWebhook | None
+    notifications_webhook: DiscordWebhook | None
 
-    def build_log_embed(self, bot: "Nightcore") -> Embed:
+    def build_component(self, bot: "Nightcore") -> Embed:
         """Build and return the log embed for the event."""
 
         if self.state == ShopOrderStateEnum.APPROVED:

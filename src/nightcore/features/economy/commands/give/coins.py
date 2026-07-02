@@ -7,7 +7,7 @@ from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
-from src.infra.db.operations import get_or_create_user, get_specified_channel
+from src.infra.db.operations import get_or_create_user, get_specified_webhook
 from src.nightcore.components.embed import (
     ErrorEmbed,
     SuccessMoveEmbed,
@@ -64,7 +64,7 @@ async def give_coins(
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
     ) as (guild_config, session):
-        logging_channel_id = await get_specified_channel(
+        logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -117,7 +117,7 @@ async def give_coins(
             dto=AwardNotificationEventDTO(
                 guild=guild,
                 event_type="give_coins",
-                logging_channel_id=logging_channel_id,
+                logging_webhook=logging_webhook,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
                 item_name=coin_name or "коины",

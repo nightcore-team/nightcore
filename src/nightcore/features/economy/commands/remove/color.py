@@ -11,7 +11,7 @@ from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     get_color_by_id,
     get_or_create_user,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import (
     ErrorEmbed,
@@ -84,7 +84,7 @@ async def remove_color(
         )
 
     async with bot.uow.start() as session:
-        logging_channel_id = await get_specified_channel(
+        logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -162,7 +162,7 @@ async def remove_color(
             dto=AwardNotificationEventDTO(
                 guild=guild,
                 event_type="remove/color",
-                logging_channel_id=logging_channel_id,
+                logging_webhook=logging_webhook,
                 user_id=user.id,
                 moderator_id=interaction.user.id,
                 item_name=f"{color_name} ({color.role_id})",  # type: ignore

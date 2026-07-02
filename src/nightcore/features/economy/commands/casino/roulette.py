@@ -13,9 +13,10 @@ from src.infra.db.models import (
     GuildEconomyConfig,
     GuildLoggingConfig,
 )
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.operations import (
     get_or_create_user,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.economy._groups import casino as casino_group
@@ -88,7 +89,7 @@ async def roulette(
 
     outcome = ""
     result: RouletteResult | None = None
-    logging_channel_id: int | None = None
+    logging_webhook: DiscordWebhook | None = None
     new_balance = 0
     casino_game_id: int | None = None
     casino_multiplayer_channel_id: int | None = None
@@ -102,7 +103,7 @@ async def roulette(
                 guild_id=guild.id,
                 user_id=member.id,
             )
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -237,7 +238,7 @@ async def roulette(
                 dto=AwardNotificationEventDTO(
                     guild=guild,
                     event_type="casino/roulette",
-                    logging_channel_id=logging_channel_id,
+                    logging_webhook=logging_webhook,
                     user_id=member.id,
                     moderator_id=bot.user.id,  # type: ignore
                     item_name=coin_name,
