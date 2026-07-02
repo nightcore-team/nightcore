@@ -209,12 +209,34 @@ DISCORD_WEBHOOK_RE = re.compile(
     r"(?P<id>\d+)/(?P<token>[\w-]+)/?$"
 )
 
+DISCORD_WEBHOOK_ID_MIN_LENGTH = 17
+DISCORD_WEBHOOK_ID_MAX_LENGTH = 20
+DISCORD_WEBHOOK_TOKEN_MIN_LENGTH = 60
+DISCORD_WEBHOOK_TOKEN_MAX_LENGTH = 90
+
 
 def validate_discord_webhook(v: Any) -> str:
     value = str(v).strip()
 
     match = DISCORD_WEBHOOK_RE.match(value)
     if not match:
+        raise ValueError(f"Invalid Discord webhook URL: {value!r}")
+
+    webhook_id = match.group("id")
+    webhook_token = match.group("token")
+
+    if not (
+        DISCORD_WEBHOOK_ID_MIN_LENGTH
+        <= len(webhook_id)
+        <= DISCORD_WEBHOOK_ID_MAX_LENGTH
+    ):
+        raise ValueError(f"Invalid Discord webhook URL: {value!r}")
+
+    if not (
+        DISCORD_WEBHOOK_TOKEN_MIN_LENGTH
+        <= len(webhook_token)
+        <= DISCORD_WEBHOOK_TOKEN_MAX_LENGTH
+    ):
         raise ValueError(f"Invalid Discord webhook URL: {value!r}")
 
     return value
