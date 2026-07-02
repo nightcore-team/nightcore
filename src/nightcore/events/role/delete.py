@@ -8,13 +8,13 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_webhook
 from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -39,27 +39,23 @@ class DeleteRoleEvent(Cog):
         guild = role.guild
 
         async with self.bot.uow.start() as session:
-            roles_logging_channel_id = await get_specified_channel(
+            roles_logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_ROLES,
             )
 
-        if not roles_logging_channel_id:
+        if not roles_logging_webhook:
             logger.info(
                 "[roles] Logging channel (roles) not configured for guild %s",
                 guild.id,
             )
             return
 
-        channel = await ensure_messageable_channel_exists(
-            guild, roles_logging_channel_id
-        )
-
-        if not channel:
+        if not roles_logging_webhook.valid:
             logger.info(
-                "[roles] Logging channel (roles) not found in guild %s",
+                "[roles] Logging webhook (roles) invalid in guild %s",
                 guild.id,
             )
             return
@@ -140,15 +136,13 @@ class DeleteRoleEvent(Cog):
                 name="Удалил", value=created_by_value, inline=False
             )
 
-        try:
-            await channel.send(embed=embed)  # type: ignore
-        except Exception as e:
-            logger.error(
-                "[roles] Failed to send role deletion log in guild %s: %s",
-                guild.id,
-                e,
-            )
-            return
+        await send_to_webhook(
+            self.bot,
+            roles_logging_webhook,
+            embed,
+            context="role/delete",
+            guild_id=guild.id,
+        )
 
         logger.info(
             "[roles] Role deletion logged for guild %s, role %s",

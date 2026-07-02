@@ -8,13 +8,13 @@ from discord import Guild
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_webhook
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import (
     channel_type,
     discord_ts,
-    ensure_messageable_channel_exists,
 )
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class CreateChannelHandler(Cog):
 
         async with self.bot.uow.start() as session:
             if not (
-                logging_channels_channel_id := await get_specified_channel(
+                logging_channels_webhook := await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -44,13 +44,9 @@ class CreateChannelHandler(Cog):
                 )
                 return
 
-        if not (
-            logging_channel := await ensure_messageable_channel_exists(
-                guild, logging_channels_channel_id
-            )
-        ):
+        if not logging_channels_webhook.valid:
             logger.info(
-                "[logging] Logging channel (channels) not found in guild %s",
+                "[logging] Logging webhook (channels) invalid in guild %s",
                 guild.id,
             )
             return
@@ -84,7 +80,13 @@ class CreateChannelHandler(Cog):
                             value=f"{entry.user.mention} ({entry.user.id})",
                             inline=False,
                         )
-                    await logging_channel.send(embed=embed)  # type: ignore
+                    await send_to_webhook(
+                        self.bot,
+                        logging_channels_webhook,
+                        embed,
+                        context="channel/create",
+                        guild_id=guild.id,
+                    )
                     return
 
         except discord.Forbidden as e:

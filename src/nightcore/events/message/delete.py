@@ -11,13 +11,14 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.raw_models import RawBulkMessageDeleteEvent, RawMessageDeleteEvent
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_specified_channel, get_specified_field
+from src.infra.db.operations import get_specified_field, get_specified_webhook
 from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
+    from src.infra.db.models.discord_webhook import DiscordWebhook
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +29,9 @@ class DeleteMessageEvent(Cog):
 
     async def _get_logging_and_ignoring_channels_ids(
         self, guild_id: int
-    ) -> tuple[int | None, list[int] | None]:
+    ) -> tuple["DiscordWebhook | None", list[int] | None]:
         async with self.bot.uow.start() as session:
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild_id,
                 config_type=GuildLoggingConfig,
@@ -47,7 +48,7 @@ class DeleteMessageEvent(Cog):
                 ),
             )
 
-        return logging_channel_id, ignoring_channels_ids
+        return logging_webhook, ignoring_channels_ids
 
     def _build_message_embed(
         self, message: Message, event_type: str | None = None
@@ -130,11 +131,11 @@ class DeleteMessageEvent(Cog):
             return
 
         (
-            logging_channel_id,
+            logging_webhook,
             ignoring_channels_ids,
         ) = await self._get_logging_and_ignoring_channels_ids(guild.id)
 
-        if logging_channel_id is None:
+        if logging_webhook is None:
             logger.info(
                 "[message] Logging channel not configured for guild %s",
                 guild.id,
@@ -155,28 +156,23 @@ class DeleteMessageEvent(Cog):
                 guild.id,
             )
 
-        channel = await ensure_messageable_channel_exists(
-            guild=guild, channel_id=logging_channel_id
-        )
-        if not channel:
+        if not logging_webhook.valid:
             logger.info(
-                "[message] Logging channel %s not found in guild %s",
-                logging_channel_id,
+                "[message] Logging webhook invalid in guild %s",
                 guild.id,
             )
             return
 
         embed, files = self._build_message_embed(message)
 
-        try:
-            await channel.send(embed=embed, files=files)  # type: ignore
-        except Exception as e:
-            logger.error(
-                "[message] Failed to send deleted message log to channel %s in guild %s: %s",  # noqa: E501
-                channel.id,
-                guild.id,
-                e,
-            )
+        await send_to_webhook(
+            self.bot,
+            logging_webhook,
+            embed,
+            context="message/delete",
+            guild_id=guild.id,
+            files=files,
+        )
 
         logger.info("[message] Message deleted: %s", message)
 
@@ -204,13 +200,20 @@ class DeleteMessageEvent(Cog):
             return
 
         (
-            logging_channel_id,
+            logging_webhook,
             ignoring_channels_ids,
         ) = await self._get_logging_and_ignoring_channels_ids(guild.id)
 
-        if logging_channel_id is None:
+        if logging_webhook is None:
             logger.info(
                 "[message] Logging channel not configured for guild %s",
+                guild.id,
+            )
+            return
+
+        if not logging_webhook.valid:
+            logger.info(
+                "[message] Logging webhook invalid in guild %s",
                 guild.id,
             )
             return
@@ -231,26 +234,16 @@ class DeleteMessageEvent(Cog):
                 message, event_type="bulk"
             )
 
-            channel = await ensure_messageable_channel_exists(
-                guild=guild, channel_id=logging_channel_id
+            asyncio.create_task(
+                send_to_webhook(
+                    self.bot,
+                    logging_webhook,
+                    embed,
+                    context="message/delete_bulk",
+                    guild_id=guild.id,
+                    files=files,
+                )
             )
-            if not channel:
-                logger.info(
-                    "[message] Logging channel %s not found in guild %s",
-                    logging_channel_id,
-                    guild.id,
-                )
-                return
-
-            try:
-                asyncio.create_task(channel.send(embed=embed, files=files))  # type: ignore
-            except Exception as e:
-                logger.error(
-                    "[message] Failed to send deleted message log to channel %s in guild %s: %s",  # noqa: E501
-                    channel.id,
-                    guild.id,
-                    e,
-                )
 
             logger.info("[message] Message deleted: %s", message)
 

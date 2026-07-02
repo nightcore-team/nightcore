@@ -9,13 +9,13 @@ from discord import Guild
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_webhook
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import (
     channel_type,
     discord_ts,
-    ensure_messageable_channel_exists,
 )
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 from ._utils.overwrites import build_channel_overwrites_file  # type: ignore
@@ -34,7 +34,7 @@ class DeleteChannelHandler(Cog):
 
         async with self.bot.uow.start() as session:
             if not (
-                logging_channels_channel_id := await get_specified_channel(
+                logging_channels_webhook := await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -47,13 +47,9 @@ class DeleteChannelHandler(Cog):
                 )
                 return
 
-        if not (
-            logging_channel := await ensure_messageable_channel_exists(
-                guild, logging_channels_channel_id
-            )
-        ):
+        if not logging_channels_webhook.valid:
             logger.info(
-                "[logging] Logging channel (channels) not found in guild %s",
+                "[logging] Logging webhook (channels) invalid in guild %s",
                 guild.id,
             )
             return
@@ -112,15 +108,14 @@ class DeleteChannelHandler(Cog):
                             e,
                         )
 
-                    if file:
-                        await logging_channel.send(  # type: ignore
-                            embed=embed,
-                            file=file,
-                        )
-                    else:
-                        await logging_channel.send(  # type: ignore
-                            embed=embed,
-                        )
+                    await send_to_webhook(
+                        self.bot,
+                        logging_channels_webhook,
+                        embed,
+                        context="channel/delete",
+                        guild_id=guild.id,
+                        files=[file] if file else None,
+                    )
                     return
 
         except discord.Forbidden as e:

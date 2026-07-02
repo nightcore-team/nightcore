@@ -7,9 +7,10 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_webhook
 from src.nightcore.bot import Nightcore
-from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
+from src.nightcore.utils import discord_ts
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class LeaveMemberEvent(Cog):
 
         async with self.bot.uow.start() as session:
             if not (
-                logging_members_channel_id := await get_specified_channel(
+                logging_members_webhook := await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -38,13 +39,9 @@ class LeaveMemberEvent(Cog):
                 )
                 return
 
-        if not (
-            logging_channel := await ensure_messageable_channel_exists(
-                guild, logging_members_channel_id
-            )
-        ):
+        if not logging_members_webhook.valid:
             logger.info(
-                f"[logging] Logging channel (members) not found in guild {guild.id}"  # noqa: E501
+                f"[logging] Logging webhook (members) invalid in guild {guild.id}"  # noqa: E501
             )
             return
 
@@ -81,13 +78,13 @@ class LeaveMemberEvent(Cog):
             icon_url=self.bot.user.display_avatar.url,  # type: ignore
         )
 
-        try:
-            await logging_channel.send(embed=embed)  # type: ignore
-        except Exception as e:
-            logger.error(
-                f"[logging] Failed to send member leave log message: {e}"
-            )
-            return
+        await send_to_webhook(
+            self.bot,
+            logging_members_webhook,
+            embed,
+            context="member/leave",
+            guild_id=guild.id,
+        )
 
         logger.info("[logging] Member left logged for guild: %s", guild.id)
 

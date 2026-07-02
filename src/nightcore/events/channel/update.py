@@ -9,9 +9,9 @@ from discord import Guild
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_specified_channel  # type: ignore
+from src.infra.db.operations import get_specified_webhook
 from src.nightcore.bot import Nightcore
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 from ._utils.overwrites import build_permission_changes_field  # type: ignore
@@ -33,7 +33,7 @@ class UpdateChannelHandler(Cog):
 
         async with self.bot.uow.start(readonly=True) as session:
             if not (
-                logging_channels_channel_id := await get_specified_channel(
+                logging_channels_webhook := await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -42,21 +42,16 @@ class UpdateChannelHandler(Cog):
             ):
                 outcome = "channel_not_configured"
 
-        if outcome == "channel_not_configured":
+        if outcome == "channel_not_configured" or not logging_channels_webhook:
             logger.info(
                 "[logging] Logging channel (channels) not configured for guild %s",  # noqa: E501
                 guild.id,
             )
             return
 
-        if not (
-            logging_channel := await ensure_messageable_channel_exists(
-                guild,
-                logging_channels_channel_id,  # pyright: ignore[reportArgumentType]
-            )
-        ):
+        if not logging_channels_webhook.valid:
             logger.info(
-                "[logging] Logging channel (channels) not found in guild %s",
+                "[logging] Logging webhook (channels) invalid in guild %s",
                 guild.id,
             )
             return
@@ -95,13 +90,13 @@ class UpdateChannelHandler(Cog):
             )
 
         if embed.fields:
-            try:
-                await logging_channel.send(embed=embed)  # type: ignore
-            except Exception as e:
-                logger.error(
-                    "[logging] Failed to send logging embed about channel updating: %s",  # noqa: E501
-                    e,
-                )
+            await send_to_webhook(
+                self.bot,
+                logging_channels_webhook,
+                embed,
+                context="channel/update",
+                guild_id=guild.id,
+            )
         else:
             logger.info(
                 "[logging] No relevant changes detected for channel %s in guild %s, skipping logging",  # noqa: E501

@@ -6,12 +6,12 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig, PrivateRoomState
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_webhook
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.private_rooms.components.embed import (
     PrivateRoomLogEmbed,
 )
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
@@ -51,19 +51,17 @@ class DeletePrivateRoomEvent(Cog):
             async with self.bot.uow.start() as session:
                 await session.delete(private_room_state)
 
-                optional_log_channel_id = await get_specified_channel(
+                log_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
                     channel_type=ChannelType.LOGGING_PRIVATE_CHANNELS,
                 )
-                if optional_log_channel_id is None:
+                if log_webhook is None:
                     logger.warning(
                         f"[logging] Logging channel (private_rooms) not configured for guild {guild.id}"  # noqa: E501
                     )
                     return
-
-                log_channel_id = optional_log_channel_id
 
         except Exception as e:
             logger.error(
@@ -73,31 +71,25 @@ class DeletePrivateRoomEvent(Cog):
             )
             return
 
-        if not (
-            log_channel := await ensure_messageable_channel_exists(
-                guild, log_channel_id
-            )
-        ):
+        if not log_webhook.valid:
             logger.warning(
-                f"[logging] Logging channel (private_rooms) not configured for guild {guild.id}"  # noqa: E501
+                f"[logging] Logging webhook (private_rooms) invalid for guild {guild.id}"  # noqa: E501
             )
             return
 
-        try:
-            embed = PrivateRoomLogEmbed(
-                title="Удаление приватной комнаты",
-                user_id=member.id,
-                channel=channel,
-                bot=self.bot,
-            )
-            await log_channel.send(embed=embed)  # type: ignore
-        except Exception as e:
-            logger.error(
-                "[private_rooms/event] Error sending log message for private room of %s: %s",  # noqa: E501
-                member,
-                e,
-            )
-            return
+        embed = PrivateRoomLogEmbed(
+            title="Удаление приватной комнаты",
+            user_id=member.id,
+            channel=channel,
+            bot=self.bot,
+        )
+        await send_to_webhook(
+            self.bot,
+            log_webhook,
+            embed,
+            context="private_rooms/delete",
+            guild_id=guild.id,
+        )
 
 
 async def setup(bot: Nightcore):

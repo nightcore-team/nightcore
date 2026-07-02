@@ -10,6 +10,7 @@ from src.infra.db.models import GuildLoggingConfig, GuildPrivateChannelsConfig
 from src.infra.db.operations import (
     get_private_room_state,
     get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.bot import Nightcore
 from src.nightcore.utils import ensure_messageable_channel_exists
@@ -47,7 +48,7 @@ class VoiceStateUpdateEvent(Cog):
                         config_type=GuildPrivateChannelsConfig,
                         channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
                     )
-                    logging_channel_id = await get_specified_channel(
+                    logging_webhook = await get_specified_webhook(
                         session,
                         guild_id=guild.id,
                         config_type=GuildLoggingConfig,
@@ -117,7 +118,7 @@ class VoiceStateUpdateEvent(Cog):
                             "voice_channel_join",
                             member,
                             after,
-                            logging_channel_id,
+                            logging_webhook,
                         )
                     except Exception as e:
                         logger.error(
@@ -140,7 +141,7 @@ class VoiceStateUpdateEvent(Cog):
                     private_room_state = await get_private_room_state(
                         session, user_id=member.id
                     )
-                    logging_channel_id = await get_specified_channel(
+                    logging_webhook = await get_specified_webhook(
                         session,
                         guild_id=guild.id,
                         config_type=GuildLoggingConfig,
@@ -163,7 +164,7 @@ class VoiceStateUpdateEvent(Cog):
                             "voice_channel_leave",
                             member,
                             before,
-                            logging_channel_id,
+                            logging_webhook,
                         )
                     except Exception as e:
                         logger.error(
@@ -196,7 +197,7 @@ class VoiceStateUpdateEvent(Cog):
                         config_type=GuildPrivateChannelsConfig,
                         channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
                     )
-                    logging_channel_id = await get_specified_channel(
+                    logging_webhook = await get_specified_webhook(
                         session,
                         guild_id=guild.id,
                         config_type=GuildLoggingConfig,
@@ -251,7 +252,7 @@ class VoiceStateUpdateEvent(Cog):
                         member,
                         before,
                         after,
-                        logging_channel_id,
+                        logging_webhook,
                     )
                     self.bot.dispatch(
                         "delete_private_room",
@@ -276,7 +277,7 @@ class VoiceStateUpdateEvent(Cog):
                         member,
                         before,
                         after,
-                        logging_channel_id,
+                        logging_webhook,
                     )
                     self.bot.dispatch(
                         "create_private_room", member, after.channel
@@ -294,7 +295,7 @@ class VoiceStateUpdateEvent(Cog):
                         member,
                         before,
                         after,
-                        logging_channel_id,
+                        logging_webhook,
                     )
                     logger.info(
                         "[voice] %s switched voice channel from %s to %s",

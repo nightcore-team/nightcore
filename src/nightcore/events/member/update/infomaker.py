@@ -9,7 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.models import GuildInfomakerConfig
 from src.infra.db.operations import get_specified_guild_config
 from src.nightcore.bot import Nightcore
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 
 from .._utils.roles import roles_difference  # type: ignore
 
@@ -43,8 +43,8 @@ class InfomakerUpdateMemberEvent(Cog):
             return
 
         if (
-            not guild_config.leaders_roles_logging_channel_id
-            and not guild_config.admins_roles_logging_channel_id
+            not guild_config.leaders_roles_logging_webhook
+            and not guild_config.admins_roles_logging_webhook
         ):
             logger.info(
                 f"[infomaker] Logging channel (leaders/admins) not configured for guild {guild.id}"  # noqa: E501
@@ -135,11 +135,17 @@ class InfomakerUpdateMemberEvent(Cog):
                     inline=False,
                 )
 
-            if logging_channel := await ensure_messageable_channel_exists(
-                guild,
-                guild_config.leaders_roles_logging_channel_id,  # type: ignore
+            if (
+                guild_config.leaders_roles_logging_webhook
+                and guild_config.leaders_roles_logging_webhook.valid
             ):
-                await logging_channel.send(embed=leader_embed)  # type: ignore
+                await send_to_webhook(
+                    self.bot,
+                    guild_config.leaders_roles_logging_webhook,
+                    leader_embed,
+                    context="infomaker/leaders",
+                    guild_id=guild.id,
+                )
 
         if added_admin_roles_string or removed_admin_roles_string:
             admin_embed = discord.Embed(
@@ -175,11 +181,17 @@ class InfomakerUpdateMemberEvent(Cog):
                     inline=False,
                 )
 
-            if logging_channel := await ensure_messageable_channel_exists(
-                guild,
-                guild_config.admins_roles_logging_channel_id,  # type: ignore
+            if (
+                guild_config.admins_roles_logging_webhook
+                and guild_config.admins_roles_logging_webhook.valid
             ):
-                await logging_channel.send(embed=admin_embed)  # type: ignore
+                await send_to_webhook(
+                    self.bot,
+                    guild_config.admins_roles_logging_webhook,
+                    admin_embed,
+                    context="infomaker/admins",
+                    guild_id=guild.id,
+                )
 
 
 async def setup(bot: Nightcore) -> None:

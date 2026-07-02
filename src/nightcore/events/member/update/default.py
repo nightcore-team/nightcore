@@ -7,9 +7,9 @@ import discord
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_specified_channel
+from src.infra.db.operations import get_specified_webhook
 from src.nightcore.bot import Nightcore
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 from .._utils.roles import roles_difference  # type: ignore
@@ -35,7 +35,7 @@ class DefaultUpdateMemberEvent(Cog):
 
         async with self.bot.uow.start() as session:
             if not (
-                logging_members_channel_id := await get_specified_channel(
+                logging_members_webhook := await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -48,13 +48,9 @@ class DefaultUpdateMemberEvent(Cog):
                 )
                 return
 
-        if not (
-            logging_channel := await ensure_messageable_channel_exists(
-                guild, logging_members_channel_id
-            )
-        ):
+        if not logging_members_webhook.valid:
             logger.info(
-                "[logging] Logging channel (members) not found in guild %s",
+                "[logging] Logging webhook (members) invalid in guild %s",
                 guild.id,
             )
             return
@@ -212,13 +208,13 @@ class DefaultUpdateMemberEvent(Cog):
                 )
 
         if embed.fields:
-            try:
-                await logging_channel.send(embed=embed)  # type: ignore
-            except Exception as e:
-                logger.error(
-                    "[logging] Failed to send member update log message: %s", e
-                )
-                return
+            await send_to_webhook(
+                self.bot,
+                logging_members_webhook,
+                embed,
+                context="member/update",
+                guild_id=guild.id,
+            )
 
 
 async def setup(bot: Nightcore) -> None:

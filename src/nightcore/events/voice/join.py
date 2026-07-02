@@ -7,9 +7,10 @@ from discord import Embed, Member, VoiceChannel, VoiceState
 from discord.ext.commands import Cog  # type: ignore
 
 if TYPE_CHECKING:
+    from src.infra.db.models.discord_webhook import DiscordWebhook
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -23,27 +24,23 @@ class VoiceStateJoinEvent(Cog):
         self,
         member: Member,
         after: VoiceState,
-        logging_channel_id: int | None,
+        logging_webhook: "DiscordWebhook | None",
     ) -> None:
         """Handle voice channel join events."""
 
         guild = member.guild
         after_channel = cast(VoiceChannel, after.channel)
 
-        if not logging_channel_id:
+        if not logging_webhook:
             logger.info(
                 "[voice/join] No logging channel configured for guild %s",
                 guild.id,
             )
             return
 
-        channel = await ensure_messageable_channel_exists(
-            guild, logging_channel_id
-        )
-        if not channel:
+        if not logging_webhook.valid:
             logger.info(
-                "[voice/join] Logging channel with ID %s not found in guild %s",  # noqa: E501
-                logging_channel_id,
+                "[voice/join] Logging webhook invalid in guild %s",
                 guild.id,
             )
             return
@@ -70,15 +67,13 @@ class VoiceStateJoinEvent(Cog):
             icon_url=self.bot.user.display_avatar.url,  # type: ignore
         )
 
-        try:
-            await channel.send(embed=embed)  # type: ignore
-        except Exception as e:
-            logger.error(
-                "[voice/join] Failed to send log message to channel %s in guild %s: %s",  # noqa: E501
-                logging_channel_id,
-                guild.id,
-                e,
-            )
+        await send_to_webhook(
+            self.bot,
+            logging_webhook,
+            embed,
+            context="voice/join",
+            guild_id=guild.id,
+        )
 
 
 async def setup(bot: "Nightcore") -> None:
