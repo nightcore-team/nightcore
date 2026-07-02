@@ -8,7 +8,7 @@ from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_clan_member, get_specified_channel
+from src.infra.db.operations import get_clan_member, get_specified_webhook
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -142,7 +142,7 @@ async def kick(
 
     try:
         async with bot.uow.start() as session:
-            clans_logging_channel = await get_specified_channel(
+            clans_logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -207,7 +207,7 @@ async def kick(
         actor_id=interaction.user.id,
         clan_name=interaction_clan_member.clan.name,
         actions=[clan_kick_member_action],
-        logging_channel_id=clans_logging_channel,  # type: ignore
+        logging_webhook=clans_logging_webhook,  # type: ignore
     )
 
     bot.dispatch("clan_manage_notify", dto)

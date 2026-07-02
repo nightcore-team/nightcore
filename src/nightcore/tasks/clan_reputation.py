@@ -13,7 +13,7 @@ from src.infra.db.operations import (
     get_specified_guild_config,
 )
 from src.nightcore.features.clans.components.v2 import ClansPaydayViewV2
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -61,8 +61,8 @@ class ClansPayDayTask(Cog):
                         clan.coins += added
 
                     # Get channel_id before session closes
-                    channel_id = (
-                        guild_config.clan_payday_channel_id
+                    webhook_url = (
+                        guild_config.clan_payday_webhook
                         if guild_config
                         else None
                     )
@@ -75,34 +75,27 @@ class ClansPayDayTask(Cog):
                         guild.id,
                     )
 
-                if not channel_id:
+                if not webhook_url:
                     logger.info(
-                        "[task] - Guild %s does not have clan payday channel configured.",  # noqa: E501
+                        "[task] - Guild %s does not have clan payday webhook configured.",  # noqa: E501
                         guild.id,
                     )
                     continue
 
-                channel = await ensure_messageable_channel_exists(
-                    guild, channel_id
+                if not webhook_url.valid:
+                    logger.info(
+                        "[task] - Guild %s has invalid clan payday webhook configured.",  # noqa: E501
+                        guild.id,
+                    )
+                    continue
+
+                await send_to_webhook(
+                    self.bot,
+                    webhook_url,
+                    view,
+                    context="clan_payday",
+                    guild_id=guild.id,
                 )
-                if not channel:
-                    logger.info(
-                        "[task] - Clan payday channel %s not found in guild %s",  # noqa: E501
-                        channel_id,
-                        guild.id,
-                    )
-                    continue
-
-                try:
-                    asyncio.create_task(channel.send(view=view))  # type: ignore
-                except Exception as e:
-                    logger.error(
-                        "[task] - Error sending clan payday message to channel %s in guild %s: %s",  # noqa: E501
-                        channel.id,
-                        guild.id,
-                        e,
-                    )
-                    continue
 
         except Exception as e:
             logger.exception(

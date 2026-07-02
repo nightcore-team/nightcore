@@ -6,7 +6,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import Clan, GuildClansConfig, GuildLoggingConfig
-from src.infra.db.operations import get_clan_member, get_specified_channel
+from src.infra.db.operations import get_clan_member, get_specified_webhook
 from src.nightcore.components.embed import (
     ErrorEmbed,
     MissingPermissionsEmbed,
@@ -179,7 +179,7 @@ async def improvements(
         )
 
     async with bot.uow.start() as session:
-        clans_logging_channel = await get_specified_channel(
+        clans_logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -197,7 +197,7 @@ async def improvements(
         actor_id=interaction.user.id,
         clan_name=clan_member.clan.name,  # type: ignore The clan will always exist here because of the checks on lines 64 and 125
         actions=[clan_buy_improvement_action],
-        logging_channel_id=clans_logging_channel,
+        logging_webhook=clans_logging_webhook,
     )
 
     bot.dispatch("clan_manage_notify", dto)

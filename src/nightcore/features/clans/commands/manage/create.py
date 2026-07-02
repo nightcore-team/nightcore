@@ -14,7 +14,7 @@ from src.infra.db.models import GuildClansConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     create_clan,
     create_clan_member,
-    get_specified_channel,
+    get_specified_webhook,
     get_specified_field,
 )
 from src.nightcore.components.embed import (
@@ -229,7 +229,7 @@ async def create(
     )
 
     async with bot.uow.start() as session:
-        clans_logging_channel = await get_specified_channel(
+        clans_logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -253,7 +253,7 @@ async def create(
         actor_id=interaction.user.id,
         clan_name=name,
         actions=[clan_create_action],
-        logging_channel_id=clans_logging_channel,
+        logging_webhook=clans_logging_webhook,
     )
 
     bot.dispatch("clan_manage_notify", dto)

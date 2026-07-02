@@ -10,9 +10,8 @@ from discord.ext.commands import Cog  # type: ignore
 from src.nightcore.features.clans.components.v2 import ShopNotifyViewV2
 from src.nightcore.utils import (
     ensure_member_exists,
-    ensure_messageable_channel_exists,
 )
-from src.nightcore.utils.log import send_log_message
+from src.nightcore.utils.webhook import send_to_webhook, send_webhook_message
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -44,23 +43,11 @@ class ClanShopNotifyEvent(Cog):
 
         gather_list: list[Awaitable[Any]] = []
 
-        gather_list.append(send_log_message(bot=self.bot, dto=dto))
+        gather_list.append(send_webhook_message(bot=self.bot, dto=dto))
 
-        notifications_channel = None
-        if dto.notifications_channel_id:
-            notifications_channel = await ensure_messageable_channel_exists(
-                dto.guild, dto.notifications_channel_id
-            )
-            if not notifications_channel:
-                logger.error(
-                    "[%s/log] Notifications channel %s not found in guild %s.",
-                    dto.event_type,
-                    dto.notifications_channel_id,
-                    dto.guild.id,
-                )
-        else:
+        if not dto.notifications_webhook or not dto.notifications_webhook.valid:
             logger.error(
-                "[%s/log] No notifications channel ID provided for guild %s.",
+                "[%s/log] No notifications webhook configured for guild %s.",
                 dto.event_type,
                 dto.guild.id,
             )
@@ -97,13 +84,19 @@ class ClanShopNotifyEvent(Cog):
                 )
 
                 # fallback
-                if notifications_channel:
+                if dto.notifications_webhook and dto.notifications_webhook.valid:
                     gather_list.append(
-                        notifications_channel.send(view=view)  # type: ignore
+                        send_to_webhook(
+                            self.bot,
+                            dto.notifications_webhook,
+                            view,
+                            context=dto.event_type,
+                            guild_id=dto.guild.id,
+                        )
                     )
                 else:
                     logger.error(
-                        "[%s/log] No notifications channel available for fallback for user %s in guild %s.",  # noqa: E501
+                        "[%s/log] No notifications webhook available for fallback for user %s in guild %s.",  # noqa: E501
                         dto.event_type,
                         dto.user_id,
                         dto.guild.id,

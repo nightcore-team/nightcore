@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from discord import Colour, Embed, Guild
 
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.nightcore.events.dto.base import BaseEventDTO
 from src.utils._enums import ClanManageActionEnum
 
@@ -27,9 +28,9 @@ class ClanManageNotifyDTO(BaseEventDTO):
     clan_name: str
     actions: list[ClanManageAction]
     actor_id: int
-    logging_channel_id: int | None
+    logging_webhook: DiscordWebhook | None
 
-    def build_log_embed(self, bot: "Nightcore") -> Embed:
+    def build_component(self, bot: "Nightcore") -> Embed:
         """Build and return the log embed for the event."""
 
         embed = (
