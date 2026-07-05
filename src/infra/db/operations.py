@@ -4,7 +4,16 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any, TypeVar, cast
 
-from sqlalchemy import asc, exists, extract, func, literal, select, update
+from sqlalchemy import (
+    asc,
+    delete,
+    exists,
+    extract,
+    func,
+    literal,
+    select,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -1465,3 +1474,27 @@ async def get_guild_level_role_ids(
     result = await session.execute(stmt)
 
     return result.scalars().all()
+
+
+async def insert_moderation_message(
+    session: AsyncSession, *, message: ModerationMessage
+) -> ModerationMessage:
+    expired_ids = (
+        select(ModerationMessage.id)
+        .where(
+            ModerationMessage.time_now
+            <= datetime.now(UTC) - timedelta(days=60)
+        )
+        .order_by(ModerationMessage.time_now)
+        .limit(100)
+        .with_for_update(skip_locked=True)
+    )
+    stmt = delete(ModerationMessage).where(
+        ModerationMessage.id.in_(expired_ids)
+    )
+
+    await session.execute(stmt)
+
+    session.add(message)
+
+    return message
