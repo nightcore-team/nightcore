@@ -7,6 +7,8 @@ import discord
 from discord import Guild, Member, Message
 from discord.ext.commands import Cog  # type: ignore
 
+from src.infra.db.operations import insert_moderation_message  # type: ignore
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -33,7 +35,7 @@ class CountModerationMessageEvent(Cog):
                 time_now=discord.utils.utcnow(),
             )
 
-            session.add(moderator_message)
+            await insert_moderation_message(session, message=moderator_message)
 
         logger.info(
             "[%s/log] - invoked user=%s guild=%s",
