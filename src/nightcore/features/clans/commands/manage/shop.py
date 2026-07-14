@@ -237,14 +237,7 @@ async def shop(
 
         try:
             message, _ = await asyncio.gather(
-                thread.send(
-                    view=view.make_component(),
-                    allowed_mentions=AllowedMentions(
-                        everyone=False,
-                        users=True,
-                        roles=True,
-                    ),
-                ),
+                thread.send(view=view.make_component()),
                 interaction.followup.send(
                     f"Ваш запрос на покупку был успешно создан: {thread.jump_url}",  # noqa: E501
                     ephemeral=True,
