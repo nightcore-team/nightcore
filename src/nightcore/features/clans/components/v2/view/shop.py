@@ -401,7 +401,6 @@ class ClanShopViewV2(LayoutView):
         ping_roles_ids: list[int] | None = None,
         user_id: int | None = None,
         clan_name: str | None = None,
-        clan_role_id: int | None = None,
         clan_balance_before: float | None = None,
         clan_balance_after: float | None = None,
         item_name: str | None = None,
@@ -415,7 +414,6 @@ class ClanShopViewV2(LayoutView):
         self.ping_roles_ids = ping_roles_ids or []
         self.user_id = user_id
         self.clan_name = clan_name
-        self.clan_role_id = clan_role_id
         self.clan_balance_before = clan_balance_before
         self.clan_balance_after = clan_balance_after
         self.item_name = item_name
@@ -480,7 +478,6 @@ class ClanShopViewV2(LayoutView):
 
                         self.user_id = int(match.group(1))
                         self.clan_name = match.group(3)
-                        self.clan_role_id = int(match.group(4))
                         self.clan_balance_before = float(match.group(5))
                         self.clan_balance_after = float(match.group(6))
                         self.item_name = match.group(7)
@@ -514,7 +511,7 @@ class ClanShopViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"> Пользователь: <@{self.user_id}> (`{self.user_id}`)\n"
-                f"> Клан: **{self.clan_name}** (<@&{self.clan_role_id}>)\n"
+                f"> Клан: **{self.clan_name}**\n"
                 f"> Баланс клана (до): **{self.clan_balance_before}**\n"
                 f"> Баланс клана (после): **{self.clan_balance_after}**\n"
                 f"> Товар: **{self.item_name}**\n"
