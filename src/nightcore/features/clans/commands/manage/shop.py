@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import AllowedMentions, Guild, TextChannel, app_commands
+from discord import Guild, TextChannel, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import (
@@ -205,7 +205,6 @@ async def shop(
             ping_roles_ids=clan_buy_ping_roles_ids,
             user_id=interaction.user.id,
             clan_name=clan.name,
-            clan_role_id=clan.role_id,
             clan_balance_before=clan.coins,
             clan_balance_after=clan.coins - selected_item.cost,  # type: ignore
             item_name=iname,
