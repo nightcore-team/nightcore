@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, TextChannel, app_commands
+from discord import AllowedMentions, Guild, TextChannel, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import (
@@ -237,7 +237,14 @@ async def shop(
 
         try:
             message, _ = await asyncio.gather(
-                thread.send(view=view.make_component()),
+                thread.send(
+                    view=view.make_component(),
+                    allowed_mentions=AllowedMentions(
+                        everyone=False,
+                        users=True,
+                        roles=True,
+                    ),
+                ),
                 interaction.followup.send(
                     f"Ваш запрос на покупку был успешно создан: {thread.jump_url}",  # noqa: E501
                     ephemeral=True,
