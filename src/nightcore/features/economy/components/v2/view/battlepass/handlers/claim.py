@@ -8,21 +8,24 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild
+from discord import Guild, Member
 from discord.interactions import Interaction
 
-from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     get_guild_battlepass_levels,
     get_or_create_user,
+    get_specified_channel,
 )
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils.case import (
     RewardOutcomeEnum,
     format_single_battlepass_level_reward,
     give_reward_by_type,
 )
 from src.nightcore.services.config import specified_guild_config
+from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -40,6 +43,7 @@ async def handle_battlepass_claim_reward_button(
 
     bot = interaction.client
     guild = cast(Guild, interaction.guild)
+    user = cast(Member, interaction.user)
 
     outcome = ""
     new_level = 0
@@ -65,6 +69,13 @@ async def handle_battlepass_claim_reward_button(
 
         battlepass_levels = await get_guild_battlepass_levels(
             session, guild_id=guild.id
+        )
+
+        logging_channel_id = await get_specified_channel(
+            session,
+            guild_id=guild.id,
+            config_type=GuildLoggingConfig,
+            channel_type=ChannelType.LOGGING_ECONOMY,
         )
 
         if len(battlepass_levels) < 1:
@@ -229,3 +240,18 @@ async def handle_battlepass_claim_reward_button(
                 ephemeral=True,
             ),
         )
+
+        if logging_channel_id is not None:
+            bot.dispatch(
+                "user_items_changed",
+                dto=AwardNotificationEventDTO(
+                    guild=guild,
+                    event_type="give_coins",
+                    logging_channel_id=logging_channel_id,
+                    user_id=user.id,
+                    moderator_id=interaction.user.id,
+                    item_name=reward["name"],  # type: ignore
+                    amount=reward["amount"],  # type: ignore
+                    reason="Награда /battlepass",
+                ),
+            )
