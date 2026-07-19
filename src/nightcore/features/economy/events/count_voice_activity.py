@@ -7,11 +7,7 @@ from typing import TYPE_CHECKING
 from discord import Member, VoiceState
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildMultipliersConfig
-from src.infra.db.operations import (
-    get_or_create_user,
-    get_specified_guild_config,
-)
+from src.infra.db.operations import get_or_create_user
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -63,27 +59,10 @@ class CountVoiceActivityEvent(Cog):
             if user.temp_voice_activity is None:
                 return
 
-            guild_config = await get_specified_guild_config(
-                session,
-                config_type=GuildMultipliersConfig,
-                guild_id=member.guild.id,
-            )
-
-            if guild_config is None:
-                battlepass_multipler = 1
-            else:
-                battlepass_multipler = (
-                    guild_config.temp_battlepass_multiplier
-                    or guild_config.base_battlepass_multiplier
-                )
-
             total_seconds = (now - user.temp_voice_activity).total_seconds()
 
             user.voice_activity += int(total_seconds)
             user.temp_voice_activity = None
-            user.battle_pass_points += (
-                int(total_seconds) // 60
-            ) * battlepass_multipler
 
         logger.info(
             "[voice/count] Stop counting user voice %s activity in guild %s in %s",  # noqa: E501
