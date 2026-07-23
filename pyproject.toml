@@ -12,10 +12,8 @@ dependencies = [
     "chat-exporter>=2.8.4",
     "colorlog>=6.10.1",
     "discord-py>=2.7.1",
-    "nightforo>=1.1.5",
     "discord-py",
     "discordhealthcheck>=0.1.1",
-    "nightforo>=1.1.9",
     "pillow>=12.1.0",
     "psutil>=7.0.0",
     "pydantic>=2.11.7",
@@ -25,6 +23,7 @@ dependencies = [
     "regex>=2026.5.9",
     "sqlalchemy[asyncio]>=2.0.42",
     "uvicorn>=0.41.0",
+    "nightforo>=1.1.10",
 ]
 
 [dependency-groups]
