@@ -9,12 +9,12 @@ variable "repository" {
 
 
 job "nightcore-bot" {
-  datacenters = ["dc1"]
+  namespace = "apps"
   type        = "service"
 
   update {
-    max_parallel     = 0
-    min_healthy_time = "15s"
+    max_parallel     = 1
+    min_healthy_time = "30s"
     auto_revert      = false
   }
 
