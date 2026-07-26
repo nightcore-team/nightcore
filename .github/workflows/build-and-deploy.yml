@@ -64,6 +64,7 @@ jobs:
           url: https://vault.service.consul:8200
           caCertificate: ${{ env.VAULT_CA_B64 }}
           method: jwt
+          path: jwt-github
           role: ${{ env.VAULT_ROLE }}
           jwtGithubAudience: https://github.com/nightcore-team
           secrets: |
