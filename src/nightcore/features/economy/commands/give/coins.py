@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 async def give_coins(
     interaction: Interaction["Nightcore"],
     user: User,
-    amount: app_commands.Range[int, -50000, 50000],
+    amount: int,
     reason: str | None = None,
 ):
     """Give coins to a user."""
