@@ -225,11 +225,14 @@ class CountMessageEvent(Cog):
                 user.battle_pass_points += 100
 
             user.current_exp = new_current_exp
+
             if is_level_up:
                 exp_to_level = user.exp_to_level - user.current_exp
             else:
-                user.coins += coins_multiplier + bonus_coins
+                user.coins += coins_multiplier
                 user.battle_pass_points += battlepass_multiplier
+
+            user.coins += bonus_coins
 
             new_level = await get_guild_level(
                 session, guild_id=guild.id, level=new_level_int
