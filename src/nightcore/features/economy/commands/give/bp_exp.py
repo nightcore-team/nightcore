@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 async def give_bp_exp(
     interaction: Interaction["Nightcore"],
     user: User,
-    amount: app_commands.Range[int, -50000, 50000],
+    amount: int,
     reason: str | None = None,
 ):
     """Give battlepass experience to a user."""

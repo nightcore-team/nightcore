@@ -47,7 +47,7 @@ async def give_item(
     interaction: Interaction["Nightcore"],
     role: Role,
     item_type: CaseDropTypeEnum,
-    amount: app_commands.Range[int, 1, 50000],
+    amount: int,
     reward_id: str | None = None,
     reason: str | None = None,
 ):
@@ -125,6 +125,7 @@ async def give_item(
                     if guild_config
                     else "коины"
                 )
+
             elif item_type == CaseDropTypeEnum.EXP:
                 item_name = "опыт"
             elif item_type == CaseDropTypeEnum.BATTLEPASS_POINTS:
