@@ -60,6 +60,8 @@ async def give_exp(
             ephemeral=True,
         )
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     async with bot.uow.start() as session:
         logging_webhook = await get_specified_webhook(
             session,
@@ -85,18 +87,17 @@ async def give_exp(
                 outcome = "give_exp_error"
 
     if outcome == "give_exp_error":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи опыта",
                 "Не удалось выдать опыт пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "success":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=SuccessMoveEmbed(
                 "Выдача опыта успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
@@ -104,7 +105,6 @@ async def give_exp(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
         bot.dispatch(

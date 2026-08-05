@@ -62,6 +62,8 @@ async def give_bp_exp(
             ephemeral=True,
         )
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     async with bot.uow.start() as session:
         logging_webhook = await get_specified_webhook(
             session,
@@ -87,18 +89,17 @@ async def give_bp_exp(
             outcome = "give_bp_coins_error"
 
     if outcome == "give_bp_coins_error":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи очков батлпасса",
                 "Не удалось выдать очки батлпасса пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "success":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=SuccessMoveEmbed(
                 "Выдача очков батлпасса успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
@@ -106,7 +107,6 @@ async def give_bp_exp(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
         bot.dispatch(
