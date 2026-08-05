@@ -71,6 +71,8 @@ async def give_case(
             ephemeral=True,
         )
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     outcome = ""
 
     try:
@@ -126,18 +128,17 @@ async def give_case(
         outcome = "give_case_error"
 
     if outcome == "unknown_case":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи кейса",
                 "Кейс не найден.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "cannot_give_negative_amount":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи кейса",
                 "Невозможно выдать отрицательное количество.\n"
@@ -145,22 +146,20 @@ async def give_case(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "give_case_error":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи кейса",
                 "Не удалось выдать кейс пользователю.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "success":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=SuccessMoveEmbed(
                 "Выдача кейса успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
@@ -168,7 +167,6 @@ async def give_case(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
         bot.dispatch(

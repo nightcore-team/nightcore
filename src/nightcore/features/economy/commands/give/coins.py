@@ -55,11 +55,13 @@ async def give_coins(
             embed=ErrorEmbed(
                 "Ошибка выдачи монет",
                 "Невозможно выдать монеты боту.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                bot.user.display_name,
+                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+
+    await interaction.response.defer(ephemeral=True, thinking=True)
 
     async with specified_guild_config(
         bot, guild_id=guild.id, config_type=GuildEconomyConfig
@@ -90,26 +92,24 @@ async def give_coins(
                 outcome = "give_coins_error"
 
     if outcome == "give_coins_error":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи монет",
                 "Не удалось выдать монеты пользователю.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
+                bot.user.display_name,
+                bot.user.display_avatar.url,
+            )
         )
 
     if outcome == "success":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=SuccessMoveEmbed(
                 "Выдача монет успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
                 f"**{amount} {coin_name or 'коинов'}**.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
-            ephemeral=True,
+                bot.user.display_name,
+                bot.user.display_avatar.url,
+            )
         )
 
         bot.dispatch(

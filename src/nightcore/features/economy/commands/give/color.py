@@ -68,6 +68,8 @@ async def give_color(
             ephemeral=True,
         )
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     async with bot.uow.start() as session:
         logging_channel_id = await get_specified_channel(
             session,
@@ -98,36 +100,33 @@ async def give_color(
                     outcome = "already_has_color"
 
     if outcome == "unknown_color":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи цвета",
                 "Цвет не был найден.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "already_has_color":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи цвета",
                 "У пользователя уже есть этот цвет.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "success":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=SuccessMoveEmbed(
                 "Выдача цвета успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> цвет <@&{color.role_id}>.",  # noqa: E501 # type: ignore
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
         color_role = guild.get_role(color.role_id)  # type: ignore

@@ -51,6 +51,8 @@ async def give_clanexp(
     outcome = ""
     db_clan: Clan | None = None
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     async with bot.uow.start() as session:
         logging_channel_id = await get_specified_channel(
             session,
@@ -70,24 +72,22 @@ async def give_clanexp(
             await session.flush()
 
     if outcome == "clan_not_found":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи кланового опыта",
                 "Клан не найден на сервере.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
-    await interaction.response.send_message(
+    await interaction.followup.send(
         embed=SuccessMoveEmbed(
             "Выдача кланового опыта",
             f"Успешно выдано {amount} опыта клану **{cast(Clan, db_clan).name}**.",  # noqa: E501
             bot.user.display_name,  # type: ignore
             bot.user.display_avatar.url,  # type: ignore
         ),
-        ephemeral=True,
     )
 
     bot.dispatch(

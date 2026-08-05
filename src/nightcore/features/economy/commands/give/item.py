@@ -56,6 +56,8 @@ async def give_item(
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
 
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
     target_members = [
         member
         for member in role.members
@@ -63,14 +65,13 @@ async def give_item(
     ]
 
     if not target_members:
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи",
                 "У выбранной роли нет подходящих пользователей для выдачи.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     outcome = ""
@@ -185,51 +186,47 @@ async def give_item(
         outcome = "give_item_error"
 
     if outcome == "custom_type_not_supported":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи",
                 "Выбранный тип не поддерживается для массовой выдачи.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "missing_reward_id":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи",
                 "Для выбранного типа нужно указать корректный reward.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome in {"invalid_case", "unknown_case"}:
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи",
                 "Кейс с указанным id не найден.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "unknown_color":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи",
                 "Цвет с указанным id не найден.",
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
     if outcome == "give_item_error":
-        return await interaction.response.send_message(
+        return await interaction.followup.send(
             embed=ErrorEmbed(
                 "Ошибка выдачи",
                 "Не удалось выдать предмет/валюту "
@@ -237,10 +234,9 @@ async def give_item(
                 bot.user.display_name,  # type: ignore
                 bot.user.display_avatar.url,  # type: ignore
             ),
-            ephemeral=True,
         )
 
-    await interaction.response.send_message(
+    await interaction.followup.send(
         embed=SuccessMoveEmbed(
             "Выдача успешна",
             f"Вы успешно выдали **{amount} {item_name}** пользователям с ролью {role.mention}.\n"  # noqa: E501
@@ -248,7 +244,6 @@ async def give_item(
             bot.user.display_name,  # type: ignore
             bot.user.display_avatar.url,  # type: ignore
         ),
-        ephemeral=True,
     )
 
     # for member in target_members:
