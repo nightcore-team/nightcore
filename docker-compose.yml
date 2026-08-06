@@ -27,13 +27,10 @@ services:
     depends_on:
       nightcore-db:
         condition: service_healthy
-      nightcore-redis:
-        condition: service_healthy
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard-backend.rule=Host(`${API_DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.dashboard-backend.priority=10"
+      - "traefik.http.routers.dashboard-backend.rule=Host(`${API_DOMAIN}`)"
       - "traefik.http.routers.dashboard-backend.entrypoints=web"
       - "traefik.http.routers.dashboard-backend.service=dashboard-backend"
       - "traefik.http.services.dashboard-backend.loadbalancer.server.port=${API_PORT}"
@@ -59,7 +56,7 @@ services:
       - nightcore-network
 
   traefik:
-    image: traefik:v3.7.1
+    image: traefik:v3.7.6
     container_name: nightcore-traefik
     restart: unless-stopped
     command:
@@ -79,6 +76,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
