@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import ARRAY, BigInteger, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,3 +46,17 @@ class GuildInfomakerConfig(IdIntegerMixin, Base):
             single_parent=True,
         )
     )
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        if "admins_roles_logging_webhook" in config:
+            config["admins_roles_logging_webhook"] = DiscordWebhook(
+                **config["admins_roles_logging_webhook"]
+            )
+
+        if "leaders_roles_logging_webhook" in config:
+            config["leaders_roles_logging_webhook"] = DiscordWebhook(
+                **config["leaders_roles_logging_webhook"]
+            )
+
+        return config
