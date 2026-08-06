@@ -34,7 +34,7 @@ class ChannelType(Enum):
     CREATE_PRIVATE_VOICE_CHANNEL = "private_rooms_create_channel_id"
 
     ROLE_REQUESTS = "check_role_requests_channel_id"
-    RULES_CHANNEL = "rules_channel_id"
+    RULES_CHANNEL = "rules_webhook"
 
     COUNT_MESSAGES = "count_messages_channel_id"
 

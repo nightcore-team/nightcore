@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.infra.db.models.discord_webhook import DiscordWebhook
 
 
 class GuildRulesSubRule(IdIntegerMixin, Base):
@@ -82,8 +83,17 @@ class GuildRulesConfig(IdIntegerMixin, Base):
         uselist=False,
         passive_deletes=True,
     )
-    rules_channel_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
+    _rules_webhook_id: Mapped[int | None] = mapped_column(
+        "economy_log_webhook_id",
+        ForeignKey("discordwebhook.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    rules_webhook: Mapped[DiscordWebhook | None] = relationship(
+        DiscordWebhook,
+        foreign_keys=[_rules_webhook_id],
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
 
     @staticmethod
@@ -109,5 +119,8 @@ class GuildRulesConfig(IdIntegerMixin, Base):
                 )
 
             config["guild_rules"] = GuildRules(chapters=chapters)
+
+        if "rules_webhook" in config:
+            config["rules_webhook"] = DiscordWebhook(**config["rules_webhook"])
 
         return config

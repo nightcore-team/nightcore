@@ -2,6 +2,7 @@ import logging  # noqa: D100
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
+import discord
 from discord import (
     ButtonStyle,
     Color,
@@ -33,6 +34,7 @@ from src.infra.db.models import (
 )
 from src.infra.db.operations import (
     get_specified_channel,
+    get_specified_webhook,
     get_user_notify_by_end_time,
 )
 from src.nightcore.components.embed import (
@@ -108,22 +110,12 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     )
                 )
 
-            if not (
-                rules_channel := await get_specified_channel(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildRulesConfig,
-                    channel_type=ChannelType.RULES_CHANNEL,
-                )
-            ):
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Ошибка отправки оповещения",
-                        "Канал с правилами не настроен.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
-                    )
-                )
+            rules_webhook = await get_specified_webhook(
+                session,
+                guild_id=guild.id,
+                config_type=GuildRulesConfig,
+                channel_type=ChannelType.RULES_CHANNEL,
+            )
 
             if not (
                 create_ticket_channel_id := await get_specified_channel(
@@ -155,12 +147,18 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 ephemeral=True,
             )
 
+        rules_channel_id = (
+            discord.Webhook.from_url(rules_webhook.url).channel_id
+            if rules_webhook
+            else None
+        )
+
         nview = NotifyViewV2(
             bot=view.bot,
             guild_id=guild.id,
             user_id=view.user_id,
             moderator_id=interaction.user.id,
-            rules_channel_id=rules_channel,
+            rules_channel_id=rules_channel_id,
             create_ticket_channel_id=create_ticket_channel_id,
             content=view.content,
             profile_parts=values,
