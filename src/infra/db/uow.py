@@ -2,7 +2,7 @@
 
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -19,7 +19,7 @@ class UnitOfWork:
         self,
         *,
         readonly: bool = False,
-    ) -> AsyncIterator[AsyncSession]:
+    ) -> AsyncGenerator[AsyncSession]:
         """Start a new unit of work session."""
 
         async with self._sm() as session:
