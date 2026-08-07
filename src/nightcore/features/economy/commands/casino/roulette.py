@@ -4,7 +4,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, Member, TextChannel, app_commands
+from discord import Guild, Member, Message, TextChannel, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import (
@@ -47,6 +47,22 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+async def _send_multiplayer_roulette_message(
+    bot: "Nightcore",
+    channel: TextChannel,
+    casino_game: CasinoGame,
+    view: MultiplayerRouletteViewV2,
+) -> Message:
+    """Send multiplayer roulette message and persist message/channel ids."""
+    message = await channel.send(view=view)
+    async with bot.uow.start() as session:
+        casino_game = await session.merge(casino_game)  # type: ignore
+        casino_game.message_id = message.id
+        casino_game.channel_id = message.channel.id
+
+    return message
 
 
 @casino_group.command(name="roulette", description="Сыграть в рулетку")  # type: ignore
@@ -259,83 +275,55 @@ async def roulette(
                 initiator_selected_color=selected_color,
             )
 
+            channel: TextChannel
+            success_detail: str
+            error_detail: str
+            ephemeral: bool
+
             if casino_multiplayer_channel_id is None:
-                try:
-                    message = await cast(
-                        TextChannel, interaction.channel
-                    ).send(view=view)
-
-                    async with bot.uow.start() as session:
-                        casino_game = await session.merge(casino_game)  # type: ignore
-                        casino_game.message_id = message.id
-                        casino_game.channel_id = message.channel.id
-
+                channel = cast(TextChannel, interaction.channel)
+                success_detail = "Ваша игра отправлена в канал {jump}."
+                error_detail = (
+                    "Не удалось отправить сообщение в текущий канал."
+                )
+                ephemeral = True
+            else:
+                channel = cast(
+                    TextChannel,
+                    await ensure_messageable_channel_exists(
+                        guild, casino_multiplayer_channel_id
+                    ),
+                )
+                if not channel:
                     return await interaction.response.send_message(
-                        embed=SuccessMoveEmbed(
-                            "Игра отправлена",
+                        embed=ErrorEmbed(
+                            "Ошибка канала",
                             (
-                                f"Ваша игра отправлена в канал "
-                                f"{message.jump_url}."
+                                "Канал многопользовательской рулетки "
+                                "не найден или недоступен."
                             ),
                             bot.user.display_name,  # type: ignore
                             bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
-                except Exception as e:
-                    logger.exception(
-                        "[roulette] Failed to send message in current channel "
-                        "for guild %s: %s",
-                        guild.id,
-                        e,
-                    )
-                    return await interaction.response.send_message(
-                        embed=ErrorEmbed(
-                            "Ошибка канала",
-                            "Не удалось отправить сообщение в текущий канал.",
-                            bot.user.display_name,  # type: ignore
-                            bot.user.display_avatar.url,  # type: ignore
-                        ),
-                        ephemeral=True,
-                    )
-
-            channel = cast(
-                TextChannel,
-                await ensure_messageable_channel_exists(
-                    guild, casino_multiplayer_channel_id
-                ),
-            )
-            if not channel:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Ошибка канала",
-                        (
-                            "Канал многопользовательской рулетки "
-                            "не найден или недоступен."
-                        ),
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=True,
+                success_detail = (
+                    "Ваша игра отправлена в канал {jump}.\nОстальные игроки "
+                    "могут присоединиться к игре в течение 1 минуты нажав "
+                    "на ссылку"
                 )
+                error_detail = (
+                    "Не удалось отправить сообщение в канал "
+                    "многопользовательской рулетки."
+                )
+                ephemeral = False
 
             try:
-                message = await channel.send(
+                message = await _send_multiplayer_roulette_message(
+                    bot=bot,
+                    channel=channel,
+                    casino_game=casino_game,  # type: ignore
                     view=view,
-                )
-                async with bot.uow.start() as session:
-                    casino_game = await session.merge(casino_game)  # type: ignore
-                    casino_game.message_id = message.id
-                    casino_game.channel_id = message.channel.id
-
-                return await interaction.response.send_message(
-                    embed=SuccessMoveEmbed(
-                        "Игра отправлена",
-                        f"Ваша игра отправлена в канал {message.jump_url}.\nОстальные игроки могут присоединиться к игре в течение 1 минуты нажав на ссылку",  # noqa: E501
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
-                    ),
-                    ephemeral=False,
                 )
             except Exception as e:
                 logger.exception(
@@ -346,11 +334,20 @@ async def roulette(
                 )
                 return await interaction.response.send_message(
                     embed=ErrorEmbed(
-                        "Ошибка канала",
-                        "Не удалось отправить сообщение в канал "
-                        "многопользовательской рулетки.",
+                        "Ошибка отправки",
+                        error_detail,
                         bot.user.display_name,  # type: ignore
                         bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+
+            return await interaction.response.send_message(
+                embed=SuccessMoveEmbed(
+                    "Игра отправлена",
+                    success_detail.format(jump=message.jump_url),
+                    bot.user.display_name,  # type: ignore
+                    bot.user.display_avatar.url,  # type: ignore
+                ),
+                ephemeral=ephemeral,
+            )
