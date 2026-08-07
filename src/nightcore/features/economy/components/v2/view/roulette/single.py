@@ -14,7 +14,9 @@ from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-    from src.nightcore.features.economy.utils.casino import RouletteResult
+    from src.nightcore.features.economy.utils.casino.roulette import (
+        RouletteResult,
+    )
 
 
 class SingleRouletteViewV2(LayoutView):

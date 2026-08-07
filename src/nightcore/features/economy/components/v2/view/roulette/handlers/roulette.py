@@ -90,7 +90,7 @@ async def handle_roulette_multiplayer_join_button_callback(
                             if bet.user.user_id == casino_game.initiator_id:  # type: ignore
                                 initiator_id = bet.user.user_id
                                 initiator_bet = bet.amount // 2
-                                initiator_selected_color = bet.color
+                                initiator_selected_color = bet.option
 
                             else:
                                 bets.append(
@@ -98,7 +98,7 @@ async def handle_roulette_multiplayer_join_button_callback(
                                         "user_id": bet.user.user_id,
                                         "bet": bet.amount // 2,
                                         "result_coins": None,
-                                        "selected_color": bet.color,
+                                        "selected_color": bet.option,
                                     }
                                 )
                     else:

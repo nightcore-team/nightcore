@@ -80,6 +80,7 @@ from src.infra.db.utils import (
 )
 from src.utils._enums import (
     CasinoGameStateEnum,
+    CasinoGameTypeEnum,
     ChannelType,
     ClanMemberRoleEnum,
     MultiplierTypeEnum,
@@ -1300,13 +1301,28 @@ async def get_user_casino_bet_by_game_id(
 
 
 async def get_active_casino_games(
-    session: AsyncSession, *, dt: datetime
+    session: AsyncSession,
+    *,
+    dt: datetime,
+    game_types: Sequence[CasinoGameTypeEnum] | None = None,
 ) -> Sequence[CasinoGame]:
-    """Get all active casino games for a guild."""
+    """Get all active casino games for a guild.
+
+    Args:
+        session: The database session.
+        dt: Upper bound for ``end_time`` of pending games.
+        game_types: Optional filter on the game type; when ``None`` all
+            pending games are returned.
+
+    Returns:
+        Sequence of pending casino games with an expired end time.
+    """
     stmt = select(CasinoGame).where(
         CasinoGame.state == CasinoGameStateEnum.PENDING,
         CasinoGame.end_time <= dt,
     )
+    if game_types:
+        stmt = stmt.where(CasinoGame.game_type.in_(game_types))
     stmt = stmt.options(
         selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
     )

@@ -1,9 +1,10 @@
 """Casino model for the Nightcore bot database."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     DateTime,
     Enum,
@@ -71,6 +72,10 @@ class CasinoGame(IdIntegerMixin, Base):
     end_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=func.now()
     )
+    # game-specific runtime state (board, hands, chambers, etc.)
+    state_data: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True, default=None
+    )
     # relathionship to bets
     bets: Mapped[list["CasinoBet"]] = relationship(
         back_populates="game",
@@ -94,8 +99,8 @@ class CasinoGame(IdIntegerMixin, Base):
 class CasinoBet(IdIntegerMixin, Base):
     # amount of coins bet
     amount: Mapped[int] = mapped_column(nullable=False)
-    # chosen color for the bet
-    color: Mapped[str] = mapped_column(nullable=False)
+    # chosen option for the bet (e.g. color for roulette)
+    option: Mapped[str] = mapped_column(nullable=False)
     # foreign key to the casino game
     result_type: Mapped[CasinoBetResultTypeEnum | None] = mapped_column(
         Enum(

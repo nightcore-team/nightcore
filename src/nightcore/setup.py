@@ -130,7 +130,7 @@ def create_bot(
         "src.nightcore.features.forum",
         # === tasks
         "src.nightcore.tasks.unpunish",
-        "src.nightcore.tasks.multiplayer_roulette",
+        "src.nightcore.tasks.casino_games",
         "src.nightcore.tasks.delete_ticket",
         "src.nightcore.tasks.delete_role_request",
         "src.nightcore.tasks.expired_notify",

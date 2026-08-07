@@ -156,6 +156,9 @@ class ItemChangeActionEnum(StrEnum):
 
 class CasinoGameTypeEnum(Enum):
     ROULETTE = "roulette"
+    RUSSIAN_ROULETTE = "russian_roulette"
+    BLACKJACK = "blackjack"
+    TIC_TAC_TOE = "tic_tac_toe"
 
 
 class CasinoPlayersTypeEnum(Enum):
@@ -165,12 +168,14 @@ class CasinoPlayersTypeEnum(Enum):
 
 class CasinoGameStateEnum(Enum):
     PENDING = "pending"
+    IN_PROGRESS = "in_progress"
     FINISHED = "finished"
 
 
 class CasinoBetResultTypeEnum(Enum):
     WIN = "win"
     LOSE = "lose"
+    DRAW = "draw"
 
 
 class ConfigTypeEnum(Enum):

@@ -1,10 +1,12 @@
-"""Command to play casino roulette game."""
+"""Commands and finalizer for the casino roulette game."""
 
+import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, Message, TextChannel, app_commands
+from discord.http import MultipartParameters
 from discord.interactions import Interaction
 
 from src.infra.db.models import (
@@ -16,6 +18,7 @@ from src.infra.db.models import (
 from src.infra.db.operations import (
     get_or_create_user,
     get_specified_channel,
+    get_specified_field,
 )
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.features.economy._groups import casino as casino_group
@@ -25,6 +28,9 @@ from src.nightcore.features.economy.components.v2 import (
 )
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils.casino import (
+    register_finalizer,
+)
+from src.nightcore.features.economy.utils.casino.roulette import (
     RouletteColor,
     RouletteResult,
     spin_roulette,
@@ -36,6 +42,7 @@ from src.nightcore.utils.permissions import (
     check_required_permissions,
 )
 from src.utils._enums import (
+    CasinoBetResultTypeEnum,
     CasinoGameStateEnum,
     CasinoGameTypeEnum,
     CasinoPlayersTypeEnum,
@@ -43,6 +50,7 @@ from src.utils._enums import (
 )
 
 if TYPE_CHECKING:
+    from src.infra.db.models._annot import CasinoBetAnnot
     from src.nightcore.bot import Nightcore
 
 
@@ -106,6 +114,7 @@ async def roulette(
     result: RouletteResult | None = None
     logging_channel_id: int | None = None
     new_balance = 0
+    casino_game: CasinoGame | None = None
     casino_game_id: int | None = None
     casino_multiplayer_channel_id: int | None = None
 
@@ -139,7 +148,7 @@ async def roulette(
                 )
                 casino_bet = CasinoBet(
                     user_id=user_record.id,
-                    color=selected_color,
+                    option=selected_color,
                 )
 
                 if type.value == "single":
@@ -266,6 +275,8 @@ async def roulette(
                 view=view, ephemeral=True
             )
         else:
+            assert casino_game is not None
+
             view = MultiplayerRouletteViewV2(
                 bot=bot,
                 coin_name=coin_name,
@@ -288,13 +299,10 @@ async def roulette(
                 )
                 ephemeral = True
             else:
-                channel = cast(
-                    TextChannel,
-                    await ensure_messageable_channel_exists(
-                        guild, casino_multiplayer_channel_id
-                    ),
+                target_channel = await ensure_messageable_channel_exists(
+                    guild, casino_multiplayer_channel_id
                 )
-                if not channel:
+                if target_channel is None:
                     return await interaction.response.send_message(
                         embed=ErrorEmbed(
                             "Ошибка канала",
@@ -307,6 +315,7 @@ async def roulette(
                         ),
                         ephemeral=True,
                     )
+                channel = cast(TextChannel, target_channel)
                 success_detail = (
                     "Ваша игра отправлена в канал {jump}.\nОстальные игроки "
                     "могут присоединиться к игре в течение 1 минуты нажав "
@@ -322,7 +331,7 @@ async def roulette(
                 message = await _send_multiplayer_roulette_message(
                     bot=bot,
                     channel=channel,
-                    casino_game=casino_game,  # type: ignore
+                    casino_game=casino_game,
                     view=view,
                 )
             except Exception as e:
@@ -351,3 +360,106 @@ async def roulette(
                 ),
                 ephemeral=ephemeral,
             )
+
+
+@register_finalizer(CasinoGameTypeEnum.ROULETTE)
+async def finish_roulette(bot: "Nightcore", game: CasinoGame) -> None:
+    """Finish a single multiplayer roulette game and post results."""
+    try:
+        async with bot.uow.start() as session:
+            game = await session.merge(game, load=False)  # type: ignore
+
+            coin_name = await get_specified_field(
+                session,
+                guild_id=game.guild_id,
+                config_type=GuildEconomyConfig,
+                field_name="coin_name",
+            )
+
+            bets_annot: list[CasinoBetAnnot] = []
+            initiator_id = 0
+            initiator_bet = 0
+            initiator_selected_color = ""
+            initiator_result_coins: int | None = None
+
+            num, color = spin_roulette()
+
+            # Process all bets and update user balances
+            for bet in game.bets:
+                result = RouletteResult(
+                    num, color, bet.amount // 2, bet.option
+                )
+                result_type: CasinoBetResultTypeEnum
+
+                if result.is_win:
+                    result_type = CasinoBetResultTypeEnum.WIN
+                    bet.user.coins += result.coins_change * 2
+                else:
+                    result_type = CasinoBetResultTypeEnum.LOSE
+
+                bet.result_type = result_type
+
+                if bet.user.user_id == game.initiator_id:
+                    initiator_id = bet.user.user_id
+                    initiator_bet = bet.amount // 2
+                    initiator_selected_color = bet.option
+                    initiator_result_coins = result.coins_change
+                else:
+                    bets_annot.append(
+                        {
+                            "user_id": bet.user.user_id,
+                            "bet": bet.amount // 2,
+                            "result_coins": result.coins_change,
+                            "selected_color": bet.option,
+                        }
+                    )
+
+            game.state = CasinoGameStateEnum.FINISHED
+
+            message_id = game.message_id
+            channel_id = game.channel_id
+
+        # Send Discord message outside transaction
+        await asyncio.sleep(0.2)  # to avoid rate limits
+
+        view = MultiplayerRouletteViewV2(
+            bot=bot,
+            coin_name=coin_name or "коинов",
+            initiator_id=initiator_id,
+            initiator_bet=initiator_bet,
+            initiator_selected_color=initiator_selected_color,
+            initiator_result_coins=initiator_result_coins,
+            state=CasinoGameStateEnum.FINISHED,
+            result_color=color,
+            bets=bets_annot,
+            disable_buttons=True,
+        )
+
+        asyncio.create_task(
+            bot.http.edit_message(
+                message_id=message_id,
+                channel_id=channel_id,
+                params=MultipartParameters(
+                    payload={
+                        "components": view.to_components(),
+                    },
+                    multipart=None,
+                    files=None,
+                ),
+            )
+        )
+
+        logger.info(
+            "[roulette] - Ended multiplayer roulette game %s in guild %s",
+            game.id,
+            game.guild_id,
+        )
+
+    except Exception as e:
+        logger.exception(
+            "[roulette] - Error processing roulette game %s in guild %s: %s",
+            game.id,
+            game.guild_id,
+            e,
+            exc_info=True,
+        )

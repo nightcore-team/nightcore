@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from src.infra.db.models._annot import CasinoBetAnnot
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.features.economy.utils.casino import COLORS
+from src.nightcore.features.economy.utils.casino.roulette import COLORS
 from src.utils._enums import (
     CasinoGameStateEnum,
 )
