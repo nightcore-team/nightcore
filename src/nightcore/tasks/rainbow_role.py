@@ -2,8 +2,9 @@
 
 import asyncio
 import logging
+import random
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import discord
 from discord.ext import tasks
@@ -14,14 +15,15 @@ from src.nightcore.utils import (
     ensure_guild_exists,
     ensure_role_exists,
 )
+from src.utils._enums import RainbowColorChangeTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
-RAINBOW_INTERVAL_SECONDS = 1800.0
-RAINBOW_STEPS = 20
+RAINBOW_INTERVAL_SECONDS: Final[float] = 1800.0
+RAINBOW_STEPS: Final[int] = 20
 
 
 class RainbowRoleTask(Cog):
@@ -41,6 +43,16 @@ class RainbowRoleTask(Cog):
         step = int(time.time() // RAINBOW_INTERVAL_SECONDS) % RAINBOW_STEPS
         return step / RAINBOW_STEPS
 
+    @staticmethod
+    def _hue_for_change_type(
+        change_type: RainbowColorChangeTypeEnum,
+    ) -> float:
+        """Compute the hue for the given rainbow change type."""
+        if change_type == RainbowColorChangeTypeEnum.RANDOM:
+            return random.random()
+
+        return RainbowRoleTask._current_hue()
+
     @tasks.loop(seconds=RAINBOW_INTERVAL_SECONDS)
     async def rainbow_role_task(self):
         """Task to cycle rainbow role colors."""
@@ -51,8 +63,6 @@ class RainbowRoleTask(Cog):
             if not rainbow_roles:
                 logger.info("[task] - No rainbow roles configured")
                 return
-
-            hue = self._current_hue()
 
             for rainbow in rainbow_roles:
                 guild = await ensure_guild_exists(self.bot, rainbow.guild_id)
@@ -72,6 +82,8 @@ class RainbowRoleTask(Cog):
                     )
                     continue
 
+                hue = self._hue_for_change_type(rainbow.change_type)
+
                 try:
                     await role.edit(
                         color=discord.Color.from_hsv(hue, 1.0, 1.0),
@@ -87,10 +99,11 @@ class RainbowRoleTask(Cog):
                     continue
 
                 logger.info(
-                    "[task] - Updated rainbow role %s in guild %s to hue %.2f",
+                    "[task] - Updated rainbow role %s in guild %s to hue %.2f (type=%s)",  # noqa: E501
                     rainbow.role_id,
                     guild.id,
                     hue,
+                    rainbow.change_type.value,
                 )
 
         except Exception as e:
