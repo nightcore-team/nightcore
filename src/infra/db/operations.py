@@ -74,6 +74,7 @@ from src.infra.db.models.configurations.rules import (
     GuildRulesRule,
 )
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
+from src.infra.db.models.rainbow import RainbowRole
 from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
@@ -1211,6 +1212,27 @@ async def get_guild_colors(
     """Get colors by guild id."""
 
     stmt = select(Color).where(Color.guild_id == guild_id)
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def get_rainbow_role_by_guild(
+    session: AsyncSession, *, guild_id: int
+) -> RainbowRole | None:
+    """Get a rainbow role for a guild."""
+    stmt = select(RainbowRole).where(RainbowRole.guild_id == guild_id)
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_all_rainbow_roles(
+    session: AsyncSession,
+) -> Sequence[RainbowRole]:
+    """Get all rainbow roles."""
+    stmt = select(RainbowRole)
     result = await session.execute(stmt)
 
     return result.scalars().all()

@@ -24,6 +24,12 @@ color = app_commands.Group(
     guild_only=True,
 )
 
+rainbow = app_commands.Group(
+    name="rainbow",
+    description="Команды связанные с радужной ролью.",
+    guild_only=True,
+)
+
 casino = app_commands.Group(
     name="casino",
     description="Команды связанные с казино.",

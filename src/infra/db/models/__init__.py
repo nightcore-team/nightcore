@@ -27,6 +27,7 @@ from .notify import Base, NotifyState  # noqa: F811
 from .private_rooms import Base, PrivateRoomState  # noqa: F811
 from .processed_forum_thread import Base, ProcessedForumThread  # noqa: F811
 from .punish import Base, Punish  # noqa: F811
+from .rainbow import Base, RainbowRole  # noqa: F811
 from .role_request import Base, RoleRequestState  # noqa: F811
 from .shop import Base, ShopOrderState  # noqa: F811
 from .temp import Base, TempPunish  # noqa: F811
@@ -66,6 +67,7 @@ __all__ = (
     "PrivateRoomState",
     "ProcessedForumThread",
     "Punish",
+    "RainbowRole",
     "RoleRequestState",
     "ShopOrderState",
     "TempEconomyMultiplier",
