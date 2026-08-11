@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, Member
+from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
@@ -26,7 +26,11 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
-from src.utils._enums import ChannelType, ItemChangeActionEnum
+from src.utils._enums import (
+    ChannelType,
+    ItemChangeActionEnum,
+    RainbowColorChangeTypeEnum,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -36,10 +40,28 @@ logger = logging.getLogger(__name__)
 
 
 @rainbow_group.command(name="change", description="Изменить радужную роль")  # type: ignore
+@app_commands.describe(
+    change_type=(
+        "Тип смены цвета радужной роли (если не указан, останется прежним)"
+    )
+)
+@app_commands.choices(
+    change_type=[
+        app_commands.Choice(
+            name="Сдвиг (плавное изменение цвета)",
+            value=RainbowColorChangeTypeEnum.OFFSET.value,
+        ),
+        app_commands.Choice(
+            name="Рандом (случайный цвет из радуги)",
+            value=RainbowColorChangeTypeEnum.RANDOM.value,
+        ),
+    ]
+)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def change_rainbow(
     interaction: Interaction["Nightcore"],
     new_role: discord.Role,
+    change_type: str | None = None,
 ):
     """Change rainbow role."""
 
@@ -94,6 +116,11 @@ async def change_rainbow(
             else:
                 before_role_id = rainbow.role_id
                 rainbow.role_id = new_role.id
+
+                if change_type is not None:
+                    rainbow.change_type = RainbowColorChangeTypeEnum(
+                        change_type
+                    )
 
             logging_channel_id = await get_specified_channel(
                 session,

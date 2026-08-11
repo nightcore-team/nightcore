@@ -1,10 +1,11 @@
 """Rainbow role model for the Nightcore bot database."""
 
-from sqlalchemy import BigInteger, UniqueConstraint
+from sqlalchemy import BigInteger, Enum, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.utils._enums import RainbowColorChangeTypeEnum
 
 
 class RainbowRole(IdIntegerMixin, Base):
@@ -14,3 +15,13 @@ class RainbowRole(IdIntegerMixin, Base):
 
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    change_type: Mapped[RainbowColorChangeTypeEnum] = mapped_column(
+        Enum(
+            RainbowColorChangeTypeEnum,
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in x],  # type: ignore
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=RainbowColorChangeTypeEnum.OFFSET,
+    )

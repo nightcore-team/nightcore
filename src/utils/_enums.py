@@ -210,3 +210,8 @@ class InactiveRequestStateEnum(Enum):
     PENDING = "pending"
     APPROVED = "approved"
     DENIED = "denied"
+
+
+class RainbowColorChangeTypeEnum(Enum):
+    RANDOM = "random"
+    OFFSET = "offset"

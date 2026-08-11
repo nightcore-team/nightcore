@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import discord
-from discord import Guild, Member
+from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 from sqlalchemy.exc import IntegrityError
 
@@ -28,7 +28,11 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
-from src.utils._enums import ChannelType, ItemChangeActionEnum
+from src.utils._enums import (
+    ChannelType,
+    ItemChangeActionEnum,
+    RainbowColorChangeTypeEnum,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -38,10 +42,24 @@ logger = logging.getLogger(__name__)
 
 
 @rainbow_group.command(name="create", description="Создать радужную роль")  # type: ignore
+@app_commands.describe(change_type="Тип смены цвета радужной роли")
+@app_commands.choices(
+    change_type=[
+        app_commands.Choice(
+            name="Сдвиг (плавное изменение цвета)",
+            value=RainbowColorChangeTypeEnum.OFFSET.value,
+        ),
+        app_commands.Choice(
+            name="Рандом (случайный цвет из радуги)",
+            value=RainbowColorChangeTypeEnum.RANDOM.value,
+        ),
+    ]
+)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def create_rainbow(
     interaction: Interaction["Nightcore"],
     role: discord.Role,
+    change_type: str = RainbowColorChangeTypeEnum.OFFSET.value,
 ):
     """Create rainbow role."""
 
@@ -97,6 +115,7 @@ async def create_rainbow(
                 new_rainbow = RainbowRole(
                     guild_id=guild.id,
                     role_id=role.id,
+                    change_type=RainbowColorChangeTypeEnum(change_type),
                 )
 
                 session.add(new_rainbow)
