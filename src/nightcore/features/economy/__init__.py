@@ -7,6 +7,7 @@ from ._groups import case as case_group
 from ._groups import casino as casino_group
 from ._groups import color as color_group
 from ._groups import give as give_group
+from ._groups import rainbow as rainbow_group
 from ._groups import remove as remove_group
 from ._groups import temp as temp_group
 
@@ -38,6 +39,9 @@ from .commands.give import (
     exp,
     item,
 )
+from .commands.rainbow import change as rainbow_change
+from .commands.rainbow import create as rainbow_create
+from .commands.rainbow import delete as rainbow_delete
 from .commands.remove import color as remove_color
 from .commands.temp import multiplier, role
 
@@ -61,6 +65,9 @@ __all__ = (
     "item",
     "multiplier",
     "open",
+    "rainbow_change",
+    "rainbow_create",
+    "rainbow_delete",
     "remove_color",
     "role",
     "roulette",
@@ -76,3 +83,4 @@ async def setup(bot: "Nightcore"):
     bot.tree.add_command(casino_group)
     bot.tree.add_command(temp_group)
     bot.tree.add_command(remove_group)
+    bot.tree.add_command(rainbow_group)

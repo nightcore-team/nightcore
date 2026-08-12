@@ -18,6 +18,9 @@ from src.infra.redis.repository import GuildStateRepository
 from src.infra.redis.serializers import snapshot_guild_state
 from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
+from src.nightcore.features.economy.commands.rainbow._guilds import (
+    RAINBOW_GUILD,
+)
 from src.nightcore.features.economy.components.v2 import (
     CoinsShopOrderViewV2,
     CoinsShopViewV2,
@@ -243,6 +246,23 @@ class Nightcore(Bot):
 
         except Exception as e:
             logger.error("[failed] Sync failed: %s", e)
+            import traceback
+
+            logger.error(traceback.format_exc())
+
+        try:
+            guild_synced = await self.tree.sync(guild=RAINBOW_GUILD)
+            logger.info(
+                "[sync] Successfully synced %d guild commands for %s",
+                len(guild_synced),
+                RAINBOW_GUILD.id,
+            )
+        except Exception as e:
+            logger.error(
+                "[failed] Guild sync failed for %s: %s",
+                RAINBOW_GUILD.id,
+                e,
+            )
             import traceback
 
             logger.error(traceback.format_exc())

@@ -11,6 +11,7 @@ from sqlalchemy import (
     extract,
     func,
     literal,
+    or_,
     select,
     update,
 )
@@ -74,6 +75,7 @@ from src.infra.db.models.configurations.rules import (
     GuildRulesRule,
 )
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
+from src.infra.db.models.rainbow import RainbowRole
 from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
@@ -1214,6 +1216,52 @@ async def get_guild_colors(
     result = await session.execute(stmt)
 
     return result.scalars().all()
+
+
+async def get_rainbow_role_by_guild(
+    session: AsyncSession, *, guild_id: int
+) -> RainbowRole | None:
+    """Get a rainbow role for a guild."""
+    stmt = select(RainbowRole).where(RainbowRole.guild_id == guild_id)
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_due_rainbow_roles(
+    session: AsyncSession, *, now: datetime
+) -> Sequence[RainbowRole]:
+    """Get rainbow roles whose change deadline has arrived or is not set."""
+    stmt = select(RainbowRole).where(
+        or_(
+            RainbowRole.next_change_at.is_(None),
+            RainbowRole.next_change_at <= now,
+        )
+    )
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def update_rainbow_role_schedule(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    next_change_at: datetime | None,
+    current_step: int | None,
+) -> None:
+    """Update a rainbow role's change deadline and offset step."""
+    stmt = (
+        update(RainbowRole)
+        .where(RainbowRole.guild_id == guild_id)
+        .values(
+            next_change_at=next_change_at,
+            current_step=current_step,
+        )
+    )
+
+    await session.execute(stmt)
 
 
 async def get_guild_cases(
