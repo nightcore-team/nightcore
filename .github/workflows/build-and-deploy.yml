@@ -49,7 +49,7 @@ jobs:
       - name: Setup Nomad CLI
         uses: hashicorp/setup-nomad@main
         with:
-          version: "1.9.7"
+          version: "2.0.4"
 
       - name: Prepare Vault inputs
         run: |
