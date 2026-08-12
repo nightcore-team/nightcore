@@ -34,7 +34,8 @@ def upgrade() -> None:
     op.alter_column('guildforumconfig', 'prefix_id',
                existing_type=sa.INTEGER(),
                type_=sa.Boolean(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using="prefix_id::boolean")
     # ### end Alembic commands ###
 
 
@@ -44,6 +45,7 @@ def downgrade() -> None:
     op.alter_column('guildforumconfig', 'prefix_id',
                existing_type=sa.Boolean(),
                type_=sa.INTEGER(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using="prefix_id::integer")
     op.drop_table('rainbowrole')
     # ### end Alembic commands ###
