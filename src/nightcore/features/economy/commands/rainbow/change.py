@@ -122,6 +122,9 @@ async def change_rainbow(
                         change_type
                     )
 
+                rainbow.next_change_at = None
+                rainbow.current_step = None
+
             logging_channel_id = await get_specified_channel(
                 session,
                 guild_id=guild.id,

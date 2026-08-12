@@ -1,6 +1,8 @@
 """Rainbow role model for the Nightcore bot database."""
 
-from sqlalchemy import BigInteger, Enum, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import BigInteger, DateTime, Enum, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -25,3 +27,7 @@ class RainbowRole(IdIntegerMixin, Base):
         nullable=False,
         default=RainbowColorChangeTypeEnum.OFFSET,
     )
+    next_change_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    current_step: Mapped[int | None] = mapped_column(Integer, nullable=True)

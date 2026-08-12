@@ -11,6 +11,7 @@ from sqlalchemy import (
     extract,
     func,
     literal,
+    or_,
     select,
     update,
 )
@@ -1228,14 +1229,39 @@ async def get_rainbow_role_by_guild(
     return result.scalar_one_or_none()
 
 
-async def get_all_rainbow_roles(
-    session: AsyncSession,
+async def get_due_rainbow_roles(
+    session: AsyncSession, *, now: datetime
 ) -> Sequence[RainbowRole]:
-    """Get all rainbow roles."""
-    stmt = select(RainbowRole)
+    """Get rainbow roles whose change deadline has arrived or is not set."""
+    stmt = select(RainbowRole).where(
+        or_(
+            RainbowRole.next_change_at.is_(None),
+            RainbowRole.next_change_at <= now,
+        )
+    )
     result = await session.execute(stmt)
 
     return result.scalars().all()
+
+
+async def update_rainbow_role_schedule(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    next_change_at: datetime | None,
+    current_step: int | None,
+) -> None:
+    """Update a rainbow role's change deadline and offset step."""
+    stmt = (
+        update(RainbowRole)
+        .where(RainbowRole.guild_id == guild_id)
+        .values(
+            next_change_at=next_change_at,
+            current_step=current_step,
+        )
+    )
+
+    await session.execute(stmt)
 
 
 async def get_guild_cases(
