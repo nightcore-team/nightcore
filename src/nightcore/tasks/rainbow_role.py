@@ -106,7 +106,7 @@ class RainbowRoleTask(Cog):
         try:
             now = datetime.now(UTC)
 
-            async with self.bot.uow.start(readonly=True) as session:
+            async with self.bot.uow.start() as session:
                 due_roles = await get_due_rainbow_roles(session, now=now)
 
             if not due_roles:
