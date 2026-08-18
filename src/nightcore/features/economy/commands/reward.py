@@ -109,15 +109,17 @@ class Reward(Cog):
             )
 
         elif outcome == "success":
+            bonus_text = "\n".join(
+                f"> Дополнительный бонус в размере {total_bonuses[rid]} за наличие роли <@&{rid}>"  # noqa: E501
+                for rid in total_bonuses
+                if rid is not None
+            )
+
             return await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Успешно получена ежедневная награда",
                     f"Вы получили свою ежедневную награду: {total_bonuses[None]} {coin_name or 'коинов'}"  # noqa: E501 # type: ignore
-                    "\n".join(
-                        f"> Дополнительный бонус в размере {total_bonuses[rid]} за наличие роли <@&{rid}>"  # noqa: E501
-                        for rid in total_bonuses
-                        if rid is not None
-                    ),
+                    + bonus_text,
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),
