@@ -69,7 +69,7 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         ARRAY(BigInteger), nullable=True
     )
     reward_bonuses: Mapped[list[GuildRewardBonus]] = relationship(
-        GuildEconomyShopItem,
+        GuildRewardBonus,
         lazy="selectin",
         cascade="all, delete-orphan",
     )
