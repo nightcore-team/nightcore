@@ -20,6 +20,6 @@ class Config(BaseEnvConfig):
     DEVELOPER_IDS: list[int] = [  # noqa: RUF012
         1280700292530176131,
         566255833684508672,
-        451359852418039808,
+        948260247808671774,
     ]
     INACTIVE_FORUM_NODE_ID: int = 20
