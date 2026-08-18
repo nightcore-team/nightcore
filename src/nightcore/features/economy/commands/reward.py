@@ -41,6 +41,7 @@ class Reward(Cog):
         guild = cast(Guild, interaction.guild)
         member = cast(Member, interaction.user)
 
+        base_bonus = 0
         total_bonuses: dict[int | None, int] = {}
 
         outcome = ""
@@ -63,25 +64,21 @@ class Reward(Cog):
                     outcome = "reward_too_early"
 
             if not outcome:
+                base_bonus = guild_config.base_reward_bonus
                 reward_bonuses = guild_config.reward_bonuses
 
-                for bonus in reward_bonuses:
-                    if not bonus.coins or bonus.coins <= 0:
-                        continue
-
-                    if bonus.role_id is None:
-                        total_bonuses[None] = bonus.coins
-
-                    else:
+                if base_bonus <= 0 and not reward_bonuses:
+                    outcome = "no_reward_configured"
+                else:
+                    for bonus in reward_bonuses:
                         if has_any_role(member, bonus.role_id):
                             total_bonuses[bonus.role_id] = bonus.coins
 
-                if not total_bonuses:
-                    outcome = "no_reward_configured"
-                else:
                     coin_name = guild_config.coin_name
 
-                    user.coins = user.coins + sum(total_bonuses.values())
+                    user.coins = (
+                        user.coins + sum(total_bonuses.values()) + base_bonus
+                    )
                     user.reward_time = now
 
                     outcome = "success"
@@ -109,17 +106,20 @@ class Reward(Cog):
             )
 
         elif outcome == "success":
+            base_text = (
+                f"Вы получили свою ежедневную награду: {base_bonus} {coin_name or 'коинов'}"  # type: ignore  # noqa: E501
+                if base_bonus > 0
+                else "Базовая ежеднавная награда не настроена."
+            )
             bonus_text = "\n".join(
                 f"> Дополнительный бонус в размере {total_bonuses[rid]} за наличие роли <@&{rid}>"  # noqa: E501
                 for rid in total_bonuses
-                if rid is not None
             )
 
             return await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Успешно получена ежедневная награда",
-                    f"Вы получили свою ежедневную награду: {total_bonuses[None]} {coin_name or 'коинов'}"  # noqa: E501 # type: ignore
-                    + bonus_text,
+                    base_text + bonus_text,
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

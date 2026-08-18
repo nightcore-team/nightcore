@@ -52,9 +52,7 @@ class GuildRewardBonus(IdIntegerMixin, Base):
         nullable=False,
     )
     coins: Mapped[int] = mapped_column(Integer, nullable=False)
-    role_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True, default=None
-    )
+    role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
 class GuildEconomyConfig(IdIntegerMixin, Base):  #
@@ -67,6 +65,9 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     coin_name: Mapped[str | None] = mapped_column(String, nullable=True)
     economy_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
+    )
+    base_reward_bonus: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     reward_bonuses: Mapped[list[GuildRewardBonus]] = relationship(
         GuildRewardBonus,
