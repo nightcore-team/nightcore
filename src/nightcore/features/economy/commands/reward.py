@@ -4,12 +4,11 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
-from discord import Guild, app_commands
+from discord import Guild, Member, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models.user import User
 from src.infra.db.operations import get_or_create_user
 from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
 from src.nightcore.services.config import specified_guild_config
@@ -18,6 +17,7 @@ from src.nightcore.utils import discord_ts
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from src.nightcore.utils.object import has_any_role
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -39,6 +39,9 @@ class Reward(Cog):
         """Claim your daily reward."""
 
         guild = cast(Guild, interaction.guild)
+        member = cast(Member, interaction.user)
+
+        total_bonuses: dict[int | None, int] = {}
 
         outcome = ""
 
@@ -60,13 +63,25 @@ class Reward(Cog):
                     outcome = "reward_too_early"
 
             if not outcome:
-                reward_coins = guild_config.reward_bonus
-                if not reward_coins or reward_coins <= 0:
+                reward_bonuses = guild_config.reward_bonuses
+
+                for bonus in reward_bonuses:
+                    if not bonus.coins or bonus.coins <= 0:
+                        continue
+
+                    if bonus.role_id is None:
+                        total_bonuses[None] = bonus.coins
+
+                    else:
+                        if has_any_role(member, bonus.role_id):
+                            total_bonuses[bonus.role_id] = bonus.coins
+
+                if not total_bonuses:
                     outcome = "no_reward_configured"
                 else:
                     coin_name = guild_config.coin_name
 
-                    user.coins = User.coins + reward_coins
+                    user.coins = user.coins + sum(total_bonuses.values())
                     user.reward_time = now
 
                     outcome = "success"
@@ -97,7 +112,12 @@ class Reward(Cog):
             return await interaction.response.send_message(
                 embed=SuccessMoveEmbed(
                     "Успешно получена ежедневная награда",
-                    f"Вы получили свою ежедневную награду: {reward_coins} {coin_name or 'коинов'}",  # type: ignore  # noqa: E501
+                    f"Вы получили свою ежедневную награду: {total_bonuses[None]} {coin_name or 'коинов'}"  # noqa: E501 # type: ignore
+                    "\n".join(
+                        f"> Дополнительный бонус в размере {total_bonuses[rid]} за наличие роли <@&{rid}>"  # noqa: E501
+                        for rid in total_bonuses
+                        if rid is not None
+                    ),
                     self.bot.user.display_name,  # type: ignore
                     self.bot.user.display_avatar.url,  # type: ignore
                 ),

@@ -35,6 +35,28 @@ class GuildEconomyShopItem(IdIntegerMixin, Base):
     cost: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
+class GuildRewardBonus(IdIntegerMixin, Base):
+    __table_args__ = (
+        UniqueConstraint(
+            "guild_id",
+            "role_id",
+            name="uq_reward_bonus_guild",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
+    )
+
+    guild_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("guildeconomyconfig.guild_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    coins: Mapped[int] = mapped_column(Integer, nullable=False)
+    role_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True, default=None
+    )
+
+
 class GuildEconomyConfig(IdIntegerMixin, Base):  #
     """Economy configuration for a guild."""
 
@@ -46,9 +68,12 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     economy_access_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
-    reward_bonus: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default=text("0")
+    reward_bonuses: Mapped[list[GuildRewardBonus]] = relationship(
+        GuildEconomyShopItem,
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
+
     economy_shop_buy_ping_roles_ids: Mapped[list[int] | None] = mapped_column(
         ARRAY(BigInteger), nullable=True
     )
