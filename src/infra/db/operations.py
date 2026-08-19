@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
+    Boolean,
     asc,
     delete,
     exists,
@@ -13,9 +14,10 @@ from sqlalchemy import (
     literal,
     or_,
     select,
+    type_coerce,
     update,
 )
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import array, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
@@ -198,6 +200,7 @@ async def get_specified_guild_config(  # noqa: UP047
 async def get_available_guild_configs(
     session: AsyncSession, *, guild_id: int, roles: list[int]
 ) -> list[str]:
+    """Get the list of available guild configurations for the given roles."""
 
     select_clauses = [
         array(roles).overlap(column).label(config_type.value)
@@ -224,7 +227,10 @@ async def has_guild_config_access(
     roles: list[int],
     config_type: ConfigTypeEnum,
 ) -> bool:
+    """Check if the given roles have access to a guild configuration."""
+
     target_column = _ACCESS_COLUMNS.get(config_type)
+
     if target_column is None:
         raise ValueError(f"Unknown config type: {config_type}")
 
@@ -1512,6 +1518,8 @@ async def reset_users_voice_activity(session: AsyncSession) -> int:
 async def get_clan_shop_item_by_name(
     session: AsyncSession, *, guild_id: int, name: str
 ) -> GuildClanShopItem | None:
+    """Get a clan shop item by name for a guild."""
+
     stmt = select(GuildClanShopItem).where(
         GuildClanShopItem.guild_id == guild_id, GuildClanShopItem.name == name
     )
@@ -1524,6 +1532,8 @@ async def get_clan_shop_item_by_name(
 async def get_economy_shop_item_by_name(
     session: AsyncSession, *, guild_id: int, name: str
 ) -> GuildEconomyShopItem | None:
+    """Get an economy shop item by name for a guild."""
+
     stmt = select(GuildEconomyShopItem).where(
         GuildEconomyShopItem.guild_id == guild_id,
         GuildEconomyShopItem.name == name,
@@ -1537,6 +1547,8 @@ async def get_economy_shop_item_by_name(
 async def get_organization_roles_ids(
     session: AsyncSession, *, guild_id: int
 ) -> Sequence[int]:
+    """Get the list of organizational role ids for a guild."""
+
     stmt = select(GuildOrganizationalRole.role_id).where(
         GuildOrganizationalRole.guild_id == guild_id
     )
@@ -1549,6 +1561,8 @@ async def get_organization_roles_ids(
 async def get_organization_role_by_role_id(
     session: AsyncSession, *, guild_id: int, role_id: int
 ) -> GuildOrganizationalRole | None:
+    """Get an organizational role by its role id for a guild."""
+
     stmt = select(GuildOrganizationalRole).where(
         GuildOrganizationalRole.guild_id == guild_id,
         GuildOrganizationalRole.role_id == role_id,
@@ -1589,6 +1603,8 @@ async def get_active_forum_guilds(
 async def get_guild_level(
     session: AsyncSession, guild_id: int, level: int
 ) -> GuildLevel | None:
+    """Get the closest configured guild level not exceeding the given level."""
+
     stmt = (
         select(GuildLevel)
         .where(GuildLevel.guild_id == guild_id, GuildLevel.level <= level)
@@ -1604,6 +1620,8 @@ async def get_guild_level(
 async def get_guild_level_role_ids(
     session: AsyncSession, guild_id: int
 ) -> Sequence[int]:
+    """Get the distinct role ids of configured guild levels for a guild."""
+
     stmt = (
         select(GuildLevel.role_id)
         .where(GuildLevel.guild_id == guild_id)
@@ -1618,6 +1636,8 @@ async def get_guild_level_role_ids(
 async def insert_moderation_message(
     session: AsyncSession, *, message: ModerationMessage
 ) -> ModerationMessage:
+    """Delete expired moderation messages and insert a new one."""
+
     expired_ids = (
         select(ModerationMessage.id)
         .where(
