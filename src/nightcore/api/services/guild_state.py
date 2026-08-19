@@ -10,6 +10,7 @@ from src.infra.db.operations import (
     get_specified_guild_config,
 )
 from src.infra.db.uow import UnitOfWork
+from src.nightcore.api.dependencies import LoggingRevisionService
 from src.nightcore.api.domain.exceptions.base import LogicalError
 from src.nightcore.api.schemas.configuration import (
     CONFIG_SCHEMA_MODEL_MAP,
@@ -23,7 +24,11 @@ from src.utils._enums import ConfigTypeEnum
 
 
 class GuildStateService:
-    def __init__(self, uow: UnitOfWork, bot: Nightcore) -> None:
+    def __init__(
+        self,
+        uow: UnitOfWork,
+        bot: Nightcore,
+    ) -> None:
         self._bot = bot
         self._uow = uow
 
@@ -101,6 +106,7 @@ class GuildStateService:
         member: discord.Member,
         config_type: ConfigTypeEnum,
         data: dict[str, Any],
+        logging_revision_service: LoggingRevisionService,
     ):
         """
         Update the configuration of a guild.
@@ -109,6 +115,7 @@ class GuildStateService:
             member: The user who initiated the configuration update.
             config_type: The type of the configuration to update.
             data: A dictionary representing the new configuration data.
+            logging_revision_service: Service used to record the change.
 
         Raises:
             ValueError: If the config type is unknown.
@@ -139,5 +146,18 @@ class GuildStateService:
                 guild_id=member.guild.id,
             )
 
+            old_data: dict[str, Any] = {}
+
             for k, v in nomalized.items():
+                old_data[k] = getattr(config, k)
+
                 setattr(config, k, v)
+
+            await logging_revision_service.create_revision(
+                session,
+                guild_id=member.guild.id,
+                user_id=member.id,
+                config_type=config_type,
+                old_data=old_data,
+                new_data=nomalized,
+            )

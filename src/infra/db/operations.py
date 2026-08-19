@@ -45,6 +45,7 @@ from src.infra.db.models import (
     GuildRoleRequestConfig,
     GuildRulesConfig,
     GuildTicketsConfig,
+    LoggingRevision,
     ModerationMessage,
     NotifyState,
     PrivateRoomState,
@@ -784,6 +785,56 @@ async def get_latest_user_role_request(
     )
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
+
+
+async def get_last_logging_revision(
+    session: AsyncSession, *, guild_id: int
+) -> LoggingRevision | None:
+    """Get the most recent logging revision for a guild."""
+
+    stmt = (
+        select(LoggingRevision)
+        .where(LoggingRevision.guild_id == guild_id)
+        .order_by(
+            LoggingRevision.created_at.desc().nulls_last(),
+        )
+        .limit(1)
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_logging_revisions(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_type: ConfigTypeEnum,
+    limit: int = 100,
+    offset: int = 0,
+) -> Sequence[LoggingRevision]:
+    """Get logging revisions for a guild filtered by config type.
+
+    Returns a paginated window of the most recent revisions.
+    """
+
+    stmt = (
+        select(LoggingRevision)
+        .where(
+            LoggingRevision.guild_id == guild_id,
+            LoggingRevision.config_type == config_type,
+        )
+        .order_by(
+            LoggingRevision.created_at.desc().nulls_last(),
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
 
 
 async def get_fraction_roles(

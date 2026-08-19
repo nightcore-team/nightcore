@@ -10,6 +10,7 @@ from fastapi.params import Depends
 from src.nightcore.api.security.jwt import JWTTokenService
 from src.nightcore.api.services.access import AccessService
 from src.nightcore.api.services.guild_state import GuildStateService
+from src.nightcore.api.services.logging_revision import LoggingRevisionService
 from src.nightcore.bot import Nightcore
 
 if TYPE_CHECKING:
@@ -109,9 +110,20 @@ def get_guild_state_service(
     return GuildStateService(uow=uow, bot=bot)
 
 
+def get_logging_revision_service(
+    uow: Annotated[UnitOfWork, Depends(get_uow)],
+):
+    """Dependency to inject the LoggingRevisionService to the endpoint."""
+
+    return LoggingRevisionService(uow)
+
+
 UserIdDependency = Annotated[int, Depends(get_user_id)]
 BotDependency = Annotated[Nightcore, Depends(get_bot)]
 GuildStateServiceDependency = Annotated[
     GuildStateService, Depends(get_guild_state_service)
 ]
 AccessServiceDependency = Annotated[AccessService, Depends(get_access_service)]
+LoggingRevisionServiceDependency = Annotated[
+    LoggingRevisionService, Depends(get_logging_revision_service)
+]

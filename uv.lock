@@ -760,13 +760,8 @@ requires-dist = [
     { name = "discord-py" },
     { name = "discord-py", specifier = ">=2.7.1" },
     { name = "discordhealthcheck", specifier = ">=0.1.1" },
-<<<<<<< HEAD
-    { name = "fastapi", specifier = ">=0.136.3" },
-    { name = "nightforo", specifier = ">=1.1.5" },
-    { name = "nightforo", specifier = ">=1.1.9" },
-=======
+{ name = "fastapi", specifier = ">=0.136.3" },
     { name = "nightforo", specifier = ">=1.1.10" },
->>>>>>> 87cf765 (chore: bump nightforo to 1.1.10)
     { name = "pillow", specifier = ">=12.1.0" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pydantic", specifier = ">=2.11.7" },
