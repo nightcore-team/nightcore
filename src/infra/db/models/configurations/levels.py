@@ -4,6 +4,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -48,7 +49,15 @@ class GuildBonusRole(IdIntegerMixin, Base):
         ForeignKey("guildlevelsconfig.guild_id", ondelete="CASCADE"),
         nullable=False,
     )
-    coins: Mapped[int] = mapped_column(Integer, nullable=False)
+    coins: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    exp: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    battle_pass_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
