@@ -111,7 +111,7 @@ class Reward(Cog):
                 if base_bonus > 0
                 else "Базовая ежеднавная награда не настроена."
             )
-            bonus_text = "\n".join(
+            bonus_text = "\n ".join(
                 f"> Дополнительный бонус в размере {total_bonuses[rid]} за наличие роли <@&{rid}>"  # noqa: E501
                 for rid in total_bonuses
             )
