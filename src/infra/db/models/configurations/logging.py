@@ -169,3 +169,10 @@ class GuildLoggingConfig(IdIntegerMixin, Base):  #
                 config[k] = DiscordWebhook(**v)
 
         return config
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

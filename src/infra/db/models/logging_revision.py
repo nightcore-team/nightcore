@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, Enum, Index, String, text
+from sqlalchemy import JSON, BigInteger, Enum, Index, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import UpdatedAtMixin
@@ -42,4 +42,8 @@ class LoggingRevision(Base, CreatedAtMixin, UpdatedAtMixin):
         nullable=False,
         default=dict,
         server_default=text("'[]'::json"),
+    )
+
+    version: Mapped[int] = mapped_column(
+        Integer, default=1, server_default=text("1")
     )

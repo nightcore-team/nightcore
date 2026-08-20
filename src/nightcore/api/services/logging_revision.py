@@ -7,6 +7,7 @@ import discord
 
 from src.infra.db.models import LoggingRevision
 from src.infra.db.operations import (
+    CONFIG_MODEL_MAP,
     get_last_logging_revision,
     get_logging_revision_by_id,
     get_logging_revisions,
@@ -52,7 +53,8 @@ class LoggingRevisionService:
         guild_id: int,
         user_id: int,
         config_type: "ConfigTypeEnum",
-        new_data: dict[str, Any],
+        data: dict[str, Any],
+        version: int,
     ):
         """
         Create a logging revision for a configuration change.
@@ -62,7 +64,8 @@ class LoggingRevisionService:
             guild_id: The ID of the guild where the change happened.
             user_id: The ID of the user who made the change.
             config_type: The type of the configuration that was changed.
-            new_data: The updated configuration values.
+            data: The updated configuration values.
+            version: Version of ORM model.
         """
 
         revision_id = self.generate_revision_id()
@@ -80,7 +83,8 @@ class LoggingRevisionService:
                 config_type=config_type,
                 user_id=user_id,
                 guild_id=guild_id,
-                new_data=new_data,
+                data=data,
+                version=version,
             )
         )
 
@@ -158,19 +162,33 @@ class LoggingRevisionService:
         """
         Get a specific logging revision for a guild.
 
+        Stale revisions (older than the configuration model version) are
+        migrated in place by patching their data and bumping the stored
+        version, so the returned values always match the current schema.
+
         Args:
             guild_id: The ID of the guild the revision belongs to.
             revision_id: The revision ID to look up.
             config_type: The type of the configuration the revision
                 belongs to.
 
+        Raises:
+            ValueError: If no configuration model is mapped for the
+                config type, or the revision is newer than the
+                configuration model version.
+
         Returns:
             A LoggingRevisionDataSchema containing the old and new data
             of the found revision (empty dicts when not found).
         """
 
-        old_data = {}
-        new_data = {}
+        old_data: dict[str, Any] = {}
+        new_data: dict[str, Any] = {}
+
+        orm_model = CONFIG_MODEL_MAP.get(config_type)
+
+        if orm_model is None:
+            raise ValueError("Configuration model can't be `None`")
 
         async with self._uow.start() as session:
             current_revision = await get_logging_revision_by_id(
@@ -180,7 +198,15 @@ class LoggingRevisionService:
                 config_type=config_type,
             )
 
-            if current_revision is not None:
+            if current_revision is None:
+                return LoggingRevisionDataSchema(
+                    revision_id=revision_id,
+                    old_data=old_data,
+                    new_data=new_data,
+                )
+
+            down_revision = None
+            if current_revision.down_revision_id:
                 down_revision = await get_logging_revision_by_id(
                     session,
                     guild_id=guild_id,
@@ -190,7 +216,22 @@ class LoggingRevisionService:
                 if down_revision is not None:
                     old_data = down_revision.data
 
-                new_data = current_revision.data
+            new_data = current_revision.data
+
+            if current_revision.version < orm_model.__version__:  # type: ignore
+                new_data = orm_model.patch_revision(new_data)  # type: ignore
+
+                if old_data:
+                    old_data = orm_model.patch_revision(old_data)  # type: ignore
+
+                current_revision.data = new_data
+                if down_revision is not None:
+                    down_revision.data = old_data
+
+            elif current_revision.version > orm_model.__version__:  # type: ignore
+                raise ValueError(
+                    "Revision version can't be greatest then ORM configuration model version."  # noqa: E501
+                )
 
         return LoggingRevisionDataSchema(
             revision_id=revision_id,

@@ -154,5 +154,6 @@ class GuildStateService:
                 guild_id=member.guild.id,
                 user_id=member.id,
                 config_type=config_type,
-                new_data=nomalized,
+                data=nomalized,
+                version=type_.__version__,
             )

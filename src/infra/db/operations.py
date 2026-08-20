@@ -837,10 +837,14 @@ async def get_logging_revision_by_id(
         The matching LoggingRevision or None when it is not found.
     """
 
-    stmt = select(LoggingRevision).where(
-        LoggingRevision.guild_id == guild_id,
-        LoggingRevision.revision_id == revision_id,
-        LoggingRevision.config_type == config_type,
+    stmt = (
+        select(LoggingRevision)
+        .where(
+            LoggingRevision.guild_id == guild_id,
+            LoggingRevision.revision_id == revision_id,
+            LoggingRevision.config_type == config_type,
+        )
+        .with_for_update()
     )
 
     result = await session.execute(stmt)

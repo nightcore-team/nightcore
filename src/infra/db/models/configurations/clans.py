@@ -94,3 +94,10 @@ class GuildClansConfig(IdIntegerMixin, Base):
             )
 
         return config
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

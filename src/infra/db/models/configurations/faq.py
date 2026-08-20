@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import JSON, BigInteger, text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,3 +19,10 @@ class GuildFaqConfig(IdIntegerMixin, Base):
         default=list,
         server_default=text("'[]'::json"),
     )
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

@@ -124,3 +124,10 @@ class GuildRulesConfig(IdIntegerMixin, Base):
             config["rules_webhook"] = DiscordWebhook(**config["rules_webhook"])
 
         return config
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

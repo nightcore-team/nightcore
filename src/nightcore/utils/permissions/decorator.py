@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from discord.ext.commands import Cog  # type: ignore
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from src.infra.db.operations import GuildT
+    from src.infra.db.operations import ConfigType
     from src.nightcore.bot import Nightcore
 
 from .types import PERMISSION_CONFIG_MAP, PermissionsFlagEnum
@@ -125,7 +125,7 @@ async def has_specified_permission(
     *,
     session: AsyncSession,
     guild_id: int,
-    config_type: type[GuildT],
+    config_type: type[ConfigType],
     field_name: str,
     access_name: str,
 ) -> bool:
