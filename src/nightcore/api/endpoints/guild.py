@@ -13,6 +13,9 @@ from src.nightcore.api.dependencies import (
 from src.nightcore.api.schemas import ChannelInfoSchema, RoleInfoSchema
 from src.nightcore.api.schemas.configuration import ConfigUpdateBody
 from src.nightcore.api.schemas.logging_revision import (
+    ListLoggingRevisionRequestSchema,
+    LoggingRevisionDataSchema,
+    LoggingRevisionMetaSchema,
     LoggingRevisionRequestSchema,
 )
 from src.utils._enums import ConfigTypeEnum
@@ -227,10 +230,12 @@ async def patch_guild_configuration(
 
 
 @router.get(
-    "/{guild_id:int}/logging-revisions", status_code=status.HTTP_200_OK
+    "/{guild_id:int}/logging-revisions",
+    status_code=status.HTTP_200_OK,
+    response_model=list[LoggingRevisionMetaSchema],
 )
 async def get_guild_logging_revisions(
-    params: LoggingRevisionRequestSchema,
+    params: ListLoggingRevisionRequestSchema,
     user_id: UserIdDependency,
     bot: BotDependency,
     access_service: AccessServiceDependency,
@@ -268,4 +273,50 @@ async def get_guild_logging_revisions(
         guild=guild,
         limit=params.limit,
         offset=params.offset,
+    )
+
+
+@router.get(
+    "/{guild_id:int}/logging-revisions/{revision_id:str}",
+    status_code=status.HTTP_200_OK,
+    response_model=LoggingRevisionDataSchema,
+)
+async def get_guild_logging_revision(
+    params: LoggingRevisionRequestSchema,
+    user_id: UserIdDependency,
+    bot: BotDependency,
+    access_service: AccessServiceDependency,
+    logging_revision_service: LoggingRevisionServiceDependency,
+):
+    """Get logging revision for specific guild by revision_id."""
+
+    guild = bot.get_guild(params.guild_id)
+
+    if guild is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
+        )
+
+    member = guild.get_member(user_id)
+
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this guild",
+        )
+
+    has_access = await access_service.has_config_access(
+        member=member, config_type=params.config_type
+    )
+
+    if not has_access:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this configuration",
+        )
+
+    return await logging_revision_service.get_by_params(
+        guild_id=params.guild_id,
+        revision_id=params.revision_id,
+        config_type=params.config_type,
     )

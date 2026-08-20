@@ -18,19 +18,28 @@ class Base(BaseModel):
     )
 
 
-class LoggingRevisionRequestSchema(Base):
+class ListLoggingRevisionRequestSchema(Base):
     guild_id: DiscordId
     config_type: ConfigTypeEnum
     limit: int = 100
     offset: int = 0
 
 
-class LoggingRevisionSchema(Base):
+class LoggingRevisionRequestSchema(Base):
+    guild_id: DiscordId
+    revision_id: str
+    config_type: ConfigTypeEnum
+
+
+class LoggingRevisionMetaSchema(Base):
     revision_id: str
     down_revision_id: str
     config_type: ConfigTypeEnum
-    guild_id: DiscordId
     discord_user_id: DiscordId
     discord_username: str
+
+
+class LoggingRevisionDataSchema(Base):
+    revision_id: str
     old_data: dict[str, Any]
     new_data: dict[str, Any]

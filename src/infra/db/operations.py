@@ -806,6 +806,36 @@ async def get_last_logging_revision(
     return result.scalar_one_or_none()
 
 
+async def get_logging_revision_by_id(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    revision_id: str,
+    config_type: ConfigTypeEnum,
+):
+    """Get a single logging revision for a guild.
+
+    Args:
+        session: The async database session.
+        guild_id: The ID of the guild the revision belongs to.
+        revision_id: The revision ID to look up.
+        config_type: The type of the configuration the revision belongs to.
+
+    Returns:
+        The matching LoggingRevision or None when it is not found.
+    """
+
+    stmt = select(LoggingRevision).where(
+        LoggingRevision.guild_id == guild_id,
+        LoggingRevision.revision_id == revision_id,
+        LoggingRevision.config_type == config_type,
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
 async def get_logging_revisions(
     session: AsyncSession,
     *,

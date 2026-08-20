@@ -8,9 +8,13 @@ import discord
 from src.infra.db.models import LoggingRevision
 from src.infra.db.operations import (
     get_last_logging_revision,
+    get_logging_revision_by_id,
     get_logging_revisions,
 )
-from src.nightcore.api.schemas.logging_revision import LoggingRevisionSchema
+from src.nightcore.api.endpoints.guild import LoggingRevisionDataSchema
+from src.nightcore.api.schemas.logging_revision import (
+    LoggingRevisionMetaSchema,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -86,7 +90,7 @@ class LoggingRevisionService:
     @staticmethod
     def _map_revision_to_schema(
         revision: LoggingRevision, members: dict[int, discord.Member]
-    ) -> LoggingRevisionSchema:
+    ) -> LoggingRevisionMetaSchema:
         """
         Map an ORM revision to its schema with the member display name.
 
@@ -100,15 +104,12 @@ class LoggingRevisionService:
 
         member = members.get(revision.user_id)
 
-        return LoggingRevisionSchema(
+        return LoggingRevisionMetaSchema(
             revision_id=revision.revision_id,
             down_revision_id=revision.down_revision_id or "",
             config_type=revision.config_type,
-            guild_id=revision.guild_id,
             discord_user_id=revision.user_id,
             discord_username=member.display_name if member else "",
-            old_data=revision.old_data,
-            new_data=revision.new_data,
         )
 
     async def list_revisions_by_params(
@@ -118,7 +119,7 @@ class LoggingRevisionService:
         guild: discord.Guild,
         limit: int = 100,
         offset: int = 0,
-    ) -> list[LoggingRevisionSchema]:
+    ) -> list[LoggingRevisionMetaSchema]:
         """
         Get logging revisions for a guild filtered by config type.
 
@@ -153,3 +154,39 @@ class LoggingRevisionService:
             self._map_revision_to_schema(revision, members)
             for revision in revisions
         ]
+
+    async def get_by_params(
+        self, *, guild_id: int, revision_id: str, config_type: ConfigTypeEnum
+    ) -> LoggingRevisionDataSchema:
+        """
+        Get a specific logging revision for a guild.
+
+        Args:
+            guild_id: The ID of the guild the revision belongs to.
+            revision_id: The revision ID to look up.
+            config_type: The type of the configuration the revision
+                belongs to.
+
+        Returns:
+            A LoggingRevisionDataSchema containing the old and new data
+            of the found revision (empty dicts when not found).
+        """
+
+        old_data = {}
+        new_data = {}
+
+        async with self._uow.start() as session:
+            revision = await get_logging_revision_by_id(
+                session,
+                guild_id=guild_id,
+                revision_id=revision_id,
+                config_type=config_type,
+            )
+
+            if revision is not None:
+                old_data = revision.old_data
+                new_data = revision.new_data
+
+        return LoggingRevisionDataSchema(
+            revision_id=revision_id, old_data=old_data, new_data=new_data
+        )

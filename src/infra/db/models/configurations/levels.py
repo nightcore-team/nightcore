@@ -100,6 +100,8 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize json."""
+
         if "level_roles" in config:
             config["level_roles"] = [
                 GuildLevel(**item) for item in config["level_roles"]
