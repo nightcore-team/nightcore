@@ -15,7 +15,7 @@ from discord.ui import (
     TextDisplay,
 )
 
-from .transfer import TransferHistoryActionRow
+from ..transfer import TransferHistoryActionRow
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore

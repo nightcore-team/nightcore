@@ -19,13 +19,11 @@ from discord.ui import (
 
 if TYPE_CHECKING:
     from src.infra.db.models.clan import Clan
-    from src.infra.db.models.color import Color
-    from src.infra.db.models.user import UserCase
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.utils import discord_ts
 
-from .transfer import TransferHistoryActionRow
+from .collection import UserProfileActionRow
 
 
 class UserProfileViewV2(LayoutView):
@@ -43,11 +41,13 @@ class UserProfileViewV2(LayoutView):
         voice_activity: str,
         messages_count: int,
         avatar_url: str,
-        cases: list["UserCase"],
-        colors: list["Color"],
         clan: "Clan | None" = None,
     ):
         super().__init__(timeout=None)
+
+        self.bot = bot
+        self.guild_id = guild_id
+        self.user_id = user_id
 
         container = Container[Self](
             accent_color=discord.Color.from_str("#ffffff")
@@ -76,34 +76,13 @@ class UserProfileViewV2(LayoutView):
         )
         container.add_item(Separator[Self]())
 
-        if len(cases) > 0:
-            container.add_item(
-                TextDisplay[Self](
-                    "### <a:68842universebox:1442920870996742275> Кейсы: "
-                )
+        container.add_item(
+            UserProfileActionRow(
+                bot=bot,
+                guild_id=guild_id,
+                user_id=user_id,
             )
-            container.add_item(
-                TextDisplay[Self](
-                    "\n".join(
-                        f"> {case.item.name}, количество: {case.amount}"
-                        for case in cases
-                    )
-                )
-            )
-            container.add_item(Separator[Self]())
-
-        if len(colors) > 0:
-            container.add_item(
-                TextDisplay[Self]("### <:palette:1442915900666679527> Цвета: ")
-            )
-            container.add_item(
-                TextDisplay[Self](
-                    "\n".join(f"> <@&{color.role_id}>" for color in colors)
-                )
-            )
-            container.add_item(Separator[Self]())
-
-        container.add_item(TransferHistoryActionRow(guild_id, user_id))
+        )
         container.add_item(Separator[Self]())
 
         now = datetime.now(UTC)

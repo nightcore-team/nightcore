@@ -20,15 +20,6 @@ from discord.ui import (
     button,
 )
 
-from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import (
-    get_specified_field,
-    get_user_transfer_history,
-)
-from src.nightcore.features.economy.utils.pages import (
-    build_transfer_history_pages,
-)
-
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -57,32 +48,12 @@ class TransferHistoryActionRow(ActionRow[LayoutView]):
     ):
         """Handle transfer history button callback."""
 
-        bot = interaction.client
+        from .profile.handlers.transfer import open_transfer_history
 
-        async with bot.uow.start() as session:
-            coin_name: str | None = await get_specified_field(
-                session,
-                guild_id=self.guild_id,
-                config_type=GuildEconomyConfig,
-                field_name="coin_name",
-            )
-            transfers = await get_user_transfer_history(
-                session, guild_id=self.guild_id, user_id=self.user_id
-            )
-            logger.info("TRASNFERS: %s", transfers)
-
-        pages = build_transfer_history_pages(transfers, coin_name)
-
-        view = TransferHistoryViewV2(
-            bot=bot,
+        await open_transfer_history(
+            interaction,
+            guild_id=self.guild_id,
             user_id=self.user_id,
-            total_transfers=len(transfers),
-            pages=pages,
-        )
-
-        await interaction.response.send_message(
-            view=view.make_component(),
-            ephemeral=True,
         )
 
 
