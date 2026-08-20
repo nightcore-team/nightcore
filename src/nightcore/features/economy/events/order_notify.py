@@ -62,25 +62,6 @@ class CoinsShopNotifyEvent(Cog):
             )
             return
 
-        notifications_channel = None
-        if dto.notifications_channel_id:
-            notifications_channel = await ensure_messageable_channel_exists(
-                dto.guild, dto.notifications_channel_id
-            )
-            if notifications_channel is None:
-                logger.warning(
-                    "[%s/log] Notifications channel %s not found in guild %s.",
-                    dto.event_type,
-                    dto.notifications_channel_id,
-                    dto.guild.id,
-                )
-        else:
-            logger.info(
-                "[%s/log] No notifications channel ID provided for guild %s.",
-                dto.event_type,
-                dto.guild.id,
-            )
-
         if member:
             view = CoinsShopOrderNotifyViewV2(
                 bot=self.bot,
@@ -93,14 +74,17 @@ class CoinsShopNotifyEvent(Cog):
                 custom_id=dto.custom_id,
             )
 
+            dm_sent = False
             try:
-                await member.send(view=view)
+                dm = await member.create_dm()
+                await dm.send(view=view)
                 logger.info(
                     "[%s/log] Successfully sent DM to user %s in guild %s.",
                     dto.event_type,
                     dto.user_id,
                     dto.guild.id,
                 )
+                dm_sent = True
             except discord.Forbidden:
                 logger.info(
                     "[%s/log] Failed to send DM to user %s because he doesn't accept DM. Trying notifications channel...",  # noqa: E501
@@ -115,21 +99,41 @@ class CoinsShopNotifyEvent(Cog):
                     dto.guild.id,
                     e,
                 )
-            finally:
-                # fallback
-                if notifications_channel:
-                    try:
-                        await notifications_channel.send(  # type: ignore
-                            view=view,
+
+            # fallback
+            if not dm_sent:
+                notifications_channel = None
+
+                if dto.notifications_channel_id:
+                    notifications_channel = (
+                        await ensure_messageable_channel_exists(
+                            dto.guild, dto.notifications_channel_id
                         )
-                    except Exception as e:
+                    )
+                    if notifications_channel is not None:
+                        try:
+                            await notifications_channel.send(member.mention)  # type: ignore
+                            await notifications_channel.send(  # type: ignore
+                                view=view,
+                                allowed_mentions=discord.AllowedMentions(
+                                    users=False
+                                ),
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                "[%s/log] Failed to send message in notifications channel %s to user %s in guild %s: %s.",  # noqa: E501
+                                dto.event_type,
+                                notifications_channel.id,
+                                dto.user_id,
+                                dto.guild.id,
+                                e,
+                            )
+                    else:
                         logger.warning(
-                            "[%s/log] Failed to send message in notifications channel %s to user %s in guild %s: %s.",  # noqa: E501
+                            "[%s/log] Notifications channel %s not found in guild %s.",  # noqa: E501
                             dto.event_type,
-                            notifications_channel.id,
-                            dto.user_id,
+                            dto.notifications_channel_id,
                             dto.guild.id,
-                            e,
                         )
 
         logger.info(
