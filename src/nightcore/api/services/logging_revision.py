@@ -52,7 +52,6 @@ class LoggingRevisionService:
         guild_id: int,
         user_id: int,
         config_type: "ConfigTypeEnum",
-        old_data: dict[str, Any],
         new_data: dict[str, Any],
     ):
         """
@@ -63,14 +62,13 @@ class LoggingRevisionService:
             guild_id: The ID of the guild where the change happened.
             user_id: The ID of the user who made the change.
             config_type: The type of the configuration that was changed.
-            old_data: The previous configuration values.
             new_data: The updated configuration values.
         """
 
         revision_id = self.generate_revision_id()
 
         last_revision = await get_last_logging_revision(
-            session, guild_id=guild_id
+            session, guild_id=guild_id, config_type=config_type
         )
 
         session.add(
@@ -82,7 +80,6 @@ class LoggingRevisionService:
                 config_type=config_type,
                 user_id=user_id,
                 guild_id=guild_id,
-                old_data=old_data,
                 new_data=new_data,
             )
         )
@@ -176,17 +173,27 @@ class LoggingRevisionService:
         new_data = {}
 
         async with self._uow.start() as session:
-            revision = await get_logging_revision_by_id(
+            current_revision = await get_logging_revision_by_id(
                 session,
                 guild_id=guild_id,
                 revision_id=revision_id,
                 config_type=config_type,
             )
 
-            if revision is not None:
-                old_data = revision.old_data
-                new_data = revision.new_data
+            if current_revision is not None:
+                down_revision = await get_logging_revision_by_id(
+                    session,
+                    guild_id=guild_id,
+                    revision_id=current_revision.down_revision_id,
+                    config_type=config_type,
+                )
+                if down_revision is not None:
+                    old_data = down_revision.data
+
+                new_data = current_revision.data
 
         return LoggingRevisionDataSchema(
-            revision_id=revision_id, old_data=old_data, new_data=new_data
+            revision_id=revision_id,
+            old_data=old_data,
+            new_data=new_data,
         )

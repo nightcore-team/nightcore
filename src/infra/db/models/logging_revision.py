@@ -37,13 +37,7 @@ class LoggingRevision(Base, CreatedAtMixin, UpdatedAtMixin):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
-    old_data: Mapped[dict[str, Any]] = mapped_column(
-        JSON,
-        nullable=False,
-        default=dict,
-        server_default=text("'[]'::json"),
-    )
-    new_data: Mapped[dict[str, Any]] = mapped_column(
+    data: Mapped[dict[str, Any]] = mapped_column(
         JSON,
         nullable=False,
         default=dict,

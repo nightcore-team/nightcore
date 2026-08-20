@@ -788,13 +788,25 @@ async def get_latest_user_role_request(
 
 
 async def get_last_logging_revision(
-    session: AsyncSession, *, guild_id: int
+    session: AsyncSession, *, guild_id: int, config_type: ConfigTypeEnum
 ) -> LoggingRevision | None:
-    """Get the most recent logging revision for a guild."""
+    """Get the most recent logging revision for a guild.
+
+    Args:
+        session: The async database session.
+        guild_id: The ID of the guild to get the revision for.
+        config_type: The type of the configuration to filter by.
+
+    Returns:
+        The most recent LoggingRevision or None when none exist.
+    """
 
     stmt = (
         select(LoggingRevision)
-        .where(LoggingRevision.guild_id == guild_id)
+        .where(
+            LoggingRevision.guild_id == guild_id,
+            LoggingRevision.config_type == config_type,
+        )
         .order_by(
             LoggingRevision.created_at.desc().nulls_last(),
         )

@@ -146,11 +146,7 @@ class GuildStateService:
                 guild_id=member.guild.id,
             )
 
-            old_data: dict[str, Any] = {}
-
             for k, v in nomalized.items():
-                old_data[k] = getattr(config, k)
-
                 setattr(config, k, v)
 
             await logging_revision_service.create_revision(
@@ -158,6 +154,5 @@ class GuildStateService:
                 guild_id=member.guild.id,
                 user_id=member.id,
                 config_type=config_type,
-                old_data=old_data,
                 new_data=nomalized,
             )
