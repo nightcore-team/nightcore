@@ -1,6 +1,7 @@
 """Logging revision service implementation."""
 
 import secrets
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final
 
 import discord
@@ -14,10 +15,13 @@ from src.infra.db.operations import (
 )
 from src.nightcore.api.endpoints.guild import LoggingRevisionDataSchema
 from src.nightcore.api.schemas.logging_revision import (
+    ListLoggingRevisionMetaResponseSchema,
     LoggingRevisionMetaSchema,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from src.infra.db.uow import UnitOfWork
@@ -111,22 +115,30 @@ class LoggingRevisionService:
             config_type=revision.config_type,
             discord_user_id=revision.user_id,
             discord_username=member.display_name if member else "",
+            created_at=revision.created_at,
         )
 
     async def list_revisions_by_params(
         self,
         *,
-        config_type: "ConfigTypeEnum",
         guild: discord.Guild,
+        config_types: "Sequence[ConfigTypeEnum] | None" = None,
+        user_id: int | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> list[LoggingRevisionMetaSchema]:
+    ) -> ListLoggingRevisionMetaResponseSchema:
         """
-        Get logging revisions for a guild filtered by config type.
+        Get logging revisions for a guild.
 
         Args:
-            config_type: The type of the configuration to filter by.
             guild: The guild to get the revisions for.
+            config_types: Optional configuration types to filter by.
+                ``None`` means no filtering by configuration type.
+            user_id: Optional author id to filter revisions by.
+            date_from: Optional inclusive lower bound on creation time.
+            date_to: Optional inclusive upper bound on creation time.
             limit: The maximum number of revisions to return.
             offset: The number of revisions to skip.
 
@@ -139,7 +151,10 @@ class LoggingRevisionService:
             revisions = await get_logging_revisions(
                 session,
                 guild_id=guild.id,
-                config_type=config_type,
+                config_types=config_types,
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
                 limit=limit,
                 offset=offset,
             )
@@ -151,10 +166,13 @@ class LoggingRevisionService:
             fetched = await guild.query_members(user_ids=user_ids, cache=True)
             members = {member.id: member for member in fetched}
 
-        return [
-            self._map_revision_to_schema(revision, members)
-            for revision in revisions
-        ]
+        return ListLoggingRevisionMetaResponseSchema(
+            total=len(revisions),
+            revisions=[
+                self._map_revision_to_schema(revision, members)
+                for revision in revisions
+            ],
+        )
 
     async def get_by_params(
         self, *, guild_id: int, revision_id: str, config_type: ConfigTypeEnum

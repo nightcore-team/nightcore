@@ -6,6 +6,7 @@ from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
     Boolean,
+    ColumnElement,
     asc,
     delete,
     exists,
@@ -856,21 +857,43 @@ async def get_logging_revisions(
     session: AsyncSession,
     *,
     guild_id: int,
-    config_type: ConfigTypeEnum,
+    config_types: Sequence[ConfigTypeEnum] | None = None,
+    user_id: int | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     limit: int = 100,
     offset: int = 0,
 ) -> Sequence[LoggingRevision]:
-    """Get logging revisions for a guild filtered by config type.
+    """Get logging revisions for a guild.
+
+    Optionally filters by configuration types (``config_types``),
+    author (``user_id``) and a ``created_at`` date range
+    (``date_from`` / ``date_to``, both inclusive).
 
     Returns a paginated window of the most recent revisions.
     """
 
+    conditions: list[ColumnElement[bool]] = [
+        LoggingRevision.guild_id == guild_id,
+    ]
+
+    if config_types is not None:
+        if not config_types:
+            return []
+        conditions.append(LoggingRevision.config_type.in_(config_types))
+
+    if user_id is not None:
+        conditions.append(LoggingRevision.user_id == user_id)
+
+    if date_from is not None:
+        conditions.append(LoggingRevision.created_at >= date_from)
+
+    if date_to is not None:
+        conditions.append(LoggingRevision.created_at <= date_to)
+
     stmt = (
         select(LoggingRevision)
-        .where(
-            LoggingRevision.guild_id == guild_id,
-            LoggingRevision.config_type == config_type,
-        )
+        .where(*conditions)
         .order_by(
             LoggingRevision.created_at.desc().nulls_last(),
         )

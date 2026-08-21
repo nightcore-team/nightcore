@@ -13,9 +13,9 @@ from src.nightcore.api.dependencies import (
 from src.nightcore.api.schemas import ChannelInfoSchema, RoleInfoSchema
 from src.nightcore.api.schemas.configuration import ConfigUpdateBody
 from src.nightcore.api.schemas.logging_revision import (
+    ListLoggingRevisionMetaResponseSchema,
     ListLoggingRevisionRequestSchema,
     LoggingRevisionDataSchema,
-    LoggingRevisionMetaSchema,
     LoggingRevisionRequestSchema,
 )
 from src.utils._enums import ConfigTypeEnum
@@ -232,7 +232,7 @@ async def patch_guild_configuration(
 @router.get(
     "/{guild_id:int}/logging-revisions",
     status_code=status.HTTP_200_OK,
-    response_model=list[LoggingRevisionMetaSchema],
+    response_model=ListLoggingRevisionMetaResponseSchema,
 )
 async def get_guild_logging_revisions(
     params: ListLoggingRevisionRequestSchema,
@@ -258,19 +258,36 @@ async def get_guild_logging_revisions(
             detail="You are not a member of this guild",
         )
 
-    has_access = await access_service.has_config_access(
-        member=member, config_type=params.config_type
-    )
-
-    if not has_access:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have access to this configuration",
+    if params.config_type is not None:
+        has_access = await access_service.has_config_access(
+            member=member, config_type=params.config_type
         )
 
+        if not has_access:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to this configuration",
+            )
+
+        config_types: list[ConfigTypeEnum] | None = [params.config_type]
+    else:
+        available = await access_service.get_available_configurations(
+            member=member
+        )
+        config_types = [ConfigTypeEnum(value) for value in available]
+
+        if not config_types:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to any configuration",
+            )
+
     return await logging_revision_service.list_revisions_by_params(
-        config_type=params.config_type,
         guild=guild,
+        config_types=config_types,
+        user_id=params.user_id,
+        date_from=params.date_from,
+        date_to=params.date_to,
         limit=params.limit,
         offset=params.offset,
     )
