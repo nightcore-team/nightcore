@@ -5,13 +5,12 @@ from typing import Any
 from sqlalchemy import JSON, BigInteger, Enum, Index, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.infra.db.models._mixins import UpdatedAtMixin
+from src.infra.db.models._mixins import CreatedAtMixin
 from src.infra.db.models.base import Base
-from src.infra.db.models.clan import CreatedAtMixin
 from src.utils._enums import ConfigTypeEnum
 
 
-class LoggingRevision(Base, CreatedAtMixin, UpdatedAtMixin):
+class LoggingRevision(Base, CreatedAtMixin):
     __table_args__ = (
         Index(
             "ix_logging_revision_guild_config_created",
