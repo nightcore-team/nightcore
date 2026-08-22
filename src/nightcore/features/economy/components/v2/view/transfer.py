@@ -180,7 +180,11 @@ class TransferCoinsViewV2(LayoutView):
 
         container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
-        container.add_item(TextDisplay[Self]("### Уведомление о переводе\n"))
+        container.add_item(
+            TextDisplay[Self](
+                "### <:nightcoreArrowsLeftRight:1540432969431519277> Уведомление о переводе\n"  # noqa: E501
+            )
+        )
         container.add_item(
             TextDisplay[Self](
                 f"Пользователь <@{user_id}> перевел вам {amount} {item_name} <:nightcoreBanknoteUp:1540436249809133683>\n"  # noqa: E501
