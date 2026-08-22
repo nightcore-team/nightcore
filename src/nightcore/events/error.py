@@ -8,14 +8,14 @@ from discord import AppCommandOptionType, Guild, app_commands
 from discord.ext import commands
 
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed.error import (
-    EntityNotFoundEmbed,
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    NoConfigFoundButCreatedEmbed,
-    NoConfigFoundEmbed,
-    StrToIntTransformFailedEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    NoConfigFoundButCreatedViewV2,
+    NoConfigFoundViewV2,
+    StrToIntTransformFailedViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.exceptions import (
     ConfigMissingButCreatingError,
@@ -70,18 +70,12 @@ async def setup(bot: "Nightcore") -> None:
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=NoConfigFoundButCreatedEmbed(
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
-                    ),
+                    view=NoConfigFoundButCreatedViewV2(),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=NoConfigFoundButCreatedEmbed(
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
-                    ),
+                    view=NoConfigFoundButCreatedViewV2(),
                     ephemeral=True,
                 )
             return
@@ -97,20 +91,12 @@ async def setup(bot: "Nightcore") -> None:
             if isinstance(original.transformer, StrToIntTransformer):
                 if not interaction.response.is_done():
                     await interaction.response.send_message(
-                        embed=StrToIntTransformFailedEmbed(
-                            original.value,
-                            interaction.client.user.name,  # type: ignore
-                            interaction.client.user.display_avatar.url,  # type: ignore
-                        ),
+                        view=StrToIntTransformFailedViewV2(original.value),
                         ephemeral=True,
                     )
                 else:
                     await interaction.followup.send(
-                        embed=StrToIntTransformFailedEmbed(
-                            original.value,
-                            interaction.client.user.name,  # type: ignore
-                            interaction.client.user.display_avatar.url,  # type: ignore
-                        ),
+                        view=StrToIntTransformFailedViewV2(original.value),
                         ephemeral=True,
                     )
                 return
@@ -118,20 +104,12 @@ async def setup(bot: "Nightcore") -> None:
             if original.type == AppCommandOptionType.user:
                 if not interaction.response.is_done():
                     await interaction.response.send_message(
-                        embed=EntityNotFoundEmbed(
-                            "пользователь",
-                            interaction.client.user.name,  # type: ignore
-                            interaction.client.user.display_avatar.url,  # type: ignore
-                        ),
+                        view=EntityNotFoundViewV2("пользователь"),
                         ephemeral=True,
                     )
                 else:
                     await interaction.followup.send(
-                        embed=EntityNotFoundEmbed(
-                            "пользователь",
-                            interaction.client.user.name,  # type: ignore
-                            interaction.client.user.display_avatar.url,  # type: ignore
-                        ),
+                        view=EntityNotFoundViewV2("пользователь"),
                         ephemeral=True,
                     )
                 return
@@ -146,19 +124,17 @@ async def setup(bot: "Nightcore") -> None:
             missing_perms = ", ".join(original.missing_permissions)
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=MissingPermissionsEmbed(
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
-                        f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                    view=MissingPermissionsViewV2(
+                        "Вам не хватает следующих прав для "
+                        f"использования этой команды: {missing_perms}."
                     ),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=MissingPermissionsEmbed(
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
-                        f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                    view=MissingPermissionsViewV2(
+                        "Вам не хватает следующих прав для "
+                        f"использования этой команды: {missing_perms}."
                     ),
                     ephemeral=True,
                 )
@@ -174,21 +150,19 @@ async def setup(bot: "Nightcore") -> None:
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                    view=ErrorViewV2(
                         "Команда на перезарядке",
-                        f"Пожалуйста, подождите {original.retry_after:.2f} секунд перед повторным использованием этой команды.",  # noqa: E501
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                        f"Пожалуйста, подождите {original.retry_after:.2f} "
+                        "секунд перед повторным использованием этой команды.",
                     ),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=ErrorEmbed(
+                    view=ErrorViewV2(
                         "Команда на перезарядке",
-                        f"Пожалуйста, подождите {original.retry_after:.2f} секунд перед повторным использованием этой команды.",  # noqa: E501
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                        f"Пожалуйста, подождите {original.retry_after:.2f} "
+                        "секунд перед повторным использованием этой команды.",
                     ),
                     ephemeral=True,
                 )
@@ -203,18 +177,12 @@ async def setup(bot: "Nightcore") -> None:
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=NoConfigFoundEmbed(
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
-                    ),
+                    view=NoConfigFoundViewV2(),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=NoConfigFoundEmbed(
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
-                    ),
+                    view=NoConfigFoundViewV2(),
                     ephemeral=True,
                 )
             return
@@ -229,19 +197,15 @@ async def setup(bot: "Nightcore") -> None:
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        f"{original.__class__.__name__}: {original.msg}"
                     ),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        f"{original.__class__.__name__}: {original.msg}"
                     ),
                     ephemeral=True,
                 )
@@ -257,19 +221,15 @@ async def setup(bot: "Nightcore") -> None:
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        f"{original.__class__.__name__}: {original.msg}"
                     ),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        f"{original.__class__.__name__}: {original.msg}"
                     ),
                     ephemeral=True,
                 )
@@ -285,19 +245,15 @@ async def setup(bot: "Nightcore") -> None:
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        f"{original.__class__.__name__}: {original.msg}"
                     ),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
-                        f"{original.__class__.__name__}: {original.msg}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        f"{original.__class__.__name__}: {original.msg}"
                     ),
                     ephemeral=True,
                 )
@@ -313,21 +269,15 @@ async def setup(bot: "Nightcore") -> None:
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=ErrorEmbed(
-                        "Нужный параметр не настроен",
-                        f"{original}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ErrorViewV2(
+                        "Нужный параметр не настроен", f"{original}"
                     ),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    embed=ErrorEmbed(
-                        "Нужный параметр не настроен.",
-                        f"{original}",
-                        interaction.client.user.name,  # type: ignore
-                        interaction.client.user.display_avatar.url,  # type: ignore
+                    view=ErrorViewV2(
+                        "Нужный параметр не настроен.", f"{original}"
                     ),
                     ephemeral=True,
                 )

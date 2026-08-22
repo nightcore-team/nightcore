@@ -7,10 +7,10 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import Clan, GuildClansConfig, GuildLoggingConfig
 from src.infra.db.operations import get_clan_member, get_specified_channel
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
@@ -115,68 +115,61 @@ async def improvements(
                             outcome = "invalid_improvement"
 
     if outcome == "invalid_improvement":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка улучшения клана",
                 "Недопустимое улучшение.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "missing_permissions":
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.response.send_message(
+            view=MissingPermissionsViewV2(),
             ephemeral=True,
         )
+        return
 
     if outcome == "insufficient_funds":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка улучшения клана",
                 "Недостаточно репутации для данного улучшения.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "max_deputies_reached":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка улучшения клана",
                 "Достигнут максимальный лимит заместителей.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "max_members_reached":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка улучшения клана",
                 "Достигнут максимальный лимит участников.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "x2_payday_already_active":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка улучшения клана",
                 "Улучшение x2 Payday уже активно.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     async with bot.uow.start() as session:
         clans_logging_channel = await get_specified_channel(
@@ -202,12 +195,11 @@ async def improvements(
 
     bot.dispatch("clan_manage_notify", dto)
 
-    return await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+    await interaction.response.send_message(
+        view=SuccessViewV2(
             "Успешное улучшение клана",
             "Улучшение клана применено успешно.",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )
+    return

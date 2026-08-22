@@ -21,11 +21,11 @@ from src.infra.db.operations import (
     get_clan_member,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
-    ErrorEmbed,
-    NoOptionsSuppliedEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+    NoOptionsSuppliedViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
@@ -84,24 +84,20 @@ async def settings(
         clan_id = int(clan)
     except ValueError:
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
         return
 
     if not new_leader and not new_role and not new_name and not new_channel:
-        return await interaction.response.send_message(
-            embed=NoOptionsSuppliedEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.response.send_message(
+            view=NoOptionsSuppliedViewV2(),
             ephemeral=True,
         )
+        return
 
     outcome: str | None = None
     clan_name: str | None = None
@@ -255,113 +251,101 @@ async def settings(
                             outcome = "name_change_internal_error"
 
     if outcome == "clan_not_found":
-        return await interaction.response.send_message(
-            embed=EntityNotFoundEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-                "clan",
-            ),
+        await interaction.response.send_message(
+            view=EntityNotFoundViewV2("clan"),
             ephemeral=True,
         )
+        return
 
     if outcome == "new_leader_not_in_clan":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка назначения лидера",
                 f"{new_leader.mention} не состоит в вашем клане.",  # type: ignore[union-attr]
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "max_members_achieved":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка назначения лидера",
                 "Достигнуто максимальное количество участников в клане.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "already_leader":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка назначения лидера",
                 f"{new_leader.mention} уже является лидером клана.",  # type: ignore[union-attr]
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "role_has_administrator_permissions":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения роли клана",
                 "Роль клана не может иметь права администратора.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "role_high_than_bot":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения роли клана",
                 "Роль клана должна быть ниже верхней роли бота.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "leader_change_internal_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка назначения лидера",
                 "Произошла ошибка при изменении лидера клана.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "role_change_internal_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения роли клана",
                 "Произошла ошибка при изменении роли клана.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "name_change_internal_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения названии клана",
                 "Произошла ошибка при изменении названия клана.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "name_equal_to_the_current":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения названии клана",
                 "Новое название не отличается от текущего.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     summary_lines: list[str] = []
     if changed_leader_to:
@@ -438,13 +422,11 @@ async def settings(
     bot.dispatch("clan_manage_notify", dto)
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Настройки клана обновлены",
             details
             if clan_name is None
             else f"Клан: **{clan_name}**\n{details}",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )
@@ -460,11 +442,9 @@ async def settings(
                 await new_leader.add_roles(role)  # type: ignore
             except Exception:
                 await interaction.followup.send(
-                    embed=ErrorEmbed(
+                    view=ErrorViewV2(
                         "Ошибка выдачи роли лидеру",
                         "При выдаче роли клана лидеру произошла ошибка.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )

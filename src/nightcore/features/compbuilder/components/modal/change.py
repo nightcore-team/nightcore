@@ -12,10 +12,10 @@ if TYPE_CHECKING:
     from src.infra.db.models import CustomComponent
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    NoOptionsSuppliedEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    NoOptionsSuppliedViewV2,
+    SuccessViewV2,
 )
 
 # from src.nightcore.utils.content import is_image_url
@@ -78,12 +78,10 @@ class ChangeComponentModal(Modal, title="Изменение компонента
         author_text = self.author_text.value or None
 
         if not any([name, text, component_type, author_text]):  # type: ignore
-            return await interaction.response.send_message(
-                embed=NoOptionsSuppliedEmbed(
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.avatar.url,  # type: ignore
-                )
+            await interaction.response.send_message(
+                view=NoOptionsSuppliedViewV2()
             )
+            return
 
         changed_fields: list[str] = []
         if name:
@@ -108,21 +106,18 @@ class ChangeComponentModal(Modal, title="Изменение компонента
                 self.component.id,
                 e,
             )
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка изменения компонента",
                     "Произошла ошибка при изменении компонента.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.avatar.url,  # type: ignore
                 )
             )
+            return
 
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Изменение компонента.",
                 f"Компонент успешно изменен. Измененные поля: {', '.join(changed_fields)}",  # noqa: E501
-                self.bot.user.display_name,  # type: ignore
-                self.bot.user.avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

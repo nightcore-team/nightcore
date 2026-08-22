@@ -13,12 +13,12 @@ from discord.interactions import Interaction
 
 from src.config.config import config
 from src.infra.db.models import GuildModerationConfig
-from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2 import (
@@ -100,66 +100,61 @@ class Voteban(Cog):
             ping_role = await ensure_role_exists(guild, ping_role_id)
 
         if guild.me == user:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка отправки запроса на блокировку",
                     "Вы не можете заблокировать меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if (member := await ensure_member_exists(guild, user.id)) is not None:
             if member.guild_permissions.administrator:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка отправки запроса на блокировку",
                         "Вы не можете заблокировать администраторов.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             is_member_moderator = has_any_role_from_sequence(
                 member, moderation_access_roles
             )
 
             if is_member_moderator:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка отправки запроса на блокировку",
                         "Вы не можете заблокировать модераторов.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             if not compare_top_roles(guild, member):
-                return await interaction.response.send_message(
-                    embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                await interaction.response.send_message(
+                    view=MissingPermissionsViewV2(
                         "Я не могу забанить этого пользователя, потому что у него роль выше, чем у меня.",  # noqa: E501
                     ),
                     ephemeral=True,
                 )
+                return
 
         await interaction.response.defer(thinking=True)
 
         parsed_duration = parse_duration(duration)
 
         if not parsed_duration:
-            return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
+            await interaction.followup.send(
+                view=ValidationErrorViewV2(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         parsed_delete_messages_per_seconds = 0
 
@@ -167,22 +162,20 @@ class Voteban(Cog):
             tmp_delete_messages_per = parse_duration(delete_messages_per)
 
             if tmp_delete_messages_per is None:
-                return await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
+                await interaction.followup.send(
+                    view=ValidationErrorViewV2(
                         "Неверная продолжительность удаления сообщений. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+                return
 
             if tmp_delete_messages_per > config.bot.DELETE_MESSAGES_SECONDS:
-                return await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
+                await interaction.followup.send(
+                    view=ValidationErrorViewV2(
                         f"Продолжительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+                return
 
             parsed_delete_messages_per_seconds = tmp_delete_messages_per
 
@@ -190,14 +183,11 @@ class Voteban(Cog):
             guild, ban_request_channel_id
         )
         if not channel:
-            return await interaction.followup.send(
-                embed=EntityNotFoundEmbed(
-                    "канал",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.followup.send(
+                view=EntityNotFoundViewV2("канал"),
                 ephemeral=True,
             )
+            return
 
         view = BanRequestViewV2(
             author_id=interaction.user.id,
@@ -221,11 +211,9 @@ class Voteban(Cog):
             )
 
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Запрос на бан отправлен",
                     f"Ваш [запрос на бан]({message.jump_url}) для {user.mention} было успешно отправлено.",  # noqa: E501 # type: ignore
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
             )
 
@@ -236,12 +224,10 @@ class Voteban(Cog):
                 channel.id,
                 e,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отправки запроса на блокировку",
                     "Не удалось отправить сообщение с запросом на блокировку.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 )
             )
 

@@ -9,10 +9,10 @@ from discord import Guild, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.features.moderation.events import MessageClearEventData
 
@@ -50,14 +50,13 @@ class Clear(Cog):
         guild = cast(Guild, interaction.guild)
 
         if not guild.me.guild_permissions.manage_messages:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
                     "У меня нет разрешения на управление сообщениями.",
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -70,22 +69,19 @@ class Clear(Cog):
             )
         except Exception as e:
             logger.exception("[command] - Failed to clear messages: %s", e)
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка очистки сообщений",
                     "Не удалось очистить сообщения в текущем канале.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Сообщения очищены",
                 f"Успешно очищено {amount} сообщений из канала {'от ' + user.mention if user else ''}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

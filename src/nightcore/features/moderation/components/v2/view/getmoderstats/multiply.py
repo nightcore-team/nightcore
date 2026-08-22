@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color, Interaction
@@ -45,8 +45,8 @@ class GetModerStatsPaginationButtons(ActionRow["MultiplyGetModerStatsViewV2"]):
         return True
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1442925401696632934>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowLeftRed:1540735599462449163>",
         custom_id="getmoderstats:prev",
     )
     async def previous(
@@ -63,8 +63,8 @@ class GetModerStatsPaginationButtons(ActionRow["MultiplyGetModerStatsViewV2"]):
         )
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1442924853085864178>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowRightRed:1540735601089847296>",
         custom_id="getmoderstats:next",
     )
     async def next(
@@ -124,11 +124,11 @@ class MultiplyGetModerStatsViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:winternightcoremoderation:1450513379897905415> Статистика модерации\n\n"  # noqa: E501
+                f"## <:nightcoreModerator:1540734534423805952> Статистика модерации\n\n"  # noqa: E501
                 f"**Период:** {discord_ts(self.from_dt)} - {discord_ts(self.to_dt)}\n"  # noqa: E501
                 f"> **Всего модераторов:** {sum(len(page) for page in self.pages)}"  # noqa: E501
             )
@@ -153,12 +153,9 @@ class MultiplyGetModerStatsViewV2(LayoutView):
         else:
             self.pagination = None
 
-        now = datetime.now(UTC)
-
         container.add_item(
             TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
-                f"-# Powered by {self.bot.user.name} at {discord_ts(now)}"  # type: ignore
+                f"-# Page {self.current_page + 1} of {len(self.pages)}"
             )
         )
 

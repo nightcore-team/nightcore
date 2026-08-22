@@ -6,11 +6,12 @@ from discord import Attachment, Guild, Member, TextStyle
 from discord.interactions import Interaction
 from discord.ui import FileUpload, Label, Modal, TextInput
 
+from src.nightcore.components.view.v2 import ErrorViewV2, ValidationErrorViewV2
+
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.config.config import config as project_config
-from src.nightcore.components.embed import ErrorEmbed, ValidationErrorEmbed
 from src.nightcore.features.meta.components.v2.view.bugreport import (
     BugReportViewV2,
 )
@@ -55,14 +56,13 @@ class BugReportModal(Modal, title="Отправить отчёт об ошибк
                     ".webp",
                 )
             ):
-                return await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
+                await interaction.followup.send(
+                    view=ValidationErrorViewV2(
                         "Пожалуйста отправьте валидный файл изображения (png, jpg, jpeg, webp).",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
         view = BugReportViewV2(
             bot=self.bot,
@@ -76,15 +76,14 @@ class BugReportModal(Modal, title="Отправить отчёт об ошибк
             project_config.bot.BUG_REPORT_CHANNEL_ID
         )
         if not channel:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отправки отчёта об ошибке.",
                     "Канал для  отправки отчётов об ошибках не найден.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         await channel.send(view=view)  # type: ignore
 

@@ -40,14 +40,13 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
         super().__init__(timeout=None)
         self.bot = bot
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:9183shoppingcart:1442921975851778310> Уведомление о покупке товара"  # noqa: E501
+                "### <:nightcorepShopping:1540451786853191790> Уведомление о покупке товара\n"  # noqa: E501
             )
         )
-        container.add_item(Separator[Self]())
 
         description = ""
         if state == ShopOrderStateEnum.APPROVED:
@@ -62,7 +61,11 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
         container.add_item(TextDisplay[Self](f"{description}"))
         container.add_item(Separator[Self]())
 
-        container.add_item(TextDisplay[Self]("### Информация о покупке:"))
+        container.add_item(
+            TextDisplay[Self](
+                "### <:nightcoreInfo:1540439225877528626> Информация о покупке:"  # noqa: E501
+            )
+        )
 
         container.add_item(
             TextDisplay[Self](

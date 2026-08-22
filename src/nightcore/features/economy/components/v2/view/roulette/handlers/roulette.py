@@ -13,7 +13,7 @@ from src.infra.db.operations import (
     get_casino_game_by_message_id,
     get_specified_field,
 )
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.economy.components.v2 import (
     MultiplayerRouletteViewV2,
 )
@@ -106,37 +106,34 @@ async def handle_roulette_multiplayer_join_button_callback(
                         outcome = "join_success"
 
     if outcome == "game_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка присоединения",
                 "Игра не найдена.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "game_finished":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка присоединения",
                 "Игра уже завершена.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "initiator_cannot_leave":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выхода",
                 "Инициатор игры не может покинуть/присоединиться к игре.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "leave_success":
         view = MultiplayerRouletteViewV2(
@@ -151,10 +148,11 @@ async def handle_roulette_multiplayer_join_button_callback(
 
         asyncio.create_task(message.edit(view=view))
 
-        return await interaction.response.send_message(
+        await interaction.response.send_message(
             "Вы успешно покинули игру в рулетку.",
             ephemeral=True,
         )
+        return
 
     if outcome == "join_success":
         await interaction.response.send_modal(

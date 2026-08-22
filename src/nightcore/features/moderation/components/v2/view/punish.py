@@ -6,7 +6,6 @@ Used for displaying punishment information in guilds.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import Color
@@ -23,7 +22,6 @@ if TYPE_CHECKING:
 from src.nightcore.features.moderation.utils.punishments import (
     PUNISHMENTS_DESC_DICT,
 )
-from src.nightcore.utils import discord_ts
 
 
 class PunishViewV2(LayoutView):
@@ -49,14 +47,14 @@ class PunishViewV2(LayoutView):
     ):
         super().__init__()
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
 
         if mode == "expired":
-            title = "Оповещение об окончании наказания"
+            title = "<:nightcoreNotifyEnd:1540731907829145622> Оповещение об окончании наказания"  # noqa: E501
         elif "un" in punish_type:
-            title = "Оповещение о снятии наказания"
+            title = "<:nightcoreNotifyMinus:1540731774504534016> Оповещение о снятии наказания"  # noqa: E501
         else:
-            title = "Оповещение о выдаче наказания"
+            title = "<:nightcoreNotifyPlus:1540730025983090759> Оповещение о выдаче наказания"  # noqa: E501
 
         if mode == "expired":
             main_text = self._get_expired_text(guild_name)
@@ -67,11 +65,7 @@ class PunishViewV2(LayoutView):
                 mode=mode,
             )
 
-        container.add_item(
-            TextDisplay[Self](
-                f"## <:winternightcoremoderation:1450513379897905415> {title}\n\n{main_text}"  # noqa: E501
-            )
-        )
+        container.add_item(TextDisplay[Self](f"## {title}\n\n{main_text}"))
         container.add_item(Separator[Self]())
 
         meta_description = self._get_meta_description(
@@ -92,13 +86,6 @@ class PunishViewV2(LayoutView):
                 )
             )
             container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 

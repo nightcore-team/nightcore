@@ -12,10 +12,10 @@ from src.infra.db.operations import (
     get_specified_channel,
     get_specified_field,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.clans._groups import manage as manage_clan_group
@@ -57,27 +57,25 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
     try:
         clan_id = int(clan)
     except ValueError:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
     # Check permissions
     if not guild.me.guild_permissions.manage_channels:
-        return await interaction.followup.send(
-            embed=MissingPermissionsEmbed(
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+        await interaction.followup.send(
+            view=MissingPermissionsViewV2(
                 "У меня нет прав на управление каналами в этом сервере.",
             ),
         )
+        return
 
     # Get clan from database
     outcome = ""
@@ -118,26 +116,24 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
                 )
 
     if outcome == "clan_not_found":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "channel_exists":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания канала клана",
                 "Для данного клана уже существует канал.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     # Check if category is configured
     if not create_clan_channel_category_id:
@@ -146,14 +142,13 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
     # Ensure clan role exists
     clan_role = await ensure_role_exists(guild, clan_role_id)
     if clan_role is None:
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания канала клана",
                 f"Роль клана **{clan_name}** не найдена на сервере.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     # Ensure category exists
     category = await ensure_category_exists(
@@ -165,14 +160,13 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             "guild %s: category not found",
             guild.id,
         )
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания канала клана",
                 "Не удалось найти категорию для создания каналов кланов.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     # Create the clan channel
     try:
@@ -206,15 +200,14 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
                 dbclan.clan_channel_id = channel.id
 
         if outcome == "clan_not_found_on_update":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка обновления информации о клане",
                     "Клан не найден в базе данных при обновлении информации о канале.",  # noqa: E501
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         logger.info(
             "[clans/create_channel] Created channel %s for clan %s in "
@@ -244,11 +237,9 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
 
         # Send success message
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Канал клана создан",
                 f"Для клана **{clan_name}** был создан текстовый канал {channel.mention} в категории {category.mention}.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
 
@@ -259,11 +250,10 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             guild.id,
             e,
         )
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания канала клана",
                 "Произошла ошибка при создании канала для клана.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return

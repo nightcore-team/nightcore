@@ -4,7 +4,6 @@ Roulette view v2 component.
 Used for displaying the results of a casino roulette game.
 """
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Color
@@ -16,8 +15,6 @@ from discord.ui import (
     Separator,
     TextDisplay,
 )
-
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.infra.db.models._annot import CasinoBetAnnot
@@ -49,7 +46,7 @@ class MultiplayerRouletteViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "## <:Casino_Chip:1403530383013842994> Рулетка",
+                "## <:nightcoreChip:1540462329878028349> Игра в рулетку",
             )
         )
         container.add_item(Separator[Self]())
@@ -58,7 +55,7 @@ class MultiplayerRouletteViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"### Пользователь <@{initiator_id}> запустил игру\n"
-                f"> **Его ставка:** {initiator_bet} {coin_name_display} | {COLORS[initiator_selected_color]}\n"  # noqa: E501
+                f"> **Его ставка:** <:nightcoreBanknote:1540403146072002624> {initiator_bet} {coin_name_display} | {COLORS[initiator_selected_color]}\n"  # noqa: E501
                 f"> **Его результат:** {initiator_result_coins if initiator_result_coins is not None else 'Ожидание...'}\n"  # noqa: E501
             )
         )
@@ -70,7 +67,7 @@ class MultiplayerRouletteViewV2(LayoutView):
                     "### Список остальных участников:\n"
                     "-# цвет | пользователь | ставка | результат\n"
                     + "\n".join(
-                        f"> {COLORS[bet['selected_color']]} <:42920arrowrightalt:1442924551880314921> <@{bet['user_id']}>, {bet['bet']} {coin_name_display} | {bet['result_coins'] if bet['result_coins'] is not None else 'Ожидание...'}"  # noqa: E501
+                        f"> {COLORS[bet['selected_color']]} <:42920arrowrightalt:1442924551880314921> <@{bet['user_id']}>, <:nightcoreBanknote:1540403146072002624> {bet['bet']} {coin_name_display} | {bet['result_coins'] if bet['result_coins'] is not None else 'Ожидание...'}"  # noqa: E501
                         for bet in bets
                     )
                 )
@@ -98,18 +95,11 @@ class MultiplayerRouletteViewV2(LayoutView):
                     style=ButtonStyle.grey,
                     label="Присоединиться к игре",
                     custom_id="casino:roulette:multiplayer",
-                    emoji="<:2988copylink:1442925607620055071>",
+                    emoji="<:nightcoreChip:1540462329878028349>",
                     disabled=disable_buttons,
                 )
             )
         )
         container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

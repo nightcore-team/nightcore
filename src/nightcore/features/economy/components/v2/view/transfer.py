@@ -5,7 +5,6 @@ Used for displaying a notification when an item is transferred to a user.
 """
 
 import logging
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color
@@ -23,8 +22,6 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import discord_ts
-
 logger = logging.getLogger(__name__)
 
 
@@ -39,7 +36,7 @@ class TransferHistoryActionRow(ActionRow[LayoutView]):
         style=ButtonStyle.grey,
         label="История переводов",
         custom_id="balance:history",
-        emoji="<:winterarrowsnightcore:1450562878166925334>",
+        emoji="<:nightcoreArrowsLeftRight:1540432969431519277>",
     )
     async def transfer_history_button(
         self,
@@ -64,8 +61,8 @@ class TransferHistoryPaginationActionRow(ActionRow["TransferHistoryViewV2"]):
         """Handle transfer history pagination button callback."""
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1442925401696632934>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowLeftCyan:1540434220436951172>",
         custom_id="balance:history:prev",
     )
     async def previous(
@@ -81,8 +78,8 @@ class TransferHistoryPaginationActionRow(ActionRow["TransferHistoryViewV2"]):
         )
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1442924853085864178>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowRightCyan:1540434390780477551>",
         custom_id="balance:history:next",
     )
     async def next(
@@ -132,12 +129,12 @@ class TransferHistoryViewV2(LayoutView):
         self.clear_items()
 
         container = Container[Self](
-            accent_color=Color.from_str("#ffffff")
+            accent_color=Color.from_str("#5EC9B3")
         )  # #515cff
 
         container.add_item(
             TextDisplay[Self](
-                "## <:winterarrowsnightcore:1450562878166925334> История переводов"  # noqa: E501
+                "### <:nightcoreArrowsLeftRight:1540432969431519277> История переводов"  # noqa: E501
             )
         )
         container.add_item(
@@ -159,12 +156,9 @@ class TransferHistoryViewV2(LayoutView):
             container.add_item(TextDisplay[Self](self.pages[0]))
             container.add_item(Separator[Self]())
 
-        now = datetime.now(UTC)
-
         container.add_item(
             TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Page {self.current_page + 1} of {len(self.pages)}"
             )
         )
 
@@ -184,33 +178,20 @@ class TransferCoinsViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#515cff"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
+        container.add_item(TextDisplay[Self]("### Уведомление о переводе\n"))
         container.add_item(
             TextDisplay[Self](
-                "### <:arrows:1442916548921790575> Уведомление о переводе"
-            )
-        )
-        container.add_item(Separator[Self]())
-
-        container.add_item(
-            TextDisplay[Self](
-                f"Пользователь <@{user_id}> перевел вам {amount} {item_name}\n"
+                f"Пользователь <@{user_id}> перевел вам {amount} {item_name} <:nightcoreBanknoteUp:1540436249809133683>\n"  # noqa: E501
             )
         )
         if comment:
+            container.add_item(Separator())
             container.add_item(
                 TextDisplay[Self](
-                    f'<:send:1442916328641134632> **Комментарий:** \n> *"{comment}"*'  # noqa: E501
+                    f'<:nightcoreComment:1540436103562006548> **Комментарий:** \n> *"{comment}"*'  # noqa: E501
                 )
             )
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

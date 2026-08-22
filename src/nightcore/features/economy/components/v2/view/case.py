@@ -4,7 +4,6 @@ V2 views components related to cases.
 Used for displaying case opening results and help information about cases.
 """
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Self, cast
 
 from discord import ButtonStyle, Color, Interaction
@@ -17,8 +16,6 @@ from discord.ui import (
     TextDisplay,
     button,
 )
-
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.infra.db.models.case import CaseDropAnnot
@@ -39,16 +36,14 @@ class CaseOpenViewV2(LayoutView):
         self.bot = bot
         self.case_name = case_name
 
-        container = Container[Self](accent_color=Color.from_str("#1441ac"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         title_suffix = f" x{opened_amount}" if opened_amount > 1 else ""
         container.add_item(
             TextDisplay(
-                f"## <a:68842universebox:1442920870996742275> Открытие кейса{title_suffix}"  # noqa: E501
+                f"### <:nightcoreStarUp:1540441938979983482> Открытие кейса{title_suffix}\n"  # noqa: E501
             )
         )
-        container.add_item(Separator())
-
         # Aggregate rewards
         aggregated_rewards: dict[str, dict[str, int | float]] = {}
         processed_drop_ids: set[tuple[str, int, int]] = set()
@@ -86,13 +81,6 @@ class CaseOpenViewV2(LayoutView):
         )
         container.add_item(Separator())
 
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay(
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
-
         self.add_item(container)
 
 
@@ -103,7 +91,7 @@ class CaseHelpPaginationActionRow(ActionRow["CaseHelpViewV2"]):
         """Handle case help pagination button callback."""
 
     @button(
-        style=ButtonStyle.secondary,
+        style=ButtonStyle.grey,
         emoji="<:41036arrowforwardios1:1442925401696632934>",
         custom_id="case:help:prev",
     )
@@ -164,11 +152,11 @@ class CaseHelpViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#1441ac"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
             TextDisplay(
-                "## <a:68842universebox:1442920870996742275> Информация о кейсах"  # noqa: E501
+                "## <:nightcoreCase:1540678039841673216> Информация о кейсах"
             )
         )
         container.add_item(Separator())
@@ -194,12 +182,9 @@ class CaseHelpViewV2(LayoutView):
 
         container.add_item(Separator())
 
-        now = datetime.now(UTC)
-
         container.add_item(
             TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Page {self.current_page + 1} of {len(self.pages)}"
             )
         )
 

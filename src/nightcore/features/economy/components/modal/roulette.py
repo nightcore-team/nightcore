@@ -16,6 +16,7 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_field,
 )
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.utils._enums import CasinoGameStateEnum
 
 if TYPE_CHECKING:
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 
-from src.nightcore.components.embed import ErrorEmbed, ValidationErrorEmbed
+from src.nightcore.components.view.v2 import ValidationErrorViewV2
 from src.nightcore.features.economy.components.v2 import (
     MultiplayerRouletteViewV2,
 )
@@ -81,26 +82,23 @@ class JoinMultiplayerRouletteModal(
         try:
             amount = int(self.short.value)
         except ValueError:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Ошибка присоединения",
-                    "Пожалуйста, введите корректное числовое значение для ставки.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Пожалуйста, введите корректное "
+                    "числовое значение для ставки."
                 ),
                 ephemeral=True,
             )
+            return
 
         if amount < 5:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Ошибка присоединения",
-                    "Ставка должна быть не менее 5 коинов.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Ставка должна быть не менее 5 коинов."
                 ),
                 ephemeral=True,
             )
+            return
 
         bot = self.bot
         guild = cast(Guild, interaction.guild)
@@ -174,37 +172,35 @@ class JoinMultiplayerRouletteModal(
                                 )
 
         if outcome == "insufficient_funds":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка присоединения",
                     "У вас недостаточно коинов для этой ставки.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "game_not_found":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка присоединения",
-                    "Игра не найдена. Пожалуйста, убедитесь, что игра все еще активна.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    "Игра не найдена. Пожалуйста, убедитесь, "
+                    "что игра все еще активна.",
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "game_finished":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка присоединения",
                     "Игра уже завершена. Вы не можете присоединиться к ней.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             view = MultiplayerRouletteViewV2(

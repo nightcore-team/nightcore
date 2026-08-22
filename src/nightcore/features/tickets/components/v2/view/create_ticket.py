@@ -1,11 +1,10 @@
 """View for paginating infractions."""
 
 import logging
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
-from discord import ButtonStyle, CategoryChannel, Guild, Member
+from discord import ButtonStyle, CategoryChannel, Color, Guild, Member
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -32,13 +31,13 @@ from src.infra.db.operations import (
     get_specified_channel,
     get_specified_guild_config,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.features.tickets.events.dto import TicketChangeEventData
-from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
+from src.nightcore.utils import ensure_messageable_channel_exists
 from src.utils._enums import ChannelType, TicketStateEnum
 
 from .manage_ticket import ManageTicketViewV2
@@ -53,7 +52,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Создать тикет",
-        emoji="<:29909ticket:1442924723528007700>",
+        emoji="<:nightcoreTicketNew:1540818406977052812>",
         custom_id="ticket:create",
     )
     async def create_ticket(
@@ -67,13 +66,12 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         if not guild.me.guild_permissions.manage_channels:
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+            await interaction.followup.send(
+                view=MissingPermissionsViewV2(
                     "У меня недостаточно прав для управления каналами.",
                 ),
             )
+            return
 
         outcome = ""
         current_tickets_count = 0
@@ -164,44 +162,41 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 )
 
         if outcome == "ticket_system_not_configured":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Система тикетов не настроена",
                     "Система тикетов не настроена на этом сервере.",
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
             )
+            return
 
         if outcome == "user_ticket_banned":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Вы забанены",
                     "Вам запрещено создавать тикеты.",
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
             )
+            return
 
         if outcome == "user_has_open_ticket":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "У вас уже есть открытый тикет",
-                    "У вас уже есть открытый тикет. Пожалуйста, закройте его перед созданием нового.",  # noqa: E501
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    "У вас уже есть открытый тикет. "
+                    "Пожалуйста, закройте его перед созданием нового.",
                 ),
             )
+            return
 
         if outcome == "ticket_creation_failed":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка создания тикета",
                     "Не удалось создать тикет. Пожалуйста, попробуйте позже.",
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
             )
+            return
 
         if outcome == "ready_to_create":
             new_tickets_category = cast(
@@ -217,14 +212,13 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     "Failed to find new tickets category in guild %s",
                     guild.id,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Категория не найдена",
                         "Система тикетов настроена неправильно.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+                return
 
             try:
                 overwrites = new_tickets_category.overwrites
@@ -257,14 +251,13 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     new_tickets_category.id,
                     e,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка создания канала",
                         "Не удалось создать канал тикета.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+                return
 
             async with view.bot.uow.start() as session:
                 ticket_state = TicketState(
@@ -297,11 +290,10 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 )
 
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Тикет создан",
-                    f"Ваш тикет был создан: [Перейти к тикету]({ticket_jump_url})",  # noqa: E501
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    "Ваш тикет был создан: "
+                    f"[Перейти к тикету]({ticket_jump_url})",
                 ),
             )
 
@@ -318,7 +310,7 @@ class CreateTicketViewV2(LayoutView):
         # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#5DADE2"))
 
         # Header
         container.add_item(TextDisplay[Self]("## Задайте ваш вопрос"))
@@ -334,15 +326,6 @@ class CreateTicketViewV2(LayoutView):
         # action row
         container.add_item(Separator[Self]())
         container.add_item(CreateTicketButton())
-        container.add_item(Separator[Self]())
-
-        # Footer
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 

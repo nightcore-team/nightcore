@@ -19,9 +19,7 @@ from src.utils._enums import ChannelType
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.moderation.components.v2 import (
     InfractionsViewV2,
 )
@@ -100,14 +98,13 @@ class Infractions(Cog):
             logger.exception(
                 "[command] - Failed to send infractions view: %s", e
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отправки нарушений",
                     "Не удалось отправить компонент нарушений.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
             )
+            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s",

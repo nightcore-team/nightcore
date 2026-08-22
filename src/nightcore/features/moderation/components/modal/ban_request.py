@@ -7,10 +7,10 @@ import discord
 from discord.ui import FileUpload, Label, Modal, TextInput
 
 from src.config.config import config
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.moderation.components.v2 import BanRequestViewV2
 from src.nightcore.utils.content import is_image_url
@@ -80,14 +80,14 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
 
         duration_seconds = parse_duration(self.duration.value)
         if duration_seconds is None:
-            return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
-                    "Invalid duration format. Use s/m/h/d (e.g., 30m, 2h, 3d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.followup.send(
+                view=ValidationErrorViewV2(
+                    "Invalid duration format. "
+                    "Use s/m/h/d (e.g., 30m, 2h, 3d).",
                 ),
                 ephemeral=True,
             )
+            return
 
         delete_seconds = 0
         original_delete_seconds = ""
@@ -97,22 +97,20 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
                 self.delete_messages_for_last.value
             )
             if delete_seconds is None:
-                return await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
+                await interaction.followup.send(
+                    view=ValidationErrorViewV2(
                         "Неверная продолжительность. Используйте s/m/h/d до 7d (например, 30m, 2h, 3d).",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+                return
 
             if delete_seconds > config.bot.DELETE_MESSAGES_SECONDS:
-                return await interaction.followup.send(
-                    embed=ValidationErrorEmbed(
+                await interaction.followup.send(
+                    view=ValidationErrorViewV2(
                         f"Продолжительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+                return
 
             original_delete_seconds = self.delete_messages_for_last.value
 
@@ -151,11 +149,10 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
             message = await self.channel.send(view=view)
 
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Запрос на бан отправлен",
-                    f"Ваш {message.jump_url} для {self.target.mention} был успешно отправлен.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    f"Ваш {message.jump_url} для {self.target.mention} "
+                    "был успешно отправлен.",
                 )
             )
 
@@ -166,14 +163,13 @@ class BanFormModal(Modal, title="Отправить запрос на бан"):
                 self.channel.id,
                 e,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Запрос на бан не удался",
                     "Не удалось отправить сообщение с запросом на бан.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         logger.info(
             "[ban_request_submit] - invoked user=%s guild=%s target=%s duration=%s reason=%s delete_messages_for_last=%s",  # noqa: E501

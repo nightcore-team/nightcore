@@ -13,10 +13,7 @@ from src.infra.db.models.color import Color
 from src.infra.db.operations import (
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import color as color_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
@@ -52,37 +49,34 @@ async def create_color(
     outcome = ""
 
     if role.position >= member.top_role.position:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания цвета",
                 "Вы не можете использовать роль с позицией выше чем ваша высшая роль.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if role.permissions.administrator:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания цвета",
                 "Роль цвета не может иметь права администратора.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if not compare_top_roles(guild, role):
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания цвета",
                 "Роль цвета должна быть ниже высшей роли бота.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     try:
         async with bot.uow.start() as session:
@@ -119,26 +113,24 @@ async def create_color(
         )
 
     if outcome == "color_exists":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания цвета",
                 "К данной роли уже привязан цвет.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "color_create_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания цвета",
                 "Произошла ошибка при создании цвета. Обратитесь к разработчикам.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     item = ChangedRole(after_id=role.id)
 
@@ -154,11 +146,9 @@ async def create_color(
     bot.dispatch("item_change_notify", dto)
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Создание цвета успешно",
             f"Вы успешно создали цвет {role.mention} ",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

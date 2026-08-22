@@ -533,6 +533,24 @@ async def get_clan_by_name(
     return result.scalar_one_or_none()
 
 
+async def get_user_clan(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> Clan | None:
+    """Get the clan of a user in a guild."""
+
+    stmt = (
+        select(Clan)
+        .join(ClanMember, ClanMember.clan_id == Clan.id)
+        .where(Clan.guild_id == guild_id, ClanMember.user_id == user_id)
+    )
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
 async def get_private_room_state(
     session: AsyncSession, *, user_id: int
 ) -> PrivateRoomState | None:

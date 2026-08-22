@@ -12,7 +12,10 @@ from discord.interactions import Interaction
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import EntityNotFoundEmbed, ErrorEmbed
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+)
 from src.nightcore.utils import ensure_role_exists
 
 logger = logging.getLogger(__name__)
@@ -84,11 +87,7 @@ async def _handle_role_toggle(
 
     if not role:
         await interaction.response.send_message(
-            embed=EntityNotFoundEmbed(
-                "выбранная роль",
-                interaction.client.user.display_name,  # type: ignore
-                interaction.client.user.avatar.url,  # type: ignore
-            ),
+            view=EntityNotFoundViewV2("выбранная роль"),
             ephemeral=True,
         )
         return
@@ -128,11 +127,9 @@ async def _remove_roles(
             guild.id,
         )
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка удаления роли",
                 "У бота нет прав для удаления этой роли.",
-                interaction.client.user.display_name,  # type: ignore
-                interaction.client.user.avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -146,11 +143,9 @@ async def _remove_roles(
             exc_info=True,
         )
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка удаления роли",
                 "Произошла ошибка при удалении роли.",
-                interaction.client.user.display_name,  # type: ignore
-                interaction.client.user.avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -179,11 +174,9 @@ async def _add_role(
             guild.id,
         )
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка добавления роли",
                 "У бота нет прав для добавления этой роли.",
-                interaction.client.user.display_name,  # type: ignore
-                interaction.client.user.avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -197,11 +190,9 @@ async def _add_role(
             exc_info=True,
         )
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка добавления роли",
                 "Произошла ошибка при добавлении роли.",
-                interaction.client.user.display_name,  # type: ignore
-                interaction.client.user.avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

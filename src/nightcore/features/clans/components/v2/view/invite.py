@@ -3,10 +3,9 @@
 import asyncio
 import logging
 from collections.abc import Sequence
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Member
+from discord import ButtonStyle, Color, Member
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -37,7 +36,7 @@ from src.utils._enums import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.utils import discord_ts, ensure_role_exists
 
 logger = logging.getLogger(__name__)
@@ -46,8 +45,8 @@ logger = logging.getLogger(__name__)
 class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
     @button(
         label="Принять приглашение",
-        style=ButtonStyle.green,
-        emoji="<:check:1442915033079353404>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreAcceptInvite:1540715264738599074>",
         custom_id="clan_invite:accept",
     )
     async def accept(
@@ -93,11 +92,9 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
 
         if outcome == "clan_member_exists":
             await interaction.followup.send(
-                embed=ErrorEmbed(
+                view=ErrorViewV2(
                     "Ошибка принятия приглашения в клан",
                     "Произошла ошибка при обработке вашего запроса.",
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -105,11 +102,9 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
 
         if outcome == "database_error":
             await interaction.followup.send(
-                embed=ErrorEmbed(
+                view=ErrorViewV2(
                     "Ошибка принятия приглашения в клан",
                     "Произошла ошибка при обработке вашего запроса.",
-                    view.bot.user.display_name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -168,8 +163,8 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
 
     @button(
         label="Отклонить приглашение",
-        style=ButtonStyle.red,
-        emoji="<:failed:1442915170320912506>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreDeclineInvite:1540715521912078417>",
         custom_id="clan_invite:decline",
     )
     async def decline(
@@ -210,18 +205,17 @@ class ClanInviteViewV2(LayoutView):
         self.invited_member = invited_member
         self.clan = clan
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#9B7EDE"))
 
         container.add_item(
             TextDisplay[Self](
-                f"## <:10447information:1442922761591849021> | Приглашение в клан <:42920arrowrightalt:1442924551880314921> {invited_member.mention}"  # noqa: E501
+                f"### <:nightcoreInfoPurple:1540714202778308709> Приглашение в клан для {invited_member.mention}"  # noqa: E501
             )
         )
-        container.add_item(Separator[Self]())
 
         container.add_item(
             TextDisplay[Self](
-                f"<:241508crown:1442923559541407844> **Лидер/заместитель** <@{inviter.id}>"  # noqa: E501
+                f"<:nightcoreCrownPurple:1540714328209100923> **Лидер/заместитель** <@{inviter.id}>"  # noqa: E501
                 f" приглашает Вас в свой клан **{clan.name}**\n"
             )
         )
@@ -234,14 +228,6 @@ class ClanInviteViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         container.add_item(ClanInviteActionRow())
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 
@@ -250,10 +236,10 @@ class ClanListViewV2(LayoutView):
     def __init__(self, bot: "Nightcore", clans: Sequence[Clan]) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#9B7EDE"))
         container.add_item(
             TextDisplay[Self](
-                "## <:10447information:1442922761591849021> Список кланов"
+                "## <:nightcoreInfoPurple:1540714202778308709> Список кланов"
             )
         )
         container.add_item(Separator[Self]())
@@ -262,20 +248,11 @@ class ClanListViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self](
                     f"**{clan.name}**\n"
-                    f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                    f"<:nightcoreCrownPurple:1540714328209100923> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                     f"Дата создания: {discord_ts(clan.created_at)}\n"
                     f"Роль: <@&{clan.role_id}>\n"
                     f"Участники: {len(clan.members)}/{clan.max_members}\n\n"
                 )
             )
-
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

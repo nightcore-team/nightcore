@@ -20,7 +20,7 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import MissingPermissionsEmbed
+from src.nightcore.components.view.v2 import MissingPermissionsViewV2
 from src.nightcore.features.proposals.components.modal import (
     CheckProposalModal,
 )
@@ -42,7 +42,7 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         label="Одобрить",
         custom_id="proposal:approve",
         style=ButtonStyle.grey,
-        emoji="<:check:1442915033079353404>",
+        emoji="<:nightcoreAcceptGrey:1540800701641396224>",
     )  # type: ignore
     @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
     async def approve_proposal(
@@ -87,7 +87,7 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         label="Отклонить",
         custom_id="proposal:decline",
         style=ButtonStyle.grey,
-        emoji="<:failed:1442915170320912506>",
+        emoji="<:nightcoreDeclineGrey:1540801320691310702>",
     )  # type: ignore
     @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
     async def decline_proposal(
@@ -226,19 +226,17 @@ class ProposalViewV2(LayoutView):
 
         if not interaction.response.is_done():
             await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
-                    f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
+                view=MissingPermissionsViewV2(
+                    "Вам не хватает следующих прав для "
+                    f"использования этой команды: {_missing_perms}.",
                 ),
                 ephemeral=True,
             )
         else:
             await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
-                    f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                view=MissingPermissionsViewV2(
+                    "Вам не хватает следующих прав для "
+                    f"использования этой команды: {missing_perms}.",
                 ),
                 ephemeral=True,
             )

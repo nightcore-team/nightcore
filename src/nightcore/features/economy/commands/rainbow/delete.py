@@ -11,10 +11,7 @@ from src.infra.db.operations import (
     get_rainbow_role_by_guild,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import rainbow as rainbow_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
@@ -74,26 +71,24 @@ async def delete_rainbow(
         )
 
     if outcome == "rainbow_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления радужной роли",
                 "На этом сервере не настроена радужная роль.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "rainbow_delete_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления радужной роли",
                 "Произошла ошибка при удалении радужной роли. Обратитесь к разработчикам.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     item = ChangedRole(
         after_id=rainbow.role_id,  # type: ignore
@@ -102,11 +97,9 @@ async def delete_rainbow(
     rainbow_role = guild.get_role(rainbow.role_id)  # type: ignore
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Удаление радужной роли успешно",
             f"Вы успешно удалили радужную роль <@&{rainbow.role_id}> ",  # type: ignore
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

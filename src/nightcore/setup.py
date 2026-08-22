@@ -15,7 +15,6 @@ def create_bot(
         # meta
         "src.nightcore.features.meta.commands.copy",
         "src.nightcore.features.meta.commands.say",
-        "src.nightcore.features.meta.commands.join",
         "src.nightcore.features.meta.commands.ping",
         "src.nightcore.features.meta.commands.avatar",
         "src.nightcore.features.meta.commands.banner",
@@ -74,7 +73,6 @@ def create_bot(
         "src.nightcore.features.economy",
         "src.nightcore.features.economy.commands.top",
         "src.nightcore.features.economy.commands.pay",
-        "src.nightcore.features.economy.commands.balance",
         "src.nightcore.features.economy.commands.shopmessage",
         "src.nightcore.features.economy.commands.reward",
         "src.nightcore.features.economy.commands.profile",

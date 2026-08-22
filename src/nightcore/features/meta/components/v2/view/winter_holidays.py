@@ -1,8 +1,5 @@
 """Winter holidays view v2 component."""
 
-from __future__ import annotations
-
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import Color, MediaGalleryItem
@@ -17,13 +14,11 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import discord_ts
-
 
 class WinterHolidaysViewV2(LayoutView):
     def __init__(
         self,
-        bot: Nightcore,
+        bot: "Nightcore",
         calendar: str,
         tz: str,
         holidays: list[dict[str, object]],
@@ -59,13 +54,5 @@ class WinterHolidaysViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         container.add_item(MediaGallery[Self](MediaGalleryItem(image_url)))
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

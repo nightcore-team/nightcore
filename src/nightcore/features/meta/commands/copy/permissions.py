@@ -23,7 +23,10 @@ from src.nightcore.utils.permissions import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,22 +51,21 @@ async def copy_permissions(
     """Copy permissions from one channel to another for a specific user or role."""  # noqa: E501
 
     member = cast(Member, interaction.user)
-    bot = interaction.client
 
     # Get permission overwrite for the target user/role in the source channel  # noqa: E501
     permission_overwrite = from_channel.overwrites_for(role_or_user)
 
     # Check if there are any permissions set
     if permission_overwrite.is_empty():
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка копирования прав",
-                "Для выбранного пользователя или роли не заданы права в канале!",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                "Для выбранного пользователя или роли "
+                "не заданы права в канале!",
             ),
             ephemeral=True,
         )
+        return
 
     # Apply permissions to the target channel
     try:
@@ -73,15 +75,14 @@ async def copy_permissions(
             reason=f"Copied permissions from #{from_channel.name} by {member}",
         )
     except discord.Forbidden:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка копирования прав",
                 "У бота нет прав для управления правами в целевом канале.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     except discord.HTTPException as e:
         logger.exception(
@@ -90,23 +91,20 @@ async def copy_permissions(
             to_channel.id,
             e,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка копирования прав",
                 "Произошла ошибка при копировании прав!",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     target_mention = role_or_user.mention
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Права скопированы",
             f"Права для {target_mention} успешно скопированы из {from_channel.mention} в {to_channel.mention}.",  # noqa: E501
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

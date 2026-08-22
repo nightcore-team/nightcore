@@ -106,7 +106,6 @@ def build_cases_help_pages(
 
 def build_battlepass_levels_pages(
     levels: Sequence[BattlepassLevel],
-    coin_name: str | None = None,
     current_user_level: int | None = None,
     is_v2: bool = False,
 ) -> list[str]:
@@ -140,7 +139,7 @@ def build_battlepass_levels_pages(
         reward_amount = level_data.reward["amount"]
 
         arrow = (
-            "<:48765whitearrow:1442918703367983225> "
+            "<:nightcoreArrowRightCyan:1540434390780477551> "
             if level == current_user_level
             else ""
         )

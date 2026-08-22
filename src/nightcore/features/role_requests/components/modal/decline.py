@@ -17,9 +17,7 @@ if TYPE_CHECKING:
     )
 
 from src.infra.db.operations import get_latest_user_role_request
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.role_requests.utils import (
     send_role_request_dm,
 )
@@ -90,26 +88,24 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
                 last_rr.updated_at = datetime.now(UTC)  # type: ignore
 
         if outcome == "role_request_not_found":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отклонения",
                     "Запрос на роль не найден в базе данных.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "role_request_already_declined":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отклонения",
                     "Запрос на роль уже был отклонен.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         try:
             await self.message.edit(view=self.view)
@@ -120,15 +116,15 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
                 guild.id,
                 e,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отклонения",
-                    "Произошла ошибка при редактировании сообщения о запросе на роль.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    "Произошла ошибка при редактировании "
+                    "сообщения о запросе на роль.",
                 ),
                 ephemeral=True,
             )
+            return
 
         state_view = self.state_view_type(
             bot=self.bot,

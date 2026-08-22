@@ -10,9 +10,9 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_moderation_access_roles
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserKickEventData
@@ -69,57 +69,52 @@ class Kick(Cog):
             member, moderation_access_roles
         )
         if is_member_moderator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка кика пользователя",
                     "Вы не можете кикнуть модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if member.guild_permissions.administrator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка кика пользователя",
                     "Вы не можете кикнуть администраторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if not guild.me.guild_permissions.kick_members:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "У меня нет прав для кика участников.",
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
+                    "У меня нет прав для кика участников."
                 ),
                 ephemeral=True,
             )
+            return
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка кика пользователя",
                     "Вы не можете кикнуть меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if not compare_top_roles(guild, member):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
                     "Я не могу кикнуть этого пользователя, потому что у него роль выше моей.",  # noqa: E501
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(thinking=True)
 
@@ -146,15 +141,14 @@ class Kick(Cog):
             await guild.kick(member, reason=reason)
         except Exception as e:
             logger.warning("[command] - Failed to kick user: %s", e)
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
-                    "Ошибка кика",  # type: ignore
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка кика",
                     "Не удалось кикнуть пользователя.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.followup.send(
             view=PunishViewV2(

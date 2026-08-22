@@ -13,7 +13,7 @@ from discord.ui import Modal, TextInput
 from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildFaqConfig
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.content import is_image_url
 
@@ -105,11 +105,9 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
 
         if outcome == "title_already_exists":
             await interaction.response.send_message(
-                embed=ErrorEmbed(
+                view=ErrorViewV2(
                     "Ошибка создания страницы FAQ",
                     f"Страница с заголовком '{title}' уже существует.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -117,11 +115,9 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
 
         if outcome == "description_already_exists":
             await interaction.response.send_message(
-                embed=ErrorEmbed(
+                view=ErrorViewV2(
                     "Ошибка создания страницы FAQ",
                     "Страница с таким описанием уже существует.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -129,11 +125,9 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
 
         if outcome == "success":
             await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Страница FAQ создана",
                     f"Страница с заголовком '{title}' успешно создана.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )

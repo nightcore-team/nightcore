@@ -17,7 +17,7 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_channel,
 )
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils.case import (
     RewardOutcomeEnum,
@@ -150,11 +150,9 @@ async def handle_battlepass_claim_reward_button(
 
     if outcome == "battlepass_not_configured":
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения награды",
                 "Баттлпас не настроен на этом сервере.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -162,11 +160,9 @@ async def handle_battlepass_claim_reward_button(
 
     if outcome == "level_not_found":
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения награды",
                 "Ваш текущий уровень не найден в конфигурации баттлпаса.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -174,11 +170,9 @@ async def handle_battlepass_claim_reward_button(
 
     if outcome == "not_enough_points":
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Недостаточно опыта",
                 "У вас недостаточно опыта для получения награды за этот уровень.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -186,11 +180,9 @@ async def handle_battlepass_claim_reward_button(
 
     if outcome.startswith("error"):
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка при получении награды",
                 "Произошла ошибка при получении награды.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -222,7 +214,7 @@ async def handle_battlepass_claim_reward_button(
 
         if outcome == "success_no_next_level":
             success_message += (
-                "\n\nВы достигли максимального уровня баттлпаса."
+                "\n> Вы достигли максимального уровня баттлпаса."
             )
 
         await asyncio.gather(
@@ -231,11 +223,9 @@ async def handle_battlepass_claim_reward_button(
                 view=updated_view,
             ),
             interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Награда получена",
                     success_message,
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             ),

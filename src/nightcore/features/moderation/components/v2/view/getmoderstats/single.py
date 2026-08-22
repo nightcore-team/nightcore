@@ -40,7 +40,7 @@ class ChangeStatDetailsActionRow(ActionRow["SingleGetModerStatsViewV2"]):
         label="История изменений статистики",
         custom_id="change_stat_details:get",
         style=ButtonStyle.grey,
-        emoji="<:sync:1442913913405702285>",
+        emoji="<:nightcoreChangeStat:1540741425539321977>",
     )
     async def get_change_stat_details(
         self,
@@ -78,11 +78,11 @@ class ChangeStatDetailsViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"## <:winternightcoremoderation:1450513379897905415> Изменения статистики\n**Модератор:** {moderator.mention}\n**Количество изменений:** {len(stats.changestat_details)}"  # noqa: E501
+                    f"## <:nightcoreChangeStat:1540741425539321977> Изменения статистики\n**Модератор:** {moderator.mention}\n**Количество изменений:** {len(stats.changestat_details)}"  # noqa: E501
                 ),
                 accessory=Thumbnail[Self](moderator.display_avatar.url),
             )
@@ -90,14 +90,6 @@ class ChangeStatDetailsViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         container.add_item(TextDisplay[Self](f"{details}"))
-        container.add_item(Separator[Self]())
-
-        now = discord.utils.utcnow()
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 
@@ -118,11 +110,11 @@ class SingleGetModerStatsViewV2(LayoutView):
         self.mod_score = mod_score
         self.stats = stats
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    "## <:winternightcoremoderation:1450513379897905415> Статистика модератора\n"  # noqa: E501
+                    "## <:nightcoreModerator:1540734534423805952> Статистика модератора\n"  # noqa: E501
                     f"**Модератор:** {moderator.mention} (`{moderator.id}`)\n"
                     f"**Количество баллов:** {stats.calculate_total_points(mod_score)}\n"  # noqa: E501
                     f"> **Количество {'добавленных' if stats.deducted_points >= 0 else 'снятых'} баллов:** {stats.deducted_points}\n"  # noqa: E501
@@ -147,7 +139,7 @@ class SingleGetModerStatsViewV2(LayoutView):
         if stats.changestat_details and len(stats.changestat_details) > 5:
             container.add_item(
                 TextDisplay[Self](
-                    "<:42920arrowrightalt:1442924551880314921> *Остальные записи доступны по кнопке ниже*"  # noqa: E501
+                    "<:nightcoreArrowRightRed:1540735601089847296> *Остальные записи доступны по кнопке ниже*"  # noqa: E501
                 )
             )
             container.add_item(Separator[Self]())
@@ -156,12 +148,9 @@ class SingleGetModerStatsViewV2(LayoutView):
         else:
             container.add_item(Separator[Self]())
 
-        now = discord.utils.utcnow()
-
         container.add_item(
             TextDisplay[Self](
-                f"-# From {discord_ts(from_dt)} to {discord_ts(to_dt)}\n"
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# From {discord_ts(from_dt)} to {discord_ts(to_dt)}"
             )
         )
 

@@ -7,7 +7,7 @@ from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_clans
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.features.clans.components.v2 import ClanListViewV2
 from src.nightcore.utils.permissions import (
@@ -36,15 +36,14 @@ async def list_clans(interaction: Interaction["Nightcore"]):
         dbclans = await get_clans(session, guild_id=guild.id)
 
     if not dbclans:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка получения списка кланов",
                 "Список кланов пуст.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     view = ClanListViewV2(bot=bot, clans=dbclans)
 

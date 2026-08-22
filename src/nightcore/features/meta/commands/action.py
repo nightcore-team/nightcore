@@ -7,8 +7,8 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import (
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2.error import (
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.meta.utils import (
     ACTION_CHOICES,
@@ -49,10 +49,8 @@ class Action(Cog):
         if action in DUO_ACTIONS:
             if user is None:
                 await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        "Вы должны указать пользователя для этого действия!",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        "Вы должны указать пользователя для этого действия!"
                     ),
                     ephemeral=True,
                 )
@@ -61,10 +59,8 @@ class Action(Cog):
             # Prevent acting on yourself
             if user.id == interaction.user.id:
                 await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        "Вы не можете выполнить это действие на себе.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                    view=ValidationErrorViewV2(
+                        "Вы не можете выполнить это действие на себе."
                     ),
                     ephemeral=True,
                 )

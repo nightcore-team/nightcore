@@ -65,7 +65,6 @@ class Top(Cog):
             )
 
         view = UsersListViewV2(
-            interaction.client,
             coin_name=coin_name,
             users=users,
             sort_by=sort_by.value if sort_by else None,

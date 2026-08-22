@@ -8,10 +8,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_case_by_id, get_specified_channel
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedCase,
@@ -78,26 +75,24 @@ async def delete_case(
         )
 
     if outcome == "case_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения кейса",
                 "Выбранный кейс не найден в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "case_delete_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления кейса",
                 "Произошла ошибка при удалении кейса. Обратитесь к разработчикам.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     item = ChangedCase(
         after_name=case.name,  # type: ignore
@@ -115,11 +110,9 @@ async def delete_case(
     bot.dispatch("item_change_notify", dto)
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Удаление кейса успешно",
             f"Вы успешно удалили кейс {case.name} ",  # type: ignore
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

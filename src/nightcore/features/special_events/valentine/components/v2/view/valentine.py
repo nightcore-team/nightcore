@@ -76,11 +76,12 @@ class ShowValetineActionRow(ActionRow["ValentineViewV2"]):
         image_file = File(
             fp=io.BytesIO(self.image_bytes), filename="image.png"
         )
-        return await interaction.response.send_message(
+        await interaction.response.send_message(
             view=ValentineMediaView(image_bytes=self.image_bytes),
             files=[image_file],
             ephemeral=True,
         )
+        return
 
 
 class ValentineViewV2(LayoutView):

@@ -14,9 +14,7 @@ from src.nightcore.features.moderation.utils.transformers import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import (
-    ValidationErrorEmbed,
-)
+from src.nightcore.components.view.v2 import ValidationErrorViewV2
 from src.nightcore.features.moderation.components.v2 import PrepareNotifyViewV2
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -57,14 +55,13 @@ class Notify(Cog):
         parsed_duration = parse_duration(duration)
 
         if not parsed_duration:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         end_time = calculate_end_time(parsed_duration)
 

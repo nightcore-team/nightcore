@@ -13,10 +13,7 @@ from src.infra.db.models import GuildModerationConfig
 from src.infra.db.models._annot import ModerationInfractionsDataAnnot
 from src.infra.db.operations import get_moderation_stats, get_moderstats_dict
 from src.infra.db.utils import group_infractions_by_moderator
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    ValidationErrorEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, ValidationErrorViewV2
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2.view.getmoderstats import (  # noqa: E501
     MultiplyGetModerStatsViewV2,
@@ -78,14 +75,11 @@ class GetModerationStats(Cog):
             from_dt += timedelta(hours=3)
             to_dt += timedelta(hours=3)
         except ValueError as e:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    str(e),
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(str(e)),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
         trackable_moderation_role: int = 0
@@ -118,15 +112,14 @@ class GetModerationStats(Cog):
             )
 
         if not moderators:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка получения статистики.",
                     "Не удалось найти модераторов с отслеживаемой ролью.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(ephemeral=ephemeral)
 
@@ -156,15 +149,15 @@ class GetModerationStats(Cog):
 
         match len(stats):
             case 0:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка получения статистики.",
-                        "Не удалось найти статистику модерации за указанный период.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                        "Не удалось найти статистику модерации "
+                        "за указанный период.",
                     ),
                     ephemeral=True,
                 )
+                return
             case 1:
                 view = SingleGetModerStatsViewV2(
                     self.bot,

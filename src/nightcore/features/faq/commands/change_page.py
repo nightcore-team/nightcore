@@ -8,7 +8,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildFaqConfig
 from src.infra.db.models._annot import FAQPageAnnot
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.faq._groups import faq as faq_group
 from src.nightcore.features.faq.components.modal import ChangeFAQPageModal
 from src.nightcore.features.faq.utils import faq_autocomplete
@@ -60,11 +60,9 @@ async def change_faq_page(
 
     if outcome == "page_not_found":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка изменения страницы FAQ",
                 f"Страница с названием '{page}' не найдена в FAQ этого сервера.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

@@ -8,10 +8,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_or_create_user, get_specified_channel
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
@@ -50,15 +47,14 @@ async def give_exp(
     outcome = ""
 
     if user == bot.user:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи опыта",
                 "Невозможно выдать опыт боту.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -87,23 +83,20 @@ async def give_exp(
                 outcome = "give_exp_error"
 
     if outcome == "give_exp_error":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи опыта",
                 "Не удалось выдать опыт пользователю.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "success":
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Выдача опыта успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
                 f"**{amount} опыта**.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
 

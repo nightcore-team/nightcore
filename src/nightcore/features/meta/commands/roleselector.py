@@ -12,7 +12,7 @@ from discord.interactions import Interaction
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2.error import ErrorViewV2
 from src.nightcore.features.meta.components.modal import RoleSelectorModal
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -53,14 +53,14 @@ class RoleSelector(Cog):
                 c = Color.from_str(color)
         except Exception as e:
             logger.error("[compbuilder/preview] Invalid color provided: %s", e)
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка предпросмотра компонента",
-                    "Указанный цвет недействителен. Пожалуйста, используйте правильный HEX формат.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.avatar.url,  # type: ignore
+                    "Указанный цвет недействителен. "
+                    "Пожалуйста, используйте правильный HEX формат.",
                 )
             )
+            return
 
         await interaction.response.send_modal(
             RoleSelectorModal(

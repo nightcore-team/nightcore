@@ -17,10 +17,10 @@ if TYPE_CHECKING:
 import contextlib
 
 from src.infra.db.models import RoleRequestState
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.role_requests.utils import validate_user_nickname
 from src.nightcore.utils import has_any_role_from_sequence
@@ -77,36 +77,33 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
 
         nickname = validate_user_nickname(self.nickname.value)
         if not nickname:
-            return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
-                    "Неверный формат никнейма. Пожалуйста, используйте Name_Surname.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.followup.send(
+                view=ValidationErrorViewV2(
+                    "Неверный формат никнейма. "
+                    "Пожалуйста, используйте Name_Surname.",
                 ),
                 ephemeral=True,
             )
+            return
 
         try:
             rank = int(self.rank.value)
         except ValueError:
-            return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
-                    "Неверный формат ранга. Пожалуйста, введите действительное число.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.followup.send(
+                view=ValidationErrorViewV2(
+                    "Неверный формат ранга. "
+                    "Пожалуйста, введите действительное число.",
                 ),
                 ephemeral=True,
             )
+            return
 
         if 1 > rank > 11:
-            return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
-                    "Ранг должен быть между 1 и 10.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.followup.send(
+                view=ValidationErrorViewV2("Ранг должен быть между 1 и 10."),
                 ephemeral=True,
             )
+            return
 
         attachment: discord.Attachment = self.label.component.values[0]  # type: ignore
         if not attachment or not attachment.filename.lower().endswith(  # type: ignore
@@ -117,14 +114,14 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 ".webp",
             )
         ):
-            return await interaction.followup.send(
-                embed=ValidationErrorEmbed(
-                    "Пожалуйста отправьте валидный файл изображения (png, jpg, jpeg, webp).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.followup.send(
+                view=ValidationErrorViewV2(
+                    "Пожалуйста отправьте валидный файл изображения "
+                    "(png, jpg, jpeg, webp).",
                 ),
                 ephemeral=True,
             )
+            return
 
         with contextlib.suppress(Exception):
             edited_user = await user.edit(
@@ -145,11 +142,9 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
             message = await self.channel.send(view=view)  # type: ignore
 
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Отправка запроса на роль",
                     "Ваш запрос на роль был успешно отправлен.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
@@ -161,15 +156,14 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 self.channel.id,
                 e,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отправки запроса на роль",
                     "Не удалось отправить сообщение о запросе на роль.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
         async with self.bot.uow.start() as session:
@@ -194,15 +188,14 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
                 outcome = "role_request_create_failed"
 
         if outcome == "role_request_create_failed":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отправки запроса на роль",
                     "Не удалось создать запись запроса на роль в базе данных.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
         else:
             roles = has_any_role_from_sequence(
                 user, self.all_roles_ids, with_roles=True

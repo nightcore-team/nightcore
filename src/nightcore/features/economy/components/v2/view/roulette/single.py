@@ -4,13 +4,10 @@ Roulette view v2 component.
 Used for displaying the results of a casino roulette game.
 """
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import Color
 from discord.ui import Container, LayoutView, Separator, TextDisplay
-
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -27,11 +24,11 @@ class SingleRouletteViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:Casino_Chip:1403530383013842994> Рулетка",
+                "## <:nightcoreChip:1540462329878028349> Игра в рулетку",
             )
         )
         container.add_item(Separator[Self]())
@@ -49,12 +46,5 @@ class SingleRouletteViewV2(LayoutView):
         )
 
         container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

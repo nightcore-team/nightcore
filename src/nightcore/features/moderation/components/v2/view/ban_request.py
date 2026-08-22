@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
@@ -33,14 +33,12 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 
-from src.nightcore.components.embed import (
-    MissingPermissionsEmbed,
-)
+from src.nightcore.components.view.v2 import MissingPermissionsViewV2
 from src.nightcore.features.moderation.events.dto import UserBannedEventData
 from src.nightcore.features.moderation.utils.punish_notify import (
     send_punish_dm_message,
 )
-from src.nightcore.utils import discord_ts, has_any_role_from_sequence
+from src.nightcore.utils import has_any_role_from_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -63,18 +61,15 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         # TODO: get info about ban request from components after bot restarting
         if not has_moder_role:
             await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
+                view=MissingPermissionsViewV2(),
                 ephemeral=True,
             )
             return False
         return True
 
     @button(
-        style=ButtonStyle.green,
-        emoji="<:check:1442915033079353404>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreAcceptGreen:1540739795737780355>",
         label="Одобрить",
         custom_id="ban_request:approve",
     )
@@ -88,16 +83,18 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
         async with view.approve_lock:
             if view.is_closed:
-                return await interaction.response.send_message(
+                await interaction.response.send_message(
                     "Этот запрос на бан уже был закрыт.",
                     ephemeral=True,
                 )
+                return
 
             if moderator.id in view.in_favor:
-                return await interaction.response.send_message(
+                await interaction.response.send_message(
                     "Вы уже проголосовали.",
                     ephemeral=True,
                 )
+                return
 
             view.in_favor.append(moderator.id)
             view.in_favor_moderators_text += f"- <@{moderator.id}>\n"
@@ -109,12 +106,13 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
                     view.ban_access_roles_ids,
                 )
             ):
-                return await interaction.response.edit_message(
+                await interaction.response.edit_message(
                     view=view.make_component()
                 )
+                return
 
             view.is_closed = True
-            view.accent_color = discord.Color.green()
+            view.accent_color = discord.Color.from_str("#81b475")
 
             await interaction.response.defer()
 
@@ -173,10 +171,7 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
                 view=view.make_component(disabled=True)
             )
             await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
-                ),
+                view=MissingPermissionsViewV2(),
                 ephemeral=True,
             )
 
@@ -185,8 +180,8 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         return
 
     @button(
-        style=ButtonStyle.red,
-        emoji="<:failed:1442915170320912506>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreAcceptRed:1540737393404157982>",
         label="Отклонить",
         custom_id="ban_request:deny",
     )
@@ -198,16 +193,18 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         user = cast(Member, interaction.user)
 
         if view.is_closed:
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 "Этот запрос на бан уже был закрыт.",
                 ephemeral=True,
             )
+            return
 
         if user.id in view.against:
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 "Вы уже проголосовали.",
                 ephemeral=True,
             )
+            return
 
         view.against.append(user.id)
 
@@ -221,15 +218,16 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
             or interaction.user.id == view.author_id
             or len(view.against) >= 4
         ):
-            view.accent_color = discord.Color.red()
+            view.accent_color = discord.Color.from_str("#C0577A")
 
             view.is_closed = True
 
             await interaction.response.defer()
 
-            return await interaction.edit_original_response(
+            await interaction.edit_original_response(
                 view=view.make_component(disabled=True),
             )
+            return
 
         await interaction.response.defer()
 
@@ -341,16 +339,6 @@ class BanRequestViewV2(LayoutView):
         # Action buttons
         self.actions = ActionButtons()
         container.add_item(self.actions)
-        container.add_item(Separator[Self]())
-
-        # Footer
-        now = datetime.now(UTC)
-
-        container.add_item(
-            TextDisplay["BanRequestViewV2"](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         if disabled:
             self.disable_buttons()

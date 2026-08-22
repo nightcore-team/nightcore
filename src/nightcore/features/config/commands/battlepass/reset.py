@@ -13,10 +13,7 @@ from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.operations import reset_users_battlepass_levels
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )
@@ -70,30 +67,25 @@ async def reset(
             outcome = "success"
 
     if outcome == "error_resetting_users":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка сброса боевого пропуска",
                 "Произошла ошибка при сбросе боевого пропуска у пользователей.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         msg = (
             f"Боевой пропуск успешно сброшен у {users_count} пользователей.\n"
         )
 
-        return await interaction.followup.send(
-            embed=SuccessMoveEmbed(
-                "Сброс боевого пропуска",
-                msg,
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.followup.send(
+            view=SuccessViewV2("Сброс боевого пропуска", msg),
             ephemeral=True,
         )
+        return
 
     logger.info(
         "[command] - invoked user=%s guild=%s",

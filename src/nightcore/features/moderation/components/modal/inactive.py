@@ -12,10 +12,10 @@ from src.infra.db.operations import (
     get_guild_forum_config,
     get_specified_guild_config,
 )
-from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
-    ErrorEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.v2 import (
@@ -96,29 +96,25 @@ class InactiveFormModal(Modal, title="Отправить заявку на не�
                 guild.id,
                 e,
             )
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка отправки запроса не неактив",
                     "Произошла ошибка при отправке запроса на неактив.",
-                    bot.user.name,
-                    bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
+            return
 
         try:
             inactive_channel = await ensure_messageable_channel_exists(
                 guild, moderation_config.inactive_channel_id
             )
             if inactive_channel is None:
-                return await interaction.response.send_message(
-                    embed=EntityNotFoundEmbed(
-                        "канал для неактива",
-                        bot.user.name,
-                        bot.user.display_avatar.url,
-                    ),
+                await interaction.response.send_message(
+                    view=EntityNotFoundViewV2("канал для неактива"),
                     ephemeral=True,
                 )
+                return
 
             message = f"""
 1. Ник: {nickname}
@@ -142,24 +138,21 @@ class InactiveFormModal(Modal, title="Отправить заявку на не�
                 interaction.user.id,
                 e,
             )
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка отправки запроса не неактив",
                     "Не удалить отправить запрос на неактив",
-                    bot.user.name,
-                    bot.user.display_avatar.url,
                 ),
                 ephemeral=True,
             )
+            return
 
         url = message.jump_url  # type: ignore
 
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Заявка на неактив отправлена",
                 f"Ваша заявка на неактив успешно отправлена: {url}.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )

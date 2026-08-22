@@ -14,10 +14,10 @@ from src.infra.db.operations import (
     get_organization_roles_ids,
     get_specified_field,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.view import (
@@ -95,25 +95,23 @@ class Rr(Cog):
             )
 
         if not guild.me.guild_permissions.manage_roles:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
                     "У меня нет прав для удаления ролей.",
                 ),
                 ephemeral=True,
             )
+            return
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка снятия роли",
                     "Вы не можете удалить роли у меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         # Filter roles that user has
         user_org_roles: list[discord.Role] = [
@@ -123,15 +121,14 @@ class Rr(Cog):
         ]
 
         if not user_org_roles:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка снятия роли",
                     "У пользователя нет организационных ролей.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         roles_count = len(user_org_roles)
         logger.info(
@@ -151,15 +148,14 @@ class Rr(Cog):
                 )
             except Exception as e:
                 logger.exception("[command] - Failed to remove role: %s", e)
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка снятия роли",
                         "Не удалось снять роль с пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             try:
                 self.bot.dispatch(
@@ -182,11 +178,10 @@ class Rr(Cog):
                 return
 
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Роль удалена",
-                    f"Роль {role.mention} успешно снята с {member.mention}.{f' Причина: {reason}' if reason else ''}",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    f"Роль {role.mention} успешно снята с {member.mention}."
+                    f"{f' Причина: {reason}' if reason else ''}",
                 )
             )
         else:

@@ -13,10 +13,10 @@ from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
@@ -65,54 +65,50 @@ async def change_level(
         and new_reward_type is None
         and new_reward_amount is None
     ):
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Вы не выбрали ни одного параметра для изменения.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if (
         new_reward is None
         and new_reward_type is not None
         and new_reward_type.requires_id_or_custom()
     ):
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Для типов CASE, COLOR, CUSTOM ввод новой награды обязателен.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if (
         new_reward is not None
         and len(new_reward) > config.bot.MAX_CUSTOM_REWARD_SIZE
     ):
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Максимальная длина награды - 100 символов.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if new_reward_type is not None and new_reward_type.requires_id():
         try:
             new_reward_id = int(new_reward)  # type: ignore
         except ValueError as _:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Введен неверный id кейса или цвета.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
     outcome = ""
 
@@ -164,33 +160,29 @@ async def change_level(
             attributes.flag_modified(battlepass_level, "reward")
 
     if outcome == "level_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения уровня.",
                 f"Уровень {level} не найден в боевом пропуске.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "drop_with_entered_id_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения уровня.",
                 f"Награда с id {new_reward} не найдена.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Уровень изменен.",
             f"Уровень {level} успешно изменен в боевой пропуск.",  # type: ignore
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

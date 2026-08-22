@@ -10,10 +10,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_color_by_id, get_specified_channel
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import color as color_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
@@ -56,37 +53,34 @@ async def change_color(
     outcome = None
 
     if new_role.position >= member.top_role.position:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения цвета",
                 "Вы не можете использовать роль с позицией выше чем ваша высшая роль.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if new_role.permissions.administrator:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения цвета",
                 "Роль цвета не может иметь права администратора.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if not compare_top_roles(guild, new_role):
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения цвета",
                 "Роль цвета должна быть ниже высшей роли бота.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     try:
         async with bot.uow.start() as session:
@@ -125,37 +119,34 @@ async def change_color(
         )
 
     if outcome == "color_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения цвета",
                 "Выбранный цвет не найден в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "color_exists":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения цвета",
                 "К данной роли уже привязан цвет.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "color_change_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения цвета",
                 "Произошла ошибка при создании цвета. Обратитесь к разработчикам.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     item = ChangedRole(before_id=color.role_id, after_id=new_role.id)  # type: ignore
 
@@ -171,11 +162,9 @@ async def change_color(
     bot.dispatch("item_change_notify", dto)
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Изменение цвета успешно",
             f"Вы успешно изменили цвет {new_role.mention} ",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

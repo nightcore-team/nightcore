@@ -29,6 +29,7 @@ from src.nightcore.utils.permissions import (
 async def create(interaction: Interaction[Nightcore]):
     """Create a new custom component."""
 
-    return await interaction.response.send_modal(
+    await interaction.response.send_modal(
         CreateComponentModal(interaction.client)
     )
+    return

@@ -18,10 +18,10 @@ from src.utils._enums import ConfigMuteTypeEnum
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
@@ -70,14 +70,14 @@ class Mute(Cog):
         parsed_duration = parse_duration(duration)
 
         if not parsed_duration:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Неверная продолжительность. "
+                    "Используйте s/m/h/d (например, 1h, 1d, 7d).",
                 ),
                 ephemeral=True,
             )
+            return
 
         member = user
 
@@ -95,26 +95,24 @@ class Mute(Cog):
             member, moderation_access_roles
         )
         if is_member_moderator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать чат модераторам.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if member.guild_permissions.administrator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать чат администраторам.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         mute_type = (
             ConfigMuteTypeEnum.TIMEOUT if mute_type is None else mute_type
@@ -122,46 +120,43 @@ class Mute(Cog):
 
         if mute_type == ConfigMuteTypeEnum.ROLE:
             if not guild.me.guild_permissions.manage_roles:
-                return await interaction.response.send_message(
-                    embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                await interaction.response.send_message(
+                    view=MissingPermissionsViewV2(
                         "У меня нет прав для блокировки чата участников.",
                     ),
                     ephemeral=True,
                 )
+                return
 
         elif mute_type == ConfigMuteTypeEnum.TIMEOUT:  # noqa: SIM102
             if not guild.me.guild_permissions.moderate_members:
-                return await interaction.response.send_message(
-                    embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                await interaction.response.send_message(
+                    view=MissingPermissionsViewV2(
                         "У меня нет прав для блокировки чата участников.",
                     ),
                     ephemeral=True,
                 )
+                return
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать чат мне.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if not compare_top_roles(guild, member):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "Я не могу заблокировать чат этому пользователю, потому что у него роль выше моей.",  # noqa: E501
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
+                    "Я не могу заблокировать чат этому пользователю, "
+                    "потому что у него роль выше моей.",
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(thinking=True)
 
@@ -174,25 +169,25 @@ class Mute(Cog):
                     # Try cache first
                     mrole = await ensure_role_exists(guild, mute_role_id)
                     if mrole is None:
-                        return await interaction.followup.send(
-                            embed=ErrorEmbed(
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
                                 "Роль блокировки не найдена",
-                                f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
+                                f"Роль блокировки с ID {mute_role_id} "
+                                "не найдена на этом сервере.",
                             ),
                             ephemeral=True,
                         )
+                        return
                 else:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Роль блокировки не найдена",
-                            f"Роль блокировки с ID {mute_role_id} не настроена.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
+                            f"Роль блокировки с ID {mute_role_id} "
+                            "не настроена.",
                         ),
                         ephemeral=True,
                     )
+                    return
 
                 has_role = has_any_role(member, mrole.id)
 
@@ -201,62 +196,58 @@ class Mute(Cog):
                         await member.add_roles(mrole, reason=reason)  # type: ignore
                     except Exception as e:
                         logger.exception("Failed to add role: %s", e)
-                        return await interaction.followup.send(
-                            embed=ErrorEmbed(
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
                                 "Ошибка добавления роли",
-                                "Не удалось добавить роль блокировки пользователю.",  # noqa: E501
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
+                                "Не удалось добавить роль "
+                                "блокировки пользователю.",
                             ),
                             ephemeral=True,
                         )
+                        return
                 else:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка блокировки",
                             f"У {member.mention} уже есть блокировка чата.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
+                    return
 
             case ConfigMuteTypeEnum.TIMEOUT:
                 try:
                     if not member.is_timed_out():
                         await member.timeout(end_time, reason=reason)
                     else:
-                        return await interaction.followup.send(
-                            embed=ErrorEmbed(
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
                                 "Ошибка блокировки",
                                 f"{member.mention} уже в тайм-ауте.",
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
                             ),
                             ephemeral=True,
                         )
+                        return
 
                 except Exception as e:
                     logger.exception("Failed to timeout member: %s", e)
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка тайм-аута",
                             "Не удалось установить тайм-аут пользователю.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
+                    return
             case _:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Неизвестный тип блокировки",
                         "Тип блокировки должен быть 'role' или 'timeout'.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
         await interaction.followup.send(
             view=PunishViewV2(

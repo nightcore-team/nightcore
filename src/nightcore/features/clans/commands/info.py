@@ -8,7 +8,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_clan_by_id
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.features.clans.components.v2 import ClanInfoViewV2
 from src.nightcore.features.clans.utils import clans_autocomplete
@@ -40,11 +40,9 @@ async def info(interaction: Interaction["Nightcore"], clan: str):
         clan_id = int(clan)
     except ValueError:
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -57,11 +55,9 @@ async def info(interaction: Interaction["Nightcore"], clan: str):
 
     if not dbclan:
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

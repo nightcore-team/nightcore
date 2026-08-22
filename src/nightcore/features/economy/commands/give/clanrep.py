@@ -10,10 +10,7 @@ from src.infra.db.operations import (
     get_clan_by_id,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.clans.events.dto import (
     AwardNotificationEventDTO,
 )
@@ -74,21 +71,18 @@ async def give_clanrep(
             outcome = "success"
 
     if outcome == "clan_not_found":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи клановой репутации",
                 "Клан не найден в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     await interaction.followup.send(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Выдача клановой репутации",
             f"Успешно выдано {amount} репутации клану **{db_clan.name}**.",  # type: ignore
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
     )
 

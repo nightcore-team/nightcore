@@ -14,7 +14,7 @@ from src.infra.db.operations import (
     get_organization_role_by_role_id,
     get_specified_channel,
 )
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.role_requests.components.modal import (
     SendRoleRequestModal,
@@ -127,59 +127,56 @@ async def handle_role_select_button_callback(
         outcome = "error"
 
     if outcome == "error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Не удалось отправить запрос роли",
-                "Произошла внутренняя ошибка при обработке вашего запроса на роль.",  # noqa: E501
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                "Произошла внутренняя ошибка при обработке "
+                "вашего запроса на роль.",
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "unknown_option":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Не удалось отправить запрос роли",
                 "Выбрана неизвестная роль, не существующая в конфигурации.",
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "user_banned":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Не удалось отправить запрос роли",
-                "У вас имеется блокировки на подачу запросов для получение роли.",  # noqa: E501
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+                "У вас имеется блокировки на подачу запросов "
+                "для получение роли.",
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "pending_request_exists":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Не удалось отправить запрос роли",
                 "У вас уже есть активный запрос на роль.",
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "channel_not_configured":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Не удалось отправить запрос роли",
                 "Канал для проверки запросов на роли не настроен.",
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         requested_role = await ensure_role_exists(guild, selected_role_id)
@@ -187,11 +184,9 @@ async def handle_role_select_button_callback(
             if not requested_role:
                 await asyncio.gather(
                     interaction.response.send_message(
-                        embed=ErrorEmbed(
+                        view=ErrorViewV2(
                             "Не удалось отправить запрос роли",
                             "Выбранная роль не существует на этом сервере.",
-                            bot.user.name,  # type: ignore
-                            bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     ),
@@ -211,11 +206,10 @@ async def handle_role_select_button_callback(
             if not channel:
                 await asyncio.gather(
                     interaction.response.send_message(
-                        embed=ErrorEmbed(
+                        view=ErrorViewV2(
                             "Не удалось отправить запрос роли",
-                            "Канал для проверки запросов на роли не существует или недоступен.",  # noqa: E501
-                            bot.user.name,  # type: ignore
-                            bot.user.display_avatar.url,  # type: ignore
+                            "Канал для проверки запросов на роли "
+                            "не существует или недоступен.",
                         ),
                         ephemeral=True,
                     ),

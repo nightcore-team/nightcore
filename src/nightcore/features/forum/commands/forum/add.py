@@ -34,9 +34,10 @@ async def forum_add(
             )
             session.add(config)
     except IntegrityError:
-        return await interaction.response.send_message(
+        await interaction.response.send_message(
             "Конфиг для данной гильдии уже существует", ephemeral=True
         )
+        return
     except Exception as e:
         logger.error(
             "[forum/add] failed to create config for guild %s: %e",

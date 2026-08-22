@@ -11,7 +11,7 @@ from discord.interactions import Interaction
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2.error import ErrorViewV2
 from src.nightcore.features.meta.components.v2.view.winter_holidays import (
     WinterHolidaysViewV2,
 )
@@ -57,15 +57,14 @@ class WinterHolidays(Cog):
         # try to parse timezone
         zone_info = parse_timezone(timezone)
         if zone_info is None:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка часового пояса",
                     "Не удалось распознать указанный часовой пояс.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         # calculate days until winter holidays based on calendar and timezone
         holidays = get_all_holidays(zone_info, calendar)

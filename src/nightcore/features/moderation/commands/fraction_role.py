@@ -14,11 +14,11 @@ from src.infra.db.models import GuildModerationConfig
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.events import (
@@ -73,15 +73,14 @@ class FractionRole(Cog):
         try:
             role_id = int(role)
         except ValueError:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка выдачи роли",
                     "Выбранная роль не найдена.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         guild = cast(Guild, interaction.guild)
         author = cast(Member, interaction.user)
@@ -89,13 +88,12 @@ class FractionRole(Cog):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         if not guild.me.guild_permissions.manage_roles:
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.followup.send(
+                view=MissingPermissionsViewV2(
                     "У меня нет прав для выдачи ролей пользователям.",
                 ),
             )
+            return
 
         async with specified_guild_config(
             self.bot, guild.id, GuildModerationConfig
@@ -110,14 +108,13 @@ class FractionRole(Cog):
             fraction_roles = moderation_config.fraction_roles_access_roles_ids
 
         if not any(role_id == item.role_id for item in fraction_roles):
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка выдачи роли",
                     "Роль не найдена в списке фракционных ролей.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         access_roles: list[int] = []
 
@@ -130,102 +127,88 @@ class FractionRole(Cog):
         )
 
         if not has_access:
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.followup.send(
+                view=MissingPermissionsViewV2(),
             )
+            return
 
         target_role = await ensure_role_exists(guild, role_id)
 
         if target_role is None:
-            return await interaction.followup.send(
-                embed=EntityNotFoundEmbed(
-                    "фракционная роль",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.followup.send(
+                view=EntityNotFoundViewV2("фракционная роль"),
             )
+            return
 
         has_role = has_any_role(user, target_role.id)
 
         match option:
             case "add":
                 if has_role:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка выдачи роли",
                             f"{user.mention} уже имеет роль {target_role.mention}.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                     )
+                    return
 
                 try:
                     await user.add_roles(target_role)
                 except Exception as e:
                     logger.exception("Failed to add role: %s", e)
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка выдачи роли",
                             "Не удалось выдать роль пользователю.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                     )
+                    return
 
                 await interaction.followup.send(
-                    embed=SuccessMoveEmbed(
+                    view=SuccessViewV2(
                         "Выдача роли",
                         f"Роль {target_role.mention} была выдана пользователю {user.mention}.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
 
             case "remove":
                 if not has_role:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка снятия роли",
                             f"{user.mention} не имеет роль {target_role.mention}.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                     )
+                    return
 
                 try:
                     await user.remove_roles(target_role)
                 except Exception as e:
                     logger.exception("Failed to remove role: %s", e)
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка снятия роли",
                             f"Не удалось снять {target_role.mention} у {user.mention}.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                     )
+                    return
 
                 await interaction.followup.send(
-                    embed=SuccessMoveEmbed(
+                    view=SuccessViewV2(
                         "Снятие роли",
                         f"Роль {target_role.mention} была снята у пользователя {user.mention}.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
 
             case _:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Недопустимый вариант",
                         "Вариант должен быть 'Добавить' или 'Удалить'.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                 )
+                return
 
         try:
             self.bot.dispatch(

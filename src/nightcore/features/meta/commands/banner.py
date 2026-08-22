@@ -51,7 +51,7 @@ class Banner(Cog):
             await interaction.response.send_message(
                 embed=Embed(
                     title=f"Баннер пользователя {user.display_name}",  # type: ignore
-                    color=discord.Color.blurple(),
+                    color=discord.Color.from_str("#D896C8"),
                 ).set_image(
                     url=u.banner.url  # type: ignore
                 ),

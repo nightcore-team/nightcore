@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.operations import get_custom_component_by_id
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
@@ -48,14 +48,13 @@ async def delete(
     try:
         component_id = int(component)
     except ValueError:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления компонента",
                 "Указанный компонент не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return
 
     outcome = ""
     async with bot.uow.start() as session:
@@ -80,31 +79,28 @@ async def delete(
                 outcome = "error"
 
     if outcome == "not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления компонента",
                 "Указанный компонент не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return
 
     if outcome == "error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления компонента",
                 "Произошла ошибка при удалении компонента. ",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return
 
     if outcome == "success":
-        return await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+        await interaction.response.send_message(
+            view=SuccessViewV2(
                 "Компонент удалён",
                 f"Компонент **{cmp.name}** был успешно удалён.",  # type: ignore
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return

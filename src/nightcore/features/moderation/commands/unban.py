@@ -9,9 +9,9 @@ from discord import Guild, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
@@ -54,29 +54,27 @@ class UnBan(Cog):
         guild = cast(Guild, interaction.guild)
 
         if not guild.me.guild_permissions.ban_members:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
                     "У меня нет прав на разбан участников.",
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(thinking=True)
 
         try:
             await guild.fetch_ban(user)
         except discord.NotFound:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка снятия блокировки",
                     f"<@{user.id}> не забанен на этом сервере.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
         else:
             try:
                 self.bot.dispatch(
@@ -102,15 +100,14 @@ class UnBan(Cog):
                 await guild.unban(user, reason=reason)
             except discord.HTTPException as e:
                 logger.exception("Failed to unban user: %s", e)
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка снятия блокировки",
                         f"Не удалось снять блокировку с <@{user.id}>.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
         await interaction.followup.send(
             view=PunishViewV2(

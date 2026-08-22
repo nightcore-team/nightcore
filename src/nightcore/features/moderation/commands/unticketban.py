@@ -10,7 +10,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
 from src.infra.db.operations import get_or_create_user
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UnPunishEventData
 from src.nightcore.features.moderation.utils.transformers import (
@@ -54,15 +54,14 @@ class Unticketban(Cog):
         guild = cast(Guild, interaction.guild)
 
         if guild.me == user:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка снятия блокировки",
                     "Вы не можете снять блокировку с меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
 
@@ -90,26 +89,25 @@ class Unticketban(Cog):
                 outcome = "error"
 
         if outcome == "not_ticket_banned":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка снятия блокировки",
-                    "Данный пользователь не имеет блокировки на создание тикетов.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+                    "Данный пользователь не имеет блокировки "
+                    "на создание тикетов.",
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "error":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка снятия блокировки",
                     "Не удалось снять тикет бан с пользователя.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(thinking=True)
 

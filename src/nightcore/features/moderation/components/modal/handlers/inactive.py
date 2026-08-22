@@ -16,7 +16,7 @@ from src.utils._enums import InactiveRequestStateEnum
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 
 from ..inactive import InactiveRequestViewV2
 
@@ -39,15 +39,14 @@ async def handle_inactive_reject_modal_submit(
             guild.id,
             message.id,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Не удалось определить автора запроса на неактив.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     inactive_message = parse_inactive_text_from_components(message.components)
     if not inactive_message:
@@ -56,15 +55,14 @@ async def handle_inactive_reject_modal_submit(
             guild.id,
             message.id,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Не удалось определить текст запроса на неактив.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
     nickname = parse_nickname_from_components(message.components)
     if not nickname:
         logger.error(
@@ -72,15 +70,14 @@ async def handle_inactive_reject_modal_submit(
             guild.id,
             message.id,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Не удалось определить никнейм в запросе на неактив.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     reason = cast(
         str,
@@ -104,15 +101,14 @@ async def handle_inactive_reject_modal_submit(
             guild.id,
             message.id,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Не удалось обновить сообщение с результатом отклонения.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     await interaction.response.send_message(
         "Заявление на неактив отклонено.",

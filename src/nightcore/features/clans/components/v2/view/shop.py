@@ -5,7 +5,7 @@ import re
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Guild, Member, Message, Thread
+from discord import ButtonStyle, Color, Guild, Member, Message, Thread
 from discord import Container as ContainerOverride
 from discord.interactions import Interaction
 from discord.ui import (
@@ -29,11 +29,10 @@ from src.infra.db.operations import (
     get_specified_channel,
     get_specified_field,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessDeniedEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.features.clans.events.dto import (
     ClanShopOrderNotifyDTO,
@@ -54,8 +53,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
 
     @button(
         label="Одобрить",
-        style=ButtonStyle.success,
-        emoji="<:check:1442915033079353404>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreAcceptPurple:1540717637745508402>",
         custom_id="clan_shop:approve",
     )
     async def approve(
@@ -140,72 +139,62 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                                 await session.delete(shop_order)
 
         if outcome == "missing_permissions":
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(),
                 ephemeral=True,
             )
+            return
 
         if outcome == "rules_channel_not_configured":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка одобрения покупки",
                     "Канал с правилами не настроен.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         if outcome == "order_not_found":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка одобрения покупки",
                     "Заказ не найден в базе данных.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         if outcome == "invalid_state":
             await interaction.followup.send(
-                embed=ErrorEmbed(
+                view=ErrorViewV2(
                     "Ошибка одобрения покупки",
                     "Заказ уже был обработан ранее.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
 
         if outcome == "clan_not_found":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка одобрения покупки",
                     "Клан не найден в базе данных.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         if outcome == "insufficient_funds":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка одобрения покупки",
                     "Недостаточно средств на балансе клана.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         if outcome == "success":
             await interaction.followup.send(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Покупка одобрена",
                     f"Покупка товара **{view.item_name}** для клана "
                     f"**{view.clan_name}** была успешно одобрена.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
 
@@ -240,8 +229,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
 
     @button(
         label="Отклонить",
-        style=ButtonStyle.danger,
-        emoji="<:failed:1442915170320912506>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreDeclinePurple:1540717713318477824>",
         custom_id="clan_shop:decline",
     )
     async def decline(
@@ -313,52 +302,44 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                         outcome = "success"
 
         if outcome == "missing_permissions":
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(),
                 ephemeral=True,
             )
+            return
 
         if outcome == "clans_access_not_configured":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отклонения покупки",
                     "Роли с доступом к кланам не настроены.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         if outcome == "order_not_found":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка отклонения покупки",
                     "Заказ не найден в базе данных.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         elif outcome == "invalid_state":
             await interaction.followup.send(
-                embed=ErrorEmbed(
+                view=ErrorViewV2(
                     "Ошибка отклонения покупки",
                     "Заказ уже был обработан ранее.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
 
         elif outcome == "success":
             await interaction.followup.send(
-                embed=SuccessDeniedEmbed(
+                view=ErrorViewV2(
                     "Покупка отклонена",
                     f"Покупка товара **{view.item_name}** для клана "
                     f"**{view.clan_name}** была отклонена.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
 
@@ -491,7 +472,9 @@ class ClanShopViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self]()  # 1
+        container = Container[Self](
+            accent_color=Color.from_str("#9B7EDE")
+        )  # 1
         container.add_item(  # 2
             TextDisplay[Self](
                 f"{','.join(f'<@&{rid}>' for rid in self.ping_roles_ids)}"
@@ -500,7 +483,7 @@ class ClanShopViewV2(LayoutView):
         container.add_item(Separator[Self]())  # 3
         container.add_item(  # 4
             TextDisplay[Self](
-                "## <:9183shoppingcart:1442921975851778310> Запрос на покупку товара"  # noqa: E501
+                "## <:nightcoreShoppingPurple:1540718246523568268> Запрос на покупку товара"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())  # 5
@@ -534,15 +517,6 @@ class ClanShopViewV2(LayoutView):
             )
         )
         # 14
-        container.add_item(Separator[Self]())
-
-        # 15
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         if disable_all:
             self._disable_buttons()

@@ -7,10 +7,10 @@ Handles item selection and purchase flow, including creating threads for orders.
 
 import asyncio
 import logging
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import (
+    Color,
     Guild,
     SelectOption,
     TextChannel,
@@ -31,7 +31,10 @@ from src.infra.db.models import (
 )
 from src.infra.db.models.configurations.economy import GuildEconomyShopItem
 from src.infra.db.operations import get_or_create_user, get_specified_field
-from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+)
 from src.nightcore.services.config import specified_guild_config
 from src.utils._enums import ShopOrderStateEnum
 
@@ -39,8 +42,6 @@ from .order import CoinsShopOrderViewV2
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-
-from src.nightcore.utils import discord_ts
 
 logger = logging.getLogger(__name__)
 
@@ -129,15 +130,14 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                     interaction, guild, coin_name, shop_items
                 )
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка покупки товара",
                     "У вас недостаточно средств для покупки этого товара.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             perms = guild.me.guild_permissions
@@ -155,14 +155,13 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         interaction, guild, coin_name, shop_items
                     )
                 )
-                return await interaction.followup.send(
-                    embed=MissingPermissionsEmbed(
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
+                await interaction.followup.send(
+                    view=MissingPermissionsViewV2(
                         "У меня недостаточно прав для создания ветки с покупкой.",  # noqa: E501
                     ),
                     ephemeral=True,
                 )
+                return
 
             try:
                 thread = await cast(
@@ -180,15 +179,14 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         interaction, guild, coin_name, shop_items
                     )
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка покупки",
                         "Не удалось создать ветку для покупки в магазине экономики.",  # noqa: E501
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             oview = CoinsShopOrderViewV2(
                 bot,
@@ -218,15 +216,14 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         interaction, guild, coin_name, shop_items
                     )
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка покупки",
                         "Не удалось создать состояние заказа в базе данных.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             try:
                 message, _ = await asyncio.gather(
@@ -245,15 +242,14 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         interaction, guild, coin_name, shop_items
                     )
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка покупки",
                         "Не удалось отправить сообщение с покупкой в магазине экономики.",  # noqa: E501
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             oview.custom_id = state.custom_id
 
@@ -275,19 +271,10 @@ class CoinsShopViewV2(LayoutView):
         """Build shop view component."""
         self.clear_items()
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
         container.add_item(
             TextDisplay[Self](
-                f"## <:241508crown:1442923559541407844> Магазин сервера {guild_name}"  # noqa: E501
-            )
-        )
-        container.add_item(Separator[Self]())
-
-        container.add_item(
-            TextDisplay[Self](
-                "**Приветствую вас, уважаемые пользователи.**\n"
-                "Это магазин нашего дискорд сервера.\n"
-                f"Вы можете приобрести различные привилегии за **{coin_name}** <:55506lightbluefire:1442923343094218792>"  # noqa: E501
+                f"## <:nightcoreCrown:1540453024772661300> Магазин сервера {guild_name}"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -305,12 +292,5 @@ class CoinsShopViewV2(LayoutView):
             SelectItemActionRow(options=cast(list[SelectOption], options))
         )
         container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

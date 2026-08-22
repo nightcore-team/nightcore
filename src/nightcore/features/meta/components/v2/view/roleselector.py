@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import Color, MediaGalleryItem, Role, SelectOption
@@ -18,8 +17,6 @@ from discord.ui import (
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-
-from src.nightcore.utils import discord_ts
 
 
 class RoleSelectorSelect(Select["RoleSelectorViewV2"]):
@@ -65,13 +62,5 @@ class RoleSelectorViewV2(LayoutView):
             SelectOption(label="Удалить все роли", value="remove_all_roles"),
         ]
         container.add_item(ActionRow(RoleSelectorSelect(options)))
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

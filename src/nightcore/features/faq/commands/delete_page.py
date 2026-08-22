@@ -8,7 +8,7 @@ from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildFaqConfig
 from src.infra.db.models._annot import FAQPageAnnot
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.faq._groups import faq as faq_group
 from src.nightcore.features.faq.utils import faq_autocomplete
 from src.nightcore.services.config import specified_guild_config
@@ -60,11 +60,9 @@ async def delete_faq_page(
 
     if outcome == "page_not_found":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка удаления страницы FAQ",
                 f"Страница с названием '{page}' не найдена в FAQ этого сервера.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -72,11 +70,9 @@ async def delete_faq_page(
 
     if outcome == "success":
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Удаление страницы FAQ",
                 f"Страница FAQ с названием '{page}' успешно удалена.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

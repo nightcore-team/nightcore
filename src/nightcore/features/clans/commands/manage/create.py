@@ -17,10 +17,10 @@ from src.infra.db.operations import (
     get_specified_channel,
     get_specified_field,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.clans._groups import manage as manage_clan_group
@@ -71,33 +71,30 @@ async def create(
     try:
         color_int = int(color.lstrip("#"), 16)
     except ValueError:
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания клана",
                 "Неверный формат цвета. Пожалуйста, используйте HEX формат, например, #FF5733.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if not guild.me.guild_permissions.manage_roles:
-        return await interaction.followup.send(
-            embed=MissingPermissionsEmbed(
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+        await interaction.followup.send(
+            view=MissingPermissionsViewV2(
                 "У меня нет прав на управление ролями в этом сервере.",
             ),
         )
+        return
 
     if len(guild.roles) == config.bot.MAX_GUILD_ROLES_COUNT:
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания клана",
                 "Достигнуто максимальное количество ролей в гильдии.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     try:
         clan_role = await guild.create_role(
@@ -109,14 +106,13 @@ async def create(
         logger.error(
             "[clans] Error creating clan role in guild %s: %s", guild.id, e
         )
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания роли клана",
                 "Произошла ошибка при создании роли клана в сервере.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     # Wrap UoW in try-except to handle errors after transaction
     outcome = None
@@ -182,14 +178,13 @@ async def create(
                 delete_error,
             )
 
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания клана",
                 user_message,
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "general_error":
         try:
@@ -206,14 +201,13 @@ async def create(
                 delete_error,
             )
 
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания клана",
                 "Произошла ошибка при создании клана в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     asyncio.create_task(
         leader.add_roles(clan_role, reason="Назначение роли лидера клана.")
@@ -259,11 +253,9 @@ async def create(
     bot.dispatch("clan_manage_notify", dto)
 
     await interaction.followup.send(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Клан успешно создан",
             f"Клан **{name}** успешно создан, и роль назначена пользователю {leader.mention}.",  # noqa: E501
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )
@@ -280,15 +272,14 @@ async def create(
                     "[clans] Error fetching create clan channel category for guild %s: category not found",  # noqa: E501
                     guild.id,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка создания канала клана",
                         "Не удалось найти категорию для создания каналов кланов. ",  # noqa: E501
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
             try:
                 channel = await guild.create_text_channel(
                     name=f"{name}-clan",
@@ -314,11 +305,9 @@ async def create(
                     merged_clan.clan_channel_id = channel.id
 
                 await interaction.followup.send(
-                    embed=SuccessMoveEmbed(
+                    view=SuccessViewV2(
                         "Канал клана создан",
                         f"Для клана **{name}** был создан текстовый канал в категории {category.mention}.",  # noqa: E501
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
@@ -328,15 +317,14 @@ async def create(
                     guild.id,
                     e,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка создания канала клана",
                         "Произошла ошибка при создании канала для клана.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
         else:
             raise FieldNotConfiguredError("категория кланов")

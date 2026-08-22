@@ -7,7 +7,7 @@ from discord import Guild, Member
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_clan_member
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.clans._groups import clan as clan_main_group
 from src.nightcore.utils import ensure_role_exists
 from src.nightcore.utils.permissions import (
@@ -67,37 +67,34 @@ async def leave(interaction: Interaction["Nightcore"]):
                 outcome = "database_error"
 
     if outcome == "not_in_clan":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выхода из клана",
                 "Вы не состоите в клане на этом сервере.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "is_leader":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выхода из клана",
                 "Лидер клана не может покинуть его. Передайте лидерство другому участнику или удалите клан.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "database_error":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выхода из клана",
                 "Не удалось покинуть клан из-за внутренней ошибки.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     role = await ensure_role_exists(guild, clan_role_id)
 
@@ -105,21 +102,18 @@ async def leave(interaction: Interaction["Nightcore"]):
         try:
             await user.remove_roles(role, reason="Покинул клан")
         except Exception:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка выхода из клана",
                     "Вы покинули клан, но произошла ошибка при снятии роли",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
     await interaction.followup.send(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Выход из клана",
             f"Вы успешно покинули клан **{clan_name}**.",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

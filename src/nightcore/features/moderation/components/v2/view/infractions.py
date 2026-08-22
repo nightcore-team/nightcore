@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color, User
@@ -23,8 +22,6 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import discord_ts
-
 
 class PaginationButtons(ActionRow["InfractionsViewV2"]):
     def __init__(self):
@@ -43,8 +40,8 @@ class PaginationButtons(ActionRow["InfractionsViewV2"]):
         return True
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1442925401696632934>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowLeftRed:1540735599462449163>",
         custom_id="infractions_prev",
     )
     async def previous(
@@ -59,8 +56,8 @@ class PaginationButtons(ActionRow["InfractionsViewV2"]):
         )
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1442924853085864178>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowRightRed:1540735601089847296>",
         custom_id="infractions_next",
     )
     async def next(
@@ -117,14 +114,14 @@ class InfractionsViewV2(LayoutView):
         # important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
 
         # Header
 
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"## <:winternightcoreinfractions:1450531448384917614> Список нарушений\n"  # noqa: E501
+                    f"## <:nightcoreInfractions:1540736147192291369> Список нарушений\n"  # noqa: E501
                     f"**Пользователь:** {self.user.mention} `({self.user.id})`\n"  # noqa: E501
                     f"**Общее количество нарушений:** `{self.total_punishments}`\n"  # noqa: E501
                     f"> **Количество нарушений за последние 7 дней:** `{self.count_last_7_days_infractions}`"  # noqa: E501
@@ -144,12 +141,9 @@ class InfractionsViewV2(LayoutView):
         else:
             self.pagination = None
 
-        now = datetime.now(UTC)
-
         container.add_item(
             TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Page {self.current_page + 1} of {len(self.pages)}"
             )
         )
 

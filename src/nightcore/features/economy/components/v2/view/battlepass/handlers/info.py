@@ -65,7 +65,6 @@ async def handle_battlepass_info_button(
 
     pages = build_battlepass_levels_pages(
         levels=battlepass_levels,
-        coin_name=coin_name,
         current_user_level=user_level,
         is_v2=True,
     )

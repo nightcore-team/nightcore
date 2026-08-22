@@ -39,7 +39,7 @@ class Avatar(Cog):
         await interaction.response.send_message(
             embed=Embed(
                 title=f"Аватар пользователя {user.display_name}",  # type: ignore
-                color=discord.Color.blurple(),
+                color=discord.Color.from_str("#D896C8"),
             ).set_image(
                 url=user.avatar.url  # type: ignore
                 if user.avatar  # type: ignore

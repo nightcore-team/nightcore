@@ -1,10 +1,10 @@
 """Clan info view v2."""
 
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle
+from discord import ButtonStyle, Color
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -28,7 +28,7 @@ class ClanMembersActionRow(ActionRow["ClanInfoViewV2"]):
     @button(
         label="Список участников",
         style=ButtonStyle.grey,
-        emoji="<:7330member:1442923720959332492>",
+        emoji="<:nightcoreClanMembers:1540713940110020629>",
         custom_id="clan_info:members",
         row=0,
     )
@@ -54,10 +54,10 @@ class ClanMemberListViewV2(LayoutView):
     def __init__(self, bot: "Nightcore", members: list[ClanMember]) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#9B7EDE"))
         container.add_item(
             TextDisplay[Self](
-                "## <:7330member:1442923720959332492> Список участников клана"
+                "## <:nightcoreClanMembers:1540713940110020629> Список участников клана"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -68,14 +68,6 @@ class ClanMemberListViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 ", ".join(f"<@{member.user_id}>" for member in members)
-            )
-        )
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
             )
         )
 
@@ -103,19 +95,19 @@ class ClanInfoViewV2(LayoutView):
         self.bot = bot
         self.members = members
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#9B7EDE"))
 
         # header
         container.add_item(
             TextDisplay[Self](
-                f"## <:10447information:1442922761591849021> Информация о клане `{name}`"  # noqa: E501
+                f"## <:nightcoreInfoPurple:1540714202778308709> Информация о клане `{name}`"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
 
         container.add_item(
             TextDisplay[Self](
-                "### <:241508crown:1442923559541407844> Руководители клана:"
+                "### <:nightcoreCrownPurple:1540714328209100923> Руководители клана:"  # noqa: E501
             )
         )
         text = ""
@@ -131,7 +123,7 @@ class ClanInfoViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"### <:55506lightbluefire:1442923343094218792> Статистика клана:\n"  # noqa: E501
+                f"### <:nightcoreStats:1540714551119454288> Статистика клана:\n"  # noqa: E501
                 f"> Уровень: **{lvl}**\n"
                 f"> Опыт: **{current_exp}**\n"
                 f"> Репутация: **{reputation}** (x{reputation_multiplier})\n"
@@ -147,14 +139,6 @@ class ClanInfoViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         container.add_item(ClanMembersActionRow())
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 
@@ -168,10 +152,10 @@ class ClanListViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#9B7EDE"))
         container.add_item(
             TextDisplay[Self](
-                "## <:10447information:1442922761591849021> Список кланов"
+                "## <:nightcoreClanMembers:1540713940110020629> Список кланов"
             )
         )
         container.add_item(Separator[Self]())
@@ -183,7 +167,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:nightcoreCrownPurple:1540714328209100923> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Участники: {len(clan.members)}/{clan.max_members}\n\n"  # noqa: E501
                             )
@@ -192,7 +176,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:nightcoreCrownPurple:1540714328209100923> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Репутация: {clan.coins}\n\n"
                             )
@@ -201,7 +185,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:nightcoreCrownPurple:1540714328209100923> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Дата создания: {discord_ts(clan.created_at)}\n\n"  # noqa: E501
                             )
@@ -211,7 +195,7 @@ class ClanListViewV2(LayoutView):
                         container.add_item(
                             TextDisplay[Self](
                                 f"**{clan.name}**\n"
-                                f"<:241508crown:1442923559541407844> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
+                                f"<:nightcoreCrownPurple:1540714328209100923> Лидер: <@{clan.leader.user_id}>\n"  # noqa: E501
                                 f"Роль: <@&{clan.role_id}>\n"
                                 f"Участники: {len(clan.members)}/{clan.max_members}\n"  # noqa: E501
                                 f"Репутация: {clan.coins}\n"
@@ -222,14 +206,5 @@ class ClanListViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self]("> На этом сервере нет ни одного клана.")
             )
-
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

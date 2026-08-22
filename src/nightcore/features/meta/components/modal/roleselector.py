@@ -8,7 +8,7 @@ from discord import Color, Guild, Role
 from discord.interactions import Interaction
 from discord.ui import Label, Modal, RoleSelect
 
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.meta.components.v2 import RoleSelectorViewV2
 from src.nightcore.utils import compare_top_roles
 
@@ -54,11 +54,9 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
         for role in values:
             if role.permissions.administrator:
                 await interaction.followup.send(
-                    embed=ErrorEmbed(
+                    view=ErrorViewV2(
                         "Ошибка создания селектора ролей",
                         f"Роль {role.mention} имеет права администратора и не может быть добавлена в селектор ролей.",  # noqa: E501
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
@@ -66,11 +64,9 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
 
             if role.position >= interaction.user.top_role.position:  # type: ignore this modal is only used in the guild because of the decorator @guild_only in the command that calls it
                 await interaction.followup.send(
-                    embed=ErrorEmbed(
+                    view=ErrorViewV2(
                         "Ошибка создания селектора ролей",
                         f"Позиция роли {role.mention} больше чем позиция вашей наивысшей роли.",  # noqa: E501
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
@@ -81,11 +77,9 @@ class RoleSelectorModal(Modal, title="Выбор ролей"):
                 role,
             ):
                 await interaction.followup.send(
-                    embed=ErrorEmbed(
+                    view=ErrorViewV2(
                         "Ошибка создания селектора ролей",
                         f"Роль {role.mention} выше роли бота, поэтому вы не можете добавить её в селектор ролей.",  # noqa: E501
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )

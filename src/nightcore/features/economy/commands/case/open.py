@@ -11,10 +11,7 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    ValidationErrorEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, ValidationErrorViewV2
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
@@ -129,48 +126,44 @@ async def open_case(
         outcome = "error"
 
     if outcome == "no_case":
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "У вас нет такого кейса для открытия.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "no_case_reward_configured":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка открытия кейса",
                 "Награды не настроены для выбранного кейса.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome.startswith("error"):
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка открытия кейса",
                 "Произошла ошибка при открытии кейса.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         if opened_case_item is None:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка открытия кейса",
                     "Кейс не найден после открытия.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         view = CaseOpenViewV2(
             bot=bot,

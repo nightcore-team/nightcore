@@ -7,7 +7,10 @@ from discord import Embed, Guild, Interaction
 
 from src.infra.db.operations import get_guild_rules
 from src.nightcore.bot import Nightcore
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+)
 from src.nightcore.features.meta.utils import build_rules_embeds
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -36,30 +39,28 @@ async def send_rules(
         session.expunge_all()
 
     if rules is None or not rules.chapters:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки правил",
                 "Правила отсутствуют",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     chapters = rules.chapters
 
     if not chapters:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки правил",
                 "Правила отсутствуют",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
-    await interaction.response.defer(thinking=True)
+    await interaction.response.defer(ephemeral=True, thinking=True)
     messages: list[list[Embed]] = []
 
     # build and send embeds
@@ -82,11 +83,9 @@ async def send_rules(
         await interaction.channel.send(embeds=embed_group)  # type: ignore
 
     await interaction.followup.send(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Отправка правил",
             "Правила успешно отправлены",
-            bot.user.display_name,  # type: ignore
-            bot.user.avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

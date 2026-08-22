@@ -11,10 +11,10 @@ from discord.interactions import Interaction
 
 from src.config.config import config
 from src.infra.db.models import GuildModerationConfig
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.features.moderation.components.modal import BanFormModal
@@ -85,72 +85,68 @@ class Ban(Cog):
             member, moderation_access_roles
         )
         if is_member_moderator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка бана пользователя",
                     "Вы не можете забанить модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if (
             isinstance(member, Member)
             and member.guild_permissions.administrator
         ):
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка бана пользователя",
                     "Вы не можете забанить администраторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if not guild.me.guild_permissions.ban_members:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
                     "У меня нет прав на бан участников.",
                 ),
                 ephemeral=True,
             )
+            return
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка бана пользователя",
                     "Вы не можете забанить меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if not compare_top_roles(guild, member):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "Я не могу забанить этого пользователя, потому что у него роль выше моей.",  # noqa: E501
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
+                    "Я не могу забанить этого пользователя, "
+                    "потому что у него роль выше моей.",
                 ),
                 ephemeral=True,
             )
+            return
 
         parsed_duration = parse_duration(duration)
 
         if not parsed_duration:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
-                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Неверная продолжительность. "
+                    "Используйте s/m/h/d (например, 1h, 1d, 7d).",
                 ),
                 ephemeral=True,
             )
+            return
 
         parsed_delete_messages_per = 0
 
@@ -158,24 +154,23 @@ class Ban(Cog):
             tmp_delete_messages_per = parse_duration(delete_messages_per)
 
             if tmp_delete_messages_per is None:
-                return await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        "Неверная длительность удаления сообщений. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                await interaction.response.send_message(
+                    view=ValidationErrorViewV2(
+                        "Неверная длительность удаления сообщений. "
+                        "Используйте s/m/h/d (например, 1h, 1d, 7d).",
                     ),
                     ephemeral=True,
                 )
+                return
 
             if tmp_delete_messages_per > config.bot.DELETE_MESSAGES_SECONDS:
-                return await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
+                await interaction.response.send_message(
+                    view=ValidationErrorViewV2(
                         f"Длительность удаления сообщений не может превышать {config.bot.DELETE_MESSAGES_SECONDS // 86400} дней.",  # noqa: E501
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             parsed_delete_messages_per = tmp_delete_messages_per
 
@@ -236,15 +231,14 @@ class Ban(Cog):
                     guild.id,
                     e,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка бана пользователя",
                         "Не удалось забанить пользователя.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
             else:
                 await interaction.followup.send(
                     view=PunishViewV2(
@@ -258,15 +252,14 @@ class Ban(Cog):
                     )
                 )
         else:
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка бана пользователя",
                     f"{user.mention} уже забанен на этом сервере.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s reason=%s",
@@ -287,15 +280,14 @@ async def _ban_request_callback(
     member = await ensure_member_exists(guild, user.id)
 
     if member is None:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса на бан",
                 "Пользователь не найден на сервере.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     async with specified_guild_config(
         client,
@@ -322,66 +314,56 @@ async def _ban_request_callback(
         for role_id in moderation_access_roles
     )
     if not has_moder_role:
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.response.send_message(
+            view=MissingPermissionsViewV2(),
             ephemeral=True,
         )
+        return
 
     is_member_moderator = any(
         member.get_role(role_id) for role_id in moderation_access_roles
     )
     if is_member_moderator:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
-                "Вы не можете забанить модераторов.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2("Вы не можете забанить модераторов."),
             ephemeral=True,
         )
+        return
 
     if member.guild_permissions.administrator:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
-                "Вы не можете забанить администраторов.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
+                "Вы не можете забанить администраторов."
             ),
             ephemeral=True,
         )
+        return
 
     if not guild.me.guild_permissions.ban_members:
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
-                "У меня нет прав на бан участников.",
+        await interaction.response.send_message(
+            view=MissingPermissionsViewV2(
+                "У меня нет прав на бан участников."
             ),
             ephemeral=True,
         )
+        return
 
     if guild.me == member:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
-                "Вы не можете забанить меня.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2("Вы не можете забанить меня."),
             ephemeral=True,
         )
+        return
 
     if not compare_top_roles(guild, member):
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
-                "Я не могу забанить этого пользователя, потому что у него роль выше моей.",  # noqa: E501
+        await interaction.response.send_message(
+            view=MissingPermissionsViewV2(
+                "Я не могу забанить этого пользователя, "
+                "потому что у него роль выше моей.",
             ),
             ephemeral=True,
         )
+        return
 
     role = None
     if ban_request_ping_role_id:
@@ -396,14 +378,13 @@ async def _ban_request_callback(
         guild, ban_request_channel_id
     )
     if channel is None:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса на бан",
                 "Канал для отправки запросов на бан не найден.",
-                client.user.name,  # type: ignore
-                client.user.display_avatar.url,  # type: ignore
             )
         )
+        return
 
     modal = BanFormModal(
         target=user,

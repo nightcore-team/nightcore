@@ -12,10 +12,7 @@ from src.infra.db.operations import (
     get_case_by_id,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedReward,
@@ -94,37 +91,34 @@ async def delete_case_reward(
         )
 
     if outcome == "case_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения кейса",
                 "Выбранный кейс не найден в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "case_change_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения кейса",
                 "Произошла ошибка при изменении кейса. Обратитесь к разработчикам.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "unknown_reward_index":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка добавления награды",
                 "Награда с данным порядковым номером не существует.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     item = ChangedReward(after=reward)  # type: ignore
 
@@ -140,11 +134,9 @@ async def delete_case_reward(
     bot.dispatch("item_change_notify", dto)
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Удаление награды успешно",
             f"Вы удалили награду из кейса {case.name} ",  # type: ignore
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

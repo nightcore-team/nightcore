@@ -11,10 +11,7 @@ from src.infra.db.operations import (
     get_color_by_id,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import color as color_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
@@ -81,26 +78,24 @@ async def delete_color(
         )
 
     if outcome == "color_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения цвета",
                 "Выбранный цвет не найден в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "color_delete_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления цвета",
                 "Произошла ошибка при удалении цвета. Обратитесь к разработчикам.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     item = ChangedRole(
         after_id=color.role_id,  # type: ignore
@@ -122,11 +117,9 @@ async def delete_color(
     bot.dispatch("item_change_notify", dto)
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Удаление цвета успешно",
             f"Вы успешно удалили цвет <@&{color.role_id}> ",  # type: ignore
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

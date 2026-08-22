@@ -13,10 +13,7 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import remove as remove_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
@@ -62,26 +59,24 @@ async def remove_color(
     outcome = ""
 
     if not guild.me.guild_permissions.manage_roles:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления цвета",
                 "У меня недостаточно прав для управления ролями.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if user == bot.user:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления цвета",
                 "Невозможно удалить цвет у бота.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     async with bot.uow.start() as session:
         logging_channel_id = await get_specified_channel(
@@ -112,34 +107,30 @@ async def remove_color(
                     outcome = "does_not_have_color"
 
     if outcome == "unknown_color":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления цвета",
                 "Цвет не был найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "does_not_have_color":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления цвета",
                 "У пользователя нет этого цвета.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Удаление цвета успешно",
                 f"Вы успешно удалили пользователю <@{user.id}> цвет <@&{color.role_id}>.",  # noqa: E501 # type: ignore
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

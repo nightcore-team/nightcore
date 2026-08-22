@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildFaqConfig
 from src.infra.db.models._annot import FAQPageAnnot
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -48,11 +48,9 @@ async def handle_faq_button_callback(
 
     if outcome == "page_not_found":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения страницы FAQ",
                 f"Страница с названием '{page_title}' не найдена в FAQ этого сервера.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

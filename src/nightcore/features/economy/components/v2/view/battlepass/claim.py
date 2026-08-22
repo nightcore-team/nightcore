@@ -4,7 +4,6 @@ Battlepass claim view v2 component.
 Used for displaying user's battlepass information with info/claim buttons.
 """
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Color, Interaction
@@ -18,8 +17,6 @@ from discord.ui import (
     TextDisplay,
     Thumbnail,
 )
-
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -40,12 +37,12 @@ class BattlepassClaimViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#b777a6"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    "## <:9057saturn:1442919302587093072> Battlepass\n"
+                    "## <:nightcoreBattlepass:1540406661146091590> Battlepass\n"  # noqa: E501
                     f"**Общее количество уровней**: {total_levels}\n"
                     "> Для повышения уровня активно общайтесь на нашем сервере <:heartt:1442919985004544011>"  # noqa: E501
                 ),
@@ -57,7 +54,7 @@ class BattlepassClaimViewV2(LayoutView):
         info_button = Button[Self](
             label="Информация",
             style=ButtonStyle.secondary,
-            emoji="<:5730galaxy:1442918999036793045>",
+            emoji="<:nightcoreGem:1540406663377453097>",
             custom_id="battlepass:info",
         )
 
@@ -73,7 +70,7 @@ class BattlepassClaimViewV2(LayoutView):
 
         claim_reward_button = Button[Self](
             label="Забрать награду",
-            style=ButtonStyle.secondary,
+            style=ButtonStyle.grey,
             # emoji="<:5730galaxy:1442918999036793045>",
             custom_id="battlepass:claim_reward",
             disabled=disable_button,
@@ -81,19 +78,12 @@ class BattlepassClaimViewV2(LayoutView):
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"<:48765whitearrow:1442918703367983225> **Награда за уровень: {reward_type}, {reward_amount}**"  # noqa: E501
+                    f"<:nightcoreArrowRightCyan:1540434390780477551> **Награда за уровень: {reward_type}, {reward_amount}**"  # noqa: E501
                 ),
                 accessory=claim_reward_button,
             )
         )
         container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 

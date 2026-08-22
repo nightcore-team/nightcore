@@ -1,11 +1,9 @@
 """Clans Payday View V2 Component."""
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
+from discord import Color
 from discord.ui import Container, LayoutView, Separator, TextDisplay
-
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -15,10 +13,12 @@ class ClansPaydayViewV2(LayoutView):
     def __init__(self, bot: "Nightcore") -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#9B7EDE"))
 
         container.add_item(
-            TextDisplay[Self]("## <:241508crown:1442923559541407844> PayDay")
+            TextDisplay[Self](
+                "## <:nightcoreCrownPurple:1540714328209100923> PayDay"
+            )
         )
         container.add_item(Separator[Self]())
 
@@ -27,13 +27,4 @@ class ClansPaydayViewV2(LayoutView):
                 "Всем кланам были выданы очки репутации в зависимости от количества участников и множителя PayDay."  # noqa: E501
             )
         )
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
-
         self.add_item(container)

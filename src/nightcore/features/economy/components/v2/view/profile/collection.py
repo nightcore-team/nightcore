@@ -38,11 +38,11 @@ class CasesCollectionViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
             TextDisplay[Self](
-                "### <a:68842universebox:1442920870996742275> Кейсы: "
+                "### <:nightcoreCase:1540678039841673216> Кейсы: "
             )
         )
         container.add_item(Separator[Self]())
@@ -82,10 +82,12 @@ class ColorsCollectionViewV2(LayoutView):
     ):
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
-            TextDisplay[Self]("### <:palette:1442915900666679527> Цвета: ")
+            TextDisplay[Self](
+                "### <:nightcoreColor:1540678362970988544> Цвета: "
+            )
         )
         container.add_item(Separator[Self]())
 
@@ -129,7 +131,7 @@ class UserProfileActionRow(ActionRow[LayoutView]):
         style=ButtonStyle.grey,
         label="История переводов",
         custom_id="profile:history",
-        emoji="<:winterarrowsnightcore:1450562878166925334>",
+        emoji="<:nightcoreArrowsLeftRight:1540432969431519277>",
     )
     async def transfer_history_button(
         self,
@@ -148,7 +150,7 @@ class UserProfileActionRow(ActionRow[LayoutView]):
         style=ButtonStyle.grey,
         label="Цвета",
         custom_id="profile:colors",
-        emoji="<:palette:1442915900666679527>",
+        emoji="<:nightcoreColor:1540678362970988544>",
     )
     async def colors_button(
         self,
@@ -181,7 +183,7 @@ class UserProfileActionRow(ActionRow[LayoutView]):
         style=ButtonStyle.grey,
         label="Кейсы",
         custom_id="profile:cases",
-        emoji="<a:68842universebox:1442920870996742275>",
+        emoji="<:nightcoreCase:1540678039841673216>",
     )
     async def cases_button(
         self,

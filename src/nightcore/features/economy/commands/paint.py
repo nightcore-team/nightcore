@@ -12,7 +12,7 @@ from discord.interactions import Interaction
 from src.infra.db.models.color import Color
 from src.infra.db.models.user import User
 from src.infra.db.operations import get_guild_colors, get_or_create_user
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.utils import (
     CLEAR_COLOR_ID,
     user_colors_autocomplete,
@@ -52,15 +52,14 @@ class Paint(Cog):
         member = cast(Member, interaction.user)
 
         if not guild.me.guild_permissions.manage_roles:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка выдачи цвета",
                     "У меня недостаточно прав для управления ролями.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
 
@@ -89,67 +88,60 @@ class Paint(Cog):
                 )
 
         if outcome == "already_have_color":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка выдачи цвета",
                     "Вы уже применили на себя этот цвет.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "no_colors_to_reset":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка сброса цвета",
                     "У вас нет активного цвета для сброса.",
-                    interaction.client.user.display_name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "no_color_in_inventory":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка выдачи цвета",
                     "У вас нет этого цвета в инвентаре.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "role_not_found":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка выдачи цвета",
                     "Роль цвета не найдена на сервере.",
-                    interaction.client.user.display_name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "error":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка выдачи цвета",
                     "Произошла ошибка при применении цвета",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Изменение цвета",
                     success_description,  # type: ignore
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )

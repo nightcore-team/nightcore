@@ -52,10 +52,7 @@ async def case_help(
 
     pages = build_cases_help_pages(cases)
 
-    view = CaseHelpViewV2(
-        bot=bot,
-        pages=pages,
-    )
+    view = CaseHelpViewV2(bot=bot, pages=pages)
 
     await interaction.response.send_message(view=view, ephemeral=True)
 

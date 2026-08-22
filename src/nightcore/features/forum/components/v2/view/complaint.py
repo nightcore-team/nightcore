@@ -34,7 +34,7 @@ class ComplaintActionRow(ActionRow["ComplaintViewV2"]):
                 style=ButtonStyle.link,
                 label="Ссылка на жалобу",
                 url=self.url,
-                emoji="<:2988copylink:1442925607620055071>",
+                emoji="<:nightcoreLink:1540727730486907012>",
             )
         )
 
@@ -51,12 +51,12 @@ class ComplaintViewV2(LayoutView):
         super().__init__(timeout=None)
 
         container = Container[Self](
-            accent_color=Color.from_str("#ffffff")
+            accent_color=Color.from_str("#C0577A")
         )  # 9300d2
 
         container.add_item(
             TextDisplay[Self](
-                "### <:winternightcoremoderation:1450513379897905415> Поступила новая жалоба на модератора"  # noqa: E501
+                "### <:nightcoreModerComplaint:1540728416263733329> Жалоба на модератора"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -71,7 +71,7 @@ class ComplaintViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                "### Информация о жалобе\n"
+                "### <:nightcoreInfoRed:1540728901372878889> Информация о жалобе\n"  # noqa: E501
                 f"Модератор: <@{moderator_id}>\n"
                 f"ID модератора: {moderator_id}\n"
                 f"Причина: {reason}\n"

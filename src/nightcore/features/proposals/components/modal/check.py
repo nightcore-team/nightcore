@@ -7,7 +7,7 @@ import discord
 from discord.ui import Modal, TextInput
 
 from src.config.config import config
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.proposals.utils import (
     strip_discord_markdown_to_plain,
 )
@@ -88,11 +88,9 @@ class CheckProposalModal(Modal, title="Рассмотрение предложе
             )
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                    view=ErrorViewV2(
                         "Ошибка рассмотра предложения",
                         "Произошла ошибка при обработке вашего ответа.",
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )

@@ -8,10 +8,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import get_or_create_user, get_specified_channel
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
@@ -51,15 +48,14 @@ async def give_coins(
     outcome = ""
 
     if user == bot.user:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи монет",
                 "Невозможно выдать монеты боту.",
-                bot.user.display_name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -92,23 +88,20 @@ async def give_coins(
                 outcome = "give_coins_error"
 
     if outcome == "give_coins_error":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи монет",
                 "Не удалось выдать монеты пользователю.",
-                bot.user.display_name,
-                bot.user.display_avatar.url,
             )
         )
+        return
 
     if outcome == "success":
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Выдача монет успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
                 f"**{amount} {coin_name or 'коинов'}**.",
-                bot.user.display_name,
-                bot.user.display_avatar.url,
             )
         )
 

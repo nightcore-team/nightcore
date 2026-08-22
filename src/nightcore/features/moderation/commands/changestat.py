@@ -14,10 +14,10 @@ from src.infra.db.models import (
 from src.infra.db.models import (
     GuildModerationConfig,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.services.config import specified_guild_config
@@ -80,14 +80,13 @@ class ChangeStat(Cog):
             amount = float(amount)
         except ValueError as e:
             logger.error("[command] - Invalid amount: %s", e)
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Пожалуйста, укажите корректное число.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         async with specified_guild_config(
             self.bot, guild.id, GuildModerationConfig
@@ -108,14 +107,13 @@ class ChangeStat(Cog):
             moderator, trackable_moderation_role
         )
         if not is_member_moderator:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Этот пользователь не является модератором для получения статистики.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
         async with self.bot.uow.start() as session:
@@ -141,26 +139,24 @@ class ChangeStat(Cog):
                 outcome = "changestat_failed"
 
         if outcome == "changestat_failed":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка изменения статистики",
                     "Не удалось изменить статистику модератора.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
-            return await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+            await interaction.response.send_message(
+                view=SuccessViewV2(
                     "Статистика модератора успешно изменена",
                     f"Статистика модератора {moderator.mention} была изменена: {type.name}, {amount}.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s moderator=%s type=%s reason=%s amount=%s",  # noqa: E501

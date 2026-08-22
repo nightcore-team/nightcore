@@ -14,9 +14,9 @@ from src.infra.db.operations import (
     get_or_create_user,
     is_user_ticketbanned,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
@@ -72,27 +72,25 @@ class Ticketban(Cog):
         outcome = ""
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         parsed_duration = parse_duration(duration)
 
         if not parsed_duration:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         try:
             async with self.bot.uow.start() as session:
@@ -123,35 +121,32 @@ class Ticketban(Cog):
                 e,
             )
 
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки тикетов",
                     "Не удалось заблокировать пользователя.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         if outcome == "cannot_punish_moderator":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "already_punisned":
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Этот пользователь уже имеет блокировку на создание тикетов.",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer()
 

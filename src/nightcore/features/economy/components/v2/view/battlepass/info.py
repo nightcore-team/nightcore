@@ -32,7 +32,7 @@ class PaginationButtons(ActionRow["BattlepassInfoViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1442925401696632934>",
+        emoji="<:nightcoreArrowLeftCyan:1540434220436951172>",
         custom_id="battlepass:info_prev",
     )
     async def previous(
@@ -45,6 +45,7 @@ class PaginationButtons(ActionRow["BattlepassInfoViewV2"]):
 
         if view.current_page > 0:  # type: ignore
             view.current_page -= 1  # type: ignore
+
         await interaction.followup.edit_message(
             interaction.message.id,  # type: ignore
             view=view.make_component(),
@@ -52,7 +53,7 @@ class PaginationButtons(ActionRow["BattlepassInfoViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1442924853085864178>",
+        emoji="<:nightcoreArrowRightCyan:1540434390780477551>",
         custom_id="battlepass:info_next",
     )
     async def next(
@@ -65,6 +66,7 @@ class PaginationButtons(ActionRow["BattlepassInfoViewV2"]):
 
         if view.current_page < len(view.pages) - 1:  # type: ignore
             view.current_page += 1  # type: ignore
+
         await interaction.followup.edit_message(
             interaction.message.id,  # type: ignore
             view=view.make_component(),
@@ -108,11 +110,11 @@ class BattlepassInfoViewV2(LayoutView):
         """Create the view components."""
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#b777a6"))
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:9057saturn:1442919302587093072> Battlepass Information"
+                "## <:nightcoreBattlepass:1540406661146091590> Battlepass Information"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())

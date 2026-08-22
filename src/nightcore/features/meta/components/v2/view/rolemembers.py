@@ -1,9 +1,8 @@
 """Role members view v2 component."""
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
-from discord import ButtonStyle, Role
+from discord import ButtonStyle, Color, Role
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
@@ -17,8 +16,6 @@ from discord.ui import (
     Thumbnail,
     button,
 )
-
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -41,8 +38,8 @@ class PaginationButtons(ActionRow["RoleMembersViewV2"]):
         return True
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1442925401696632934>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowLeftPink:1540695597454065675>",
         custom_id="rolemembers:prev",
     )
     async def previous(
@@ -57,8 +54,8 @@ class PaginationButtons(ActionRow["RoleMembersViewV2"]):
         )
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1442924853085864178>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowRightPink:1540695596506284082>",
         custom_id="rolemembers:next",
     )
     async def next(
@@ -114,10 +111,10 @@ class RoleMembersViewV2(LayoutView):
         # Important: clear previous items to avoid duplicate custom_id
         self.clear_items()
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#D896C8"))
 
         header_section: TextDisplay[Self] | Section[Self] = TextDisplay[Self](
-            f"### <:10447information:1442922761591849021> Список участников с ролью\n"  # noqa: E501
+            f"### <:nightcoreInfoPink:1540695300061007983> Список участников с ролью\n"  # noqa: E501
             f"Роль: {self.role.mention}\n"
             f"ID роли: **`{self.role.id}`**\n"
             f"Количество участников: **{self.members_count}**"
@@ -142,11 +139,9 @@ class RoleMembersViewV2(LayoutView):
             container.add_item(Separator[Self]())
 
         # Footer
-        now = datetime.now(UTC)
         container.add_item(
             TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}\n"
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
+                f"-# Page {self.current_page + 1} of {len(self.pages)}"
             )
         )
 

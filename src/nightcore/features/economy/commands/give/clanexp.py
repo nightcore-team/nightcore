@@ -10,10 +10,7 @@ from src.infra.db.operations import (
     get_clan_by_id,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.clans.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.features.economy._groups import give as give_group
@@ -72,21 +69,18 @@ async def give_clanexp(
             await session.flush()
 
     if outcome == "clan_not_found":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи кланового опыта",
                 "Клан не найден на сервере.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     await interaction.followup.send(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Выдача кланового опыта",
             f"Успешно выдано {amount} опыта клану **{cast(Clan, db_clan).name}**.",  # noqa: E501
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
     )
 

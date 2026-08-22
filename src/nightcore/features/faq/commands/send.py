@@ -6,8 +6,7 @@ from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildFaqConfig
-from src.nightcore.components.embed import ErrorEmbed
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.faq._groups import faq as faq_group
 from src.nightcore.features.faq.components.v2 import FAQGlobalViewV2
 from src.nightcore.services.config import specified_guild_config
@@ -52,11 +51,9 @@ async def send_faq_pages(
 
     if outcome == "no_pages":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка отправки FAQ",
                 "В FAQ этого сервера нет страниц для отображения.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -68,11 +65,9 @@ async def send_faq_pages(
         await interaction.channel.send(view=view)  # type: ignore
 
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Отправка FAQ",
                 "Сообщение FAQ успешно отправлено.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

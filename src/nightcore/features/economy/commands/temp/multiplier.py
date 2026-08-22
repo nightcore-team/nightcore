@@ -11,10 +11,10 @@ from src.infra.db.models import GuildMultipliersConfig
 from src.infra.db.operations import (
     get_or_create_temp_multiplier,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.economy._groups import temp as temp_group
 from src.nightcore.services.config import specified_guild_config
@@ -64,14 +64,13 @@ async def set_multiplier(
     parsed_duration = parse_duration(duration)
 
     if not parsed_duration:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     outcome = ""
     multiplier_type_enum = MultiplierTypeEnum(multiplier_type.value)
@@ -121,23 +120,20 @@ async def set_multiplier(
             outcome = "error"
 
     if outcome == "error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка установки множителя",
                 "Не удалось установить временный множитель.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Множитель установлен",
                 f"Временный множитель {multiplier_type_enum.value} x{multiplier} установлен на {duration}.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

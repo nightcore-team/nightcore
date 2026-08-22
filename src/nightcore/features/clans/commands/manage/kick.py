@@ -9,10 +9,10 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import get_clan_member, get_specified_channel
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
@@ -67,11 +67,9 @@ async def kick(
 
     if not interaction_clan_member:
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка кика пользователя",
                 "Вы не состоите в клане.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -79,11 +77,9 @@ async def kick(
 
     if not kicked_user_clan_member:
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка кика пользователя",
                 f"{user.mention} не состоит ни в одном из кланов.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -94,21 +90,16 @@ async def kick(
         and interaction_clan_member.role != ClanMemberRoleEnum.DEPUTY
     ):
         await interaction.followup.send(
-            embed=MissingPermissionsEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
+            view=MissingPermissionsViewV2(),
             ephemeral=True,
         )
         return
 
     if interaction_clan_member.clan_id != kicked_user_clan_member.clan_id:
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка кика пользователя",
                 f"{user.mention} не состоит в вашем клане.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -116,11 +107,9 @@ async def kick(
 
     if kicked_user_clan_member.role == ClanMemberRoleEnum.LEADER:
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка кика пользователя",
                 "Вы не можете кикнуть лидера клана.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -128,11 +117,9 @@ async def kick(
 
     if interaction_clan_member.role == kicked_user_clan_member.role:
         await interaction.followup.send(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка кика пользователя",
                 "У вас нет прав для кика пользователя с ролью заместителя",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -160,14 +147,13 @@ async def kick(
         outcome = "db_error"
 
     if outcome == "db_error":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка кика пользователя",
                 "Ошибка удаления пользователя из базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             )
         )
+        return
 
     if member := await ensure_member_exists(guild, user.id):
         role = await ensure_role_exists(
@@ -178,24 +164,21 @@ async def kick(
             try:
                 await member.remove_roles(role, reason="Кик из клана.")
             except Exception:
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка кика пользователя",
                         "Участник кикнут из клана, но произошла ошибка при снятии роли",  # noqa: E501
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     )
                 )
+                return
 
-    embed = SuccessMoveEmbed(
+    view = SuccessViewV2(
         "Кик пользователя из клана",
         "Пользователь был успешно кикнут из клана.",
-        bot.user.display_name,  # type: ignore
-        bot.user.display_avatar.url,  # type: ignore
     )
 
     with contextlib.suppress(Exception):
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(view=view, ephemeral=True)
 
     clan_kick_member_action = ClanManageAction(
         type=ClanManageActionEnum.KICK_MEMBER, after=user.mention

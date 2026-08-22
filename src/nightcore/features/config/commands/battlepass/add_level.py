@@ -14,11 +14,11 @@ from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
-from src.nightcore.components.embed.error import ValidationErrorEmbed
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )
@@ -66,37 +66,34 @@ async def add_level(
     outcome = ""
 
     if reward is None and reward_type.requires_id_or_custom():
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Для типов CASE, COLOR, CUSTOM ввод награды обязателен.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if reward is not None and len(reward) > config.bot.MAX_CUSTOM_REWARD_SIZE:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Максимальная длина награды - 100 символов.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if reward_type.requires_id():
         try:
             reward_id = int(reward)  # type: ignore
         except ValueError as _:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Введен неверный id кейса или цвета.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
     battlepass_level = BattlepassLevel(
         guild_id=guild.id, exp_required=exp_required
@@ -164,45 +161,40 @@ async def add_level(
                     outcome = "before_level_not_found"
 
     if outcome == "before_level_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка добавления уровня",
                 "Предыдущий уровень для добавления не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "unknown_case_id":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка добавления уровня",
                 "Кейс с данным id не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "unknown_color_id":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка добавления уровня",
                 "Цвет с данным id не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Уровень добавлен",
                 "Уровень успешно добавлен в боевой пропуск.",  # type: ignore
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

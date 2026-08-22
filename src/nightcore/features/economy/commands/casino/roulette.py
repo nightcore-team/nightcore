@@ -17,7 +17,7 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_channel,
 )
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import casino as casino_group
 from src.nightcore.features.economy.components.v2 import (
     MultiplayerRouletteViewV2,
@@ -197,26 +197,24 @@ async def roulette(
             outcome = "error"
 
     if outcome == "insufficient_balance":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка ставки",
                 "У вас недостаточно коинов для ставки.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка игры",
                 "Произошла ошибка при игре в рулетку.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         coin_name = guild_config.coin_name or "коины"
@@ -230,15 +228,14 @@ async def roulette(
                     member.id,
                     guild.id,
                 )
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка игры",
                         "Произошла ошибка при игре в рулетку.",
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             view = SingleRouletteViewV2(
                 bot=bot,
@@ -262,9 +259,8 @@ async def roulette(
                 ),
             )
 
-            return await interaction.response.send_message(
-                view=view, ephemeral=True
-            )
+            await interaction.response.send_message(view=view, ephemeral=True)
+            return
         else:
             view = MultiplayerRouletteViewV2(
                 bot=bot,
@@ -295,18 +291,17 @@ async def roulette(
                     ),
                 )
                 if not channel:
-                    return await interaction.response.send_message(
-                        embed=ErrorEmbed(
+                    await interaction.response.send_message(
+                        view=ErrorViewV2(
                             "Ошибка канала",
                             (
                                 "Канал многопользовательской рулетки "
                                 "не найден или недоступен."
                             ),
-                            bot.user.display_name,  # type: ignore
-                            bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
+                    return
                 success_detail = (
                     "Ваша игра отправлена в канал {jump}.\nОстальные игроки "
                     "могут присоединиться к игре в течение 1 минуты нажав "
@@ -332,22 +327,20 @@ async def roulette(
                     guild.id,
                     e,
                 )
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка отправки",
                         error_detail,
-                        bot.user.display_name,  # type: ignore
-                        bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
-            return await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+            await interaction.response.send_message(
+                view=SuccessViewV2(
                     "Игра отправлена",
                     success_detail.format(jump=message.jump_url),
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=ephemeral,
             )
+            return

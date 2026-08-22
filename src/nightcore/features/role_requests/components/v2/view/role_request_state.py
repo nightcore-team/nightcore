@@ -1,6 +1,5 @@
 """Role request state view."""
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Color
@@ -16,7 +15,6 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.utils import discord_ts
 from src.utils._enums import RoleRequestStateEnum
 
 
@@ -58,33 +56,25 @@ class RoleRequestStateView(LayoutView):
 
         match state:
             case RoleRequestStateEnum.APPROVED:
-                accent_color = Color.from_str("#32F113")
-                header_text = (
-                    "### <:check:1442915033079353404> Запрос на роль одобрен"
-                )
+                accent_color = Color.from_str("#81b475")
+                header_text = "### <:nightcoreAcceptGreen:1540739795737780355> Запрос на роль одобрен"  # noqa: E501
                 text = f"Модератор <@{moderator_id}> одобрил запрос пользователя <@{user_id}> на роль <@&{roles_ids[0]}>."  # noqa: E501
             case RoleRequestStateEnum.DENIED:
-                accent_color = Color.from_str("#F11313")
-                header_text = (
-                    "### <:failed:1442915170320912506> Запрос на роль отклонен"
-                )
+                accent_color = Color.from_str("#C0577A")
+                header_text = "### <:nightcoreDeclineRed:1540733707416117388> Запрос на роль отклонен"  # noqa: E501
                 text = f"Модератор <@{moderator_id}> отклонил запрос пользователя <@{user_id}> на роль <@&{roles_ids[0]}> по причине:\n> {self.reason}."  # noqa: E501
             case RoleRequestStateEnum.CANCELED:
-                accent_color = Color.from_str("#F11313")
-                header_text = (
-                    "### <:failed:1442915170320912506> Запрос на роль отменен"
-                )
+                accent_color = Color.from_str("#C0577A")
+                header_text = "### <:nightcoreDeclineRed:1540733707416117388> Запрос на роль отменен"  # noqa: E501
                 text = (
                     f"Пользователь <@{user_id}> отменил свой запрос на роль."
                 )
             case RoleRequestStateEnum.EXPIRED:
-                accent_color = Color.from_str("#F1F113")
-                header_text = (
-                    "### <:sandclock:1442914884147871874> Запрос на роль истек"
-                )
+                accent_color = Color.from_str("#C0577A")
+                header_text = "### <:nightcoreTimedOut:1540816674507456512> Запрос на роль истек"  # noqa: E501
                 text = f"Запрос на роль пользователя <@{user_id}> истек."
             case RoleRequestStateEnum.REMOVED:
-                accent_color = Color.from_str("#515cff")
+                accent_color = Color.from_str("#C0577A")
                 header_text = "### <:remove:1442914236836610119> Роль удалена"
                 text = f"Модератор <@{moderator_id}> снял пользователю <@{user_id}> роль(-и) {', '.join(f'<@&{role}>' for role in roles_ids)} по причине:\n> {self.reason}."  # noqa: E501
             case _:
@@ -95,14 +85,5 @@ class RoleRequestStateView(LayoutView):
         container.add_item(TextDisplay(header_text))
         container.add_item(Separator())
         container.add_item(TextDisplay(text))
-        container.add_item(Separator())
-
-        now = datetime.now(UTC)
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore
-            )
-        )
 
         self.add_item(container)

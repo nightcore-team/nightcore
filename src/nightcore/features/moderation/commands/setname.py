@@ -10,11 +10,11 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_moderation_access_roles
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.moderation.events import (
     UserSetNameEventData,
@@ -77,59 +77,54 @@ class Setname(Cog):
             member, moderation_access_roles
         )
         if is_member_moderator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка смены никнейма",
                     "Вы не можете изменить никнейм модератора.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if not guild.me.guild_permissions.change_nickname:
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "У меня нет прав на изменение никнеймов.",
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
+                    "У меня нет прав на изменение никнеймов."
                 ),
                 ephemeral=True,
             )
+            return
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка смены никнейма",
                     "Вы не можете изменить мой никнейм.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if not compare_top_roles(guild, member):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                    "Я не могу изменить никнейм этого пользователя, потому что у него роль выше моей.",  # noqa: E501
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
+                    "Я не могу изменить никнейм этого пользователя, потому что у него роль выше моей."  # noqa: E501
                 ),
                 ephemeral=True,
             )
+            return
 
         old_member_nickname = member.display_name
 
         if nickname:
             if len(nickname) > 32:
-                return await interaction.response.send_message(
-                    embed=ValidationErrorEmbed(
-                        "Никнейм не может быть длиннее 32 символов.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
+                await interaction.response.send_message(
+                    view=ValidationErrorViewV2(
+                        "Никнейм не может быть длиннее 32 символов."
                     ),
                     ephemeral=True,
                 )
+                return
         else:
             nickname = member.global_name or member.name
 
@@ -161,11 +156,9 @@ class Setname(Cog):
             return
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Никнейм изменён",
                 f"Никнейм пользователя {member.mention} успешно изменён.",
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
             )
         )
         logger.info(

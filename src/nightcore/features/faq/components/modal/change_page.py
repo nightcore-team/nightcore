@@ -15,9 +15,9 @@ from sqlalchemy.orm import attributes
 
 from src.infra.db.models import GuildFaqConfig
 from src.infra.db.models._annot import FAQPageAnnot
-from src.nightcore.components.embed import (
-    NoOptionsSuppliedEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    NoOptionsSuppliedViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.content import is_image_url
@@ -109,21 +109,16 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
 
         if outcome == "":
             await interaction.response.send_message(
-                embed=NoOptionsSuppliedEmbed(
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
+                view=NoOptionsSuppliedViewV2(),
                 ephemeral=True,
             )
             return
 
         if outcome == "success":
             await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Изменение страницы FAQ",
                     f"Страница FAQ с названием '{self.page['title']}' успешно изменена.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )

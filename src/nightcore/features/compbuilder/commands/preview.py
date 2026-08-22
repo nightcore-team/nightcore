@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.operations import get_custom_component_by_id
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
@@ -53,14 +53,13 @@ async def preview(
     try:
         component_id = int(component)
     except ValueError:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка предпросмотра компонента",
                 "Указанный компонент не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return
 
     c = Color.default()
     try:
@@ -68,14 +67,14 @@ async def preview(
             c = Color.from_str(color)
     except Exception as e:
         logger.error("[compbuilder/preview] Invalid color provided: %s", e)
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка предпросмотра компонента",
-                "Указанный цвет недействителен. Пожалуйста, используйте правильный HEX формат.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
+                "Указанный цвет недействителен. "
+                "Пожалуйста, используйте правильный HEX формат.",
             )
         )
+        return
 
     async with bot.uow.start() as session:
         cmp = await get_custom_component_by_id(
@@ -85,16 +84,15 @@ async def preview(
         )
 
     if cmp is None:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка предпросмотра компонента",
                 "Указанный компонент не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return
 
-    return await interaction.response.send_modal(
+    await interaction.response.send_modal(
         ChooseImageModal(
             bot=bot,
             type=cmp.type,
@@ -104,3 +102,4 @@ async def preview(
             color=c,
         )
     )
+    return

@@ -9,11 +9,11 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import get_or_create_user, get_specified_channel
-from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
-    ErrorEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.economy.events.dto import TransferCoinsEventDTO
 from src.nightcore.services.config import specified_guild_config
@@ -55,44 +55,40 @@ class Pay(Cog):
         guild = cast(Guild, interaction.guild)
 
         if amount <= 0:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Сумма должна быть положительным числом.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
         if user == self.bot.user:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Вы не можете перевести коинов боту.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if user == interaction.user:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Вы не можете перевести коинов самому себе.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         member = await ensure_member_exists(guild, user.id)
         if not member:
-            return await interaction.response.send_message(
-                embed=EntityNotFoundEmbed(
+            await interaction.response.send_message(
+                view=EntityNotFoundViewV2(
                     "пользователь",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
         async with specified_guild_config(
@@ -133,23 +129,20 @@ class Pay(Cog):
                     outcome = "success"
 
         if outcome == "user_dont_have_enough_coins":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка перевода",
                     "У вас недостаточно коинов для перевода.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Успешный перевод",
                     f"Вы успешно перевели пользователю {member.mention} {amount} {coin_name or 'коинов'}.",  # noqa: E501
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )

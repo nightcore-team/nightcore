@@ -15,11 +15,8 @@ from src.infra.db.operations import (
     get_color_by_id,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.error import ValidationErrorEmbed
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
+from src.nightcore.components.view.v2.error import ValidationErrorViewV2
 from src.nightcore.features.economy._groups import case as case_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedReward,
@@ -77,37 +74,34 @@ async def add_case_reward(
     logging_channel_id = None
 
     if reward is None and reward_type.requires_id_or_custom():
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Для типов CASE, COLOR, CUSTOM ввод награды обязателен.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if reward is not None and len(reward) > config.bot.MAX_CUSTOM_REWARD_SIZE:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Максимальная длина награды - 100 символов.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if reward_type.requires_id():
         try:
             reward_id = int(reward)  # type: ignore
         except ValueError as _:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Введен неверный id кейса или цвета.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
     try:
         async with bot.uow.start() as session:
             case = await get_case_by_id(
@@ -181,59 +175,54 @@ async def add_case_reward(
         )
 
     if outcome == "case_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения кейса",
                 "Выбранный кейс не найден в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "case_change_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения кейса",
                 "Произошла ошибка при изменении кейса. Обратитесь к разработчикам.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "max_rewards_achieved":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения кейса",
                 "Достигнуто максимально количество наград в кейсе.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "unknown_reward_case_id":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка добавления награды",
                 "Кейс с данным id не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "unknown_color_id":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка добавления награды",
                 "Цвет с данным id не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     item = ChangedReward(after=new_reward)  # type: ignore
 
@@ -249,11 +238,9 @@ async def add_case_reward(
     bot.dispatch("item_change_notify", dto)
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Добавление награды успешно",
             f"Вы добавили награду в кейс {case.name} ",  # type: ignore
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

@@ -8,7 +8,7 @@ from discord import Guild
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildFaqConfig
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.faq.utils.pages import build_faq_page_components
 from src.nightcore.services.config import specified_guild_config
 
@@ -43,11 +43,9 @@ async def handle_faq_global_button_callback(
 
     if outcome == "no_pages":
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка отправки FAQ",
                 "В FAQ этого сервера нет страниц для отображения.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

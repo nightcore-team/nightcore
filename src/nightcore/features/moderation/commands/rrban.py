@@ -14,9 +14,9 @@ from src.infra.db.operations import (
     get_or_create_user,
     set_user_field_upsert,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserMutedEventData
@@ -67,27 +67,25 @@ class Rrban(Cog):
         member = user
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать запрос ролей для меня.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         parsed_duration = parse_duration(duration)
 
         if not parsed_duration:
-            return await interaction.response.send_message(
-                embed=ValidationErrorEmbed(
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
                     "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         async with self.bot.uow.start() as session:
             moderation_access_roles = await get_moderation_access_roles(
@@ -101,27 +99,25 @@ class Rrban(Cog):
             member, moderation_access_roles
         )
         if is_member_moderator:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки",
                     "Вы не можете заблокировать запрос ролей для модераторов.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         try:
             if u.role_request_ban:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка блокировки",
                         "Этот пользователь уже заблокирован на запрос ролей.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
             async with self.bot.uow.start() as session:
                 await set_user_field_upsert(
                     session,
@@ -138,14 +134,13 @@ class Rrban(Cog):
                 guild.id,
                 e,
             )
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка блокировки на запрос ролей",
                     "Не удалось заблокировать пользователю запрос ролей.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 )
             )
+            return
 
         await interaction.response.defer(thinking=True)
 

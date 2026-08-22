@@ -10,7 +10,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import get_or_create_user
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import discord_ts
 
@@ -84,26 +84,24 @@ class Reward(Cog):
                     outcome = "success"
 
         if outcome == "no_reward_configured":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка получения ежедневной награды",
                     "Ежедневная награда не настроена на этом сервере.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "reward_too_early":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка получения ежедневной награды",
                     f"Вы уже получали свою ежедневную награду. \n> Следующая награда: {discord_ts(next_reward)}",  # noqa: E501 # type: ignore
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         elif outcome == "success":
             base_text = (
@@ -116,15 +114,14 @@ class Reward(Cog):
                 for rid in total_bonuses
             )
 
-            return await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+            await interaction.response.send_message(
+                view=SuccessViewV2(
                     "Успешно получена ежедневная награда",
                     base_text + bonus_text,
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         logger.info(
             "[command] - invoked user=%s guild=%s",

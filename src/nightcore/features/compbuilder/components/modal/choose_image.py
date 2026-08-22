@@ -19,7 +19,7 @@ from discord.ui import FileUpload, Label, LayoutView, Modal, TextInput
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.compbuilder.components.embed import build_embed
 from src.nightcore.features.compbuilder.components.v2 import (
     build_view as build_v2_component,
@@ -73,14 +73,13 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
 
         if self.image_url.value:
             if not is_image_url(self.image_url.value):
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка компонента",
                         "Указанный URL изображения недействителен.",
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.avatar.url,  # type: ignore
                     )
                 )
+                return
             image_source = self.image_url.value
 
         if not image_source:
@@ -93,15 +92,14 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
                 ):
                     image_source = attachment  # type: ignore
                 else:
-                    return await interaction.response.send_message(
-                        embed=ErrorEmbed(
+                    await interaction.response.send_message(
+                        view=ErrorViewV2(
                             "Ошибка компонента",
                             "Пожалуйста отправьте валидный файл изображения (png, jpg, jpeg, webp).",  # noqa: E501
-                            self.bot.user.display_name,  # type: ignore
-                            self.bot.user.avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
+                    return
 
         component: Embed | LayoutView | None = None
 
@@ -127,15 +125,14 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
                     "[compbuilder/choose_image] Unsupported component type: %s",  # noqa: E501
                     self.type,
                 )
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка компонента",
                         "Указанный тип компонента не поддерживается.",
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
         if isinstance(component, Embed):
             content = self.role.mention if self.role and self.channel else None

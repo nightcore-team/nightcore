@@ -5,6 +5,9 @@ from typing import TYPE_CHECKING
 
 from discord.interactions import Interaction
 
+from src.nightcore.features.clans.components.v2.view.handlers.info import (
+    handle_clan_info_button,
+)
 from src.nightcore.features.economy.components.v2.view.battlepass.claim import (  # noqa: E501
     BattlepassClaimViewV2,
 )
@@ -13,6 +16,9 @@ from src.nightcore.features.economy.components.v2.view.battlepass.handlers.claim
 )
 from src.nightcore.features.economy.components.v2.view.battlepass.handlers.info import (  # noqa: E501
     handle_battlepass_info_button,
+)
+from src.nightcore.features.economy.components.v2.view.battlepass.handlers.show import (  # noqa: E501
+    handle_battlepass_show_button,
 )
 from src.nightcore.features.economy.components.v2.view.battlepass.info import (
     BattlepassInfoViewV2,
@@ -84,8 +90,16 @@ async def setup(bot: "Nightcore") -> None:
                                 interaction=interaction,
                                 view=BattlepassInfoViewV2,
                             )
+                        case str() if custom_id.endswith(":show"):
+                            # custom_id format: battlepass:{user_id}:show
+                            await handle_battlepass_show_button(
+                                interaction=interaction,
+                            )
                         case _:
                             ...
+
+                case str() if custom_id.startswith("clan:"):
+                    await handle_clan_info_button(interaction=interaction)
 
                 case str() if custom_id.startswith("role_request:select_"):
                     await handle_role_select_button_callback(

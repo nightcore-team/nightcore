@@ -10,8 +10,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.configurations.economy import GuildEconomyShopItem
-from src.nightcore.components.embed import ErrorEmbed
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
@@ -59,27 +58,25 @@ class ShopMessage(Cog):
         answer_time = time.perf_counter()
 
         if outcome == "coin_name_not_configured":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка отправки сообщения магазина",
                     "Название коина не настроено на этом сервере.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             if not shop_items:
-                return await interaction.response.send_message(
-                    embed=ErrorEmbed(
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
                         "Ошибка отправки сообщения магазина",
                         "В магазине нет доступных товаров.",
-                        self.bot.user.display_name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             options: list[SelectOption] = [
                 SelectOption(
@@ -108,7 +105,7 @@ class ShopMessage(Cog):
             await interaction.channel.send(view=view)  # type: ignore
 
             await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+                view=SuccessViewV2(
                     "Отправка магазина",
                     "Сообщение магазина успешно отправлено.",
                     self.bot.user.display_name,  # type: ignore

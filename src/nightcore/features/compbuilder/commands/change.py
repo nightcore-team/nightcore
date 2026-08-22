@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.operations import get_custom_component_by_id
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.compbuilder._groups import (
     components as builder_group,
 )
@@ -45,14 +45,13 @@ async def change(
     try:
         component_id = int(component)
     except ValueError:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения компонента",
                 "Указанный компонент не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return
 
     async with bot.uow.start() as session:
         cmp = await get_custom_component_by_id(
@@ -62,15 +61,15 @@ async def change(
         )
 
     if not cmp:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка изменения компонента",
                 "Указанный компонент не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.avatar.url,  # type: ignore
             )
         )
+        return
 
-    return await interaction.response.send_modal(
+    await interaction.response.send_modal(
         ChangeComponentModal(bot, cmp)
     )
+    return

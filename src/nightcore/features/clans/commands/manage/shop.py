@@ -17,9 +17,9 @@ from src.infra.db.operations import (
     get_clan_shop_item_by_name,
     get_specified_field,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
 )
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
@@ -102,64 +102,58 @@ async def shop(
                 outcome = "success"
 
     if outcome == "unknown_item":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка покупки",
                 "Выбранный предмет не существует в магазине клана.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "missing_permissions":
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.response.send_message(
+            view=MissingPermissionsViewV2(),
             ephemeral=True,
         )
+        return
 
     if outcome == "insufficient_funds":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка покупки",
                 "Недостаточно репутации для покупки данного предмета.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         assert clan is not None
 
         clan_shop_channel_id = guild_config.clan_shop_channel_id
         if not clan_shop_channel_id:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка покупки",
                     "Канал для покупок в магазине клана не настроен.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         channel = await ensure_messageable_channel_exists(
             guild, clan_shop_channel_id
         )
         if channel is None:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка покупки",
                     "Канал для покупок в магазине клана не найден.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         perms = guild.me.guild_permissions
 
@@ -171,14 +165,13 @@ async def shop(
                 perms.manage_roles,
             ]
         ):
-            return await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
-                    "У меня недостаточно прав для создания ветки с покупкой.",
+            await interaction.response.send_message(
+                view=MissingPermissionsViewV2(
+                    "У меня недостаточно прав для создания ветки с покупкой."
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(ephemeral=True)
 
@@ -190,15 +183,14 @@ async def shop(
             logger.exception(
                 "[clans/shop] Failed to create clan shop thread: %s", e
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка покупки",
                     "Не удалось создать ветку для покупки в магазине клана.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         view = ClanShopViewV2(
             bot,
@@ -224,15 +216,14 @@ async def shop(
             logger.exception(
                 "[clans/shop] Failed to create shop order state: %s", e
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка покупки",
                     "Не удалось создать состояние заказа в базе данных.",
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         try:
             message, _ = await asyncio.gather(
@@ -246,15 +237,14 @@ async def shop(
             logger.exception(
                 "[clans/shop] Failed to send clan shop message: %s", e
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка покупки",
                     "Не удалось отправить сообщение с покупкой в магазине клана.",  # noqa: E501
-                    bot.user.display_name,  # type: ignore
-                    bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         view.custom_id = state.custom_id
 

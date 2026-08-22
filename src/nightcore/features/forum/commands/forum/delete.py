@@ -54,9 +54,10 @@ async def forum_delete(
         return
 
     if outcome == "config_not_found":
-        return await interaction.response.send_message(
+        await interaction.response.send_message(
             content="Конфиг для данной гильдии не найден!", ephemeral=True
         )
+        return
 
     await interaction.response.send_message(
         content="Конфиг успешно удален!", ephemeral=True

@@ -14,10 +14,7 @@ from src.infra.db.operations import (
     get_rainbow_role_by_guild,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-)
-from src.nightcore.components.embed.success import SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import rainbow as rainbow_group
 from src.nightcore.features.economy.events.dto.item_change import (
     ChangedRole,
@@ -71,37 +68,34 @@ async def create_rainbow(
     outcome = ""
 
     if role.position >= member.top_role.position:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания радужной роли",
                 "Вы не можете использовать роль с позицией выше чем ваша высшая роль.",  # noqa: E501
-                bot.user.display_name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     if role.permissions.administrator:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания радужной роли",
                 "Радужная роль не может иметь права администратора.",
-                bot.user.display_name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     if not compare_top_roles(guild, role):
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания радужной роли",
                 "Радужная роль должна быть ниже высшей роли бота.",
-                bot.user.display_name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     try:
         async with bot.uow.start() as session:
@@ -146,33 +140,29 @@ async def create_rainbow(
         )
 
     if outcome == "rainbow_exists":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания радужной роли",
                 "На этом сервере уже настроена радужная роль. Используйте команду `/rainbow change` для изменения роли.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "rainbow_create_error":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка создания радужной роли",
                 "Произошла ошибка при создании радужной роли.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Создание радужной роли успешно",
             f"Вы успешно настроили радужную роль {role.mention} ",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

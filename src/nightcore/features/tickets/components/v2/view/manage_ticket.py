@@ -36,16 +36,17 @@ from src.infra.db.operations import (
     get_latest_user_ticket,
     get_specified_channel,
 )
-from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
-from src.nightcore.features.tickets.events.dto import TicketChangeEventData
-from src.nightcore.utils import (
-    discord_ts,
-    ensure_messageable_channel_exists,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
 )
+from src.nightcore.features.tickets.events.dto import TicketChangeEventData
+from src.nightcore.utils import ensure_messageable_channel_exists
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils.time_utils import discord_ts
 from src.utils._enums import ChannelType, TicketStateEnum
 
 logger = logging.getLogger(__name__)
@@ -63,30 +64,23 @@ class TicketStateViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#5DADE2"))
 
         message: str = ""
         match state:
             case TicketStateEnum.OPENED:
-                message = "### Тикет был открыт модератором {}"
+                message = f"### <@{author_id}>, тикет был открыт модератором <@{moderator_id}>"  # noqa: E501
             case TicketStateEnum.PINNED:
-                message = "### Тикет был закреплен модератором {}"
+                message = f"### <@{author_id}>, тикет был закреплен модератором <@{moderator_id}>"  # noqa: E501
             case TicketStateEnum.CLOSED:
-                message = "### Тикет был закрыт модератором {}"
+                message = f"### <@{author_id}>, тикет был закрыт модератором <@{moderator_id}>"  # noqa: E501
             case _:
                 message = "Неизвестное состояние."
 
         container.add_item(
             TextDisplay[Self](message.format(f"<@{moderator_id}>"))
         )
-        container.add_item(Separator[Self]())
 
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)} | <@{author_id}>"  # type: ignore  # noqa: E501
-            )
-        )
         self.add_item(container)
 
 
@@ -97,7 +91,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Закрепить",
-        emoji="<:paperclip1:1442914563321368737>",
+        emoji="<:nightcoreTicketPin:1540819251508682782>",
         custom_id="ticket:pin",
     )  # type: ignore
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
@@ -114,14 +108,13 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         await interaction.response.defer()
 
         if not guild.me.guild_permissions.manage_channels:
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
+            await interaction.followup.send(
+                view=MissingPermissionsViewV2(
                     "У меня нет прав на управление каналами.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
         ticket_author_id = 0
@@ -178,37 +171,34 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 view.interaction_user_id,
                 guild.id,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось закрепить тикет",
                     "Тикет не найден для этого пользователя.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "ticket_closed":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось закрепить тикет",
                     "Вы не можете закрепить закрытый тикет.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "already_pinned":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось закрепить тикет",
                     "Этот тикет уже закреплен другим модератором.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             pinned_tickets_category = await ensure_messageable_channel_exists(
@@ -222,15 +212,14 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     pinned_tickets_category_id,
                     guild.id,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Не удалось закрепить тикет",
                         "Категория закрепленных тикетов не найдена.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             await channel.edit(
                 category=cast(CategoryChannel, pinned_tickets_category),
@@ -268,7 +257,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Открыть",
-        emoji="<:unlock:1442914794377187448>",
+        emoji="<:nightcoreTicketOpen:1540818951586586754>",
         custom_id="ticket:reopen",
     )  # type: ignore
     @check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)  # type: ignore
@@ -286,14 +275,13 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         await interaction.response.defer()
 
         if not guild.me.guild_permissions.manage_channels:
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
+            await interaction.followup.send(
+                view=MissingPermissionsViewV2(
                     "У меня нет прав на управление каналами.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
         ticket_author_id = 0
@@ -347,37 +335,35 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 ticket_author_id,
                 guild.id,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось открыть тикет",
                     "Тикет не найден для этого пользователя.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "already_opened":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось открыть тикет",
-                    "Вы не можете открыть уже открытый тикет. Просто закрепите его.",  # noqa: E501
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
+                    "Вы не можете открыть уже открытый тикет. "
+                    "Просто закрепите его.",
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "already_pinned":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось открыть тикет",
                     "Этот тикет уже закреплен другим модератором.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             # Get pinned tickets category
@@ -392,15 +378,15 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     pinned_tickets_category_id,
                     guild.id,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Не удалось открыть тикет",
-                        "Категория закрепленных тикетов настроена неправильно.",  # noqa: E501
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
+                        "Категория закрепленных тикетов "
+                        "настроена неправильно.",
                     ),
                     ephemeral=True,
                 )
+                return
 
             overwrites = channel.overwrites
 
@@ -449,7 +435,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
     @button(
         style=ButtonStyle.grey,
         label="Закрыть",
-        emoji="<:lock4:1442914715025276988>",
+        emoji="<:nightcoreTicketClose:1540819066694926456>",
         custom_id="ticket:close",
     )  # type: ignore
     @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
@@ -468,14 +454,13 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         await interaction.response.defer()
 
         if not guild.me.guild_permissions.manage_channels:
-            return await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
+            await interaction.followup.send(
+                view=MissingPermissionsViewV2(
                     "У меня нет прав на управление каналами.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         outcome = ""
         ticket_author_id = 0
@@ -528,26 +513,24 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 view.interaction_user_id,
                 guild.id,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось закрыть тикет",
                     "Тикет не найден для этого пользователя.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "already_closed":
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Не удалось закрыть тикет",
                     "Этот тикет уже закрыт.",
-                    view.bot.user.name,  # type: ignore
-                    view.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         if outcome == "success":
             closed_tickets_category = await ensure_messageable_channel_exists(
@@ -561,15 +544,14 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     closed_tickets_category_id,
                     guild.id,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Не удалось закрыть тикет",
                         "Категория закрытых тикетов не найдена.",
-                        view.bot.user.name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
             overwrites = channel.overwrites
 
@@ -628,12 +610,12 @@ class ManageTicketViewV2(LayoutView):
 
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#515cff"))
+        container = Container[Self](accent_color=Color.from_str("#5DADE2"))
 
         # Main text
         container.add_item(
             TextDisplay[Self](
-                f"### Уважаемый <@{interaction_user_id}>, \nесли у вас есть жалобы на работу модераторов, пожалуйста, обратитесь на [форум Arz Guard](https://forum.arzguard.com)."  # noqa: E501
+                f"### <:nightcoreTicketNew:1540818406977052812> Обращение от пользователя <@{interaction_user_id}> \n> Если у вас есть жалобы на работу модераторов, пожалуйста, обратитесь на [форум Arz Guard](https://forum.arzguard.com)."  # noqa: E501
             )
         )
 
@@ -670,19 +652,17 @@ class ManageTicketViewV2(LayoutView):
 
         if not interaction.response.is_done():
             await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
-                    f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
+                view=MissingPermissionsViewV2(
+                    "Вам не хватает следующих прав для "
+                    f"использования этой команды: {_missing_perms}.",
                 ),
                 ephemeral=True,
             )
         else:
             await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
-                    f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                view=MissingPermissionsViewV2(
+                    "Вам не хватает следующих прав для "
+                    f"использования этой команды: {missing_perms}.",
                 ),
                 ephemeral=True,
             )

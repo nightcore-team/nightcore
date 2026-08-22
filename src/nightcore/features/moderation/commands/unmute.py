@@ -9,9 +9,9 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildModerationConfig
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
 )
 from src.nightcore.features.moderation.components.v2 import PunishViewV2
 from src.nightcore.features.moderation.events import UserUnmutedEventData
@@ -76,36 +76,33 @@ class UnMute(Cog):
 
         if mute_type == ConfigMuteTypeEnum.ROLE:
             if not guild.me.guild_permissions.manage_roles:
-                return await interaction.response.send_message(
-                    embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                        "У меня нет прав для разблокировки чата участников.",
+                await interaction.response.send_message(
+                    view=MissingPermissionsViewV2(
+                        "У меня нет прав для разблокировки чата участников."
                     ),
                     ephemeral=True,
                 )
+                return
 
         elif mute_type == ConfigMuteTypeEnum.TIMEOUT:  # noqa: SIM102
             if not guild.me.guild_permissions.moderate_members:
-                return await interaction.response.send_message(
-                    embed=MissingPermissionsEmbed(
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
-                        "У меня нет прав для разблокировки чата участников.",
+                await interaction.response.send_message(
+                    view=MissingPermissionsViewV2(
+                        "У меня нет прав для разблокировки чата участников."
                     ),
                     ephemeral=True,
                 )
+                return
 
         if guild.me == member:
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка снятия блокировки",
                     "Вы не можете разблокировать чат мне.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(thinking=True)
 
@@ -116,28 +113,26 @@ class UnMute(Cog):
                     mrole = await ensure_role_exists(guild, mute_role_id)
 
                 if mute_role_id is None or mrole is None:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка снятия блокировки",
                             f"Роль блокировки с ID {mute_role_id} не найдена на этом сервере.",  # noqa: E501
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
+                    return
                 else:
                     has_role = has_any_role(member, mrole.id)
 
                     if not has_role or not compare_top_roles(guild, mrole):
-                        return await interaction.followup.send(
-                            embed=ErrorEmbed(
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
                                 "Ошибка снятия блокировки",
                                 "Роль блокировки не найдена у этого пользователя или она выше моей.",  # noqa: E501
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
                             ),
                             ephemeral=True,
                         )
+                        return
                     else:
                         try:
                             await member.remove_roles(mrole)
@@ -148,15 +143,14 @@ class UnMute(Cog):
                                 member.id,
                                 e,
                             )
-                            return await interaction.followup.send(
-                                embed=ErrorEmbed(
+                            await interaction.followup.send(
+                                view=ErrorViewV2(
                                     "Ошибка снятия блокировки",
                                     "Не удалось снять роль мута с пользователя.",  # noqa: E501
-                                    self.bot.user.name,  # type: ignore
-                                    self.bot.user.display_avatar.url,  # type: ignore
                                 ),
                                 ephemeral=True,
                             )
+                            return
 
             case ConfigMuteTypeEnum.TIMEOUT:
                 if member.is_timed_out():
@@ -168,39 +162,36 @@ class UnMute(Cog):
                             member.id,
                             e,
                         )
-                        return await interaction.followup.send(
-                            embed=ErrorEmbed(
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
                                 "Ошибка снятия блокировки",
                                 "Не удалось снять тайм-аут.",
-                                self.bot.user.name,  # type: ignore
-                                self.bot.user.display_avatar.url,  # type: ignore
                             ),
                             ephemeral=True,
                         )
+                        return
                 else:
-                    return await interaction.followup.send(
-                        embed=ErrorEmbed(
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
                             "Ошибка снятия блокировки",
                             "У пользователя в данный момент нет тайм-аута.",
-                            self.bot.user.name,  # type: ignore
-                            self.bot.user.display_avatar.url,  # type: ignore
                         ),
                         ephemeral=True,
                     )
+                    return
             case _:
                 logger.error(
                     "Unknown mute type for user %s",
                     member.id,
                 )
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка снятия блокировки",
                         "Указанный тип блокировки неизвестен.",
-                        self.bot.user.name,  # type: ignore
-                        self.bot.user.display_avatar.url,  # type: ignore
                     ),
                     ephemeral=True,
                 )
+                return
 
         await interaction.followup.send(
             view=PunishViewV2(

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
-import discord
 from discord import Attachment, Color, MediaGalleryItem
 from discord.ui import (
     Container,
@@ -13,8 +12,6 @@ from discord.ui import (
     Separator,
     TextDisplay,
 )
-
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -59,12 +56,5 @@ class BugReportViewV2(LayoutView):
                 MediaGallery[Self](MediaGalleryItem(screenshot.url))
             )
             container.add_item(Separator[Self]())
-
-        now = discord.utils.utcnow()
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)

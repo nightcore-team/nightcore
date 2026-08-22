@@ -8,7 +8,10 @@ from discord.interactions import Interaction
 
 from src.infra.db.models.clan import ClanMember
 from src.infra.db.operations import get_clan_member
-from src.nightcore.components.embed import ErrorEmbed, MissingPermissionsEmbed
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+)
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.components.v2 import ClanInviteViewV2
 from src.nightcore.utils.permissions import (
@@ -72,46 +75,41 @@ async def invite(
                         outcome = "success"
 
     if outcome == "inviter_no_clan":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка приглашения в клан",
                 "Вы не состоите в клане.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "limit_reached":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка приглашения в клан",
                 "В вашем клане достигнуто максимальное количество участников.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "invited_already_in_clan":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка приглашения в клан",
                 f"Пользователь {user.mention} уже состоит в клане.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "missing_permissions":
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
-            ),
+        await interaction.response.send_message(
+            view=MissingPermissionsViewV2(),
             ephemeral=True,
         )
+        return
 
     interaction_clan_member = cast(ClanMember, interaction_clan_member)
 

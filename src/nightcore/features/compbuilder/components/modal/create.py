@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models import CustomComponent
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 
 # from src.nightcore.utils.content import is_image_url
 
@@ -96,21 +96,19 @@ class CreateComponentModal(Modal, title="Создание компонента")
                 outcome = "failure"
 
         if outcome == "failure":
-            return await interaction.response.send_message(
-                embed=ErrorEmbed(
+            await interaction.response.send_message(
+                view=ErrorViewV2(
                     "Ошибка создания компонента",
                     "Произошла ошибка при создании компонента. ",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.avatar.url,  # type: ignore
                 )
             )
+            return
 
         if outcome == "success":
-            return await interaction.response.send_message(
-                embed=SuccessMoveEmbed(
+            await interaction.response.send_message(
+                view=SuccessViewV2(
                     "Компонент создан",
                     f"Компонент **{name}** успешно создан.",
-                    self.bot.user.display_name,  # type: ignore
-                    self.bot.user.avatar.url,  # type: ignore
                 )
             )
+            return

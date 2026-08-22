@@ -11,6 +11,7 @@ from src.infra.db.operations import (
     get_guild_forum_config,
     get_specified_guild_config,
 )
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.exceptions import (
     ConfigMissingError,
     FieldNotConfiguredError,
@@ -28,7 +29,6 @@ from src.utils._enums import InactiveRequestStateEnum
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import ErrorEmbed
 from src.nightcore.features.moderation.components.modal import (
     InactiveRejectModal,
 )
@@ -53,15 +53,14 @@ async def handle_inactive_request_button_callback(
         logger.error(
             "[inactive] Invalid author ID in custom_id: %s", custom_id
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка обработки запроса на неактив",
                 "Некорректный идентификатор автора в данных кнопки.",
-                interaction.client.user.name,
-                interaction.client.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     async with bot.uow.start() as session:
         guild_config = await get_specified_guild_config(
@@ -76,28 +75,26 @@ async def handle_inactive_request_button_callback(
         raise ConfigMissingError(guild.id)
 
     if interaction.user.id == author_id:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка обработки запроса на неактив",
                 "Вы не можете одобрить или отклонить свой собственный запрос.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     if not has_any_role_from_sequence(
         interaction.user, guild_config.leadership_access_roles_ids
     ):
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка обработки запроса на неактив",
                 "У вас нет прав для одобрения или отклонения этого запроса.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     match action:
         case "approve":
@@ -126,15 +123,14 @@ async def handle_inactive_request_approve_button(
             guild.id,
             message.id,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Не удалось определить автора запроса на неактив.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     inactive_message = parse_inactive_text_from_components(message.components)
     if not inactive_message:
@@ -143,15 +139,14 @@ async def handle_inactive_request_approve_button(
             guild.id,
             message.id,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Не удалось определить текст запроса на неактив.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
     nickname = parse_nickname_from_components(message.components)
     if not nickname:
         logger.error(
@@ -159,15 +154,14 @@ async def handle_inactive_request_approve_button(
             guild.id,
             message.id,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Не удалось определить никнейм в запросе на неактив.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     nickname = remove_emoji_from_text(nickname)
 
@@ -187,15 +181,14 @@ async def handle_inactive_request_approve_button(
             guild.id,
             e,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Произошла ошибка при отправке запроса на неактив.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     view = InactiveRequestViewV2(
         bot=bot,
@@ -214,15 +207,14 @@ async def handle_inactive_request_approve_button(
             guild.id,
             e,
         )
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка отправки запроса не неактив",
                 "Произошла ошибка при изменении сообщения о неактиве.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     try:
         result = await bot.apis.forum.create_thread(
@@ -239,15 +231,14 @@ async def handle_inactive_request_approve_button(
             guild.id,
             e,
         )
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка создания темы на форуме",
                 "Произошла ошибка при создании темы на форуме.",
-                bot.user.name,
-                bot.user.display_avatar.url,
             ),
             ephemeral=True,
         )
+        return
 
     url = result.thread.view_url
 

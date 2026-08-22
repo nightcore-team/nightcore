@@ -13,10 +13,7 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_channel,
 )
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
@@ -61,15 +58,14 @@ async def give_case(
     bot = interaction.client
 
     if user == bot.user:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи кейса",
                 "Невозможно выдать кейс боту.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -128,44 +124,39 @@ async def give_case(
         outcome = "give_case_error"
 
     if outcome == "unknown_case":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи кейса",
                 "Кейс не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "cannot_give_negative_amount":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи кейса",
                 "Невозможно выдать отрицательное количество.\n"
                 "(Отрицательное количество может использоваться только для снятия кейсов)",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "give_case_error":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи кейса",
                 "Не удалось выдать кейс пользователю.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "success":
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Выдача кейса успешна",
                 f"Вы успешно выдали пользователю <@{user.id}> "
                 f"**{case.name}** в количестве **{amount}**.",  # type: ignore
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
 

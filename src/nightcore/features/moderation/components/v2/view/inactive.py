@@ -41,9 +41,9 @@ class InactiveRequestViewV2(LayoutView):
 
         accent_color = None
         if state == InactiveRequestStateEnum.APPROVED:
-            accent_color = discord.Color.green()
+            accent_color = discord.Color.from_str("#81b475")
         elif state == InactiveRequestStateEnum.DENIED:
-            accent_color = discord.Color.red()
+            accent_color = discord.Color.from_str("#C0577A")
 
         status = "На рассмотрении"
         if state == InactiveRequestStateEnum.APPROVED:
@@ -53,7 +53,7 @@ class InactiveRequestViewV2(LayoutView):
 
         container = Container[Self](accent_color=accent_color)
 
-        container.add_item(TextDisplay("## Заявление на неактив"))
+        container.add_item(TextDisplay("### Заявление на неактив"))
         container.add_item(TextDisplay(f"> Автор: <@{author_id}>"))
         container.add_item(Separator())
 
@@ -62,8 +62,8 @@ class InactiveRequestViewV2(LayoutView):
         container.add_item(
             ActionRow[Self](
                 Button(
-                    style=ButtonStyle.green,
-                    emoji="<:check:1442915033079353404>",
+                    style=ButtonStyle.grey,
+                    emoji="<:nightcoreAcceptGreen:1540739795737780355>",
                     label="Одобрить",
                     custom_id=f"inactive:{author_id}:approve",
                     disabled=state
@@ -73,8 +73,8 @@ class InactiveRequestViewV2(LayoutView):
                     ],
                 ),
                 Button(
-                    style=ButtonStyle.red,
-                    emoji="<:failed:1442915170320912506>",
+                    style=ButtonStyle.grey,
+                    emoji="<:nightcoreDeclineRed:1540733707416117388>",
                     label="Отклонить",
                     custom_id=f"inactive:{author_id}:deny",
                     disabled=state

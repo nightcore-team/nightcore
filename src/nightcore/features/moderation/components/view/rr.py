@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING
 
 import discord
 
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.moderation.events.dto import (
     RolesChangeEventData,
 )
@@ -65,15 +62,14 @@ class RemoveOrgRoleSelect(discord.ui.View):
             )
         except Exception as e:
             logger.exception("[command] - Failed to remove role: %s", e)
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     "Ошибка снятия ролей",
                     "Не удалось снять указанные роли с пользователя.",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
                 ),
                 ephemeral=True,
             )
+            return
 
         try:
             self.bot.dispatch(
@@ -99,12 +95,12 @@ class RemoveOrgRoleSelect(discord.ui.View):
             if isinstance(child, discord.ui.Select):
                 child.disabled = True  # type: ignore
 
-        await interaction.response.edit_message(
-            embed=SuccessMoveEmbed(
+        await interaction.response.edit_message(view=self)
+
+        await interaction.followup.send(
+            view=SuccessViewV2(
                 "Снятие ролей",
                 f"Роль (-и) {', '.join(role.mention for role in roles)} успешно сняты с {self.member.mention}.{f' Причина: {self.reason}' if self.reason else ''}",  # noqa: E501
-                self.bot.user.name,  # type: ignore
-                self.bot.user.display_avatar.url,  # type: ignore
             ),
-            view=self,
+            ephemeral=True,
         )

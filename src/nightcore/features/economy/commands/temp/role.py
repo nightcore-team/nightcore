@@ -12,11 +12,11 @@ from src.infra.db.models import (
     TempRole,
 )
 from src.infra.db.operations import get_specified_channel, get_temp_role
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
-    ValidationErrorEmbed,
+from src.nightcore.components.view.v2 import (
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
+    ValidationErrorViewV2,
 )
 from src.nightcore.features.economy._groups import temp as temp_group
 from src.nightcore.features.economy.events.dto import (
@@ -58,59 +58,54 @@ async def give_role(
     bot = interaction.client
 
     if has_any_role(user, role.id):
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи роли",
                 "У пользователя уже есть эта роль.",
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if user == bot.user:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи роли",
                 "Невозможно выдать временную роль боту.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if not compare_top_roles(guild, role):
-        return await interaction.response.send_message(
-            embed=MissingPermissionsEmbed(
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
+        await interaction.response.send_message(
+            view=MissingPermissionsViewV2(
                 "Я не могу выдать временную роль человеку, которая выше моей.",
             ),
             ephemeral=True,
         )
+        return
 
     if role.permissions.administrator:
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи роли",
                 "Невозможно выдать временную роль с правами администратора.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     parsed_duration = parse_duration(duration)
 
     if not parsed_duration:
-        return await interaction.response.send_message(
-            embed=ValidationErrorEmbed(
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
                 "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
-                bot.user.name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     outcome = ""
     async with bot.uow.start() as session:
@@ -152,15 +147,14 @@ async def give_role(
             outcome = "error_to_create_record"
 
     if outcome == "error_to_create_record":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи временной роли",
                 "Не удалось выдать временную роль пользователю.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
     try:
         await user.add_roles(
             role, reason="Temporary role assigned via economy command."
@@ -173,22 +167,19 @@ async def give_role(
             guild.id,
             e,
         )
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка выдачи временной роли",
                 "Не удалось выдать временную роль пользователю.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
     await interaction.response.send_message(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Временная роль выдана",
             f"Вы успешно выдали пользователю {user.mention} "
             f"роль {role.mention} на срок {duration}.",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
         ephemeral=True,
     )

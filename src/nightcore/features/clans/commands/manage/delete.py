@@ -18,10 +18,7 @@ from src.utils._enums import ChannelType, ClanManageActionEnum
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.embed import (
-    ErrorEmbed,
-    SuccessMoveEmbed,
-)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.clans._groups import manage as manage_clan_group
 from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils import (
@@ -54,11 +51,9 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
         clan_id = int(clan)
     except ValueError:
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -98,24 +93,22 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
             outcome = "database_error"
 
     if outcome == "clan_not_found":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка удаления клана",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             )
         )
+        return
 
     if outcome == "database_error":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка удаления клана",
                 "Не удалось удалить клан из-за внутренней ошибки.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             )
         )
+        return
 
     if outcome == "success":
         role = await ensure_role_exists(guild, clan_role_id)
@@ -133,11 +126,9 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
                 )
 
         await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+            view=SuccessViewV2(
                 "Удаление клана",
                 f"Клан **{clan_name}** был успешно удален вместе с его участниками.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             )
         )
 

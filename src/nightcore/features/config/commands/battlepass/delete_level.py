@@ -7,7 +7,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_battlepass_level
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.config._groups import (
     battlepass as battlepass_group,
 )
@@ -54,27 +54,25 @@ async def delete_level(
             outcome = "success"
 
     if outcome == "level_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка удаления уровня",
                 f"Уровень {level} не найден в боевом пропуске.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
-        return await interaction.response.send_message(
-            embed=SuccessMoveEmbed(
+        await interaction.response.send_message(
+            view=SuccessViewV2(
                 "Уровень удален",
                 f"Уровень {level} успешно удален из боевого пропуска.\n"
                 f"Последующие уровни автоматически сдвинуты вниз.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     logger.info(
         "[command] - invoked user=%s guild=%s delete_level=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501

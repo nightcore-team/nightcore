@@ -7,7 +7,6 @@ Handles FAQ page button interactions.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
 from discord import ButtonStyle, Color, MediaGalleryItem
@@ -25,7 +24,6 @@ from discord.ui import (
 )
 
 from src.infra.db.models._annot import FAQPageAnnot
-from src.nightcore.utils import discord_ts
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -37,11 +35,11 @@ class FAQGlobalViewV2(LayoutView):
     ) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.blurple())
+        container = Container[Self](accent_color=Color.from_str("#D896C8"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:heartt:1442919985004544011> Часто задаваемые вопросы (FAQ)"  # noqa: E501
+                "## <:nightcoreQuestionPink:1540726018359296061> Часто задаваемые вопросы (FAQ)"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -58,18 +56,10 @@ class FAQGlobalViewV2(LayoutView):
             ActionRow[Self](
                 Button[Self](
                     label="Перейти к FAQ",
-                    style=ButtonStyle.secondary,
-                    emoji="<:heartt:1442919985004544011>",
+                    style=ButtonStyle.grey,
+                    emoji="<:nightcoreFaq:1540726152208060436>",
                     custom_id="faq:open_faq",
                 )
-            )
-        )
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore
             )
         )
 
@@ -81,8 +71,8 @@ class FAQViewPaginationButtons(ActionRow["FAQViewV2"]):
         super().__init__()
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios1:1442925401696632934>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowLeftPink:1540695597454065675>",
         custom_id="faq:prev",
     )
     async def previous(
@@ -99,8 +89,8 @@ class FAQViewPaginationButtons(ActionRow["FAQViewV2"]):
         )
 
     @button(
-        style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1442924853085864178>",
+        style=ButtonStyle.grey,
+        emoji="<:nightcoreArrowRightPink:1540695596506284082>",
         custom_id="faq:next",
     )
     async def next(
@@ -149,11 +139,11 @@ class FAQViewV2(LayoutView):
         """Build the FAQ view component."""
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.blurple())
+        container = Container[Self](accent_color=Color.from_str("#D896C8"))
 
         container.add_item(
             TextDisplay[Self](
-                "## <:heartt:1442919985004544011> Часто задаваемые вопросы (FAQ)"  # noqa: E501
+                "## <:nightcoreQuestionPink:1540726018359296061> Часто задаваемые вопросы (FAQ)"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -169,19 +159,10 @@ class FAQViewV2(LayoutView):
                         container.add_item(item)
                     self.actions = FAQViewPaginationButtons()
                     container.add_item(self.actions)
-                    container.add_item(Separator[Self]())
         else:
             container.add_item(
                 TextDisplay[Self]("В FAQ этого сервера нет страниц.")
             )
-            container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
-            )
-        )
 
         self.add_item(container)
         self._update_buttons()
@@ -193,7 +174,7 @@ class FAQPageViewV2(LayoutView):
     def __init__(self, bot: Nightcore, page: FAQPageAnnot) -> None:
         super().__init__(timeout=None)
 
-        container = Container[Self](accent_color=Color.blurple())
+        container = Container[Self](accent_color=Color.from_str("#D896C8"))
 
         container.add_item(TextDisplay[Self](f"## {page['title']}"))
         container.add_item(Separator[Self]())
@@ -206,12 +187,5 @@ class FAQPageViewV2(LayoutView):
         ) is not None and image_url:
             media_gallery = MediaGalleryItem(image_url)
             container.add_item(MediaGallery[Self](media_gallery))
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}\n"  # type: ignore
-            )
-        )
 
         self.add_item(container)

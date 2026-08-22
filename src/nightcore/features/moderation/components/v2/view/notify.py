@@ -35,11 +35,11 @@ from src.infra.db.operations import (
     get_specified_channel,
     get_user_notify_by_end_time,
 )
-from src.nightcore.components.embed import (
-    EntityNotFoundEmbed,
-    ErrorEmbed,
-    MissingPermissionsEmbed,
-    SuccessMoveEmbed,
+from src.nightcore.components.view.v2 import (
+    EntityNotFoundViewV2,
+    ErrorViewV2,
+    MissingPermissionsViewV2,
+    SuccessViewV2,
 )
 from src.nightcore.features.tickets.utils import (
     extract_id_from_str,
@@ -99,14 +99,13 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     channel_type=ChannelType.NOTIFICATIONS,
                 )
             ):
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка отправки оповещения",
                         "Канал оповещений не настроен.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
                     )
                 )
+                return
 
             if not (
                 rules_channel := await get_specified_channel(
@@ -116,14 +115,13 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     channel_type=ChannelType.RULES_CHANNEL,
                 )
             ):
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка отправки оповещения",
                         "Канал с правилами не настроен.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
                     )
                 )
+                return
 
             if not (
                 create_ticket_channel_id := await get_specified_channel(
@@ -133,27 +131,23 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                     channel_type=ChannelType.CREATE_TICKETS,
                 )
             ):
-                return await interaction.followup.send(
-                    embed=ErrorEmbed(
+                await interaction.followup.send(
+                    view=ErrorViewV2(
                         "Ошибка отправки оповещения",
                         "Канал создания тикетов не настроен.",
-                        view.bot.user.display_name,  # type: ignore
-                        view.bot.user.display_avatar.url,  # type: ignore
                     )
                 )
+                return
 
         notifications_channel = await ensure_messageable_channel_exists(
             guild, notifications_channel_id
         )
         if not notifications_channel:
-            return await interaction.followup.send(
-                embed=EntityNotFoundEmbed(
-                    "channel",
-                    self.bot.user.name,  # type: ignore
-                    self.bot.user.display_avatar.url,  # type: ignore
-                ),
+            await interaction.followup.send(
+                view=EntityNotFoundViewV2("channel"),
                 ephemeral=True,
             )
+            return
 
         nview = NotifyViewV2(
             bot=view.bot,
@@ -176,14 +170,15 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 guild.id,
                 e,
             )
-            return await interaction.followup.send(
-                embed=ErrorEmbed(
+            await interaction.followup.send(
+                view=ErrorViewV2(
                     title="Ошибка отправки сообщения",
-                    description="Не удалось отправить сообщение в канал оповещений.",  # noqa: E501
-                    footer_text=view.bot.user.display_name,  # type: ignore
-                    footer_icon_url=view.bot.user.display_avatar.url,  # type: ignore
+                    description=(
+                        "Не удалось отправить сообщение в канал оповещений."
+                    ),
                 )
             )
+            return
 
         async with view.bot.uow.start() as session:
             notifystate = NotifyState(
@@ -197,16 +192,16 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
 
             session.add(notifystate)
 
-        return await interaction.followup.send(
-            embed=SuccessMoveEmbed(
+        await interaction.followup.send(
+            view=SuccessViewV2(
                 title="Оповещение отправлено",
                 description=(
-                    f"Оповещение для пользователя <@{view.user_id}> было успешно отправлено."  # noqa: E501
+                    f"Оповещение для пользователя "
+                    f"<@{view.user_id}> было успешно отправлено."
                 ),
-                footer_text=view.bot.user.display_name,  # type: ignore
-                footer_icon_url=view.bot.user.display_avatar.url,  # type: ignore
             )
         )
+        return
 
 
 class NotifyActionRow(ActionRow["PrepareNotifyViewV2"]):
@@ -230,25 +225,15 @@ class PrepareNotifyViewV2(LayoutView):
         self.end_time = end_time
         self.content = content
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
 
         # header
         container.add_item(
-            TextDisplay[Self]("### Выберите одно или несколько параметров")
+            TextDisplay[Self]("### Выберите один или несколько параметров")
         )
 
         # select
         container.add_item(NotifyActionRow())
-        container.add_item(Separator[Self]())
-
-        # footer
-        now = datetime.now(UTC)
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 
@@ -267,7 +252,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
         self.add_item(
             Button["NotifyViewV2"](
                 style=ButtonStyle.link,
-                emoji="<:29909ticket:1442924723528007700>",
+                emoji="<:nightcoreTicket:1540733413735014421>",
                 label="Задать вопрос",
                 url=f"https://discord.com/channels/{self.guild_id}/{self.create_ticket_channel_id}",  # type: ignore
             )
@@ -275,7 +260,7 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
 
     @button(
         style=ButtonStyle.red,
-        emoji="<:failed:1442915170320912506>",
+        emoji="<:nightcoreDeclineRed:1540733707416117388>",
         label="Отозвать оповещение",
         custom_id="notify:revoke",
     )  # type: ignore
@@ -374,19 +359,17 @@ class NotifyViewV2(LayoutView):
 
         if not interaction.response.is_done():
             await interaction.response.send_message(
-                embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
-                    f"Вам не хватает следующих прав для использования этой команды: {_missing_perms}.",  # noqa: E501
+                view=MissingPermissionsViewV2(
+                    "Вам не хватает следующих прав для "
+                    f"использования этой команды: {_missing_perms}.",
                 ),
                 ephemeral=True,
             )
         else:
             await interaction.followup.send(
-                embed=MissingPermissionsEmbed(
-                    interaction.client.user.name,  # type: ignore
-                    interaction.client.user.display_avatar.url,  # type: ignore
-                    f"Вам не хватает следующих прав для использования этой команды: {missing_perms}.",  # noqa: E501
+                view=MissingPermissionsViewV2(
+                    "Вам не хватает следующих прав для "
+                    f"использования этой команды: {missing_perms}.",
                 ),
                 ephemeral=True,
             )
@@ -450,12 +433,12 @@ class NotifyViewV2(LayoutView):
         """Creates the notify view component."""
         self.clear_items()
 
-        container = Container[Self](accent_color=Color.from_str("#ffffff"))
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
 
         # header
         container.add_item(
             TextDisplay[Self](
-                f"### <:2904notifymember:1442924357524394066> | Оповещение <:42920arrowrightalt:1442924551880314921> <@{self.user_id}>"  # noqa: E501
+                f"### <:nightcoreNotifyPlus:1540730025983090759>Оповещение от модерации для <@{self.user_id}>"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -468,7 +451,7 @@ class NotifyViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"**Модератор** <@{self.moderator_id}> обнаружил нарушение в персонализации вашего профиля Discord.\n"  # noqa: E501
+                f"<:nightcoreModerator:1540734534423805952> **Модератор** <@{self.moderator_id}> обнаружил нарушение в персонализации вашего профиля Discord.\n"  # noqa: E501
                 f"Пожалуйста, смените **`{profile_parts}`** в соответствии с правилами сервера.\n"  # noqa: E501
                 "\n**В случае отказа или игнорирования требования — будет применено наказание.**"  # noqa: E501
             )
@@ -496,16 +479,6 @@ class NotifyViewV2(LayoutView):
             create_ticket_channel_id=self.create_ticket_channel_id,  # type: ignore
         )
         container.add_item(self.actions)
-        container.add_item(Separator[Self]())
-
-        # footer
-        now = datetime.now(UTC)
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
-            )
-        )
 
         if disabled:
             self.disable_buttons()
@@ -523,29 +496,18 @@ class NotifyTimedOutViewV2(LayoutView):
 
         self.bot = bot
 
-        container = Container[Self]()
+        container = Container[Self](accent_color=Color.from_str("#C0577A"))
 
         # header
         container.add_item(
             TextDisplay[Self](
-                f"### <:8736notifyout:1442924239001878538> | Оповещение <:42920arrowrightalt:1442924551880314921> <@{moderator_id}>"  # noqa: E501
+                f"### <:nightcoreNotifyEnd:1540731907829145622> Оповещение от <@{moderator_id}>"  # noqa: E501
             )
         )
-        container.add_item(Separator[Self]())
 
         # body
         container.add_item(
             TextDisplay[Self](f"Срок действия {message_url} оповещения истек.")
-        )
-        container.add_item(Separator[Self]())
-
-        # footer
-        now = datetime.now(UTC)
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}\n"  # type: ignore
-            )
         )
 
         self.add_item(container)

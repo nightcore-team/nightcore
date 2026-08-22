@@ -14,7 +14,7 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_guild_config,
 )
-from src.nightcore.components.embed import ErrorEmbed, SuccessMoveEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import give as give_group
 from src.nightcore.features.economy.utils.autocomplete import (
     reward_depends_on_type_autocomplete,
@@ -65,14 +65,13 @@ async def give_item(
     ]
 
     if not target_members:
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи",
                 "У выбранной роли нет подходящих пользователей для выдачи.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     outcome = ""
     item_name = ""
@@ -186,63 +185,56 @@ async def give_item(
         outcome = "give_item_error"
 
     if outcome == "custom_type_not_supported":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи",
                 "Выбранный тип не поддерживается для массовой выдачи.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "missing_reward_id":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи",
                 "Для выбранного типа нужно указать корректный reward.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome in {"invalid_case", "unknown_case"}:
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи",
                 "Кейс с указанным id не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "unknown_color":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи",
                 "Цвет с указанным id не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     if outcome == "give_item_error":
-        return await interaction.followup.send(
-            embed=ErrorEmbed(
+        await interaction.followup.send(
+            view=ErrorViewV2(
                 "Ошибка выдачи",
                 "Не удалось выдать предмет/валюту "
                 "пользователям с указанной ролью.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
         )
+        return
 
     await interaction.followup.send(
-        embed=SuccessMoveEmbed(
+        view=SuccessViewV2(
             "Выдача успешна",
             f"Вы успешно выдали **{amount} {item_name}** пользователям с ролью {role.mention}.\n"  # noqa: E501
             f"Всего затронуто пользователей: **{len(target_members)}**.",
-            bot.user.display_name,  # type: ignore
-            bot.user.display_avatar.url,  # type: ignore
         ),
     )
 

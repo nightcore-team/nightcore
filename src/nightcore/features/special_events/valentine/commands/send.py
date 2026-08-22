@@ -8,7 +8,7 @@ from discord.app_commands.checks import Cooldown
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
-from src.nightcore.components.embed import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.special_events.valentine._groups import (
     valentine as valentine_group,
 )
@@ -112,27 +112,25 @@ async def send_valentine(
 
     if member.bot:
         _reset_cooldown_for_interaction(interaction)
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки валентинки",
                 "Очень приятно, но Вы не можете отправить валентинку мне.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if member.id == interaction.user.id:
         _reset_cooldown_for_interaction(interaction)
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка отправки валентинки",
                 "Вы не можете отправить валентинку самому себе.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     # generate valentine image
     image = await generate_valentine_image(text, cache=bot.images_cache)
@@ -165,11 +163,9 @@ async def send_valentine(
         logger.exception("Error while sending valentine: %s", e)
         _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка отправки валентинки",
                 "Произошла ошибка при отправке валентинки.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -204,11 +200,9 @@ async def send_valentine(
         logger.exception("Error while sending valentine: %s", e)
         _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка отправки валентинки",
                 "Произошла ошибка при отправке валентинки.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )

@@ -7,7 +7,7 @@ from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.operations import get_clan_by_id, get_clan_member
-from src.nightcore.components.embed.error import ErrorEmbed
+from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.clans._groups import manage as clan_manage_group
 from src.nightcore.features.clans.components.v2 import ClanInviteViewV2
 from src.nightcore.features.clans.utils.autocomplete import clans_autocomplete
@@ -46,11 +46,9 @@ async def moder_invite(
         clan_id = int(clan)
     except ValueError:
         await interaction.response.send_message(
-            embed=ErrorEmbed(
+            view=ErrorViewV2(
                 "Ошибка получения информации о клане",
                 "Не удалось найти данный клан в базе данных.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
@@ -78,37 +76,34 @@ async def moder_invite(
                     outcome = "success"
 
     if outcome == "clan_not_found":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка приглашения в клан",
                 "Выбранный клан не найден.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "limit_reached":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка приглашения в клан",
                 "В выбранном клане достигнуто максимальное количество участников.",  # noqa: E501
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "invited_already_in_clan":
-        return await interaction.response.send_message(
-            embed=ErrorEmbed(
+        await interaction.response.send_message(
+            view=ErrorViewV2(
                 "Ошибка приглашения в клан",
                 f"Пользователь {user.mention} уже состоит в клане.",
-                bot.user.display_name,  # type: ignore
-                bot.user.display_avatar.url,  # type: ignore
             ),
             ephemeral=True,
         )
+        return
 
     if outcome == "success":
         view = ClanInviteViewV2(
