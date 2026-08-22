@@ -38,6 +38,7 @@ async def add_faq_page(
         interaction.client,
         guild_id=guild.id,
         config_type=GuildFaqConfig,
+        _create=True,
     ) as (_, _):
         pass
 
