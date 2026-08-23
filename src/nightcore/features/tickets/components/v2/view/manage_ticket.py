@@ -492,7 +492,6 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                 ticket_author_id = ticket.author_id
 
                 # Update ticket state to CLOSED
-                ticket.moderator_id = user.id
                 ticket.state = TicketStateEnum.CLOSED
                 ticket.updated_at = datetime.now(UTC)
 
