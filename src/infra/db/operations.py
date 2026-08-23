@@ -1041,15 +1041,21 @@ async def get_role_requests_to_delete(
     return result.all()
 
 
-async def get_all_closed_tickets(
+async def get_tickets_to_delete(
     session: AsyncSession,
 ) -> Sequence[TicketState]:
-    """Get all closed tickets."""
-    stmt = select(TicketState).where(
-        TicketState.state == TicketStateEnum.CLOSED
+    """Get closed tickets that need to be deleted based on their duration."""
+    boundary = datetime.now(UTC) - timedelta(
+        hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
     )
-    result = await session.execute(stmt)
-    return result.scalars().all()
+
+    stmt = select(TicketState).where(
+        TicketState.state == TicketStateEnum.CLOSED,
+        TicketState.updated_at <= boundary,
+    )
+
+    result = await session.scalars(stmt)
+    return result.all()
 
 
 async def get_all_expired_temp_roles(

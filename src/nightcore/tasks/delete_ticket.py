@@ -2,17 +2,15 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.config.config import config
 from src.infra.db.models import GuildLoggingConfig, TicketState
 from src.infra.db.operations import (
-    get_all_closed_tickets,
     get_specified_channel,
+    get_tickets_to_delete,
 )
 from src.utils._enums import ChannelType, TicketStateEnum
 
@@ -51,18 +49,13 @@ class DeleteTicketTask(Cog):
         try:
             logger.info("[task] - Running delete ticket task")
             async with self.bot.uow.start() as session:
-                closed_tickets = await get_all_closed_tickets(session)
+                closed_tickets = await get_tickets_to_delete(session)
 
             if not closed_tickets:
                 logger.info("[task] - No closed tickets found")
                 return
 
             for ticket in closed_tickets:
-                if not ticket.updated_at + timedelta(
-                    hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
-                ) <= datetime.now(UTC):
-                    continue
-
                 guild = await ensure_guild_exists(self.bot, ticket.guild_id)
                 if guild is None:
                     logger.info(
