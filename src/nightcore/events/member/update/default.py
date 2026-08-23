@@ -73,8 +73,6 @@ class DefaultUpdateMemberEvent(Cog):
             )
             return
 
-        executor_id: int | None = None
-
         embed = discord.Embed(
             color=discord.Color.yellow(),
             timestamp=datetime.now(UTC),
@@ -91,56 +89,8 @@ class DefaultUpdateMemberEvent(Cog):
         nickname_changed = old_display != new_display
 
         if nickname_changed:
-            if "!" in new_display:
-                try:
-                    await after.edit(nick=new_display.replace("!", ""))
-                except discord.Forbidden:
-                    logger.warning(
-                        f"[logging] Missing permissions to remove '!' from nickname in guild {guild.id}"  # noqa: E501
-                    )
-                except discord.HTTPException as e:
-                    logger.error(
-                        f"[logging] HTTP error occurred while removing '!' from nickname in guild {guild.id}: {e}"  # noqa: E501
-                    )
-
-            try:
-                async for entry in after.guild.audit_logs(
-                    action=discord.AuditLogAction.member_update, limit=10
-                ):
-                    if entry.target.id == after.id:  # type: ignore
-                        executor_id = entry.user.id  # type: ignore
-                        break
-
-            except discord.Forbidden as e:
-                logger.warning(
-                    "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
-                    guild.id,
-                    e,
-                )
-                return
-            except discord.HTTPException as e:
-                logger.error(
-                    "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
-                    guild.id,
-                    e,
-                )
-                return
-            except Exception as e:
-                logger.error(
-                    "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
-                    guild.id,
-                    e,
-                )
-                return
-
-            if executor_id is None:
-                executor_id = after.id
-
             embed.description = (
                 f"Никнейм участника {after.mention} был изменен"
-            )
-            embed.add_field(
-                name="Изменил", value=f"<@{executor_id}>", inline=False
             )
             embed.add_field(
                 name="Старый никнейм", value=old_display or "—", inline=False
@@ -158,38 +108,6 @@ class DefaultUpdateMemberEvent(Cog):
         )
 
         if added_roles or removed_roles:
-            if executor_id is None:
-                try:
-                    async for entry in after.guild.audit_logs(
-                        action=discord.AuditLogAction.member_role_update,
-                        limit=10,
-                    ):
-                        if entry.target.id == after.id:  # type: ignore
-                            executor_id = entry.user.id  # type: ignore
-                            break
-
-                except discord.Forbidden as e:
-                    logger.warning(
-                        "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
-                        guild.id,
-                        e,
-                    )
-                    return
-                except discord.HTTPException as e:
-                    logger.error(
-                        "[logging] HTTP error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
-                        guild.id,
-                        e,
-                    )
-                    return
-                except Exception as e:
-                    logger.error(
-                        "[logging] Unexpected error occurred while accessing audit logs in guild %s: %s",  # noqa: E501
-                        guild.id,
-                        e,
-                    )
-                    return
-
             added_str = (
                 "".join(f"<@&{rid}>" for rid in added_roles)
                 if added_roles
@@ -207,10 +125,6 @@ class DefaultUpdateMemberEvent(Cog):
                 embed.description = (
                     f"Роли участника {after.mention} были изменены"
                 )
-                if executor_id:
-                    embed.add_field(
-                        name="Изменил", value=f"<@{executor_id}>", inline=False
-                    )
 
             if added_roles:
                 embed.add_field(
