@@ -653,6 +653,9 @@ class ManageTicketViewV2(LayoutView):
         original = getattr(error, "original", error)
 
         if not isinstance(original, app_commands.MissingPermissions):
+            logger.error(
+                "Unknown error in ticket manage component", exc_info=error
+            )
             return
 
         missing_perms: list[str] = getattr(original, "missing_permissions", [])
