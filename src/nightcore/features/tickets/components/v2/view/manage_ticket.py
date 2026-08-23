@@ -123,7 +123,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
 
         async with (
             view.bot.lock_manager.acquire(
-                AsyncioLockTypeEnum.TicketManageAction, interaction.channel_id
+                AsyncioLockTypeEnum.TicketManageAction, channel.id
             ),
             view.bot.uow.start() as session,
         ):
@@ -194,7 +194,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Не удалось закрепить тикет",
-                    "Этот тикет уже закреплен другим модератором.",
+                    "Этот тикет уже закреплен.",
                 ),
                 ephemeral=True,
             )
@@ -288,7 +288,12 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         pinned_tickets_category_id = 0
         logging_channel_id: int | None = None
 
-        async with view.bot.uow.start() as session:
+        async with (
+            view.bot.lock_manager.acquire(
+                AsyncioLockTypeEnum.TicketManageAction, channel.id
+            ),
+            view.bot.uow.start() as session,
+        ):
             ticket = await get_ticket_state(
                 session,
                 guild_id=guild.id,
@@ -348,8 +353,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Не удалось открыть тикет",
-                    "Вы не можете открыть уже открытый тикет. "
-                    "Просто закрепите его.",
+                    "Вы не можете открыть уже открытый тикет. ",
                 ),
                 ephemeral=True,
             )
@@ -467,7 +471,12 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         closed_tickets_category_id = 0
         logging_channel_id: int | None = None
 
-        async with view.bot.uow.start() as session:
+        async with (
+            view.bot.lock_manager.acquire(
+                AsyncioLockTypeEnum.TicketManageAction, channel.id
+            ),
+            view.bot.uow.start() as session,
+        ):
             ticket = await get_ticket_state(
                 session,
                 guild_id=guild.id,
