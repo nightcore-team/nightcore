@@ -24,7 +24,7 @@ class GuildForumConfig(IdIntegerMixin, Base):
         Boolean, nullable=False, default=False
     )
     prefix_id: Mapped[int | None] = mapped_column(
-        Boolean, nullable=True, default=False
+        Integer, nullable=True, default=None
     )
 
     @property
