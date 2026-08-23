@@ -4,7 +4,6 @@ User collection views v2 component.
 Used for displaying a user's cases, colors, and opening related views.
 """
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self
 
 from discord import ButtonStyle, Color, Interaction
@@ -19,7 +18,6 @@ from discord.ui import (
 )
 
 from src.infra.db.operations import get_or_create_user
-from src.nightcore.utils import discord_ts
 
 from .handlers.transfer import open_transfer_history
 
@@ -60,15 +58,6 @@ class CasesCollectionViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self]("> У пользователя пока нет кейсов.")
             )
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 
@@ -101,15 +90,6 @@ class ColorsCollectionViewV2(LayoutView):
             container.add_item(
                 TextDisplay[Self]("> У пользователя пока нет цветов.")
             )
-        container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
 

@@ -61,7 +61,7 @@ class UserProfileViewV2(LayoutView):
         container.add_item(
             Section[Self](
                 TextDisplay[Self](
-                    f"> <:nightcoreLevelUp:1540402294275969024> **Уровень:** **{lvl} | {current_exp}/{exp_to_lvl})**\n"  # noqa: E501
+                    f"> <:nightcoreLevelUp:1540402294275969024> **Уровень:** **{lvl} | ({current_exp}/{exp_to_lvl})**\n"  # noqa: E501
                     f"> <:nightcoreBanknote:1540403146072002624> **Валюта:** {balance} {coin_name if coin_name else ''}\n"  # noqa: E501
                     f"> <:nightcoreMessage:1540403723342192810> **Количество сообщений:** {messages_count}\n"  # noqa: E501
                     f"> <:audiolines:1540403938782748693> **Голосовая активность:** {voice_activity}\n"  # noqa: E501
