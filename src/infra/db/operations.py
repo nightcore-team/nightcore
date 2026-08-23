@@ -641,29 +641,44 @@ async def get_user_notify_by_end_time(
     return res.scalar_one_or_none()
 
 
-async def get_latest_user_ticket(
+async def get_ticket_state(
     session: AsyncSession,
     *,
     guild_id: int,
-    user_id: int | None = None,
-    channel_id: int | None = None,
+    channel_id: int,
 ) -> TicketState | None:
     """Get the latest ticket state for a user in a guild."""
     stmt = (
         select(TicketState)
         .where(
             TicketState.guild_id == guild_id,
-        )
-        .order_by(
-            TicketState.updated_at.desc().nulls_last(),
+            TicketState.channel_id == channel_id,
         )
         .limit(1)
     )
 
-    if user_id:
-        stmt = stmt.where(TicketState.author_id == user_id)
-    if channel_id:
-        stmt = stmt.where(TicketState.channel_id == channel_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def get_user_ticket(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> TicketState | None:
+    """Get the latest ticket state for a user in a guild."""
+    stmt = (
+        select(TicketState)
+        .where(
+            TicketState.guild_id == guild_id,
+            TicketState.author_id == user_id,
+            TicketState.state.in_(
+                (TicketStateEnum.OPENED, TicketStateEnum.PINNED)
+            ),
+        )
+        .limit(1)
+    )
 
     res = await session.execute(stmt)
     return res.scalar_one_or_none()

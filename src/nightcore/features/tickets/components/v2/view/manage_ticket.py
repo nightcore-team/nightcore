@@ -33,8 +33,8 @@ if TYPE_CHECKING:
 
 from src.infra.db.models import GuildLoggingConfig, GuildTicketsConfig
 from src.infra.db.operations import (
-    get_latest_user_ticket,
     get_specified_channel,
+    get_ticket_state,
 )
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
@@ -127,7 +127,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             ),
             view.bot.uow.start() as session,
         ):
-            ticket_state = await get_latest_user_ticket(
+            ticket_state = await get_ticket_state(
                 session, guild_id=guild.id, channel_id=channel.id
             )
 
@@ -289,7 +289,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         logging_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
-            ticket = await get_latest_user_ticket(
+            ticket = await get_ticket_state(
                 session,
                 guild_id=guild.id,
                 channel_id=channel.id,
@@ -468,7 +468,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         logging_channel_id: int | None = None
 
         async with view.bot.uow.start() as session:
-            ticket = await get_latest_user_ticket(
+            ticket = await get_ticket_state(
                 session,
                 guild_id=guild.id,
                 channel_id=channel.id,

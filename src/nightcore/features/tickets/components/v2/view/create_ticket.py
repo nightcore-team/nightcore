@@ -26,10 +26,10 @@ from src.infra.db.models import (
     TicketState,
 )
 from src.infra.db.operations import (
-    get_latest_user_ticket,
     get_or_create_user,
     get_specified_channel,
     get_specified_guild_config,
+    get_user_ticket,
 )
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
@@ -123,14 +123,11 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     if dbuser.ticket_ban:
                         outcome = "user_ticket_banned"
                     else:
-                        last_ticket = await get_latest_user_ticket(
+                        last_ticket = await get_user_ticket(
                             session, guild_id=guild.id, user_id=user.id
                         )
 
-                        if last_ticket and last_ticket.state not in [
-                            TicketStateEnum.CLOSED,
-                            TicketStateEnum.DELETED,
-                        ]:
+                        if last_ticket:
                             outcome = "user_has_open_ticket"
                         else:
                             try:
