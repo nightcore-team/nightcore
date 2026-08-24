@@ -12,6 +12,12 @@ job "nightcore-bot" {
   namespace = "apps"
   type        = "service"
 
+  constraint {
+    attribute = "${meta.roles}"
+    operator = "set_contains"
+    value = "apps"
+  }
+
   update {
     max_parallel     = 1
     min_healthy_time = "30s"
