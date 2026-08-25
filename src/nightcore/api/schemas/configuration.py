@@ -204,11 +204,8 @@ class GuildLevelsConfigSchema(BaseGuildConfig):
 
 class GuildMultiplersConfigSchema(BaseGuildConfig):
     base_exp_multiplier: int = 1
-    temp_exp_multiplier: int | None = None
     base_coins_multiplier: int = 1
-    temp_coins_multiplier: float | None = None
     base_battlepass_multiplier: int = 1
-    temp_battlepass_multiplier: int | None = None
 
 
 class GuildClanShopItemSchema(BaseGuildConfig):
