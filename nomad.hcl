@@ -114,22 +114,11 @@ API_PORT={{ .Data.data.API_PORT }}
 API_HOST={{ .Data.data.API_HOST }}
 API_DOMAIN={{ .Data.data.API_DOMAIN }}
 DASHBOARD_FRONTEND_URI={{ .Data.data.DASHBOARD_FRONTEND_URI }}
-JWT_ALGORITHM={{ .Data.data.JWT_ALGORITHM }}
 JWT_PUBLIC={{ .Data.data.JWT_PUBLIC }}
+JWT_ALGORITHM={{ .Data.data.JWT_ALGORITHM }}
 {{ end }}
 EOT
         destination = "secrets/bot.env"
-        env         = true
-      }
-
-      template {
-        data = <<EOT
-{{ with secret "secret/data/keydb" }}
-REDIS_PASSWORD={{ .Data.data.password }}
-REDIS_HOST={{ .Data.data.host }}
-{{ end }}
-EOT
-        destination = "secrets/keydb.env"
         env         = true
       }
 
