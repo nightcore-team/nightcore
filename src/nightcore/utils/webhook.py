@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import discord
 
@@ -26,11 +26,16 @@ async def send_to_webhook(
 ) -> bool:
     """Send a component to a Discord webhook, invalidating it on failure."""
     webhook = discord.Webhook.from_url(webhook_model.url, client=bot)
+
+    identity: dict[str, Any] = {}
+    identity["username"] = bot.user.display_name
+    identity["avatar_url"] = bot.user.display_avatar.url
+
     try:
         if isinstance(component, discord.Embed):
-            await webhook.send(embed=component, files=files or [])
+            await webhook.send(embed=component, files=files or [], **identity)
         else:
-            await webhook.send(view=component)
+            await webhook.send(view=component, **identity)
         return True
     except (discord.NotFound, discord.Forbidden):
         async with bot.uow.start() as session:
