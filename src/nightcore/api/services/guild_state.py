@@ -1,7 +1,9 @@
 """Guild state service implementation."""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import discord
 
@@ -10,7 +12,6 @@ from src.infra.db.operations import (
     get_specified_guild_config,
 )
 from src.infra.db.uow import UnitOfWork
-from src.nightcore.api.dependencies import LoggingRevisionService
 from src.nightcore.api.domain.exceptions.base import LogicalError
 from src.nightcore.api.schemas.configuration import (
     CONFIG_SCHEMA_MODEL_MAP,
@@ -21,6 +22,9 @@ from src.nightcore.api.utils.validators import (
 )
 from src.nightcore.bot import Nightcore
 from src.utils._enums import ConfigTypeEnum
+
+if TYPE_CHECKING:
+    from src.nightcore.api.dependencies import LoggingRevisionService
 
 
 class GuildStateService:
@@ -135,9 +139,17 @@ class GuildStateService:
         context = await self._build_validation_context(member=member)
         validated_model = pydantic_type.model_validate(data, context=context)
 
-        dump = validated_model.model_dump(exclude_unset=True)
+        # The revision payload is dumped before normalization and in json
+        # mode: normalize_from_json replaces values with ORM objects, and in
+        # python mode enum fields stay enum members. Neither is JSON
+        # serializable for the loggingrevision.data column.
+        revision_data = validated_model.model_dump(
+            mode="json", exclude_unset=True
+        )
 
-        nomalized = type_.normalize_from_json(dump)
+        nomalized = type_.normalize_from_json(
+            validated_model.model_dump(exclude_unset=True)
+        )
 
         async with self._uow.start() as session:
             config = await get_specified_guild_config(
@@ -154,6 +166,6 @@ class GuildStateService:
                 guild_id=member.guild.id,
                 user_id=member.id,
                 config_type=config_type,
-                data=nomalized,
+                data=revision_data,
                 version=type_.__version__,
             )
