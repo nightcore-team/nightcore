@@ -283,8 +283,13 @@ async def get_specified_webhook(  # noqa: UP047
 ) -> DiscordWebhook | None:
     """Get the specified logging webhook from the database."""
 
-    column = getattr(config_type, channel_type.value)
-    stmt = select(column).where(config_type.guild_id == guild_id)
+    relationship = getattr(config_type, channel_type.value)
+    stmt = (
+        select(DiscordWebhook)
+        .select_from(config_type)
+        .join(relationship)
+        .where(config_type.guild_id == guild_id)
+    )
     return await session.scalar(stmt)
 
 
