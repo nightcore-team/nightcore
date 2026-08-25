@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 from fastapi import HTTPException, Request, status
 from fastapi.params import Depends
 
+from src.infra.db.uow import UnitOfWork
 from src.nightcore.api.security.jwt import JWTTokenService
 from src.nightcore.api.services.access import AccessService
 from src.nightcore.api.services.guild_state import GuildStateService
 from src.nightcore.api.services.logging_revision import LoggingRevisionService
 from src.nightcore.bot import Nightcore
-
-if TYPE_CHECKING:
-    from src.infra.db.uow import UnitOfWork
 
 
 def get_bot(request: Request) -> Nightcore:
