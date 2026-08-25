@@ -157,7 +157,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
             user_id=view.user_id,
             moderator_id=interaction.user.id,
             rules_channel_id=discord.Webhook.from_url(
-                rules_webhook.url
+                rules_webhook.url, client=view.bot
             ).channel_id,
             create_ticket_channel_id=create_ticket_channel_id,
             content=view.content,
