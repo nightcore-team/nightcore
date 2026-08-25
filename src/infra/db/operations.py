@@ -282,6 +282,7 @@ async def get_specified_webhook(  # noqa: UP047
     channel_type: ChannelType,
 ) -> DiscordWebhook | None:
     """Get the specified logging webhook from the database."""
+
     column = getattr(config_type, channel_type.value)
     stmt = select(column).where(config_type.guild_id == guild_id)
     return await session.scalar(stmt)
@@ -853,6 +854,35 @@ async def get_logging_revision_by_id(
     return result.scalar_one_or_none()
 
 
+def _logging_revision_conditions(
+    *,
+    guild_id: int,
+    config_types: Sequence[ConfigTypeEnum] | None,
+    user_id: int | None,
+    date_from: datetime | None,
+    date_to: datetime | None,
+) -> list[ColumnElement[bool]]:
+    """Build the shared filter conditions for logging revision queries."""
+
+    conditions: list[ColumnElement[bool]] = [
+        LoggingRevision.guild_id == guild_id,
+    ]
+
+    if config_types is not None:
+        conditions.append(LoggingRevision.config_type.in_(config_types))
+
+    if user_id is not None:
+        conditions.append(LoggingRevision.user_id == user_id)
+
+    if date_from is not None:
+        conditions.append(LoggingRevision.created_at >= date_from)
+
+    if date_to is not None:
+        conditions.append(LoggingRevision.created_at <= date_to)
+
+    return conditions
+
+
 async def get_logging_revisions(
     session: AsyncSession,
     *,
@@ -873,23 +903,16 @@ async def get_logging_revisions(
     Returns a paginated window of the most recent revisions.
     """
 
-    conditions: list[ColumnElement[bool]] = [
-        LoggingRevision.guild_id == guild_id,
-    ]
+    if config_types is not None and not config_types:
+        return []
 
-    if config_types is not None:
-        if not config_types:
-            return []
-        conditions.append(LoggingRevision.config_type.in_(config_types))
-
-    if user_id is not None:
-        conditions.append(LoggingRevision.user_id == user_id)
-
-    if date_from is not None:
-        conditions.append(LoggingRevision.created_at >= date_from)
-
-    if date_to is not None:
-        conditions.append(LoggingRevision.created_at <= date_to)
+    conditions = _logging_revision_conditions(
+        guild_id=guild_id,
+        config_types=config_types,
+        user_id=user_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
 
     stmt = (
         select(LoggingRevision)
@@ -904,6 +927,37 @@ async def get_logging_revisions(
     result = await session.execute(stmt)
 
     return result.scalars().all()
+
+
+async def count_logging_revisions(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_types: Sequence[ConfigTypeEnum] | None = None,
+    user_id: int | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+) -> int:
+    """Count logging revisions matching the same filters as the listing.
+
+    Needed for pagination: the listing itself returns only one page, so the
+    total number of matching revisions has to be asked for separately.
+    """
+
+    if config_types is not None and not config_types:
+        return 0
+
+    conditions = _logging_revision_conditions(
+        guild_id=guild_id,
+        config_types=config_types,
+        user_id=user_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    stmt = select(func.count()).select_from(LoggingRevision).where(*conditions)
+
+    return await session.scalar(stmt) or 0
 
 
 async def get_fraction_roles(

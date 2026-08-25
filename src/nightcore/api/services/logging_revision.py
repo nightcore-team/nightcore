@@ -9,6 +9,7 @@ import discord
 from src.infra.db.models import LoggingRevision
 from src.infra.db.operations import (
     CONFIG_MODEL_MAP,
+    count_logging_revisions,
     get_last_logging_revision,
     get_logging_revision_by_id,
     get_logging_revisions,
@@ -18,6 +19,7 @@ from src.nightcore.api.schemas.logging_revision import (
     LoggingRevisionDataSchema,
     LoggingRevisionMetaSchema,
 )
+from src.utils._enums import ConfigTypeEnum
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -25,7 +27,6 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from src.infra.db.uow import UnitOfWork
-    from src.utils._enums import ConfigTypeEnum
 
 
 ALPHABET: Final[str] = (
@@ -143,8 +144,8 @@ class LoggingRevisionService:
             offset: The number of revisions to skip.
 
         Returns:
-            A list of LoggingRevisionSchema objects representing the
-            most recent revisions.
+            A page of LoggingRevisionSchema objects together with the total
+            number of revisions matching the filters.
         """
 
         async with self._uow.start() as session:
@@ -159,6 +160,15 @@ class LoggingRevisionService:
                 offset=offset,
             )
 
+            total = await count_logging_revisions(
+                session,
+                guild_id=guild.id,
+                config_types=config_types,
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+            )
+
         user_ids = [revision.user_id for revision in revisions]
 
         members: dict[int, discord.Member] = {}
@@ -167,7 +177,7 @@ class LoggingRevisionService:
             members = {member.id: member for member in fetched}
 
         return ListLoggingRevisionMetaResponseSchema(
-            total=len(revisions),
+            total=total,
             revisions=[
                 self._map_revision_to_schema(revision, members)
                 for revision in revisions
