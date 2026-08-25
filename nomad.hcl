@@ -38,26 +38,26 @@ job "nightcore-bot" {
           "traefik.enable=true",
           "traefik.http.routers.dashboard-backend.rule=Host(`api.nightcore.space`)",
           "traefik.http.routers.dashboard-backend.priority=10",
-          "traefik.http.routers.dashboard-backend.entrypoints=websecure",
+          "traefik.http.routers.dashboard-backend.entrypoints=tunnel",
           "traefik.http.routers.dashboard-backend.service=dashboard-backend",
           "traefik.http.services.dashboard-backend.loadbalancer.server.port=5000",
-          "traefik.http.routers.dashboard-backend.tls=true",
 
           "traefik.http.middlewares.backend-ratelimit.ratelimit.average=2",
           "traefik.http.middlewares.backend-ratelimit.ratelimit.period=1s",
           "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=8",
+          "traefik.http.middlewares.backend-ratelimit.ratelimit.sourcecriterion.requestheadername=CF-Connecting-IP",
           "traefik.http.routers.dashboard-backend.middlewares=backend-ratelimit",
 
           "traefik.http.routers.dashboard-backend-patch.rule=Host(`api.nightcore.space`) && Method(`PATCH`)",
           "traefik.http.routers.dashboard-backend-patch.priority=15",
-          "traefik.http.routers.dashboard-backend-patch.entrypoints=websecure",
+          "traefik.http.routers.dashboard-backend-patch.entrypoints=tunnel",
           "traefik.http.routers.dashboard-backend-patch.service=dashboard-backend",
-          "traefik.http.routers.dashboard-backend-patch.tls=true",
           "traefik.http.routers.dashboard-backend-patch.middlewares=patch-ratelimit",
 
           "traefik.http.middlewares.patch-ratelimit.ratelimit.average=1",
           "traefik.http.middlewares.patch-ratelimit.ratelimit.period=10s",
-          "traefik.http.middlewares.patch-ratelimit.ratelimit.burst=2"
+          "traefik.http.middlewares.patch-ratelimit.ratelimit.burst=2",
+          "traefik.http.middlewares.patch-ratelimit.ratelimit.sourcecriterion.requestheadername=CF-Connecting-IP"
       ]
     }
 
