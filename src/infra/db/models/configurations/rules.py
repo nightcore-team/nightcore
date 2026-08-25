@@ -84,7 +84,7 @@ class GuildRulesConfig(IdIntegerMixin, Base):
         passive_deletes=True,
     )
     _rules_webhook_id: Mapped[int | None] = mapped_column(
-        "economy_log_webhook_id",
+        "rules_webhook_id",
         ForeignKey("discordwebhook.id", ondelete="SET NULL"),
         nullable=True,
     )
