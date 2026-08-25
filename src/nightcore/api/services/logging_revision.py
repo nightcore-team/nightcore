@@ -13,9 +13,9 @@ from src.infra.db.operations import (
     get_logging_revision_by_id,
     get_logging_revisions,
 )
-from src.nightcore.api.endpoints.guild import LoggingRevisionDataSchema
 from src.nightcore.api.schemas.logging_revision import (
     ListLoggingRevisionMetaResponseSchema,
+    LoggingRevisionDataSchema,
     LoggingRevisionMetaSchema,
 )
 
