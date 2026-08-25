@@ -1,6 +1,5 @@
 import logging  # noqa: D100
 from datetime import UTC, datetime
-import re
 from typing import TYPE_CHECKING, Self, cast
 
 import discord
@@ -411,9 +410,7 @@ class NotifyViewV2(LayoutView):
                                 item.content, r"<#(\d+)>"
                             )
                             self.content = extract_str_by_pattern(
-                                item.content,
-                                r"```(.+)```",
-                                re.DOTALL,
+                                item.content, r"\`\`\`(.+)\`\`\`"
                             )
                         case 8:
                             self.end_time = datetime.fromtimestamp(
