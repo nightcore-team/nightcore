@@ -39,7 +39,6 @@ async def case_help(
         bot,
         guild_id=guild.id,
         config_type=GuildEconomyConfig,
-        _create=False,
     ) as (
         guild_config,
         session,

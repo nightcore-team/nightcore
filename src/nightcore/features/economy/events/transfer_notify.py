@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         TransferCoinsEventDTO,
     )
 
-from src.nightcore.utils.log import send_log_message
+from src.nightcore.utils.webhook import send_webhook_message
 
 logger = logging.getLogger(__name__)
 
@@ -68,23 +68,7 @@ class TransferCoinsEvent(Cog):
             comment=dto.comment,
         )
 
-        if dto.logging_channel_id:
-            try:
-                await send_log_message(self.bot, dto)
-            except Exception as e:
-                logger.warning(
-                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
-                    dto.event_type,
-                    dto.guild.id,
-                    e,
-                    dto.build_log_embed(self.bot).to_dict(),
-                )
-        else:
-            logger.info(
-                "[%s/log] No logging channel ID provided for guild %s",
-                dto.event_type,
-                dto.guild.id,
-            )
+        await send_webhook_message(self.bot, dto)
 
         try:
             await dto.receiver.send(view=view)

@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import BigInteger, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,3 +31,10 @@ class GuildTicketsConfig(IdIntegerMixin, Base):
     create_ticket_ping_role_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

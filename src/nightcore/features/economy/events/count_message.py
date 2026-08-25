@@ -19,18 +19,19 @@ from src.infra.db.operations import (
     get_specified_guild_config,
 )
 from src.nightcore.utils import (
-    ensure_messageable_channel_exists,
     ensure_role_exists,
     has_any_role_from_sequence,
 )
 
 if TYPE_CHECKING:
+    from src.infra.db.models.discord_webhook import DiscordWebhook
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.features.economy.components.v2.view.levelup import (
     LevelUpViewV2,
 )
 from src.nightcore.features.economy.utils import calculate_user_exp_to_level
+from src.nightcore.utils.webhook import send_to_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -113,35 +114,22 @@ class CountMessageEvent(Cog):
     async def _send_level_up_message(
         self,
         guild: Guild,
-        notifications_channel_id: int,
+        logging_webhook: "DiscordWebhook",
         member: Member,
         new_level: int,
         exp_to_level: int,
     ) -> None:
         """Send level up notification message."""
-        channel = await ensure_messageable_channel_exists(
-            guild, notifications_channel_id
-        )
-        if not channel:
-            logger.error(
-                "[economy/levelup] Notifications channel %s not found in guild %s",  # noqa: E501
-                notifications_channel_id,
-                guild.id,
-            )
-            return
 
         view = LevelUpViewV2(self.bot, member.id, new_level, exp_to_level)
 
-        try:
-            await channel.send(view=view)  # type: ignore
-        except Exception as e:
-            logger.exception(
-                "[economy/levelup] Failed to send level up message for user %s in guild %s: %s",  # noqa: E501
-                member.id,
-                guild.id,
-                e,
-            )
-            return
+        await send_to_webhook(
+            self.bot,
+            logging_webhook,
+            view,
+            context="economy/levelup",
+            guild_id=guild.id,
+        )
 
     @Cog.listener()
     async def on_count_message(self, message: Message):
@@ -161,9 +149,6 @@ class CountMessageEvent(Cog):
                 session, config_type=GuildLevelsConfig, guild_id=guild.id
             )
 
-            if multiplers_config is None or levels_config is None:
-                return
-
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
@@ -172,7 +157,7 @@ class CountMessageEvent(Cog):
 
             user.messages_count += 1
 
-            levelup_channel_id = levels_config.level_notify_channel_id
+            levelup_webhook = levels_config.level_notify_webhook
 
             exp_multiplier = (
                 multiplers_config.temp_exp_multiplier
@@ -259,11 +244,11 @@ class CountMessageEvent(Cog):
                     )
                 )
 
-            if levelup_channel_id:
+            if levelup_webhook and levelup_webhook.valid:
                 gather_list.append(
                     self._send_level_up_message(
                         guild=guild,
-                        notifications_channel_id=levelup_channel_id,
+                        logging_webhook=levelup_webhook,
                         member=author,
                         new_level=new_level_int,
                         exp_to_level=exp_to_level,

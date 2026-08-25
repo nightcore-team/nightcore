@@ -9,7 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig, TicketState
 from src.infra.db.operations import (
-    get_specified_channel,
+    get_specified_webhook,
     get_tickets_to_delete,
 )
 from src.utils._enums import ChannelType, TicketStateEnum
@@ -66,7 +66,7 @@ class DeleteTicketTask(Cog):
                     continue
 
                 async with self.bot.uow.start() as session:
-                    logging_channel_id = await get_specified_channel(
+                    logging_webhook = await get_specified_webhook(
                         session,
                         guild_id=guild.id,
                         config_type=GuildLoggingConfig,
@@ -80,7 +80,7 @@ class DeleteTicketTask(Cog):
                         channel_id=ticket.channel_id,
                         author_id=ticket.author_id,
                         moderator_id=ticket.moderator_id,
-                        logging_channel_id=logging_channel_id,
+                        logging_webhook=logging_webhook,
                         state=TicketStateEnum.DELETED,
                     ),
                 )

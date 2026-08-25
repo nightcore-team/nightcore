@@ -45,7 +45,6 @@ class OnMessageEvent(Cog):
                 bot=self.bot,
                 guild_id=guild.id,
                 config_type=GuildLevelsConfig,
-                _create=True,
             ) as (levels_config, session):
                 proposal_channel_id = await get_specified_channel(
                     session,

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from discord import Color, Embed, Guild
 
 from src.infra.db.models._annot import CaseDropAnnot
+from src.infra.db.models.discord_webhook import DiscordWebhook
+from src.nightcore.events.dto.base import BaseEventDTO
 from src.utils._enums import ItemChangeActionEnum
 
 if TYPE_CHECKING:
@@ -32,17 +34,17 @@ class ChangedCase:
 
 
 @dataclass
-class ItemChangeNotifyEventDTO:
+class ItemChangeNotifyEventDTO(BaseEventDTO):
     """DTO for item change notify event."""
 
     guild: Guild
     event_type: str
-    logging_channel_id: int | None
+    logging_webhook: DiscordWebhook | None
     moderator_id: int
     item_name: str
     item: ChangedRole | ChangedReward | ChangedCase
 
-    def build_log_embed(self, bot: "Nightcore") -> Embed:
+    def build_component(self, bot: "Nightcore") -> Embed:
         """Build and return the log embed for the event."""
 
         color = Color.dark_purple()

@@ -26,8 +26,8 @@ from src.infra.db.models import (
 from src.infra.db.operations import (
     get_clan_by_name,
     get_shop_order_state,
-    get_specified_channel,
     get_specified_field,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
@@ -83,7 +83,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 custom_id=view.custom_id,  # type: ignore
             )
 
-            clans_logging_channel_id = await get_specified_channel(
+            clans_logging_webhook = await get_specified_webhook(
                 session=session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -105,8 +105,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             ):
                 outcome = "missing_permissions"
             else:
-                nightcore_notifications_channel_id = (
-                    await get_specified_channel(
+                nightcore_notifications_webhook = (
+                    await get_specified_webhook(
                         session=session,
                         guild_id=guild.id,
                         config_type=GuildNotificationsConfig,
@@ -222,8 +222,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 clan_balance_before=cast(float, view.clan_balance_before),
                 clan_balance_after=cast(float, view.clan_balance_after),
                 custom_id=cast(int, view.custom_id),
-                logging_channel_id=clans_logging_channel_id,
-                notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
+                logging_webhook=clans_logging_webhook,
+                notifications_webhook=nightcore_notifications_webhook,  # type: ignore
             ),
         )
 
@@ -260,7 +260,7 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                 custom_id=view.custom_id,  # type: ignore
             )
 
-            clans_loggings_channel_id = await get_specified_channel(
+            clans_logging_webhook = await get_specified_webhook(
                 session=session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -282,8 +282,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
             ):
                 outcome = "missing_permissions"
             else:
-                nightcore_notifications_channel_id = (
-                    await get_specified_channel(
+                nightcore_notifications_webhook = (
+                    await get_specified_webhook(
                         session=session,
                         guild_id=guild.id,
                         config_type=GuildNotificationsConfig,
@@ -367,8 +367,8 @@ class ClanShopActionRow(ActionRow["ClanShopViewV2"]):
                     clan_balance_before=cast(float, view.clan_balance_before),
                     clan_balance_after=cast(float, view.clan_balance_after),
                     custom_id=cast(int, view.custom_id),
-                    logging_channel_id=clans_loggings_channel_id,
-                    notifications_channel_id=nightcore_notifications_channel_id,  # type: ignore
+                    logging_webhook=clans_logging_webhook,
+                    notifications_webhook=nightcore_notifications_webhook,  # type: ignore
                 ),
             )
 

@@ -14,13 +14,8 @@ from nightforo import Client as XenforoClient
 from src.config.config import config
 from src.infra.db.operations import reset_users_voice_activity
 from src.infra.db.uow import UnitOfWork
-from src.infra.redis.repository import GuildStateRepository
-from src.infra.redis.serializers import snapshot_guild_state
 from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
 from src.nightcore.features.clans.components.v2 import ClanShopViewV2
-from src.nightcore.features.economy.commands.rainbow._guilds import (
-    RAINBOW_GUILD,
-)
 from src.nightcore.features.economy.components.v2 import (
     CoinsShopOrderViewV2,
     CoinsShopViewV2,
@@ -40,6 +35,7 @@ from src.nightcore.features.tickets.components.v2 import (
 from src.nightcore.utils import log_tree_summary
 from src.nightcore.utils.image_builder.cache import ImageCache
 from src.nightcore.utils.lock_manager import AsyncioLockManager
+from src.nightcore.utils.tasks_offset import TaskOffsetManager
 
 logger = logging.getLogger(__name__)
 
@@ -77,15 +73,14 @@ class Nightcore(Bot):
         *,
         cog_modules: list[str],
         uow: UnitOfWork,
-        guild_state_repository: GuildStateRepository,
     ):
         self.cog_modules = cog_modules
         self.uow = uow
-        self.guild_state_repository = guild_state_repository
         self.apis = CustomAPICollection()
         self.images_cache = ImageCache()
         self.config = config
         self.lock_manager = AsyncioLockManager()
+        self.task_manager = TaskOffsetManager()
 
         super().__init__(
             command_prefix=".",
@@ -250,23 +245,6 @@ class Nightcore(Bot):
 
             logger.error(traceback.format_exc())
 
-        try:
-            guild_synced = await self.tree.sync(guild=RAINBOW_GUILD)
-            logger.info(
-                "[sync] Successfully synced %d guild commands for %s",
-                len(guild_synced),
-                RAINBOW_GUILD.id,
-            )
-        except Exception as e:
-            logger.error(
-                "[failed] Guild sync failed for %s: %s",
-                RAINBOW_GUILD.id,
-                e,
-            )
-            import traceback
-
-            logger.error(traceback.format_exc())
-
         self.init_views()
 
         await self._reset_users_voice_activity()
@@ -275,11 +253,6 @@ class Nightcore(Bot):
 
     async def on_ready(self):
         """Event called when the bot is ready."""
-        await self.guild_state_repository.mark_not_ready()
-        await self.guild_state_repository.sync_guilds(
-            [snapshot_guild_state(guild) for guild in self.guilds]
-        )
-        await self.guild_state_repository.mark_ready()
 
         logger.info(f"Loaded cogs: {list(self.cogs.keys())}")
         logger.info(f"Connected to {len(self.guilds)} guilds")

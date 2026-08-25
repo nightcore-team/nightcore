@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import (
     ARRAY,
     BigInteger,
@@ -82,3 +84,10 @@ class GuildAccessConfig(IdIntegerMixin, Base):
     infomaker_config_access_roles_ids: Mapped[list[int] | None] = (
         mapped_column(ARRAY(BigInteger), nullable=True)
     )
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

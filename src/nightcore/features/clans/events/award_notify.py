@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 from src.nightcore.utils import (
     ensure_member_exists,
 )
-from src.nightcore.utils.log import send_log_message
+from src.nightcore.utils.webhook import send_webhook_message
 
 logger = logging.getLogger(__name__)
 
@@ -54,18 +54,10 @@ class ClanItemsChangedEvent(Cog):
             reason=dto.reason,
         )
 
-        gather_list: list[Awaitable[Any]] = []
-
-        if dto.logging_channel_id:
-            gather_list.append(send_log_message(self.bot, dto))
-        else:
-            logger.error(
-                "[%s/log] No logging channel ID provided for guild %s",
-                dto.event_type,
-                dto.guild.id,
-            )
-
-        gather_list.append(member.send(view=view))
+        gather_list: list[Awaitable[Any]] = [
+            send_webhook_message(self.bot, dto),
+            member.send(view=view),
+        ]
 
         try:
             await asyncio.gather(*gather_list)

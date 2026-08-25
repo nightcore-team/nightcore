@@ -9,8 +9,8 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildClansConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     get_clan_by_id,
-    get_specified_channel,
     get_specified_field,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
@@ -82,7 +82,7 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
     clan_name = ""
     clan_role_id = 0
     create_clan_channel_category_id = None
-    clans_logging_channel = None
+    clans_logging_webhook = None
 
     async with bot.uow.start() as session:
         dbclan = await get_clan_by_id(
@@ -108,7 +108,7 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
                 )
 
                 # Get logging channel
-                clans_logging_channel = await get_specified_channel(
+                clans_logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -230,7 +230,7 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             actor_id=interaction.user.id,
             clan_name=clan_name,
             actions=[clan_channel_create_action],
-            logging_channel_id=clans_logging_channel,
+            logging_webhook=clans_logging_webhook,
         )
 
         bot.dispatch("clan_manage_notify", dto)

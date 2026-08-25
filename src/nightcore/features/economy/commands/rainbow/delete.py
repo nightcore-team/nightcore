@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     get_rainbow_role_by_guild,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import rainbow as rainbow_group
@@ -41,7 +41,7 @@ async def delete_rainbow(
     guild = cast(Guild, interaction.guild)
 
     outcome = ""
-    logging_channel_id = None
+    logging_webhook = None
 
     try:
         async with bot.uow.start() as session:
@@ -54,7 +54,7 @@ async def delete_rainbow(
             else:
                 await session.delete(rainbow)
 
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -109,7 +109,7 @@ async def delete_rainbow(
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
         event_type=ItemChangeActionEnum.DELETE,
-        logging_channel_id=logging_channel_id,
+        logging_webhook=logging_webhook,
         moderator_id=interaction.user.id,
         item_name=f"{rainbow_name} ({rainbow.role_id})",  # type: ignore
         item=item,

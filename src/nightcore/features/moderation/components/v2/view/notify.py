@@ -2,6 +2,7 @@ import logging  # noqa: D100
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
+import discord
 from discord import (
     ButtonStyle,
     Color,
@@ -33,6 +34,7 @@ from src.infra.db.models import (
 )
 from src.infra.db.operations import (
     get_specified_channel,
+    get_specified_webhook,
     get_user_notify_by_end_time,
 )
 from src.nightcore.components.view.v2 import (
@@ -108,7 +110,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 return
 
             if not (
-                rules_channel := await get_specified_channel(
+                rules_webhook := await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildRulesConfig,
@@ -118,7 +120,7 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 await interaction.followup.send(
                     view=ErrorViewV2(
                         "Ошибка отправки оповещения",
-                        "Канал с правилами не настроен.",
+                        "Вебхук правил не настроен.",
                     )
                 )
                 return
@@ -154,7 +156,9 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
             guild_id=guild.id,
             user_id=view.user_id,
             moderator_id=interaction.user.id,
-            rules_channel_id=rules_channel,
+            rules_channel_id=discord.Webhook.from_url(
+                rules_webhook.url
+            ).channel_id,
             create_ticket_channel_id=create_ticket_channel_id,
             content=view.content,
             profile_parts=values,

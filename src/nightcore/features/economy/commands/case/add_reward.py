@@ -13,7 +13,7 @@ from src.infra.db.models._annot import CaseDropAnnot
 from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.components.view.v2.error import ValidationErrorViewV2
@@ -71,7 +71,7 @@ async def add_case_reward(
     guild = cast(Guild, interaction.guild)
 
     outcome = ""
-    logging_channel_id = None
+    logging_webhook = None
 
     if reward is None and reward_type.requires_id_or_custom():
         await interaction.response.send_message(
@@ -158,7 +158,7 @@ async def add_case_reward(
 
                         attributes.flag_modified(case, "drop")
 
-                        logging_channel_id = await get_specified_channel(
+                        logging_webhook = await get_specified_webhook(
                             session,
                             guild_id=guild.id,
                             config_type=GuildLoggingConfig,
@@ -229,7 +229,7 @@ async def add_case_reward(
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
         event_type=ItemChangeActionEnum.ADD_REWARD,
-        logging_channel_id=logging_channel_id,
+        logging_webhook=logging_webhook,
         moderator_id=interaction.user.id,
         item_name=case.name,  # type: ignore
         item=item,

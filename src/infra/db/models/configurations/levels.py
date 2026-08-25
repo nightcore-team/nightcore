@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import (
     BigInteger,
     Enum,
@@ -9,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.utils._enums import MessageCountTypeEnum
 
 
@@ -62,8 +65,17 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
     count_messages_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    level_notify_channel_id: Mapped[int | None] = mapped_column(
-        BigInteger, nullable=True
+    _level_notify_webhook_id: Mapped[int | None] = mapped_column(
+        "level_notify_webhook_id",
+        ForeignKey("discordwebhook.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    level_notify_webhook: Mapped[DiscordWebhook | None] = relationship(
+        DiscordWebhook,
+        foreign_keys=[_level_notify_webhook_id],
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
     bonus_access_roles_ids: Mapped[list[GuildBonusRole]] = relationship(
         GuildBonusRole,
@@ -85,3 +97,28 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
         nullable=True,
         default=MessageCountTypeEnum.ALL,
     )
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize json."""
+
+        if "level_roles" in config:
+            level_roles: list[Any] = config["level_roles"] or []
+            config["level_roles"] = [
+                GuildLevel(**item) for item in level_roles
+            ]
+
+        if "bonus_access_roles_ids" in config:
+            bonus_roles: list[Any] = config["bonus_access_roles_ids"] or []
+            config["bonus_access_roles_ids"] = [
+                GuildBonusRole(**item) for item in bonus_roles
+            ]
+
+        return config
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

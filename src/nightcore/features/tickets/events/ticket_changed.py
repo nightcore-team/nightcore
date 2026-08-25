@@ -1,6 +1,7 @@
 """Ticket Event Cog for Nightcore Bot."""
 
 import asyncio
+import contextlib
 import io
 import logging
 from collections.abc import Awaitable
@@ -40,11 +41,11 @@ class TicketChangeEvent(Cog):
 
         gather_list: list[Awaitable[None]] = []
 
-        if data.logging_channel_id:
+        if data.logging_webhook and data.logging_webhook.valid:
             gather_list.append(
                 send_moderation_log(
                     self.bot,
-                    channel_id=data.logging_channel_id,
+                    webhook=data.logging_webhook,
                     event_data=data,
                 )
             )
@@ -102,11 +103,17 @@ class TicketChangeEvent(Cog):
 
         gather_list: list[Awaitable[None]] = []
 
-        if data.logging_channel_id:
+        message = f"Ваш тикет {ticket_channel.name} на сервере {data.guild.name} был удален. Для просмотра истории сообщений скачайте файл и откройте в браузере."  # noqa: E501
+
+        with contextlib.suppress(Exception):
+            user = await self.bot.fetch_user(data.author_id)
+            await user.send(content=message)
+
+        if data.logging_webhook and data.logging_webhook.valid:
             gather_list.append(
                 send_moderation_log(
                     self.bot,
-                    channel_id=data.logging_channel_id,
+                    webhook=data.logging_webhook,
                     event_data=data,
                     attachments=[transcript_file],
                 )

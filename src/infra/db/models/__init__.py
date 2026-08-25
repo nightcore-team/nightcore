@@ -22,6 +22,7 @@ from .configurations import (
     GuildTicketsConfig,
 )
 from .custom_component import Base, CustomComponent  # noqa: F811  # noqa: F811
+from .logging_revision import Base, LoggingRevision  # noqa: F811
 from .moderationmessage import Base, ModerationMessage  # noqa: F811
 from .notify import Base, NotifyState  # noqa: F811
 from .private_rooms import Base, PrivateRoomState  # noqa: F811
@@ -62,6 +63,7 @@ __all__ = (
     "GuildRoleRequestConfig",
     "GuildRulesConfig",
     "GuildTicketsConfig",
+    "LoggingRevision",
     "ModerationMessage",
     "NotifyState",
     "PrivateRoomState",

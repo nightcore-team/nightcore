@@ -2,9 +2,11 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
-from typing import Any, TypeVar, cast
+from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
+    Boolean,
+    ColumnElement,
     asc,
     delete,
     exists,
@@ -13,11 +15,12 @@ from sqlalchemy import (
     literal,
     or_,
     select,
+    type_coerce,
     update,
 )
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import array, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
 from src.config.config import config
 from src.infra.db.models import (
@@ -43,6 +46,7 @@ from src.infra.db.models import (
     GuildRoleRequestConfig,
     GuildRulesConfig,
     GuildTicketsConfig,
+    LoggingRevision,
     ModerationMessage,
     NotifyState,
     PrivateRoomState,
@@ -74,6 +78,7 @@ from src.infra.db.models.configurations.rules import (
     GuildRulesChapter,
     GuildRulesRule,
 )
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.rainbow import RainbowRole
 from src.infra.db.models.user import UserCase
@@ -84,6 +89,7 @@ from src.utils._enums import (
     CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
+    ConfigTypeEnum,
     MultiplierTypeEnum,
     NotifyStateEnum,
     RoleRequestStateEnum,
@@ -110,37 +116,131 @@ GuildT = TypeVar(
     GuildForumConfig,
 )
 
+ConfigType = Union[  # noqa: UP007
+    GuildClansConfig
+    | GuildEconomyConfig
+    | GuildLevelsConfig
+    | GuildLoggingConfig
+    | GuildModerationConfig
+    | GuildPrivateChannelsConfig
+    | GuildNotificationsConfig
+    | GuildTicketsConfig
+    | GuildInfomakerConfig
+    | GuildAccessConfig
+    | GuildRulesConfig
+    | GuildMultipliersConfig
+    | GuildProposalsConfig
+    | GuildRoleRequestConfig
+    | GuildForumConfig
+]
 
-def get_config_type_by_name(name: str) -> type[GuildT]:
-    """Get the guild configuration type by its name."""
-    config_types: dict[str, type[GuildT]] = {
-        "access": GuildAccessConfig,
-        "clans": GuildClansConfig,
-        "economy": GuildEconomyConfig,
-        "infomaker": GuildInfomakerConfig,
-        "levels": GuildLevelsConfig,
-        "logging": GuildLoggingConfig,
-        "moderation": GuildModerationConfig,
-        "notifications": GuildNotificationsConfig,
-        "private_channels": GuildPrivateChannelsConfig,
-        "tickets": GuildTicketsConfig,
-        "rules": GuildRulesConfig,
-        "proposals": GuildProposalsConfig,
-        "faq": GuildFaqConfig,
-        "role_request": GuildRoleRequestConfig,
-        "multiplers": GuildMultipliersConfig,
-        "forum": GuildForumConfig,
-    }  # type: ignore
-    return config_types[name]
+CONFIG_MODEL_MAP: dict[ConfigTypeEnum, type[Any]] = {
+    ConfigTypeEnum.ECONOMY: GuildEconomyConfig,
+    ConfigTypeEnum.LEVELS: GuildLevelsConfig,
+    ConfigTypeEnum.CLANS: GuildClansConfig,
+    ConfigTypeEnum.PRIVATE_CHANNELS: GuildPrivateChannelsConfig,
+    ConfigTypeEnum.MODERATION: GuildModerationConfig,
+    ConfigTypeEnum.NOTIFICATIONS: GuildNotificationsConfig,
+    ConfigTypeEnum.INFOMAKER: GuildInfomakerConfig,
+    ConfigTypeEnum.FORUM: GuildForumConfig,
+    ConfigTypeEnum.RULES: GuildRulesConfig,
+    ConfigTypeEnum.PROPOSALS: GuildProposalsConfig,
+    ConfigTypeEnum.MULTIPLERS: GuildMultipliersConfig,
+    ConfigTypeEnum.ROLE_REQUEST: GuildRoleRequestConfig,
+    ConfigTypeEnum.TICKETS: GuildTicketsConfig,
+    ConfigTypeEnum.LOGGING: GuildLoggingConfig,
+    ConfigTypeEnum.ACCESS: GuildAccessConfig,
+}
+
+_ACCESS_COLUMNS: Final[
+    dict[ConfigTypeEnum, InstrumentedAttribute[list[int] | None]]
+] = {
+    ConfigTypeEnum.LOGGING: GuildAccessConfig.logging_config_access_roles_ids,
+    ConfigTypeEnum.ECONOMY: GuildAccessConfig.economy_config_access_roles_ids,
+    ConfigTypeEnum.LEVELS: GuildAccessConfig.levels_config_access_roles_ids,
+    ConfigTypeEnum.CLANS: GuildAccessConfig.clans_config_access_roles_ids,
+    ConfigTypeEnum.PRIVATE_CHANNELS: GuildAccessConfig.private_channels_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.MODERATION: GuildAccessConfig.moderation_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.NOTIFICATIONS: GuildAccessConfig.notifications_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.INFOMAKER: GuildAccessConfig.infomaker_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.FORUM: GuildAccessConfig.forum_config_access_roles_ids,
+    ConfigTypeEnum.RULES: GuildAccessConfig.rules_config_access_roles_ids,
+    ConfigTypeEnum.PROPOSALS: GuildAccessConfig.proposal_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.MULTIPLERS: GuildAccessConfig.multiplers_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.ROLE_REQUEST: GuildAccessConfig.org_roles_config_access_roles_ids,  # noqa: E501
+    ConfigTypeEnum.TICKETS: GuildAccessConfig.tickets_config_access_roles_ids,
+}
 
 
 async def get_specified_guild_config(  # noqa: UP047
     session: AsyncSession, *, config_type: type[GuildT], guild_id: int
-) -> GuildT | None:
+) -> GuildT:
     """Get the guild configuration from the database."""
-    stmt = select(config_type).where(config_type.guild_id == guild_id)
+    get_stmt = select(config_type).where(config_type.guild_id == guild_id)
+    config = await session.scalar(get_stmt)
+
+    if config is not None:
+        return config
+
+    insert_stmt = (
+        insert(config_type)
+        .values(guild_id=guild_id)
+        .on_conflict_do_nothing()
+        .returning(config_type)
+    )
+
+    result = await session.execute(insert_stmt)
+    config = result.scalar_one_or_none()
+
+    if config is None:
+        config = await session.scalar(get_stmt)
+        return config  # type: ignore
+
+    return config
+
+
+async def get_available_guild_configs(
+    session: AsyncSession, *, guild_id: int, roles: list[int]
+) -> list[str]:
+    """Get the list of available guild configurations for the given roles."""
+
+    select_clauses = [
+        array(roles).overlap(column).label(config_type.value)
+        for config_type, column in _ACCESS_COLUMNS.items()
+    ]
+
+    stmt = select(*select_clauses).where(
+        GuildAccessConfig.guild_id == guild_id
+    )
+
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    row = result.mappings().first()
+
+    if row is None:
+        return []
+
+    return [key for key, value in row.items() if value]
+
+
+async def has_guild_config_access(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    roles: list[int],
+    config_type: ConfigTypeEnum,
+) -> bool:
+    """Check if the given roles have access to a guild configuration."""
+
+    target_column = _ACCESS_COLUMNS.get(config_type)
+
+    if target_column is None:
+        raise ValueError(f"Unknown config type: {config_type}")
+
+    stmt = select(
+        type_coerce(target_column.op("&&")(array(roles)), Boolean)
+    ).where(GuildAccessConfig.guild_id == guild_id)
+
+    return bool(await session.scalar(stmt))
 
 
 async def get_guild_rules(
@@ -171,6 +271,25 @@ async def get_specified_channel(  # noqa: UP047
     """Get the specified channel ID from the database."""
     column = getattr(config_type, channel_type.value)
     stmt = select(column).where(config_type.guild_id == guild_id)
+    return await session.scalar(stmt)
+
+
+async def get_specified_webhook(  # noqa: UP047
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_type: type[GuildT],
+    channel_type: ChannelType,
+) -> DiscordWebhook | None:
+    """Get the specified logging webhook from the database."""
+
+    relationship = getattr(config_type, channel_type.value)
+    stmt = (
+        select(DiscordWebhook)
+        .select_from(config_type)
+        .join(relationship)
+        .where(config_type.guild_id == guild_id)
+    )
     return await session.scalar(stmt)
 
 
@@ -706,6 +825,177 @@ async def get_latest_user_role_request(
     )
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
+
+
+async def get_last_logging_revision(
+    session: AsyncSession, *, guild_id: int, config_type: ConfigTypeEnum
+) -> LoggingRevision | None:
+    """Get the most recent logging revision for a guild.
+
+    Args:
+        session: The async database session.
+        guild_id: The ID of the guild to get the revision for.
+        config_type: The type of the configuration to filter by.
+
+    Returns:
+        The most recent LoggingRevision or None when none exist.
+    """
+
+    stmt = (
+        select(LoggingRevision)
+        .where(
+            LoggingRevision.guild_id == guild_id,
+            LoggingRevision.config_type == config_type,
+        )
+        .order_by(
+            LoggingRevision.created_at.desc().nulls_last(),
+        )
+        .limit(1)
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_logging_revision_by_id(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    revision_id: str,
+    config_type: ConfigTypeEnum,
+):
+    """Get a single logging revision for a guild.
+
+    Args:
+        session: The async database session.
+        guild_id: The ID of the guild the revision belongs to.
+        revision_id: The revision ID to look up.
+        config_type: The type of the configuration the revision belongs to.
+
+    Returns:
+        The matching LoggingRevision or None when it is not found.
+    """
+
+    stmt = (
+        select(LoggingRevision)
+        .where(
+            LoggingRevision.guild_id == guild_id,
+            LoggingRevision.revision_id == revision_id,
+            LoggingRevision.config_type == config_type,
+        )
+        .with_for_update()
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+def _logging_revision_conditions(
+    *,
+    guild_id: int,
+    config_types: Sequence[ConfigTypeEnum] | None,
+    user_id: int | None,
+    date_from: datetime | None,
+    date_to: datetime | None,
+) -> list[ColumnElement[bool]]:
+    """Build the shared filter conditions for logging revision queries."""
+
+    conditions: list[ColumnElement[bool]] = [
+        LoggingRevision.guild_id == guild_id,
+    ]
+
+    if config_types is not None:
+        conditions.append(LoggingRevision.config_type.in_(config_types))
+
+    if user_id is not None:
+        conditions.append(LoggingRevision.user_id == user_id)
+
+    if date_from is not None:
+        conditions.append(LoggingRevision.created_at >= date_from)
+
+    if date_to is not None:
+        conditions.append(LoggingRevision.created_at <= date_to)
+
+    return conditions
+
+
+async def get_logging_revisions(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_types: Sequence[ConfigTypeEnum] | None = None,
+    user_id: int | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> Sequence[LoggingRevision]:
+    """Get logging revisions for a guild.
+
+    Optionally filters by configuration types (``config_types``),
+    author (``user_id``) and a ``created_at`` date range
+    (``date_from`` / ``date_to``, both inclusive).
+
+    Returns a paginated window of the most recent revisions.
+    """
+
+    if config_types is not None and not config_types:
+        return []
+
+    conditions = _logging_revision_conditions(
+        guild_id=guild_id,
+        config_types=config_types,
+        user_id=user_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    stmt = (
+        select(LoggingRevision)
+        .where(*conditions)
+        .order_by(
+            LoggingRevision.created_at.desc().nulls_last(),
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def count_logging_revisions(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_types: Sequence[ConfigTypeEnum] | None = None,
+    user_id: int | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+) -> int:
+    """Count logging revisions matching the same filters as the listing.
+
+    Needed for pagination: the listing itself returns only one page, so the
+    total number of matching revisions has to be asked for separately.
+    """
+
+    if config_types is not None and not config_types:
+        return 0
+
+    conditions = _logging_revision_conditions(
+        guild_id=guild_id,
+        config_types=config_types,
+        user_id=user_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    stmt = select(func.count()).select_from(LoggingRevision).where(*conditions)
+
+    return await session.scalar(stmt) or 0
 
 
 async def get_fraction_roles(
@@ -1446,6 +1736,8 @@ async def reset_users_voice_activity(session: AsyncSession) -> int:
 async def get_clan_shop_item_by_name(
     session: AsyncSession, *, guild_id: int, name: str
 ) -> GuildClanShopItem | None:
+    """Get a clan shop item by name for a guild."""
+
     stmt = select(GuildClanShopItem).where(
         GuildClanShopItem.guild_id == guild_id, GuildClanShopItem.name == name
     )
@@ -1458,6 +1750,8 @@ async def get_clan_shop_item_by_name(
 async def get_economy_shop_item_by_name(
     session: AsyncSession, *, guild_id: int, name: str
 ) -> GuildEconomyShopItem | None:
+    """Get an economy shop item by name for a guild."""
+
     stmt = select(GuildEconomyShopItem).where(
         GuildEconomyShopItem.guild_id == guild_id,
         GuildEconomyShopItem.name == name,
@@ -1471,6 +1765,8 @@ async def get_economy_shop_item_by_name(
 async def get_organization_roles_ids(
     session: AsyncSession, *, guild_id: int
 ) -> Sequence[int]:
+    """Get the list of organizational role ids for a guild."""
+
     stmt = select(GuildOrganizationalRole.role_id).where(
         GuildOrganizationalRole.guild_id == guild_id
     )
@@ -1483,6 +1779,8 @@ async def get_organization_roles_ids(
 async def get_organization_role_by_role_id(
     session: AsyncSession, *, guild_id: int, role_id: int
 ) -> GuildOrganizationalRole | None:
+    """Get an organizational role by its role id for a guild."""
+
     stmt = select(GuildOrganizationalRole).where(
         GuildOrganizationalRole.guild_id == guild_id,
         GuildOrganizationalRole.role_id == role_id,
@@ -1505,21 +1803,6 @@ async def get_forum_guilds(
     return result.scalars().all()
 
 
-async def get_active_forum_guilds(
-    session: AsyncSession,
-) -> Sequence[GuildForumConfig]:
-    """Get all forum configurations."""
-
-    stmt = select(GuildForumConfig).where(
-        GuildForumConfig.channel_id != None,  # noqa: E711
-        GuildForumConfig.section_id != None,  # noqa: E711
-    )
-
-    result = await session.execute(stmt)
-
-    return result.scalars().all()
-
-
 async def get_guild_forum_config(
     session: AsyncSession, *, guild_id: int
 ) -> GuildForumConfig | None:
@@ -1534,9 +1817,26 @@ async def get_guild_forum_config(
     return result.scalar_one_or_none()
 
 
+async def get_active_forum_guilds(
+    session: AsyncSession,
+) -> Sequence[GuildForumConfig]:
+    """Get all forum configurations."""
+
+    stmt = select(GuildForumConfig).where(
+        GuildForumConfig.notify_webhook != None,  # noqa: E711
+        GuildForumConfig.section_id != None,  # noqa: E711
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
 async def get_guild_level(
     session: AsyncSession, guild_id: int, level: int
 ) -> GuildLevel | None:
+    """Get the closest configured guild level not exceeding the given level."""
+
     stmt = (
         select(GuildLevel)
         .where(GuildLevel.guild_id == guild_id, GuildLevel.level <= level)
@@ -1552,6 +1852,8 @@ async def get_guild_level(
 async def get_guild_level_role_ids(
     session: AsyncSession, guild_id: int
 ) -> Sequence[int]:
+    """Get the distinct role ids of configured guild levels for a guild."""
+
     stmt = (
         select(GuildLevel.role_id)
         .where(GuildLevel.guild_id == guild_id)
@@ -1566,6 +1868,8 @@ async def get_guild_level_role_ids(
 async def insert_moderation_message(
     session: AsyncSession, *, message: ModerationMessage
 ) -> ModerationMessage:
+    """Delete expired moderation messages and insert a new one."""
+
     expired_ids = (
         select(ModerationMessage.id)
         .where(
