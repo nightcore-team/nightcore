@@ -8,7 +8,7 @@ from discord.ext.commands import Cog  # type: ignore
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageNotifyDTO,
 )
-from src.nightcore.utils.log import send_log_message
+from src.nightcore.utils.webhook import send_webhook_message
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -24,7 +24,7 @@ class ClanManageNotifyEvent(Cog):
     async def on_clan_manage_notify(self, dto: ClanManageNotifyDTO):
         """Handle clan manage notify event."""
 
-        await send_log_message(self.bot, dto)
+        await send_webhook_message(self.bot, dto)
 
         logger.info(
             "[%s/log] - invoked user=%s guild=%s actions=%s",

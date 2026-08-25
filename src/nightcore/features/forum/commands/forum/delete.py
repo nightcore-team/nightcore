@@ -26,8 +26,6 @@ async def forum_delete(
 ):
     guild = cast(Guild, interaction.guild)
 
-    outcome = ""
-
     try:
         async with interaction.client.uow.start() as session:
             config = await get_specified_guild_config(
@@ -36,10 +34,7 @@ async def forum_delete(
                 guild_id=guild.id,
             )
 
-            if config is None:
-                outcome = "config_not_found"
-            else:
-                await session.delete(config)
+            await session.delete(config)
 
     except Exception as e:
         logger.error(
@@ -50,12 +45,6 @@ async def forum_delete(
         await interaction.response.send_message(
             content="Произошла неизвестная ошибка при удалении конфига!",
             ephemeral=True,
-        )
-        return
-
-    if outcome == "config_not_found":
-        await interaction.response.send_message(
-            content="Конфиг для данной гильдии не найден!", ephemeral=True
         )
         return
 

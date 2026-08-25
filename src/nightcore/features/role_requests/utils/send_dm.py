@@ -1,11 +1,17 @@
 """Utilities for sending DMs related to role requests."""
 
 import logging
+from typing import TYPE_CHECKING
 
 import discord
 from discord import Member
 
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import RoleRequestStateEnum
+
+if TYPE_CHECKING:
+    from src.infra.db.models.discord_webhook import DiscordWebhook
+    from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
@@ -21,32 +27,34 @@ DENIED_MESSAGE = """
 
 
 async def send_role_request_dm(
+    bot: "Nightcore",
     moderator_id: int,
-    reserve_channel: int | None,
+    reserve_webhook: "DiscordWebhook | None",
     user: Member,
     state: RoleRequestStateEnum,
     reason: str | None = None,
 ) -> None:
-    """Send a DM to the user about their role request status."""
+    """Send a DM to the user about their role request status.
+
+    Falls back to ``reserve_webhook`` if the user has DMs disabled.
+    """
+    match state:
+        case RoleRequestStateEnum.APPROVED:
+            message = APPROVED_MESSAGE.format(
+                user_id=user.id, moderator_id=moderator_id
+            )
+        case RoleRequestStateEnum.DENIED:
+            message = DENIED_MESSAGE.format(
+                user_id=user.id,
+                moderator_id=moderator_id,
+                reason=reason,
+            )
+        case _:
+            return
 
     try:
-        match state:
-            case RoleRequestStateEnum.APPROVED:
-                await user.send(
-                    APPROVED_MESSAGE.format(
-                        user_id=user.id, moderator_id=moderator_id
-                    )
-                )
-            case RoleRequestStateEnum.DENIED:
-                await user.send(
-                    DENIED_MESSAGE.format(
-                        user_id=user.id,
-                        moderator_id=moderator_id,
-                        reason=reason,
-                    )
-                )
-            case _:
-                ...
+        await user.send(message)
+        return
     except discord.Forbidden:
         logger.info(
             "[%s/log] Failed to send private message for user %s in guild %s because he doesn't accept DM",  # noqa: E501
@@ -62,3 +70,14 @@ async def send_role_request_dm(
             user.guild.id,
             e,
         )
+
+    if not reserve_webhook or not reserve_webhook.valid:
+        return
+
+    await send_to_webhook(
+        bot,
+        reserve_webhook,
+        discord.Embed(description=message),
+        context="role_request/dm_fallback",
+        guild_id=user.guild.id,
+    )

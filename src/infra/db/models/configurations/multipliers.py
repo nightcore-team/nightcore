@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import BigInteger, Float, Integer, text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,3 +29,10 @@ class GuildMultipliersConfig(IdIntegerMixin, Base):
     temp_battlepass_multiplier: Mapped[int | None] = mapped_column(
         Integer, nullable=True
     )
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

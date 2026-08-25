@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import get_color_by_id, get_specified_channel
+from src.infra.db.operations import get_color_by_id, get_specified_webhook
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import color as color_group
 from src.nightcore.features.economy.events.dto.item_change import (
@@ -49,7 +49,7 @@ async def change_color(
     guild = cast(Guild, interaction.guild)
     member = cast(Member, interaction.user)
 
-    logging_channel_id = None
+    logging_webhook = None
     outcome = None
 
     if new_role.position >= member.top_role.position:
@@ -93,7 +93,7 @@ async def change_color(
             else:
                 color.role_id = new_role.id
 
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -153,7 +153,7 @@ async def change_color(
     dto = ItemChangeNotifyEventDTO(
         guild=guild,
         event_type=ItemChangeActionEnum.COLOR_UPDATE,
-        logging_channel_id=logging_channel_id,
+        logging_webhook=logging_webhook,
         moderator_id=interaction.user.id,
         item_name=f"{new_role.mention} ({new_role.id})",
         item=item,

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 from src.nightcore.utils import (
     ensure_member_exists,
 )
-from src.nightcore.utils.log import send_log_message
+from src.nightcore.utils.webhook import send_webhook_message
 
 logger = logging.getLogger(__name__)
 
@@ -35,23 +35,7 @@ class UserItemsChangedEvent(Cog):
     ):
         """Handle user items changed event."""
 
-        if dto.logging_channel_id:
-            try:
-                await send_log_message(self.bot, dto)
-            except Exception as e:
-                logger.warning(
-                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
-                    dto.event_type,
-                    dto.guild.id,
-                    e,
-                    dto.build_log_embed(self.bot).to_dict(),
-                )
-        else:
-            logger.info(
-                "[%s/log] No logging channel ID provided for guild %s",
-                dto.event_type,
-                dto.guild.id,
-            )
+        await send_webhook_message(self.bot, dto)
 
         member = await ensure_member_exists(dto.guild, dto.user_id)
         if not member:

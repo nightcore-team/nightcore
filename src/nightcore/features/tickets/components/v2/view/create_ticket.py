@@ -25,10 +25,11 @@ from src.infra.db.models import (
     GuildTicketsConfig,
     TicketState,
 )
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.operations import (
     get_or_create_user,
-    get_specified_channel,
     get_specified_guild_config,
+    get_specified_webhook,
     get_user_ticket,
 )
 from src.nightcore.components.view.v2 import (
@@ -77,7 +78,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
         current_tickets_count = 0
         new_tickets_category_id = 0
         create_ticket_ping_role_id = 0
-        logging_channel_id: int | None = None
+        logging_webhook: DiscordWebhook | None = None
         new_channel_id = 0
         ticket_jump_url = ""
 
@@ -88,70 +89,59 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                 guild_id=guild.id,
             )
 
-            if guild_config is None:
+            if not all(
+                [
+                    guild_config.create_ticket_ping_role_id,
+                    guild_config.new_tickets_category_id,
+                    guild_config.pinned_tickets_category_id,
+                    guild_config.closed_tickets_category_id,
+                ]
+            ):
                 logger.error(
-                    "Failed to find ticket guild config in guild %s",
+                    "Not all ticket categories are configured in guild %s",
                     guild.id,
                 )
                 outcome = "ticket_system_not_configured"
             else:
-                if not all(
-                    [
-                        guild_config.create_ticket_ping_role_id,
-                        guild_config.new_tickets_category_id,
-                        guild_config.pinned_tickets_category_id,
-                        guild_config.closed_tickets_category_id,
-                    ]
-                ):
-                    logger.error(
-                        "Not all ticket categories are configured in guild %s",
-                        guild.id,
-                    )
-                    outcome = "ticket_system_not_configured"
-                else:
-                    new_tickets_category_id = (
-                        guild_config.new_tickets_category_id
-                    )
-                    create_ticket_ping_role_id = (
-                        guild_config.create_ticket_ping_role_id
-                    )
+                new_tickets_category_id = guild_config.new_tickets_category_id
+                create_ticket_ping_role_id = (
+                    guild_config.create_ticket_ping_role_id
+                )
 
-                    dbuser, _ = await get_or_create_user(
+                dbuser, _ = await get_or_create_user(
+                    session, guild_id=guild.id, user_id=user.id
+                )
+
+                if dbuser.ticket_ban:
+                    outcome = "user_ticket_banned"
+                else:
+                    last_ticket = await get_user_ticket(
                         session, guild_id=guild.id, user_id=user.id
                     )
 
-                    if dbuser.ticket_ban:
-                        outcome = "user_ticket_banned"
+                    if last_ticket:
+                        outcome = "user_has_open_ticket"
                     else:
-                        last_ticket = await get_user_ticket(
-                            session, guild_id=guild.id, user_id=user.id
-                        )
+                        try:
+                            current_tickets_count = (
+                                guild_config.tickets_count + 1
+                            )
 
-                        if last_ticket:
-                            outcome = "user_has_open_ticket"
-                        else:
-                            try:
-                                current_tickets_count = (
-                                    guild_config.tickets_count + 1
-                                )
+                            guild_config.tickets_count = current_tickets_count
 
-                                guild_config.tickets_count = (
-                                    current_tickets_count
-                                )
+                            outcome = "ready_to_create"
 
-                                outcome = "ready_to_create"
-
-                            except Exception as e:
-                                logger.error(
-                                    "Failed to prepare ticket in guild %s, user %s: %s",  # noqa: E501
-                                    guild.id,
-                                    user.id,
-                                    e,
-                                )
-                                outcome = "ticket_creation_failed"
+                        except Exception as e:
+                            logger.error(
+                                "Failed to prepare ticket in guild %s, user %s: %s",  # noqa: E501
+                                guild.id,
+                                user.id,
+                                e,
+                            )
+                            outcome = "ticket_creation_failed"
 
             if outcome == "ready_to_create":
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -273,7 +263,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                     new_channel_id,
                 )
 
-            if logging_channel_id:
+            if logging_webhook:
                 view.bot.dispatch(
                     "ticket_changed",
                     data=TicketChangeEventData(
@@ -282,7 +272,7 @@ class CreateTicketButton(ActionRow["CreateTicketViewV2"]):
                         user.id,
                         None,
                         TicketStateEnum.OPENED,
-                        logging_channel_id,
+                        logging_webhook,
                     ),
                 )
 

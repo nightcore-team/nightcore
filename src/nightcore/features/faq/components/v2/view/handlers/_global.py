@@ -28,9 +28,7 @@ async def handle_faq_global_button_callback(
     guild = cast(Guild, interaction.guild)
 
     outcome = ""
-    async with specified_guild_config(
-        bot, guild.id, GuildFaqConfig, _create=True
-    ) as (
+    async with specified_guild_config(bot, guild.id, GuildFaqConfig) as (
         guild_config,
         _,
     ):

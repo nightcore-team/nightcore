@@ -1,9 +1,5 @@
 from discord import app_commands
 
-from src.nightcore.features.economy.commands.rainbow._guilds import (
-    RAINBOW_GUILD,
-)
-
 give = app_commands.Group(
     name="give",
     description="Команды связанные с выдачей предметов/валюты.",
@@ -28,12 +24,10 @@ color = app_commands.Group(
     guild_only=True,
 )
 
-rainbow = app_commands.guilds(RAINBOW_GUILD)(
-    app_commands.Group(
-        name="rainbow",
-        description="Команды связанные с радужной ролью.",
-        guild_only=True,
-    )
+rainbow = app_commands.Group(
+    name="rainbow",
+    description="Команды связанные с радужной ролью.",
+    guild_only=True,
 )
 
 casino = app_commands.Group(

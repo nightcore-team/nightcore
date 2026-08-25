@@ -8,8 +8,8 @@ from discord.interactions import Interaction
 from discord.ui import Label, Modal, Select, TextInput
 
 from src.infra.db.models import GuildModerationConfig
+from src.infra.db.models.configurations.forum import GuildForumConfig
 from src.infra.db.operations import (
-    get_guild_forum_config,
     get_specified_guild_config,
 )
 from src.nightcore.components.view.v2 import (
@@ -73,10 +73,10 @@ class InactiveFormModal(Modal, title="Отправить заявку на не�
 
         try:
             async with bot.uow.start() as session:
-                forum_config = await get_guild_forum_config(
-                    session, guild_id=guild.id
+                forum_config = await get_specified_guild_config(
+                    session, config_type=GuildForumConfig, guild_id=guild.id
                 )
-                if not forum_config or not forum_config.prefix_id:
+                if not forum_config.prefix_id:
                     raise FieldNotConfiguredError("префикс сервера на форуме")
                 else:
                     moderation_config = await get_specified_guild_config(

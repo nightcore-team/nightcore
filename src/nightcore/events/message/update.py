@@ -10,11 +10,11 @@ from discord import Message
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
-from src.infra.db.operations import (  # type: ignore
-    get_specified_channel,
+from src.infra.db.operations import (
     get_specified_field,
+    get_specified_webhook,
 )
-from src.nightcore.utils import ensure_messageable_channel_exists
+from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ class UpdateMessageEvent(Cog):
 
         async with self.bot.uow.start() as session:
             if not (
-                logging_channel_id := await get_specified_channel(
+                logging_webhook := await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -96,13 +96,9 @@ class UpdateMessageEvent(Cog):
                 guild.id,
             )
 
-        channel = await ensure_messageable_channel_exists(
-            guild=guild, channel_id=logging_channel_id
-        )
-        if not channel:
+        if not logging_webhook.valid:
             logger.info(
-                "[message] Logging channel %s not found in guild %s",
-                logging_channel_id,
+                "[message] Logging webhook invalid in guild %s",
                 guild.id,
             )
             return
@@ -208,25 +204,23 @@ class UpdateMessageEvent(Cog):
                     )
 
         embed.add_field(name="Автор:", value=author.mention, inline=True)
-        if channel:
-            embed.add_field(
-                name="Канал:",
-                value=before.channel.mention or after.channel.mention,  # type: ignore
-                inline=True,
-            )
+        embed.add_field(
+            name="Канал:",
+            value=before.channel.mention or after.channel.mention,  # type: ignore
+            inline=True,
+        )
 
         if len(files) == 0 and len(embed.fields) <= 2:
             return
 
-        try:
-            await channel.send(embed=embed, files=files)  # type: ignore
-        except Exception as e:
-            logger.error(
-                "[message] Failed to send message log to channel %s in guild %s: %s",  # noqa: E501
-                channel.id,
-                guild.id,
-                e,
-            )
+        await send_to_webhook(
+            self.bot,
+            logging_webhook,
+            embed,
+            context="message/update",
+            guild_id=guild.id,
+            files=files,
+        )
 
         logger.info(
             "[message] Message updated: Old - %s, New - %s",

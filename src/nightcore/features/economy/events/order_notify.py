@@ -11,9 +11,8 @@ from src.nightcore.features.economy.components.v2 import (
 )
 from src.nightcore.utils import (
     ensure_member_exists,
-    ensure_messageable_channel_exists,
 )
-from src.nightcore.utils.log import send_log_message
+from src.nightcore.utils.webhook import send_to_webhook, send_webhook_message
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -34,23 +33,7 @@ class CoinsShopNotifyEvent(Cog):
     ) -> None:
         """Handle coins shop purchase notification event."""
 
-        if dto.logging_channel_id is not None:
-            try:
-                await send_log_message(self.bot, dto)
-            except Exception as e:
-                logger.warning(
-                    "[%s/log] Failed to send log message for guild %s: %s. log embed: %s",  # noqa: E501
-                    dto.event_type,
-                    dto.guild.id,
-                    e,
-                    dto.build_log_embed(self.bot).to_dict(),
-                )
-        else:
-            logger.info(
-                "[%s/log] No logging channel ID provided for guild %s",
-                dto.event_type,
-                dto.guild.id,
-            )
+        await send_webhook_message(self.bot, dto)
 
         member = await ensure_member_exists(dto.guild, dto.user_id)
         if member is None:
@@ -61,6 +44,13 @@ class CoinsShopNotifyEvent(Cog):
                 dto.guild.id,
             )
             return
+
+        if not dto.notifications_webhook or not dto.notifications_webhook.valid:
+            logger.info(
+                "[%s/log] No notifications webhook configured for guild %s.",
+                dto.event_type,
+                dto.guild.id,
+            )
 
         if member:
             view = CoinsShopOrderNotifyViewV2(
@@ -74,17 +64,14 @@ class CoinsShopNotifyEvent(Cog):
                 custom_id=dto.custom_id,
             )
 
-            dm_sent = False
             try:
-                dm = await member.create_dm()
-                await dm.send(view=view)
+                await member.send(view=view)
                 logger.info(
                     "[%s/log] Successfully sent DM to user %s in guild %s.",
                     dto.event_type,
                     dto.user_id,
                     dto.guild.id,
                 )
-                dm_sent = True
             except discord.Forbidden:
                 logger.info(
                     "[%s/log] Failed to send DM to user %s because he doesn't accept DM. Trying notifications channel...",  # noqa: E501
@@ -99,42 +86,16 @@ class CoinsShopNotifyEvent(Cog):
                     dto.guild.id,
                     e,
                 )
-
-            # fallback
-            if not dm_sent:
-                notifications_channel = None
-
-                if dto.notifications_channel_id:
-                    notifications_channel = (
-                        await ensure_messageable_channel_exists(
-                            dto.guild, dto.notifications_channel_id
-                        )
+            finally:
+                # fallback
+                if dto.notifications_webhook and dto.notifications_webhook.valid:
+                    await send_to_webhook(
+                        self.bot,
+                        dto.notifications_webhook,
+                        view,
+                        context=dto.event_type,
+                        guild_id=dto.guild.id,
                     )
-                    if notifications_channel is not None:
-                        try:
-                            await notifications_channel.send(member.mention)  # type: ignore
-                            await notifications_channel.send(  # type: ignore
-                                view=view,
-                                allowed_mentions=discord.AllowedMentions(
-                                    users=False
-                                ),
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                "[%s/log] Failed to send message in notifications channel %s to user %s in guild %s: %s.",  # noqa: E501
-                                dto.event_type,
-                                notifications_channel.id,
-                                dto.user_id,
-                                dto.guild.id,
-                                e,
-                            )
-                    else:
-                        logger.warning(
-                            "[%s/log] Notifications channel %s not found in guild %s.",  # noqa: E501
-                            dto.event_type,
-                            dto.notifications_channel_id,
-                            dto.guild.id,
-                        )
 
         logger.info(
             "[%s/log] - invoked user=%s guild=%s item_name=%s item_price=%s balance_before=%s balance_after=%s",  # noqa: E501

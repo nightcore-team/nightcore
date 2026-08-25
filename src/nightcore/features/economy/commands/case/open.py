@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     get_or_create_user,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2, ValidationErrorViewV2
 from src.nightcore.features.economy._groups import case as case_group
@@ -56,7 +56,7 @@ async def open_case(
 
     outcome = ""
     reward_text = ""
-    logging_channel_id = None
+    logging_webhook = None
     opened_case_item = None
 
     try:
@@ -70,7 +70,7 @@ async def open_case(
                 with_relations=True,
             )
 
-            logging_channel_id = await get_specified_channel(
+            logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
                 config_type=GuildLoggingConfig,
@@ -189,7 +189,7 @@ async def open_case(
                 dto=AwardNotificationEventDTO(
                     guild=guild,
                     event_type="case/open",
-                    logging_channel_id=logging_channel_id,
+                    logging_webhook=logging_webhook,
                     user_id=member.id,
                     moderator_id=bot.user.id,  # type: ignore
                     item_name=r_name,  # type: ignore

@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 from src.infra.db.models import Clan, GuildLoggingConfig
 from src.infra.db.operations import (
     create_clan_member,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageAction,
@@ -138,7 +138,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
         await interaction.message.delete()  # type: ignore
 
         async with view.bot.uow.start() as session:
-            clans_logging_channel = await get_specified_channel(
+            clans_logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=view.inviter.guild.id,
                 config_type=GuildLoggingConfig,
@@ -156,7 +156,7 @@ class ClanInviteActionRow(ActionRow["ClanInviteViewV2"]):
             actor_id=view.inviter.id,
             clan_name=view.clan.name,
             actions=[clan_invite_member_action],
-            logging_channel_id=clans_logging_channel,
+            logging_webhook=clans_logging_webhook,
         )
 
         view.bot.dispatch("clan_manage_notify", dto)

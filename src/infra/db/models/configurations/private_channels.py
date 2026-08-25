@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,3 +16,10 @@ class GuildPrivateChannelsConfig(IdIntegerMixin, Base):
     private_rooms_create_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

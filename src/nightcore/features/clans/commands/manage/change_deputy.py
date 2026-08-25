@@ -9,7 +9,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     get_clan_member,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
@@ -196,7 +196,7 @@ async def change_deputy(
         return
 
     async with bot.uow.start() as session:
-        clans_logging_channel = await get_specified_channel(
+        clans_logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -220,7 +220,7 @@ async def change_deputy(
         actor_id=interaction.user.id,
         clan_name=leader.clan.name,  # type: ignore The clan will always exist here because of the checks on lines 91 and 132
         actions=[clan_deputy_change_action],
-        logging_channel_id=clans_logging_channel,
+        logging_webhook=clans_logging_webhook,
     )
 
     bot.dispatch("clan_manage_notify", dto)

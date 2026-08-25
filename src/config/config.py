@@ -4,7 +4,8 @@ from functools import cached_property
 
 from src.infra.api.forum.config import Config as ForumConfig
 from src.infra.db.config import Config as DbConfig
-from src.infra.redis.config import Config as RedisConfig
+from src.nightcore.api.config import Config as ApiConfig
+from src.nightcore.api.security.config import Config as JWTConfig
 from src.nightcore.config import Config as BotConfig
 
 
@@ -25,9 +26,16 @@ class Config:
         return ForumConfig()  # type: ignore
 
     @cached_property
-    def redis(self) -> RedisConfig:
-        """Return the Redis configuration settings."""
-        return RedisConfig()  # type: ignore
+    def api(self) -> ApiConfig:
+        """Return the API configuration settings."""
+
+        return ApiConfig()  # type: ignore
+
+    @cached_property
+    def jwt(self) -> JWTConfig:
+        """Return the API jwt configuration settings."""
+
+        return JWTConfig()  # type: ignore
 
 
 config = Config()

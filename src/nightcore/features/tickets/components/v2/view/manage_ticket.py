@@ -32,8 +32,10 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.infra.db.models import GuildLoggingConfig, GuildTicketsConfig
+from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.operations import (
     get_specified_channel,
+    get_specified_webhook,
     get_ticket_state,
 )
 from src.nightcore.components.view.v2 import (
@@ -119,7 +121,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         outcome = ""
         ticket_author_id = 0
         pinned_tickets_category_id = 0
-        logging_channel_id: int | None = None
+        logging_webhook: DiscordWebhook | None = None
 
         async with (
             view.bot.lock_manager.acquire(
@@ -156,7 +158,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ),
                 )
 
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -235,7 +237,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             )
 
             # Dispatch event
-            if logging_channel_id:
+            if logging_webhook:
                 view.bot.dispatch(
                     "ticket_changed",
                     data=TicketChangeEventData(
@@ -244,7 +246,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                         ticket_author_id,
                         interaction.user.id,
                         TicketStateEnum.PINNED,
-                        logging_channel_id,
+                        logging_webhook,
                     ),
                 )
 
@@ -286,7 +288,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         outcome = ""
         ticket_author_id = 0
         pinned_tickets_category_id = 0
-        logging_channel_id: int | None = None
+        logging_webhook: DiscordWebhook | None = None
 
         async with (
             view.bot.lock_manager.acquire(
@@ -325,7 +327,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ),
                 )
 
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -417,7 +419,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             )
 
             # Dispatch event with OPENED state
-            if logging_channel_id:
+            if logging_webhook:
                 view.bot.dispatch(
                     "ticket_changed",
                     data=TicketChangeEventData(
@@ -426,7 +428,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                         ticket_author_id,
                         interaction.user.id,
                         TicketStateEnum.OPENED,
-                        logging_channel_id,
+                        logging_webhook,
                     ),
                 )
 
@@ -469,7 +471,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
         outcome = ""
         ticket_author_id = 0
         closed_tickets_category_id = 0
-        logging_channel_id: int | None = None
+        logging_webhook: DiscordWebhook | None = None
 
         async with (
             view.bot.lock_manager.acquire(
@@ -506,7 +508,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                     ),
                 )
 
-                logging_channel_id = await get_specified_channel(
+                logging_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
@@ -583,7 +585,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
             )
 
             # Dispatch event
-            if logging_channel_id:
+            if logging_webhook:
                 view.bot.dispatch(
                     "ticket_changed",
                     data=TicketChangeEventData(
@@ -592,7 +594,7 @@ class ManageTicketButtons(ActionRow["ManageTicketViewV2"]):
                         ticket_author_id,
                         user.id,
                         TicketStateEnum.CLOSED,
-                        logging_channel_id,
+                        logging_webhook,
                     ),
                 )
 

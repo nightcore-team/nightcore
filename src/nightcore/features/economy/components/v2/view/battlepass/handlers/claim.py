@@ -15,7 +15,7 @@ from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     get_guild_battlepass_levels,
     get_or_create_user,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
@@ -71,7 +71,7 @@ async def handle_battlepass_claim_reward_button(
             session, guild_id=guild.id
         )
 
-        logging_channel_id = await get_specified_channel(
+        logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -231,13 +231,13 @@ async def handle_battlepass_claim_reward_button(
             ),
         )
 
-        if logging_channel_id is not None:
+        if logging_webhook is not None:
             bot.dispatch(
                 "user_items_changed",
                 dto=AwardNotificationEventDTO(
                     guild=guild,
                     event_type="give_coins",
-                    logging_channel_id=logging_channel_id,
+                    logging_webhook=logging_webhook,
                     user_id=user.id,
                     moderator_id=interaction.user.id,
                     item_name=reward["name"],  # type: ignore

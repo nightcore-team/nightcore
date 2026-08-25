@@ -36,9 +36,7 @@ async def send_faq_pages(
     guild = cast(Guild, interaction.guild)
 
     outcome = ""
-    async with specified_guild_config(
-        bot, guild.id, GuildFaqConfig, _create=True
-    ) as (
+    async with specified_guild_config(bot, guild.id, GuildFaqConfig) as (
         guild_config,
         _,
     ):

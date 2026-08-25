@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import BigInteger, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,3 +17,10 @@ class GuildProposalsConfig(IdIntegerMixin, Base):
     proposals_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )
+
+    __version__ = 1
+
+    @staticmethod
+    def patch_revision(data: dict[str, Any]) -> dict[str, Any]:
+        """Apply a patch to a config revision data dict."""
+        ...

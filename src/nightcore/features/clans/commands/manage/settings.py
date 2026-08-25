@@ -19,7 +19,7 @@ from src.infra.db.operations import (
     create_clan_member,
     get_clan_by_id,
     get_clan_member,
-    get_specified_channel,
+    get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import (
     EntityNotFoundViewV2,
@@ -365,7 +365,7 @@ async def settings(
     )
 
     async with bot.uow.start() as session:
-        clans_logging_channel = await get_specified_channel(
+        clans_logging_webhook = await get_specified_webhook(
             session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
@@ -416,7 +416,7 @@ async def settings(
         actor_id=interaction.user.id,
         clan_name=clan,
         actions=actions,
-        logging_channel_id=clans_logging_channel,
+        logging_webhook=clans_logging_webhook,
     )
 
     bot.dispatch("clan_manage_notify", dto)
