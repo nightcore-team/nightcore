@@ -16,9 +16,11 @@ def extract_id_from_str(component_str: str) -> int | None:
     return None
 
 
-def extract_str_by_pattern(component_str: str, pattern: str) -> str | None:
+def extract_str_by_pattern(
+    component_str: str, pattern: str, flags: int = 0
+) -> str | None:
     """Extract a substring from a string using a regex pattern."""
-    match = re.search(pattern, component_str)
+    match = re.search(pattern, component_str, flags)
     if match:
         return match.group(1)
     return None
