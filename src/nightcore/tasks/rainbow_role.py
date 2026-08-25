@@ -28,13 +28,9 @@ logger = logging.getLogger(__name__)
 CHANGE_MIN_INTERVAL: Final[int] = 30 * 60
 CHANGE_MAX_INTERVAL: Final[int] = 120 * 60
 PALETTE_SIZE: Final[int] = 12
+HUE_OFFSET: Final[int] = 1
 MIN_HUE_SEPARATION: Final[float] = 0.12
 RANDOM_ATTEMPTS: Final[int] = 10
-
-_RAINBOW_PALETTE = [
-    discord.Color.from_hsv(i / PALETTE_SIZE, 1.0, 1.0)
-    for i in range(PALETTE_SIZE)
-]
 
 
 class RainbowRoleTask(Cog):
@@ -146,8 +142,16 @@ class RainbowRoleTask(Cog):
                         else role.id % PALETTE_SIZE
                     )
 
-                    primary = _RAINBOW_PALETTE[step]
-                    secondary = None
+                    primary_hue = step / PALETTE_SIZE
+                    secondary_hue = (
+                        (step + HUE_OFFSET) % PALETTE_SIZE
+                    ) / PALETTE_SIZE
+                    primary = discord.Color.from_hsv(
+                        primary_hue, 1.0, 1.0
+                    )
+                    secondary = discord.Color.from_hsv(
+                        secondary_hue, 1.0, 1.0
+                    )
                     next_step = (step + 1) % PALETTE_SIZE
 
                 if not await RainbowRoleTask._apply_color(
