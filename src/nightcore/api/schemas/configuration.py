@@ -136,7 +136,7 @@ class GuildRulesSchema(BaseGuildConfig):
 
 class GuildRulesConfigSchema(BaseGuildConfig):
     guild_rules: GuildRulesSchema | None = None
-    rules_channel_id: DiscordTextChannelID | None = None
+    rules_webhook: DiscordWebhookSchema | None = None
 
 
 class GuildProposalConfigSchema(BaseGuildConfig):
@@ -164,10 +164,18 @@ class GuildEconomyShopItemSchema(BaseGuildConfig):
     cost: int
 
 
+class GuildRewardBonusSchema(BaseGuildConfig):
+    role_id: DiscordRoleID
+    coins: int
+
+
 class GuildEconomyConfigSchema(BaseGuildConfig):
     coin_name: str | None = Field(max_length=20, default=None)
     economy_access_roles_ids: DiscordRoleIDList | None = None
-    reward_bonus: int = 0
+    base_reward_bonus: int = 0
+    reward_bonuses: list[GuildRewardBonusSchema] | None = Field(
+        max_length=25, default=None
+    )
     economy_shop_buy_ping_roles_ids: DiscordRoleIDList | None = None
     economy_shop_items: list[GuildEconomyShopItemSchema] | None = Field(
         max_length=25, default=None
