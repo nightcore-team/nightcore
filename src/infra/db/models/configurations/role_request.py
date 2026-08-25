@@ -70,19 +70,21 @@ class GuildRoleRequestConfig(IdIntegerMixin, Base):
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
         if "organizational_roles" in config:
+            org_roles: list[Any] = config["organizational_roles"] or []
             config["organizational_roles"] = [
                 GuildOrganizationalRole(
                     **item, type=OrganizationalRoleTypeEnum.LEGAL
                 )
-                for item in config["organizational_roles"]
+                for item in org_roles
             ]
 
         if "illegal_roles" in config:
+            illegal_roles: list[Any] = config["illegal_roles"] or []
             config["illegal_roles"] = [
                 GuildOrganizationalRole(
                     **item, type=OrganizationalRoleTypeEnum.ILLEGAL
                 )
-                for item in config["illegal_roles"]
+                for item in illegal_roles
             ]
 
         return config

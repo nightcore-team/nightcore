@@ -121,7 +121,10 @@ class GuildRulesConfig(IdIntegerMixin, Base):
             config["guild_rules"] = GuildRules(chapters=chapters)
 
         if "rules_webhook" in config:
-            config["rules_webhook"] = DiscordWebhook(**config["rules_webhook"])
+            webhook = config["rules_webhook"]
+            config["rules_webhook"] = (
+                DiscordWebhook(**webhook) if webhook is not None else None
+            )
 
         return config
 

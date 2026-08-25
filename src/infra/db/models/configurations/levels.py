@@ -103,14 +103,15 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
         """Normalize json."""
 
         if "level_roles" in config:
+            level_roles: list[Any] = config["level_roles"] or []
             config["level_roles"] = [
-                GuildLevel(**item) for item in config["level_roles"]
+                GuildLevel(**item) for item in level_roles
             ]
 
         if "bonus_access_roles_ids" in config:
+            bonus_roles: list[Any] = config["bonus_access_roles_ids"] or []
             config["bonus_access_roles_ids"] = [
-                GuildBonusRole(**item)
-                for item in config["bonus_access_roles_ids"]
+                GuildBonusRole(**item) for item in bonus_roles
             ]
 
         return config

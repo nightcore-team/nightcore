@@ -84,13 +84,15 @@ class GuildClansConfig(IdIntegerMixin, Base):
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
         if "clan_shop_items" in config:
+            shop_items: list[Any] = config["clan_shop_items"] or []
             config["clan_shop_items"] = [
-                GuildClanShopItem(**item) for item in config["clan_shop_items"]
+                GuildClanShopItem(**item) for item in shop_items
             ]
 
         if "clan_payday_webhook" in config:
-            config["clan_payday_webhook"] = DiscordWebhook(
-                **config["clan_payday_webhook"]
+            webhook = config["clan_payday_webhook"]
+            config["clan_payday_webhook"] = (
+                DiscordWebhook(**webhook) if webhook is not None else None
             )
 
         return config

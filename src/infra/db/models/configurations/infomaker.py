@@ -50,13 +50,19 @@ class GuildInfomakerConfig(IdIntegerMixin, Base):
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
         if "admins_roles_logging_webhook" in config:
-            config["admins_roles_logging_webhook"] = DiscordWebhook(
-                **config["admins_roles_logging_webhook"]
+            admins_webhook = config["admins_roles_logging_webhook"]
+            config["admins_roles_logging_webhook"] = (
+                DiscordWebhook(**admins_webhook)
+                if admins_webhook is not None
+                else None
             )
 
         if "leaders_roles_logging_webhook" in config:
-            config["leaders_roles_logging_webhook"] = DiscordWebhook(
-                **config["leaders_roles_logging_webhook"]
+            leaders_webhook = config["leaders_roles_logging_webhook"]
+            config["leaders_roles_logging_webhook"] = (
+                DiscordWebhook(**leaders_webhook)
+                if leaders_webhook is not None
+                else None
             )
 
         return config

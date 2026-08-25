@@ -46,8 +46,9 @@ class GuildForumConfig(IdIntegerMixin, Base):
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
         if "notify_webhook" in config:
-            config["notify_webhook"] = DiscordWebhook(
-                **config["notify_webhook"]
+            webhook = config["notify_webhook"]
+            config["notify_webhook"] = (
+                DiscordWebhook(**webhook) if webhook is not None else None
             )
 
         return config
