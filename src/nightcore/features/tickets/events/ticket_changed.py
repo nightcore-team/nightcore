@@ -1,6 +1,7 @@
 """Ticket Event Cog for Nightcore Bot."""
 
 import asyncio
+import contextlib
 import io
 import logging
 from collections.abc import Awaitable
@@ -101,6 +102,12 @@ class TicketChangeEvent(Cog):
         )
 
         gather_list: list[Awaitable[None]] = []
+
+        message = f"Ваш тикет {ticket_channel.name} на сервере {data.guild.name} был удален. Для просмотра истории сообщений скачайте файл и откройте в браузере."  # noqa: E501
+
+        with contextlib.suppress(Exception):
+            user = await self.bot.fetch_user(data.author_id)
+            await user.send(content=message)
 
         if data.logging_webhook and data.logging_webhook.valid:
             gather_list.append(
