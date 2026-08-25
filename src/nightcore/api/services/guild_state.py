@@ -139,16 +139,14 @@ class GuildStateService:
         context = await self._build_validation_context(member=member)
         validated_model = pydantic_type.model_validate(data, context=context)
 
-        # The revision payload is dumped before normalization and in json
-        # mode: normalize_from_json replaces values with ORM objects, and in
-        # python mode enum fields stay enum members. Neither is JSON
-        # serializable for the loggingrevision.data column.
         revision_data = validated_model.model_dump(
             mode="json", exclude_unset=True
         )
 
         nomalized = type_.normalize_from_json(
-            validated_model.model_dump(exclude_unset=True)
+            validated_model.model_dump(
+                exclude_unset=True, exclude_computed_fields=True
+            )
         )
 
         async with self._uow.start() as session:
@@ -158,8 +156,6 @@ class GuildStateService:
                 guild_id=member.guild.id,
             )
 
-            # Values of the fields about to change, as they are right now:
-            # dumped through the schema so they are JSON serializable.
             current_state = pydantic_type.model_construct(
                 **vars(config)
             ).model_dump(mode="json")
