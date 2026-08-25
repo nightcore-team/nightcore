@@ -17,7 +17,7 @@ from typing import (
 from discord import Guild, Interaction, Member, app_commands
 
 from src.config.config import config as project_config
-from src.infra.db.operations import get_specified_field
+from src.infra.db.operations import GuildT, get_specified_field
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.utils import has_any_role_from_sequence
 
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from discord.ext.commands import Cog  # type: ignore
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from src.infra.db.operations import ConfigType
     from src.nightcore.bot import Nightcore
 
 from .types import PERMISSION_CONFIG_MAP, PermissionsFlagEnum
@@ -125,7 +124,7 @@ async def has_specified_permission(
     *,
     session: AsyncSession,
     guild_id: int,
-    config_type: type[ConfigType],
+    config_type: type[GuildT],
     field_name: str,
     access_name: str,
 ) -> bool:
