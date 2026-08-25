@@ -158,6 +158,15 @@ class GuildStateService:
                 guild_id=member.guild.id,
             )
 
+            # Values of the fields about to change, as they are right now:
+            # dumped through the schema so they are JSON serializable.
+            current_state = pydantic_type.model_construct(
+                **vars(config)
+            ).model_dump(mode="json")
+            old_data = {
+                field: current_state.get(field) for field in revision_data
+            }
+
             for k, v in nomalized.items():
                 setattr(config, k, v)
 
@@ -166,6 +175,7 @@ class GuildStateService:
                 guild_id=member.guild.id,
                 user_id=member.id,
                 config_type=config_type,
+                old_data=old_data,
                 data=revision_data,
                 version=type_.__version__,
             )

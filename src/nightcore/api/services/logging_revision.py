@@ -58,6 +58,7 @@ class LoggingRevisionService:
         guild_id: int,
         user_id: int,
         config_type: "ConfigTypeEnum",
+        old_data: dict[str, Any],
         data: dict[str, Any],
         version: int,
     ):
@@ -69,6 +70,7 @@ class LoggingRevisionService:
             guild_id: The ID of the guild where the change happened.
             user_id: The ID of the user who made the change.
             config_type: The type of the configuration that was changed.
+            old_data: Values of the changed fields as they were before.
             data: The updated configuration values.
             version: Version of ORM model.
         """
@@ -88,6 +90,7 @@ class LoggingRevisionService:
                 config_type=config_type,
                 user_id=user_id,
                 guild_id=guild_id,
+                old_data=old_data,
                 data=data,
                 version=version,
             )
@@ -190,9 +193,13 @@ class LoggingRevisionService:
         """
         Get a specific logging revision for a guild.
 
+        Both sides of the diff are stored on the revision itself: old_data
+        holds the values of the changed fields as they were right before
+        the update, so no walking of the revision chain is needed.
+
         Stale revisions (older than the configuration model version) are
-        migrated in place by patching their data and bumping the stored
-        version, so the returned values always match the current schema.
+        migrated in place by patching their data, so the returned values
+        always match the current schema.
 
         Args:
             guild_id: The ID of the guild the revision belongs to.
@@ -233,17 +240,7 @@ class LoggingRevisionService:
                     new_data=new_data,
                 )
 
-            down_revision = None
-            if current_revision.down_revision_id:
-                down_revision = await get_logging_revision_by_id(
-                    session,
-                    guild_id=guild_id,
-                    revision_id=current_revision.down_revision_id,
-                    config_type=config_type,
-                )
-                if down_revision is not None:
-                    old_data = down_revision.data
-
+            old_data = current_revision.old_data
             new_data = current_revision.data
 
             if current_revision.version < orm_model.__version__:  # type: ignore
@@ -253,8 +250,7 @@ class LoggingRevisionService:
                     old_data = orm_model.patch_revision(old_data)  # type: ignore
 
                 current_revision.data = new_data
-                if down_revision is not None:
-                    down_revision.data = old_data
+                current_revision.old_data = old_data
 
             elif current_revision.version > orm_model.__version__:  # type: ignore
                 raise ValueError(
