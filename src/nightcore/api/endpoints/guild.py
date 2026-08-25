@@ -1,6 +1,8 @@
 """Guild related endpoints."""
 
-from fastapi import HTTPException, status
+from typing import Annotated
+
+from fastapi import HTTPException, Query, status
 from fastapi.routing import APIRouter
 
 from src.nightcore.api.dependencies import (
@@ -235,7 +237,8 @@ async def patch_guild_configuration(
     response_model=ListLoggingRevisionMetaResponseSchema,
 )
 async def get_guild_logging_revisions(
-    params: ListLoggingRevisionRequestSchema,
+    guild_id: int,
+    params: Annotated[ListLoggingRevisionRequestSchema, Query()],
     user_id: UserIdDependency,
     bot: BotDependency,
     access_service: AccessServiceDependency,
@@ -243,7 +246,7 @@ async def get_guild_logging_revisions(
 ):
     """List logging revisions for a specific guild."""
 
-    guild = bot.get_guild(params.guild_id)
+    guild = bot.get_guild(guild_id)
 
     if guild is None:
         raise HTTPException(
@@ -299,7 +302,9 @@ async def get_guild_logging_revisions(
     response_model=LoggingRevisionDataSchema,
 )
 async def get_guild_logging_revision(
-    params: LoggingRevisionRequestSchema,
+    guild_id: int,
+    revision_id: str,
+    params: Annotated[LoggingRevisionRequestSchema, Query()],
     user_id: UserIdDependency,
     bot: BotDependency,
     access_service: AccessServiceDependency,
@@ -307,7 +312,7 @@ async def get_guild_logging_revision(
 ):
     """Get logging revision for specific guild by revision_id."""
 
-    guild = bot.get_guild(params.guild_id)
+    guild = bot.get_guild(guild_id)
 
     if guild is None:
         raise HTTPException(
@@ -333,7 +338,7 @@ async def get_guild_logging_revision(
         )
 
     return await logging_revision_service.get_by_params(
-        guild_id=params.guild_id,
-        revision_id=params.revision_id,
+        guild_id=guild_id,
+        revision_id=revision_id,
         config_type=params.config_type,
     )

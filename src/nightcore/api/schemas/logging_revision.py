@@ -20,7 +20,6 @@ class Base(BaseModel):
 
 
 class ListLoggingRevisionRequestSchema(Base):
-    guild_id: DiscordId
     config_type: ConfigTypeEnum | None = None
     user_id: DiscordId | None = None
     date_from: datetime | None = None
@@ -30,8 +29,6 @@ class ListLoggingRevisionRequestSchema(Base):
 
 
 class LoggingRevisionRequestSchema(Base):
-    guild_id: DiscordId
-    revision_id: str
     config_type: ConfigTypeEnum
 
 
