@@ -46,7 +46,7 @@ def build_faq_page_components(
                 accessory=Button[LayoutView](
                     label="Подробнее",
                     style=ButtonStyle.secondary,
-                    custom_id=f"faq_page:{page['title']}",
+                    custom_id=f"faq:page:{page['title']}",
                 ),
             )
         )
