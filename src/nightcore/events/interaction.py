@@ -8,31 +8,12 @@ from discord.interactions import Interaction
 from src.nightcore.features.clans.components.v2.view.handlers.info import (
     handle_clan_info_button,
 )
-from src.nightcore.features.economy.components.v2.view.battlepass.claim import (  # noqa: E501
-    BattlepassClaimViewV2,
-)
-from src.nightcore.features.economy.components.v2.view.battlepass.handlers.claim import (  # noqa: E501
-    handle_battlepass_claim_reward_button,
-)
-from src.nightcore.features.economy.components.v2.view.battlepass.handlers.info import (  # noqa: E501
-    handle_battlepass_info_button,
-)
-from src.nightcore.features.economy.components.v2.view.battlepass.handlers.show import (  # noqa: E501
-    handle_battlepass_show_button,
-)
-from src.nightcore.features.economy.components.v2.view.battlepass.info import (
-    BattlepassInfoViewV2,
-)
-from src.nightcore.features.economy.components.v2.view.roulette.handlers.roulette import (  # noqa: E501
+from src.nightcore.features.economy.components.v2.view.handlers import (
+    handle_battlepass_interaction,
     handle_roulette_multiplayer_join_button_callback,
 )
-from src.nightcore.features.faq.components.v2.view.faq import (
-    FAQPageViewV2,
-    FAQViewV2,
-)
 from src.nightcore.features.faq.components.v2.view.handlers import (
-    handle_faq_button_callback,
-    handle_faq_global_button_callback,
+    handle_faq_interaction,
 )
 from src.nightcore.features.meta.components.v2.view.handlers.roleselector import (  # noqa: E501
     handle_role_selector_select,
@@ -42,6 +23,7 @@ from src.nightcore.features.moderation.components.modal.handlers import (
 )
 from src.nightcore.features.moderation.components.v2.view.handlers import (
     handle_inactive_request_button_callback,
+    handle_notify_revoke_button,
 )
 from src.nightcore.features.role_requests.components.v2 import (
     SendRoleRequestView,
@@ -67,36 +49,16 @@ async def setup(bot: "Nightcore") -> None:
 
         if custom_id:
             match custom_id:
-                case str() if custom_id.startswith("faq_page"):
-                    await handle_faq_button_callback(
+                case str() if custom_id.startswith("faq:"):
+                    await handle_faq_interaction(
                         interaction=interaction,
-                        view=FAQPageViewV2,
-                        page_title=custom_id.split(":")[1],
-                    )
-                case str() if custom_id.startswith("faq:open_faq"):
-                    await handle_faq_global_button_callback(
-                        interaction=interaction,
-                        view_class=FAQViewV2,
+                        custom_id=custom_id,
                     )
                 case str() if custom_id.startswith("battlepass"):
-                    match custom_id:
-                        case "battlepass:claim_reward":
-                            await handle_battlepass_claim_reward_button(
-                                interaction=interaction,
-                                view_to_update=BattlepassClaimViewV2,
-                            )
-                        case "battlepass:info":
-                            await handle_battlepass_info_button(
-                                interaction=interaction,
-                                view=BattlepassInfoViewV2,
-                            )
-                        case str() if custom_id.endswith(":show"):
-                            # custom_id format: battlepass:{user_id}:show
-                            await handle_battlepass_show_button(
-                                interaction=interaction,
-                            )
-                        case _:
-                            ...
+                    await handle_battlepass_interaction(
+                        interaction=interaction,
+                        custom_id=custom_id,
+                    )
 
                 case str() if custom_id.startswith("clan:"):
                     await handle_clan_info_button(interaction=interaction)
@@ -127,6 +89,9 @@ async def setup(bot: "Nightcore") -> None:
                     await handle_inactive_reject_modal_submit(
                         interaction=interaction
                     )
+
+                case "notify:revoke":
+                    await handle_notify_revoke_button(interaction)
 
                 case _:  # type: ignore
                     logger.info(

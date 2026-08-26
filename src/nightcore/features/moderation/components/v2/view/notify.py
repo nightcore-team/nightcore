@@ -2,12 +2,10 @@ import logging  # noqa: D100
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
-import discord
 from discord import (
     ButtonStyle,
     Color,
     Guild,
-    Message,
     SelectOption,
     app_commands,
 )
@@ -23,20 +21,14 @@ from discord.ui import (
     Select,
     Separator,
     TextDisplay,
-    button,
 )
 
 from src.infra.db.models import (
     GuildNotificationsConfig,
-    GuildRulesConfig,
     GuildTicketsConfig,
     NotifyState,
 )
-from src.infra.db.operations import (
-    get_specified_channel,
-    get_specified_webhook,
-    get_user_notify_by_end_time,
-)
+from src.infra.db.operations import get_specified_channel
 from src.nightcore.components.view.v2 import (
     EntityNotFoundViewV2,
     ErrorViewV2,
@@ -48,10 +40,6 @@ from src.nightcore.features.tickets.utils import (
     extract_str_by_pattern,
 )
 from src.nightcore.utils import discord_ts, ensure_messageable_channel_exists
-from src.nightcore.utils.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
 from src.nightcore.utils.types import MessageComponentType
 from src.utils._enums import ChannelType, NotifyStateEnum
 
@@ -110,22 +98,6 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
                 return
 
             if not (
-                rules_webhook := await get_specified_webhook(
-                    session,
-                    guild_id=guild.id,
-                    config_type=GuildRulesConfig,
-                    channel_type=ChannelType.RULES_CHANNEL,
-                )
-            ):
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка отправки оповещения",
-                        "Вебхук правил не настроен.",
-                    )
-                )
-                return
-
-            if not (
                 create_ticket_channel_id := await get_specified_channel(
                     session,
                     guild_id=guild.id,
@@ -156,9 +128,6 @@ class NotifySelect(Select["PrepareNotifyViewV2"]):
             guild_id=guild.id,
             user_id=view.user_id,
             moderator_id=interaction.user.id,
-            rules_channel_id=discord.Webhook.from_url(
-                rules_webhook.url, client=view.bot
-            ).channel_id,
             create_ticket_channel_id=create_ticket_channel_id,
             content=view.content,
             profile_parts=values,
@@ -262,56 +231,14 @@ class NotifyButtonsActionRow(ActionRow["NotifyViewV2"]):
             )
         )
 
-    @button(
-        style=ButtonStyle.red,
-        emoji="<:nightcoreDeclineRed:1540733707416117388>",
-        label="Отозвать оповещение",
-        custom_id="notify:revoke",
-    )  # type: ignore
-    @check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)  # type: ignore
-    async def revoke(
-        self, interaction: Interaction, button: Button["NotifyViewV2"]
-    ):
-        """Handles the revocation of the notification."""
-        guild = cast(Guild, interaction.guild)
-        view = cast("NotifyViewV2", self.view)
-
-        message = cast(Message, interaction.message)
-
-        view.guild_id = guild.id
-
-        for component in message.components:
-            for item in component.children:  # type: ignore
-                if isinstance(item, TextDisplayOverride):
-                    match item.id:
-                        case 8:
-                            view.end_time = datetime.fromtimestamp(
-                                float(
-                                    extract_str_by_pattern(
-                                        item.content, r"<t:(\d+):[A-Za-z]>"
-                                    )  # type: ignore
-                                ),
-                                tz=UTC,
-                            )
-                        case _:
-                            ...
-        async with view.bot.uow.start() as session:
-            notifystate = await get_user_notify_by_end_time(
-                session,
-                guild_id=guild.id,
-                message_id=message.id,
-                ts=cast(int, cast(datetime, view.end_time).timestamp()),
+        self.add_item(
+            Button["NotifyViewV2"](
+                style=ButtonStyle.grey,
+                emoji="<:nightcoreDeclineRed:1540733707416117388>",
+                label="Отозвать оповещение",
+                custom_id="notify:revoke",
             )
-            if not notifystate or notifystate.state != NotifyStateEnum.PENDING:
-                logger.error(
-                    "[notify] No pending notify state found for user %s in guild %s",  # noqa: E501
-                    view.user_id,
-                    guild.id,
-                )
-            else:
-                await session.delete(notifystate)
-
-        await message.delete()
+        )
 
 
 class NotifyViewV2(LayoutView):
@@ -321,7 +248,6 @@ class NotifyViewV2(LayoutView):
         guild_id: int | None = None,
         user_id: int | None = None,
         moderator_id: int | None = None,
-        rules_channel_id: int | None = None,
         create_ticket_channel_id: int | None = None,
         content: str | None = None,
         profile_parts: list[str] | None = None,
@@ -334,7 +260,6 @@ class NotifyViewV2(LayoutView):
         self.guild_id = guild_id
         self.user_id = user_id
         self.moderator_id = moderator_id
-        self.rules_channel_id = rules_channel_id
         self.content = content
         self.profile_parts = profile_parts
         self.end_time = end_time
@@ -355,6 +280,7 @@ class NotifyViewV2(LayoutView):
         original = getattr(error, "original", error)
 
         if not isinstance(original, app_commands.MissingPermissions):
+            logger.error("Unknown error in notify component", exc_info=error)
             return
 
         missing_perms: list[str] = getattr(original, "missing_permissions", [])
@@ -393,41 +319,39 @@ class NotifyViewV2(LayoutView):
         for component in components:
             for item in component.children:  # type: ignore
                 if isinstance(item, TextDisplayOverride):
-                    match item.id:
-                        case 2:
-                            self.user_id = extract_id_from_str(
-                                item.content.split(" ")[-1]
-                            )
-                        case 4:
-                            self.moderator_id = extract_str_by_pattern(
-                                item.content, r"<@!?(\d+)>"
-                            )
-                            self.profile_parts = extract_str_by_pattern(
-                                item.content, r"\*\*`(.*?)`\*\*"
-                            )
-                        case 6:
-                            self.rules_channel_id = extract_str_by_pattern(
-                                item.content, r"<#(\d+)>"
-                            )
-                            self.content = extract_str_by_pattern(
-                                item.content, r"\`\`\`(.+)\`\`\`"
-                            )
-                        case 8:
-                            self.end_time = datetime.fromtimestamp(
-                                float(
-                                    extract_str_by_pattern(
-                                        item.content, r"<t:(\d+):[A-Za-z]>"
-                                    )  # type: ignore
-                                ),
-                                tz=UTC,
-                            )
-                        case _:
-                            ...
+                    content = item.content or ""
+
+                    if "Оповещение от модерации" in content:
+                        self.user_id = extract_id_from_str(
+                            content.split(" ")[-1]
+                        )
+                    elif "Модератор" in content:
+                        self.moderator_id = extract_str_by_pattern(
+                            content, r"<@!?(\d+)>"
+                        )
+                        self.profile_parts = extract_str_by_pattern(
+                            content, r"\*\*`(.*?)`\*\*"
+                        )
+                    elif "Оповещение истекает через" in content:
+                        self.end_time = datetime.fromtimestamp(
+                            float(
+                                extract_str_by_pattern(
+                                    content, r"<t:(\d+):[A-Za-z]>"
+                                )  # type: ignore
+                            ),
+                            tz=UTC,
+                        )
+                    elif "```" in content:
+                        self.content = extract_str_by_pattern(
+                            content, r"```(.+)```"
+                        )
 
                 if isinstance(item, ActionRowOverride):
                     for btn in item.children:  # type: ignore
-                        if btn.id == 12:
-                            self.create_ticket_channel_id = btn.url[-19:-1]  # type: ignore
+                        if hasattr(btn, "url") and btn.url:  # type: ignore
+                            self.create_ticket_channel_id = btn.url[  # type: ignore
+                                -19:-1
+                            ]
 
         view = self.make_component(disabled=disabled)
 
@@ -442,7 +366,7 @@ class NotifyViewV2(LayoutView):
         # header
         container.add_item(
             TextDisplay[Self](
-                f"### <:nightcoreNotifyPlus:1540730025983090759>Оповещение от модерации для <@{self.user_id}>"  # noqa: E501
+                f"### <:nightcoreNotifyPlus:1540730025983090759> Оповещение от модерации для <@{self.user_id}>"  # noqa: E501
             )
         )
         container.add_item(Separator[Self]())
@@ -465,7 +389,7 @@ class NotifyViewV2(LayoutView):
         # body
         container.add_item(
             TextDisplay[Self](
-                f"Пункт из <#{self.rules_channel_id}>: \n```{self.content}```"
+                f"Пункт из правил сервера: \n```{self.content}```"
             )
         )
         container.add_item(Separator[Self]())
