@@ -30,7 +30,7 @@ from src.utils._enums import ChannelType
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-    from ..claim import BattlepassClaimViewV2
+    from ...battlepass.claim import BattlepassClaimViewV2
 
 logger = logging.getLogger(__name__)
 

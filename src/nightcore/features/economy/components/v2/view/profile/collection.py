@@ -19,7 +19,7 @@ from discord.ui import (
 
 from src.infra.db.operations import get_or_create_user
 
-from .handlers.transfer import open_transfer_history
+from ..handlers.profile import open_transfer_history
 
 if TYPE_CHECKING:
     from src.infra.db.models.color import Color as UserColor

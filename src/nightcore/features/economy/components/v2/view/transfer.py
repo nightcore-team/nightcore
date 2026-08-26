@@ -45,7 +45,7 @@ class TransferHistoryActionRow(ActionRow[LayoutView]):
     ):
         """Handle transfer history button callback."""
 
-        from .profile.handlers.transfer import open_transfer_history
+        from .handlers.profile import open_transfer_history
 
         await open_transfer_history(
             interaction,

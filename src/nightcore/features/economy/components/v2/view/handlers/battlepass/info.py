@@ -25,7 +25,7 @@ from src.nightcore.services.config import specified_guild_config
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-    from ..info import BattlepassInfoViewV2
+    from ...battlepass.info import BattlepassInfoViewV2
 
 
 async def handle_battlepass_info_button(
