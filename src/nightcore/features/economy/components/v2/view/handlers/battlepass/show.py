@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING
 
 from discord.interactions import Interaction
 
-from src.nightcore.services.battlepass import send_battlepass_claim_view
-
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
@@ -18,6 +16,10 @@ async def handle_battlepass_show_button(
     interaction: Interaction["Nightcore"],
 ) -> None:
     """Handle battlepass show button on the user profile."""
+
+    from src.nightcore.services.battlepass import (
+        send_battlepass_claim_view,
+    )
 
     custom_id = interaction.data.get("custom_id", "")  # type: ignore
     # custom_id format: "battlepass:{user_id}:show"
