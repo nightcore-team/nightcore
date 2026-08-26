@@ -25,11 +25,8 @@ from src.nightcore.features.moderation.components.v2.view.handlers import (
     handle_inactive_request_button_callback,
     handle_notify_revoke_button,
 )
-from src.nightcore.features.role_requests.components.v2 import (
-    SendRoleRequestView,
-)
 from src.nightcore.features.role_requests.components.v2.view.handlers import (
-    handle_role_select_button_callback,
+    handle_role_request_interaction,
 )
 
 if TYPE_CHECKING:
@@ -63,10 +60,10 @@ async def setup(bot: "Nightcore") -> None:
                 case str() if custom_id.startswith("clan:"):
                     await handle_clan_info_button(interaction=interaction)
 
-                case str() if custom_id.startswith("role_request:select_"):
-                    await handle_role_select_button_callback(
+                case str() if custom_id.startswith("role_request:"):
+                    await handle_role_request_interaction(
                         interaction=interaction,
-                        view=SendRoleRequestView,
+                        custom_id=custom_id,
                     )
                 case str() if custom_id.startswith("role_selector:"):
                     await handle_role_selector_select(interaction=interaction)

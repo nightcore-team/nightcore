@@ -27,20 +27,18 @@ from ..check_role_request import CheckRoleRequestView
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-    from ..send_role_request import (
-        SendRoleRequestView,
-    )
-
 from src.nightcore.utils import (
     ensure_messageable_channel_exists,
     ensure_role_exists,
 )
 
+from ..send_role_request import SendRoleRequestView
+
 logger = logging.getLogger(__name__)
 
 
 async def handle_role_select_button_callback(
-    interaction: Interaction["Nightcore"], view: type["SendRoleRequestView"]
+    interaction: Interaction["Nightcore"],
 ) -> None:
     """Handle the select role interaction - shared logic."""
     guild = cast(Guild, interaction.guild)
@@ -191,7 +189,7 @@ async def handle_role_select_button_callback(
                         ephemeral=True,
                     ),
                     interaction.message.edit(  # type: ignore
-                        view=view(
+                        view=SendRoleRequestView(
                             bot,
                             org_options=org_options,  # type: ignore
                             ill_options=ill_options if ill_options else None,  # type: ignore
@@ -214,7 +212,7 @@ async def handle_role_select_button_callback(
                         ephemeral=True,
                     ),
                     interaction.message.edit(  # type: ignore
-                        view=view(
+                        view=SendRoleRequestView(
                             bot,
                             org_options=org_options,  # type: ignore
                             ill_options=ill_options if ill_options else None,  # type: ignore
@@ -254,7 +252,7 @@ async def handle_role_select_button_callback(
 
     asyncio.create_task(
         interaction.message.edit(  # type: ignore
-            view=view(
+            view=SendRoleRequestView(
                 bot,
                 org_options=org_options,  # type: ignore
                 ill_options=ill_options if ill_options else None,  # type: ignore

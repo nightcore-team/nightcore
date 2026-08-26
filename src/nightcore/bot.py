@@ -24,10 +24,6 @@ from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
 )
 from src.nightcore.features.proposals.components.v2 import ProposalViewV2
-from src.nightcore.features.role_requests.components.v2 import (
-    CheckRoleRequestView,
-    SendRoleRequestView,
-)
 from src.nightcore.features.tickets.components.v2 import (
     CreateTicketViewV2,
     ManageTicketViewV2,
@@ -122,8 +118,6 @@ class Nightcore(Bot):
             CoinsShopViewV2(self),
             CoinsShopOrderViewV2(self, _build=True),
             ManageTicketViewV2(self),
-            CheckRoleRequestView(self),
-            SendRoleRequestView(self),
             NotifyViewV2(self, _build=True),
             ProposalViewV2(self, _build=True),
         ]

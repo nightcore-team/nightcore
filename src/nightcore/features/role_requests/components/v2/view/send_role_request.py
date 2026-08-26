@@ -1,11 +1,8 @@
 """View for sending role requests."""
 
-import logging
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self
 
-from discord import ButtonStyle, Color, Guild, Member, Role, SelectOption
-from discord.interactions import Interaction
+from discord import ButtonStyle, Color, SelectOption
 from discord.ui import (
     ActionRow,
     Button,
@@ -14,32 +11,10 @@ from discord.ui import (
     Select,
     Separator,
     TextDisplay,
-    button,
 )
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
-
-from src.infra.db.operations import (
-    get_latest_user_role_request,
-    get_organization_roles_ids,
-)
-from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
-from src.nightcore.features.role_requests.components.v2.view.check_role_request import (  # noqa: E501
-    CheckRoleRequestView,
-)
-from src.nightcore.features.role_requests.components.v2.view.role_request_state import (  # noqa: E501
-    RoleRequestStateView,
-)
-from src.nightcore.utils import (
-    ensure_message_exists,
-    ensure_messageable_channel_exists,
-    ensure_role_exists,
-    has_any_role_from_sequence,
-)
-from src.utils._enums import RoleRequestStateEnum
-
-logger = logging.getLogger(__name__)
 
 
 class SelectOrgRoleActionRow(ActionRow["SendRoleRequestView"]):
@@ -71,245 +46,26 @@ class SelectIllRoleActionRow(ActionRow["SendRoleRequestView"]):
 
 
 class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
-    @button(
-        label="Отменить текущий запрос",
-        custom_id="role_request:cancel",
-        style=ButtonStyle.grey,
-        emoji="<:nightcoreDeclineBlue:1540815862288752883>",
-    )
-    async def cancel_role_request(
-        self,
-        interaction: Interaction["Nightcore"],
-        button: Button["SendRoleRequestView"],
-    ) -> None:
-        """Handle the cancel button interaction."""
+    def __init__(self) -> None:
+        super().__init__()
 
-        guild = cast(Guild, interaction.guild)
-        user = cast(Member, interaction.user)
-        view = cast(SendRoleRequestView, self.view)
-
-        await interaction.response.defer(thinking=True, ephemeral=True)
-
-        outcome = ""
-        channel_id = 0
-        message_id = 0
-        role_id = 0
-        moderator_id: int | None = None
-
-        async with view.bot.uow.start() as session:
-            last_rr = await get_latest_user_role_request(
-                session, guild_id=guild.id, user_id=user.id
+        self.add_item(
+            Button["SendRoleRequestView"](
+                label="Отменить текущий запрос",
+                custom_id="role_request:cancel",
+                style=ButtonStyle.grey,
+                emoji="<:nightcoreDeclineBlue:1540815862288752883>",
             )
+        )
 
-            if not last_rr or last_rr.state in (
-                RoleRequestStateEnum.CANCELED,
-                RoleRequestStateEnum.DENIED,
-                RoleRequestStateEnum.APPROVED,
-            ):
-                outcome = "no_active_request"
-            else:
-                channel_id = last_rr.channel_id
-                message_id = last_rr.message_id
-                role_id = last_rr.role_id
-                moderator_id = last_rr.moderator_id
-
-                await session.delete(last_rr)
-
-                outcome = "success"
-
-        if outcome == "no_active_request":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка при отмене запроса",
-                    "У вас нет активных запросов на роль.",
-                ),
+        self.add_item(
+            Button["SendRoleRequestView"](
+                label="Снять организационные роли",
+                custom_id="role_request:remove_roles",
+                style=ButtonStyle.grey,
+                emoji="<:nightcoreOrgRole:1540815640951136347>",
             )
-            return
-
-        if outcome == "success":
-            channel = await ensure_messageable_channel_exists(
-                guild, channel_id
-            )
-            if not channel:
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка при отмене запроса",
-                        "Канал для проверки запросов на роль "
-                        "не существует или недоступен.",
-                    ),
-                )
-                return
-
-            rr_message = await ensure_message_exists(
-                view.bot, channel, message_id
-            )
-            if not rr_message:
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка при отмене запроса",
-                        "Сообщение с вашим запросом на роль не найдено.",
-                    ),
-                )
-                return
-
-            try:
-                message = await rr_message.edit(
-                    view=CheckRoleRequestView(
-                        bot=view.bot,
-                        interaction_user_id=user.id,
-                        interaction_user_nick=user.display_name,
-                        role_requested_id=role_id,
-                        moderator_id=moderator_id,
-                        state=RoleRequestStateEnum.CANCELED,
-                        all_disabled=True,
-                    )
-                )
-            except Exception as e:
-                logger.error(
-                    "Failed to update role request message %s in guild %s: %s",
-                    message_id,
-                    guild.id,
-                    e,
-                )
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка при отмене запроса",
-                        "Произошла ошибка при обновлении "
-                        "сообщения с вашим запросом на роль.",
-                    ),
-                )
-                return
-
-            try:
-                await message.reply(
-                    view=RoleRequestStateView(
-                        bot=view.bot,
-                        moderator_id=cast(int, moderator_id),
-                        user_id=user.id,
-                        state=RoleRequestStateEnum.CANCELED,
-                        roles_ids=[role_id],
-                    )
-                )
-            except Exception as e:
-                logger.error(
-                    "Failed to reply to role request message %s in guild %s: %s",  # noqa: E501
-                    message.id,
-                    guild.id,
-                    e,
-                )
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка при отмене запроса",
-                        "Произошла ошибка при отправке сообщения "
-                        "об отмене вашего запроса на роль.",
-                    )
-                )
-                return
-
-            await interaction.followup.send(
-                view=SuccessViewV2(
-                    "Запрос отменен",
-                    "Вы успешно отменили свой запрос на роль.",
-                )
-            )
-
-            logger.info(
-                "User %s canceled role request in guild %s",
-                user.id,
-                guild.id,
-            )
-
-    @button(
-        label="Снять организационные роли",
-        custom_id="role_request:remove_roles",
-        style=ButtonStyle.grey,
-        emoji="<:nightcoreOrgRole:1540815640951136347>",
-    )
-    async def remove_organization_roles(
-        self,
-        interaction: Interaction["Nightcore"],
-        button: Button["SendRoleRequestView"],
-    ) -> None:
-        """Handle the remove roles button interaction."""
-
-        guild = cast(Guild, interaction.guild)
-        view = cast(SendRoleRequestView, self.view)
-        user = cast(Member, interaction.user)
-
-        outcome = ""
-        org_roles_ids: Sequence[int] = []
-
-        async with view.bot.uow.start() as session:
-            org_roles_ids = await get_organization_roles_ids(
-                session, guild_id=guild.id
-            )
-
-            if not org_roles_ids:
-                outcome = "no_org_roles_configured"
-            else:
-                outcome = "success"
-
-        if outcome == "no_org_roles_configured":
-            await interaction.response.send_message(
-                view=ErrorViewV2(
-                    "Не удалось снять организационные роли",
-                    "Организационные роли не настроены на этом сервере.",
-                ),
-                ephemeral=True,
-            )
-            return
-
-        if outcome == "success":
-            if not has_any_role_from_sequence(user, org_roles_ids):
-                await interaction.response.send_message(
-                    view=ErrorViewV2(
-                        "Не удалось снять организационные роли",
-                        "У вас нет ролей для снятия.",
-                    ),
-                    ephemeral=True,
-                )
-                return
-
-            await interaction.response.defer(thinking=True, ephemeral=True)
-
-            roles_to_remove: list[Role] = []
-            for role_id in org_roles_ids:
-                role = await ensure_role_exists(guild, role_id)
-                if role and role in user.roles:
-                    roles_to_remove.append(role)
-
-            try:
-                await user.remove_roles(
-                    *roles_to_remove, reason="Снятие организационных ролей"
-                )
-            except Exception as e:
-                logger.error(
-                    "Failed to remove organization roles from user %s in guild %s: %s",  # noqa: E501
-                    user.id,
-                    guild.id,
-                    e,
-                )
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Не удалось снять организационные роли",
-                        "Произошла ошибка при снятии ваших ролей.",
-                    ),
-                )
-                return
-
-            await interaction.followup.send(
-                view=SuccessViewV2(
-                    "Снятие ролей успешно",
-                    f"Ваши организационные роли ({', '.join(f'<@&{role.id}>' for role in roles_to_remove)}) были сняты.",  # noqa: E501
-                ),
-            )
-
-            logger.info(
-                "User %s removed organization roles in guild %s: %s",
-                user.id,
-                guild.id,
-                [role.id for role in roles_to_remove],
-            )
+        )
 
 
 class SendRoleRequestView(LayoutView):
