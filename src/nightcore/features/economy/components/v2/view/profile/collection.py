@@ -19,8 +19,6 @@ from discord.ui import (
 
 from src.infra.db.operations import get_or_create_user
 
-from ..handlers.profile import open_transfer_history
-
 if TYPE_CHECKING:
     from src.infra.db.models.color import Color as UserColor
     from src.infra.db.models.user import UserCase
@@ -119,6 +117,8 @@ class UserProfileActionRow(ActionRow[LayoutView]):
         button: Button[LayoutView],
     ):
         """Handle transfer history button callback."""
+
+        from ..handlers.profile import open_transfer_history
 
         await open_transfer_history(
             interaction,
