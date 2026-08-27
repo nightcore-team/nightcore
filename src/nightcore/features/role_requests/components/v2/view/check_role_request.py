@@ -33,7 +33,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 label="Одобрить запрос",
                 custom_id="role_request:approve",
                 style=ButtonStyle.grey,
-                emoji="<:check:1442915033079353404>",
+                emoji="<:nightcoreAcceptGreen:1540739795737780355>",
             )
         )
 
@@ -42,7 +42,7 @@ class ManageRoleRequestActionRow(ActionRow["CheckRoleRequestView"]):
                 label="Отклонить запрос",
                 custom_id="role_request:decline",
                 style=ButtonStyle.grey,
-                emoji="<:failed:1442915170320912506>",
+                emoji="<:nightcoreDeclineRed:1540733707416117388>",
             )
         )
 
@@ -110,17 +110,17 @@ class CheckRoleRequestView(LayoutView):
             state_str = ""
             match self.state:
                 case RoleRequestStateEnum.APPROVED:
-                    accent_color = Color.from_str("#32F113")
+                    accent_color = Color.from_str("#81b475")
                     state_str = f"Запрос на статистику был **одобрен** модератором: <@{self.moderator_id}>"  # noqa: E501
                 case RoleRequestStateEnum.DENIED:
-                    accent_color = Color.from_str("#F11313")
+                    accent_color = Color.from_str("#C0577A")
                     state_str = f"Запрос на статистику был **отклонен** модератором: <@{self.moderator_id}>"  # noqa: E501
                 case RoleRequestStateEnum.CANCELED:
-                    accent_color = Color.from_str("#F11313")
+                    accent_color = Color.from_str("#C0577A")
                     state_str = "Пользователь отменил свой запрос на роль."
                     self.moderator_id = None
                 case RoleRequestStateEnum.EXPIRED:
-                    accent_color = Color.from_str("#F1F113")
+                    accent_color = Color.from_str("#CACA47")
                     state_str = "Запрос на роль **истек**."
                     self.moderator_id = None
                 case _:
