@@ -20,6 +20,7 @@ from src.nightcore.api.schemas.logging_revision import (
     LoggingRevisionDataSchema,
     LoggingRevisionRequestSchema,
 )
+from src.nightcore.utils import ensure_member_exists
 from src.utils._enums import ConfigTypeEnum
 
 router = APIRouter(prefix="/guilds", tags=["Guild Endpoints"])
@@ -45,7 +46,7 @@ async def get_available_configurations(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
         )
 
-    member = guild.get_member(user_id)
+    member = await ensure_member_exists(guild, user_id)
 
     if member is None:
         raise HTTPException(
@@ -77,7 +78,7 @@ async def get_guild_roles(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
         )
 
-    member = guild.get_member(user_id)
+    member = await ensure_member_exists(guild, user_id)
 
     if member is None:
         raise HTTPException(
@@ -119,7 +120,7 @@ async def get_guild_channels(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
         )
 
-    member = guild.get_member(user_id)
+    member = await ensure_member_exists(guild, user_id)
 
     if member is None:
         raise HTTPException(
@@ -162,7 +163,7 @@ async def get_guild_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
         )
 
-    member = guild.get_member(user_id)
+    member = await ensure_member_exists(guild, user_id)
 
     if member is None:
         raise HTTPException(
@@ -205,7 +206,7 @@ async def patch_guild_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
         )
 
-    member = guild.get_member(user_id)
+    member = await ensure_member_exists(guild, user_id)
 
     if member is None:
         raise HTTPException(
@@ -253,7 +254,7 @@ async def get_guild_logging_revisions(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
         )
 
-    member = guild.get_member(user_id)
+    member = await ensure_member_exists(guild, user_id)
 
     if member is None:
         raise HTTPException(
@@ -319,7 +320,7 @@ async def get_guild_logging_revision(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
         )
 
-    member = guild.get_member(user_id)
+    member = await ensure_member_exists(guild, user_id)
 
     if member is None:
         raise HTTPException(

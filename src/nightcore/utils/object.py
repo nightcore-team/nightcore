@@ -162,7 +162,7 @@ async def ensure_member_exists(
 ) -> Member | None:
     """Ensure that a member with the given user ID exists in the guild."""
 
-    if not user_id:
+    if user_id is None:
         return None
 
     member = guild.get_member(user_id)
