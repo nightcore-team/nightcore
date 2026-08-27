@@ -1,7 +1,5 @@
 """Handlers for FAQ global button interactions."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild
@@ -12,16 +10,15 @@ from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.faq.utils.pages import build_faq_page_components
 from src.nightcore.services.config import specified_guild_config
 
+from ..faq import FAQPageViewV2, FAQViewV2
 from .section import handle_faq_button_callback
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-    from ..faq import FAQPageViewV2, FAQViewV2
-
 
 async def handle_faq_interaction(
-    interaction: Interaction[Nightcore],
+    interaction: Interaction["Nightcore"],
     custom_id: str,
 ) -> None:
     """Route faq: interactions to the appropriate handler."""
@@ -30,13 +27,13 @@ async def handle_faq_interaction(
         case "faq:open_faq":
             await _handle_faq_open(
                 interaction=interaction,
-                view_class=FAQViewV2,  # type: ignore[arg-type]
+                view_class=FAQViewV2,
             )
         case str() if custom_id.startswith("faq:page:"):
             page_title = custom_id.split(":", 2)[2]
             await handle_faq_button_callback(
                 interaction=interaction,
-                view=FAQPageViewV2,  # type: ignore[arg-type]
+                view=FAQPageViewV2,
                 page_title=page_title,
             )
         case _:
@@ -44,7 +41,7 @@ async def handle_faq_interaction(
 
 
 async def _handle_faq_open(
-    interaction: Interaction[Nightcore],
+    interaction: Interaction["Nightcore"],
     view_class: type[FAQViewV2],
 ) -> None:
     """Send a view with FAQ pages."""
