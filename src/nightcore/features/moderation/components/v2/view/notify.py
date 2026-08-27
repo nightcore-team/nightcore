@@ -7,7 +7,6 @@ from discord import (
     Color,
     Guild,
     SelectOption,
-    app_commands,
 )
 from discord.components import ActionRow as ActionRowOverride
 from discord.components import TextDisplay as TextDisplayOverride
@@ -16,7 +15,6 @@ from discord.ui import (
     ActionRow,
     Button,
     Container,
-    Item,
     LayoutView,
     Select,
     Separator,
@@ -30,9 +28,9 @@ from src.infra.db.models import (
 )
 from src.infra.db.operations import get_specified_channel
 from src.nightcore.components.view.v2 import (
+    BaseErrorViewV2,
     EntityNotFoundViewV2,
     ErrorViewV2,
-    MissingPermissionsViewV2,
     SuccessViewV2,
 )
 from src.nightcore.features.tickets.utils import (
@@ -183,7 +181,7 @@ class NotifyActionRow(ActionRow["PrepareNotifyViewV2"]):
         self.add_item(NotifySelect())
 
 
-class PrepareNotifyViewV2(LayoutView):
+class PrepareNotifyViewV2(BaseErrorViewV2, LayoutView):
     def __init__(
         self,
         bot: "Nightcore",
@@ -269,40 +267,6 @@ class NotifyViewV2(LayoutView):
 
         if _build:
             self.make_component()
-
-    async def on_error(
-        self,
-        interaction: Interaction,
-        error: Exception,
-        item: Item[Self],
-    ):
-        """Handle errors for button interactions."""
-        original = getattr(error, "original", error)
-
-        if not isinstance(original, app_commands.MissingPermissions):
-            logger.error("Unknown error in notify component", exc_info=error)
-            return
-
-        missing_perms: list[str] = getattr(original, "missing_permissions", [])
-
-        _missing_perms = ", ".join(missing_perms)
-
-        if not interaction.response.is_done():
-            await interaction.response.send_message(
-                view=MissingPermissionsViewV2(
-                    "Вам не хватает следующих прав для "
-                    f"использования этой команды: {_missing_perms}.",
-                ),
-                ephemeral=True,
-            )
-        else:
-            await interaction.followup.send(
-                view=MissingPermissionsViewV2(
-                    "Вам не хватает следующих прав для "
-                    f"использования этой команды: {missing_perms}.",
-                ),
-                ephemeral=True,
-            )
 
     def disable_buttons(self):
         """Disable all buttons in the view."""

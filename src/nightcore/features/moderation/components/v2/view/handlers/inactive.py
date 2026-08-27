@@ -23,6 +23,10 @@ from src.nightcore.features.moderation.utils.content import (
 )
 from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.utils.object import cast_guild, cast_message
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.utils._enums import InactiveRequestStateEnum
 
 if TYPE_CHECKING:
@@ -37,6 +41,7 @@ from ..inactive import InactiveRequestViewV2
 logger = logging.getLogger(__name__)
 
 
+@check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
 async def handle_inactive_request_button_callback(
     interaction: Interaction["Nightcore"], custom_id: str
 ):
@@ -61,11 +66,6 @@ async def handle_inactive_request_button_callback(
         )
         return
 
-    async with bot.uow.start() as session:
-        guild_config = await get_specified_guild_config(
-            session, config_type=GuildModerationConfig, guild_id=guild.id
-        )
-
     if interaction.user.id == author_id:
         await interaction.response.send_message(
             view=ErrorViewV2(
@@ -75,6 +75,11 @@ async def handle_inactive_request_button_callback(
             ephemeral=True,
         )
         return
+
+    async with bot.uow.start() as session:
+        guild_config = await get_specified_guild_config(
+            session, config_type=GuildModerationConfig, guild_id=guild.id
+        )
 
     if not has_any_role_from_sequence(
         interaction.user, guild_config.leadership_access_roles_ids

@@ -3,8 +3,10 @@
 import logging
 from typing import TYPE_CHECKING
 
+from discord import app_commands
 from discord.interactions import Interaction
 
+from src.nightcore.components.view.v2 import MissingPermissionsViewV2
 from src.nightcore.features.clans.components.v2.view.handlers.info import (
     handle_clan_info_button,
 )
@@ -27,6 +29,9 @@ from src.nightcore.features.moderation.components.v2.view.handlers import (
 )
 from src.nightcore.features.role_requests.components.v2.view.handlers import (
     handle_role_request_interaction,
+)
+from src.nightcore.features.tickets.components.v2.view.handlers import (
+    handle_ticket_interaction,
 )
 
 if TYPE_CHECKING:
@@ -65,8 +70,15 @@ async def setup(bot: "Nightcore") -> None:
                         interaction=interaction,
                         custom_id=custom_id,
                     )
+
                 case str() if custom_id.startswith("role_selector:"):
                     await handle_role_selector_select(interaction=interaction)
+
+                case str() if custom_id.startswith("ticket:"):
+                    await handle_ticket_interaction(
+                        interaction=interaction,
+                        custom_id=custom_id,
+                    )
 
                 case str() if custom_id.startswith("casino:"):
                     match custom_id:
@@ -78,17 +90,76 @@ async def setup(bot: "Nightcore") -> None:
                             ...
 
                 case str() if custom_id.startswith("inactive:"):
-                    await handle_inactive_request_button_callback(
-                        interaction=interaction, custom_id=custom_id
-                    )
+                    try:
+                        await handle_inactive_request_button_callback(
+                            interaction, custom_id=custom_id
+                        )
+
+                    except app_commands.MissingPermissions as e:
+                        missing_perms = getattr(e, "missing_permissions", [])
+
+                        if not interaction.response.is_done():
+                            await interaction.response.send_message(
+                                view=MissingPermissionsViewV2(
+                                    "Вам не хватает следующих прав для "
+                                    f"использования этой команды: {', '.join(missing_perms)}.",  # noqa: E501
+                                ),
+                                ephemeral=True,
+                            )
+                        else:
+                            await interaction.followup.send(
+                                view=MissingPermissionsViewV2(
+                                    "Вам не хватает следующих прав для "
+                                    f"использования этой команды: {missing_perms}.",  # noqa: E501
+                                ),
+                                ephemeral=True,
+                            )
 
                 case str() if custom_id.startswith("inactive_modal:"):
-                    await handle_inactive_reject_modal_submit(
-                        interaction=interaction
-                    )
+                    try:
+                        await handle_inactive_reject_modal_submit(interaction)
+                    except app_commands.MissingPermissions as e:
+                        missing_perms = getattr(e, "missing_permissions", [])
+
+                        if not interaction.response.is_done():
+                            await interaction.response.send_message(
+                                view=MissingPermissionsViewV2(
+                                    "Вам не хватает следующих прав для "
+                                    f"использования этой команды: {', '.join(missing_perms)}.",  # noqa: E501
+                                ),
+                                ephemeral=True,
+                            )
+                        else:
+                            await interaction.followup.send(
+                                view=MissingPermissionsViewV2(
+                                    "Вам не хватает следующих прав для "
+                                    f"использования этой команды: {missing_perms}.",  # noqa: E501
+                                ),
+                                ephemeral=True,
+                            )
 
                 case "notify:revoke":
-                    await handle_notify_revoke_button(interaction)
+                    try:
+                        await handle_notify_revoke_button(interaction)
+                    except app_commands.MissingPermissions as e:
+                        missing_perms = getattr(e, "missing_permissions", [])
+
+                        if not interaction.response.is_done():
+                            await interaction.response.send_message(
+                                view=MissingPermissionsViewV2(
+                                    "Вам не хватает следующих прав для "
+                                    f"использования этой команды: {', '.join(missing_perms)}.",  # noqa: E501
+                                ),
+                                ephemeral=True,
+                            )
+                        else:
+                            await interaction.followup.send(
+                                view=MissingPermissionsViewV2(
+                                    "Вам не хватает следующих прав для "
+                                    f"использования этой команды: {missing_perms}.",  # noqa: E501
+                                ),
+                                ephemeral=True,
+                            )
 
                 case _:  # type: ignore
                     logger.info(

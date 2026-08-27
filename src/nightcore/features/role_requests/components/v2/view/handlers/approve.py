@@ -24,6 +24,10 @@ from src.nightcore.features.moderation.events.dto import RolesChangeEventData
 from src.nightcore.features.role_requests.utils import send_role_request_dm
 from src.nightcore.features.tickets.utils import extract_id_from_str
 from src.nightcore.utils import ensure_member_exists, ensure_role_exists
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.utils._enums import ChannelType, RoleRequestStateEnum
 
 from ..role_request_state import RoleRequestStateView
@@ -37,6 +41,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
 async def handle_approve(
     interaction: Interaction["Nightcore"],
     view: "CheckRoleRequestView",

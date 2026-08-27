@@ -23,6 +23,10 @@ from src.nightcore.features.role_requests.components.modal.decline import (
 )
 from src.nightcore.features.tickets.utils import extract_id_from_str
 from src.nightcore.utils import ensure_member_exists
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.utils._enums import ChannelType, RoleRequestStateEnum
 
 if TYPE_CHECKING:
@@ -35,6 +39,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
 async def handle_decline(
     interaction: Interaction["Nightcore"],
     view: "CheckRoleRequestView",

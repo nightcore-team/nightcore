@@ -11,6 +11,10 @@ from src.nightcore.features.moderation.utils.content import (
     parse_nickname_from_components,
 )
 from src.nightcore.utils.object import cast_guild, cast_message
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.utils._enums import InactiveRequestStateEnum
 
 if TYPE_CHECKING:
@@ -23,6 +27,7 @@ from ..inactive import InactiveRequestViewV2
 logger = logging.getLogger(__name__)
 
 
+@check_required_permissions(PermissionsFlagEnum.HEAD_MODERATION_ACCESS)
 async def handle_inactive_reject_modal_submit(
     interaction: Interaction["Nightcore"],
 ):

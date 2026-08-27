@@ -4,13 +4,12 @@ import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
-from discord import ButtonStyle, Color, Message, app_commands
+from discord import ButtonStyle, Color, Message
 from discord.interactions import Interaction
 from discord.ui import (
     ActionRow,
     Button,
     Container,
-    Item,
     LayoutView,
     Separator,
     TextDisplay,
@@ -20,7 +19,7 @@ from discord.ui import (
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.nightcore.components.view.v2 import MissingPermissionsViewV2
+from src.nightcore.components.view.v2 import BaseErrorViewV2
 from src.nightcore.features.proposals.components.modal import (
     CheckProposalModal,
 )
@@ -128,7 +127,7 @@ class ManageProposalActionRow(ActionRow["ProposalViewV2"]):
         await interaction.response.send_modal(modal)
 
 
-class ProposalViewV2(LayoutView):
+class ProposalViewV2(BaseErrorViewV2, LayoutView):
     def __init__(
         self,
         bot: "Nightcore",
@@ -207,39 +206,6 @@ class ProposalViewV2(LayoutView):
         self.add_item(container)
 
         return self
-
-    async def on_error(
-        self,
-        interaction: Interaction,
-        error: Exception,
-        item: Item[Self],
-    ):
-        """Handle errors for button interactions."""
-        original = getattr(error, "original", error)
-
-        if not isinstance(original, app_commands.MissingPermissions):
-            return
-
-        missing_perms: list[str] = getattr(original, "missing_permissions", [])
-
-        _missing_perms = ", ".join(missing_perms)
-
-        if not interaction.response.is_done():
-            await interaction.response.send_message(
-                view=MissingPermissionsViewV2(
-                    "Вам не хватает следующих прав для "
-                    f"использования этой команды: {_missing_perms}.",
-                ),
-                ephemeral=True,
-            )
-        else:
-            await interaction.followup.send(
-                view=MissingPermissionsViewV2(
-                    "Вам не хватает следующих прав для "
-                    f"использования этой команды: {missing_perms}.",
-                ),
-                ephemeral=True,
-            )
 
 
 class AdditionalProposalAnswerViewV2(LayoutView):

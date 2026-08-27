@@ -24,10 +24,6 @@ from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
 )
 from src.nightcore.features.proposals.components.v2 import ProposalViewV2
-from src.nightcore.features.tickets.components.v2 import (
-    CreateTicketViewV2,
-    ManageTicketViewV2,
-)
 from src.nightcore.utils import log_tree_summary
 from src.nightcore.utils.image_builder.cache import ImageCache
 from src.nightcore.utils.lock_manager import AsyncioLockManager
@@ -113,11 +109,9 @@ class Nightcore(Bot):
         """Initialize persistent views."""
 
         views: list[discord.ui.LayoutView] = [
-            CreateTicketViewV2(self),
             ClanShopViewV2(self, _build=True),
             CoinsShopViewV2(self),
             CoinsShopOrderViewV2(self, _build=True),
-            ManageTicketViewV2(self),
             NotifyViewV2(self, _build=True),
             ProposalViewV2(self, _build=True),
         ]
