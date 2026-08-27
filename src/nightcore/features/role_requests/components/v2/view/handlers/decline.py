@@ -29,12 +29,13 @@ from src.nightcore.utils.permissions import (
 )
 from src.utils._enums import ChannelType, RoleRequestStateEnum
 
+from ..role_request_state import RoleRequestStateView
+
 if TYPE_CHECKING:
     from src.infra.db.models.discord_webhook import DiscordWebhook
     from src.nightcore.bot import Nightcore
 
     from ..check_role_request import CheckRoleRequestView
-    from ..role_request_state import RoleRequestStateView
 
 logger = logging.getLogger(__name__)
 

@@ -47,9 +47,7 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
         super().__init__()
         self.user = user
         self.bot = bot
-        self.nightcore_notifications_webhook = (
-            nightcore_notifications_webhook
-        )
+        self.nightcore_notifications_webhook = nightcore_notifications_webhook
         self.view = view
         self.state_view_type = state_view
         self.message = message
