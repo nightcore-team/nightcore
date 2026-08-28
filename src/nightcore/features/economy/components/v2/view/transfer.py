@@ -156,11 +156,12 @@ class TransferHistoryViewV2(LayoutView):
             container.add_item(TextDisplay[Self](self.pages[0]))
             container.add_item(Separator[Self]())
 
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}"
+        if len(self.pages) > 1:
+            container.add_item(
+                TextDisplay[Self](
+                    f"-# Page {self.current_page + 1} of {len(self.pages)}"
+                )
             )
-        )
 
         self.add_item(container)
 

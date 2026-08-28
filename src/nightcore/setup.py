@@ -11,6 +11,7 @@ def create_bot(
 
     cog_modules = [
         # meta
+        "src.nightcore.features.meta.commands.help",
         "src.nightcore.features.meta.commands.copy",
         "src.nightcore.features.meta.commands.say",
         "src.nightcore.features.meta.commands.join",
