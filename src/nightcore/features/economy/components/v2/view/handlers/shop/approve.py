@@ -1,4 +1,4 @@
-"""Handle decline clan shop button."""
+"""Handle approve coins shop order button."""
 
 import logging
 from typing import TYPE_CHECKING, cast
@@ -7,11 +7,12 @@ from discord import Guild, Member, Message, Thread
 from discord.interactions import Interaction
 
 from src.infra.db.models import (
-    GuildClansConfig,
+    GuildEconomyConfig,
     GuildLoggingConfig,
     GuildNotificationsConfig,
 )
 from src.infra.db.operations import (
+    get_or_create_user,
     get_shop_order_state,
     get_specified_field,
     get_specified_webhook,
@@ -19,9 +20,10 @@ from src.infra.db.operations import (
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
     MissingPermissionsViewV2,
+    SuccessViewV2,
 )
-from src.nightcore.features.clans.components.v2 import ClanShopViewV2
-from src.nightcore.features.clans.events.dto import ClanShopOrderNotifyDTO
+from src.nightcore.features.economy.components.v2 import CoinsShopOrderViewV2
+from src.nightcore.features.economy.events.dto import CoinsShopOrderNotifyDTO
 from src.nightcore.utils import has_any_role_from_sequence
 from src.utils._enums import ChannelType, ShopOrderStateEnum
 
@@ -31,10 +33,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def handle_decline_clan_shop_button(
+async def handle_approve_coins_shop_order_button(
     interaction: Interaction["Nightcore"],
 ):
-    """Decline shop request button."""
+    """Approve shop order button."""
 
     bot = interaction.client
 
@@ -52,25 +54,25 @@ async def handle_decline_clan_shop_button(
             custom_id=thread.id,
         )
 
-        clans_logging_webhook = await get_specified_webhook(
+        economy_logging_webhook = await get_specified_webhook(
             session=session,
             guild_id=guild.id,
             config_type=GuildLoggingConfig,
-            channel_type=ChannelType.LOGGING_CLANS,
+            channel_type=ChannelType.LOGGING_ECONOMY,
         )
 
-        clans_access_roles_ids = await get_specified_field(
+        economy_access_roles_ids = await get_specified_field(
             session,
             guild_id=guild.id,
-            config_type=GuildClansConfig,
-            field_name="clans_access_roles_ids",
+            config_type=GuildEconomyConfig,
+            field_name="economy_access_roles_ids",
         )
-        if not clans_access_roles_ids:
-            outcome = "clans_access_not_configured"
+        if not economy_access_roles_ids:
+            outcome = "economy_access_not_configured"
 
         if not has_any_role_from_sequence(
             cast(Member, interaction.user),
-            clans_access_roles_ids,
+            economy_access_roles_ids,
         ):
             outcome = "missing_permissions"
         else:
@@ -88,10 +90,29 @@ async def handle_decline_clan_shop_button(
                 if shop_order.state != ShopOrderStateEnum.PENDING:  # type: ignore
                     outcome = "invalid_state"
                 else:
-                    shop_order.state = ShopOrderStateEnum.DENIED  # type: ignore
-                    outcome = "success"
+                    buyer, _ = await get_or_create_user(
+                        session=session,
+                        guild_id=guild.id,
+                        user_id=shop_order.user_id,  # type: ignore
+                    )
 
-                    await session.delete(shop_order)
+                    if buyer.coins < shop_order.payload.get("cost"):  # type: ignore
+                        outcome = "insufficient_funds"
+                    else:
+                        buyer.coins -= shop_order.payload.get("cost")  # type: ignore
+                        shop_order.state = ShopOrderStateEnum.APPROVED  # type: ignore
+                        outcome = "success"
+
+                        await session.delete(shop_order)
+
+    if outcome == "economy_access_not_configured":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка одобрения покупки",
+                "Роли с доступом к экономике не настроены.",
+            )
+        )
+        return
 
     if outcome == "missing_permissions":
         await interaction.response.send_message(
@@ -100,19 +121,10 @@ async def handle_decline_clan_shop_button(
         )
         return
 
-    if outcome == "clans_access_not_configured":
-        await interaction.followup.send(
-            view=ErrorViewV2(
-                "Ошибка отклонения покупки",
-                "Роли с доступом к кланам не настроены.",
-            )
-        )
-        return
-
     if outcome == "order_not_found":
         await interaction.followup.send(
             view=ErrorViewV2(
-                "Ошибка отклонения покупки",
+                "Ошибка одобрения покупки",
                 "Заказ не найден в базе данных.",
             )
         )
@@ -121,31 +133,40 @@ async def handle_decline_clan_shop_button(
     elif outcome == "invalid_state":
         await interaction.followup.send(
             view=ErrorViewV2(
-                "Ошибка отклонения покупки",
+                "Ошибка одобрения покупки",
                 "Заказ уже был обработан ранее.",
             )
         )
+        return
+
+    elif outcome == "insufficient_funds":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка одобрения покупки",
+                "Недостаточно средств на балансе пользователя.",
+            )
+        )
+        return
 
     elif outcome == "success":
         assert shop_order is not None
 
         await interaction.followup.send(
-            view=ErrorViewV2(
-                "Покупка отклонена",
-                f"Покупка товара **{shop_order.payload.get('item')}** для клана "  # noqa: E501
-                f"**{shop_order.payload.get('clan_name')}** была отклонена.",
+            view=SuccessViewV2(
+                "Покупка одобрена",
+                f"Покупка товара **{shop_order.payload.get('item')}** "
+                "была успешно одобрена.",
             ),
             ephemeral=False,
         )
 
-        view = ClanShopViewV2(
+        view = CoinsShopOrderViewV2(
             ping_roles_ids=None,
             user_id=shop_order.user_id,
-            clan_name=shop_order.payload.get("clan_name"),
-            clan_balance_before=shop_order.payload.get("balance_before"),
-            clan_balance_after=shop_order.payload.get("balance_after"),
+            user_balance_before=shop_order.payload.get("balance_before"),
+            user_balance_after=shop_order.payload.get("balance_after"),
             item_name=shop_order.payload.get("item"),
-            item_cost=shop_order.payload.get("cost"),
+            item_price=shop_order.payload.get("cost"),
             disable_buttons=True,
         )
 
@@ -154,26 +175,26 @@ async def handle_decline_clan_shop_button(
             await thread.edit(archived=True, locked=True)
         except Exception as e:
             logger.error(
-                "[clans] Error occurred while editing message and thread: %s",
+                "[economy] Error occurred while editing message and "
+                "thread: %s",
                 e,
             )
             return
 
         bot.dispatch(
-            "clan_shop_order_notify",
-            dto=ClanShopOrderNotifyDTO(
+            "coins_shop_order_notify",
+            dto=CoinsShopOrderNotifyDTO(
                 guild=guild,
-                event_type="clan_shop_order_notify",
+                event_type="coins_shop_order_notify",
                 user_id=shop_order.user_id,
                 moderator_id=interaction.user.id,
-                state=ShopOrderStateEnum.DENIED,
-                clan_name=shop_order.payload.get("clan_name"),  # type: ignore
+                state=ShopOrderStateEnum.APPROVED,
                 item_name=shop_order.payload.get("item"),
                 item_cost=shop_order.payload.get("cost"),
-                clan_balance_before=shop_order.payload.get("balance_before"),
-                clan_balance_after=shop_order.payload.get("balance_after"),
+                user_balance_before=shop_order.payload.get("balance_before"),
+                user_balance_after=shop_order.payload.get("balance_after"),
                 custom_id=thread.id,
-                logging_webhook=clans_logging_webhook,
+                logging_webhook=economy_logging_webhook,
                 notifications_webhook=nightcore_notifications_webhook,  # type: ignore
             ),
         )

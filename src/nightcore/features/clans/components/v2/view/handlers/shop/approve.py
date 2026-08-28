@@ -1,7 +1,5 @@
 """Handle approve clan shop button."""
 
-"""Clan shop view."""
-
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -166,8 +164,8 @@ async def handle_approve_clan_shop_button(
         await interaction.followup.send(
             view=SuccessViewV2(
                 "Покупка одобрена",
-                f"Покупка товара **{shop_order.payload.get('item')}** для клана "
-                f"**{shop_order.payload.get('clan_name')}** была успешно одобрена.",
+                f"Покупка товара **{shop_order.payload.get('item')}** для клана "  # noqa: E501
+                f"**{shop_order.payload.get('clan_name')}** была успешно одобрена.",  # noqa: E501
             ),
             ephemeral=False,
         )

@@ -45,7 +45,10 @@ class CoinsShopNotifyEvent(Cog):
             )
             return
 
-        if not dto.notifications_webhook or not dto.notifications_webhook.valid:
+        if (
+            not dto.notifications_webhook
+            or not dto.notifications_webhook.valid
+        ):
             logger.info(
                 "[%s/log] No notifications webhook configured for guild %s.",
                 dto.event_type,
@@ -54,11 +57,10 @@ class CoinsShopNotifyEvent(Cog):
 
         if member:
             view = CoinsShopOrderNotifyViewV2(
-                bot=self.bot,
                 moderator_id=dto.moderator_id,
                 state=dto.state,
                 item_name=dto.item_name,
-                item_price=dto.item_price,
+                item_cost=dto.item_cost,
                 user_balance_before=dto.user_balance_before,
                 user_balance_after=dto.user_balance_after,
                 custom_id=dto.custom_id,
@@ -88,7 +90,10 @@ class CoinsShopNotifyEvent(Cog):
                 )
             finally:
                 # fallback
-                if dto.notifications_webhook and dto.notifications_webhook.valid:
+                if (
+                    dto.notifications_webhook
+                    and dto.notifications_webhook.valid
+                ):
                     await send_to_webhook(
                         self.bot,
                         dto.notifications_webhook,
@@ -103,7 +108,7 @@ class CoinsShopNotifyEvent(Cog):
             dto.user_id,
             dto.guild.id,
             dto.item_name,
-            dto.item_price,
+            dto.item_cost,
             dto.user_balance_before,
             dto.user_balance_after,
         )

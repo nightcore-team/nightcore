@@ -36,7 +36,7 @@ from src.nightcore.components.view.v2 import (
     MissingPermissionsViewV2,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.utils._enums import ShopOrderStateEnum
+from src.utils._enums import ShopOrderStateEnum, ShopOrderTypeEnum
 
 from .order import CoinsShopOrderViewV2
 
@@ -96,6 +96,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
         bot = interaction.client
 
         await interaction.response.defer(ephemeral=True)
+
         outcome = ""
         async with specified_guild_config(
             bot, guild.id, GuildEconomyConfig
@@ -189,7 +190,6 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 return
 
             oview = CoinsShopOrderViewV2(
-                bot,
                 ping_roles_ids=ping_roles_ids,  # type: ignore
                 user_id=interaction.user.id,
                 user_balance_before=buyer.coins,
@@ -205,6 +205,14 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         guild_id=guild.id,
                         user_id=interaction.user.id,
                         state=ShopOrderStateEnum.PENDING,
+                        type=ShopOrderTypeEnum.COINS,
+                        payload={
+                            "user_id": interaction.user.id,
+                            "cost": float(price),
+                            "item": item,
+                            "balance_before": buyer.coins,
+                            "balance_after": buyer.coins - float(price),
+                        },
                     )
                     session.add(state)
             except Exception as e:
@@ -226,8 +234,8 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 return
 
             try:
-                message, _ = await asyncio.gather(
-                    thread.send(view=oview.make_component()),
+                await asyncio.gather(
+                    thread.send(view=oview),
                     interaction.followup.send(
                         f"Ваш запрос на покупку был успешно создан: {thread.jump_url}",  # noqa: E501
                         ephemeral=True,
@@ -250,10 +258,6 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                     ephemeral=True,
                 )
                 return
-
-            oview.custom_id = state.custom_id
-
-            asyncio.create_task(message.edit(view=oview.make_component()))
 
 
 class CoinsShopViewV2(LayoutView):

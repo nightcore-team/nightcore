@@ -15,11 +15,7 @@ from src.config.config import config
 from src.infra.db.operations import reset_users_voice_activity
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
-from src.nightcore.features.clans.components.v2 import ClanShopViewV2
-from src.nightcore.features.economy.components.v2 import (
-    CoinsShopOrderViewV2,
-    CoinsShopViewV2,
-)
+from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
 from src.nightcore.features.moderation.components.v2 import (
     NotifyViewV2,
 )
@@ -109,9 +105,7 @@ class Nightcore(Bot):
         """Initialize persistent views."""
 
         views: list[discord.ui.LayoutView] = [
-            ClanShopViewV2(self, _build=True),
             CoinsShopViewV2(self),
-            CoinsShopOrderViewV2(self, _build=True),
             NotifyViewV2(self, _build=True),
             ProposalViewV2(self, _build=True),
         ]

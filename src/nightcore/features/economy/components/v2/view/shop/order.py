@@ -1,23 +1,8 @@
-"""
-Coins Shop Order View V2.
+"""Coins shop order view v2."""
 
-Used for displaying and managing shop orders.
-"""
+from typing import Self
 
-import logging
-import re
-from typing import TYPE_CHECKING, Self, cast
-
-from discord import (
-    ButtonStyle,
-    Color,
-    Guild,
-    Interaction,
-    Member,
-    Message,
-    Thread,
-)
-from discord import Container as ContainerOverride
+from discord import ButtonStyle, Color
 from discord.ui import (
     ActionRow,
     Button,
@@ -25,479 +10,81 @@ from discord.ui import (
     LayoutView,
     Separator,
     TextDisplay,
-    button,
 )
-
-from src.infra.db.models import (
-    GuildEconomyConfig,
-    GuildLoggingConfig,
-    GuildNotificationsConfig,
-)
-from src.infra.db.operations import (
-    get_or_create_user,
-    get_shop_order_state,
-    get_specified_field,
-    get_specified_webhook,
-)
-from src.nightcore.components.view.v2 import (
-    ErrorViewV2,
-    MissingPermissionsViewV2,
-    SuccessViewV2,
-)
-from src.nightcore.features.economy.events.dto import CoinsShopOrderNotifyDTO
-from src.nightcore.utils import has_any_role_from_sequence
-from src.nightcore.utils.types import MessageComponentType
-from src.utils._enums import ChannelType, ShopOrderStateEnum
-
-if TYPE_CHECKING:
-    from src.nightcore.bot import Nightcore
-
-logger = logging.getLogger(__name__)
-
-
-class CoinsShopOrderActionRow(ActionRow["CoinsShopOrderViewV2"]):
-    """Coins shop action row."""
-
-    @button(
-        label="Одобрить",
-        style=ButtonStyle.grey,
-        emoji="<:nightcoreAccept:1540450035907436625>",
-        custom_id="coins_shop:approve",
-    )
-    async def approve(
-        self,
-        interaction: Interaction,
-        button: Button["CoinsShopOrderViewV2"],
-    ):
-        """Approve shop request button."""
-        view = cast("CoinsShopOrderViewV2", self.view)
-        guild = cast(Guild, interaction.guild)
-        bot = view.bot
-
-        message = cast(Message, interaction.message)
-        thread = cast(Thread, interaction.channel)
-
-        view.parse_main_component_data(components=message.components)
-
-        outcome = ""
-
-        await interaction.response.defer()
-
-        async with bot.uow.start() as session:
-            shop_order = await get_shop_order_state(
-                session=session,
-                guild_id=guild.id,
-                custom_id=view.custom_id,  # type: ignore
-            )
-
-            economy_logging_webhook = await get_specified_webhook(
-                session=session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_ECONOMY,
-            )
-
-            economy_access_roles_ids = await get_specified_field(
-                session,
-                guild_id=guild.id,
-                config_type=GuildEconomyConfig,
-                field_name="economy_access_roles_ids",
-            )
-            if not economy_access_roles_ids:
-                outcome = "economy_access_not_configured"
-
-            if not has_any_role_from_sequence(
-                cast(Member, interaction.user),
-                economy_access_roles_ids,
-            ):
-                outcome = "missing_permissions"
-            else:
-                nightcore_notifications_webhook = await get_specified_webhook(
-                    session=session,
-                    guild_id=guild.id,
-                    config_type=GuildNotificationsConfig,
-                    channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
-                )
-
-                if not shop_order:
-                    outcome = "order_not_found"
-
-                if not outcome:
-                    if shop_order.state != ShopOrderStateEnum.PENDING:  # type: ignore
-                        outcome = "invalid_state"
-                    else:
-                        buyer, _ = await get_or_create_user(
-                            session=session,
-                            guild_id=guild.id,
-                            user_id=cast(int, view.user_id),
-                        )
-
-                        if buyer.coins < view.item_price:  # type: ignore
-                            outcome = "insufficient_funds"
-                        else:
-                            buyer.coins -= view.item_price  # type: ignore
-                            shop_order.state = ShopOrderStateEnum.APPROVED  # type: ignore
-                            outcome = "success"
-
-                            await session.delete(shop_order)
-
-        if outcome == "economy_access_not_configured":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка одобрения покупки",
-                    "Роли с доступом к экономике не настроены.",
-                )
-            )
-            return
-
-        if outcome == "missing_permissions":
-            await interaction.followup.send(
-                view=MissingPermissionsViewV2(),
-                ephemeral=True,
-            )
-            return
-
-        if outcome == "order_not_found":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка одобрения покупки",
-                    "Заказ не найден в базе данных.",
-                ),
-                ephemeral=True,
-            )
-            return
-
-        elif outcome == "invalid_state":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка одобрения покупки",
-                    "Заказ уже был обработан ранее.",
-                ),
-                ephemeral=True,
-            )
-
-        elif outcome == "insufficient_funds":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка одобрения покупки",
-                    "Недостаточно средств на балансе пользователя.",
-                ),
-                ephemeral=True,
-            )
-            return
-
-        elif outcome == "success":
-            await interaction.followup.send(
-                view=SuccessViewV2(
-                    "Покупка одобрена",
-                    f"Покупка товара **{view.item_name}** была успешно одобрена.",  # noqa: E501
-                ),
-                ephemeral=True,
-            )
-
-        try:
-            await message.edit(view=view.make_component(disable_all=True))
-            await thread.edit(archived=True, locked=True)
-        except Exception as e:
-            logger.error(
-                "[clans] Error occurred while editing message and thread: %s",
-                e,
-            )
-            return
-
-        bot.dispatch(
-            "coins_shop_order_notify",
-            dto=CoinsShopOrderNotifyDTO(
-                guild=guild,
-                event_type="coins_shop_order_notify",
-                user_id=cast(int, view.user_id),
-                moderator_id=interaction.user.id,
-                state=ShopOrderStateEnum.APPROVED,
-                item_name=cast(str, view.item_name),
-                item_price=cast(float, view.item_price),
-                user_balance_before=cast(float, view.user_balance_before),
-                user_balance_after=cast(float, view.user_balance_after),
-                custom_id=cast(int, view.custom_id),
-                logging_webhook=economy_logging_webhook,
-                notifications_webhook=nightcore_notifications_webhook,  # type: ignore
-            ),
-        )
-
-    @button(
-        label="Отклонить",
-        style=ButtonStyle.grey,
-        emoji="<:nightcoreDecline:1540450233417338960>",
-        custom_id="coins_shop:decline",
-    )
-    async def decline(
-        self,
-        interaction: Interaction,
-        button: Button["CoinsShopOrderViewV2"],
-    ):
-        """Decline shop request button."""
-
-        view = cast("CoinsShopOrderViewV2", self.view)
-        guild = cast(Guild, interaction.guild)
-        bot = view.bot
-
-        message = cast(Message, interaction.message)
-        thread = cast(Thread, interaction.channel)
-
-        view.parse_main_component_data(components=message.components)
-
-        outcome = ""
-
-        await interaction.response.defer()
-
-        async with bot.uow.start() as session:
-            shop_order = await get_shop_order_state(
-                session=session,
-                guild_id=guild.id,
-                custom_id=view.custom_id,  # type: ignore
-            )
-
-            economy_logging_webhook = await get_specified_webhook(
-                session=session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_ECONOMY,
-            )
-
-            economy_access_roles_ids = await get_specified_field(
-                session,
-                guild_id=guild.id,
-                config_type=GuildEconomyConfig,
-                field_name="economy_access_roles_ids",
-            )
-            if not economy_access_roles_ids:
-                outcome = "economy_access_not_configured"
-
-            if not has_any_role_from_sequence(
-                cast(Member, interaction.user),
-                economy_access_roles_ids,
-            ):
-                outcome = "missing_permissions"
-            else:
-                nightcore_notifications_webhook = await get_specified_webhook(
-                    session=session,
-                    guild_id=guild.id,
-                    config_type=GuildNotificationsConfig,
-                    channel_type=ChannelType.NIGHTCORE_NOTIFICATIONS,
-                )
-
-                if not shop_order:
-                    outcome = "order_not_found"
-
-                if not outcome:
-                    if shop_order.state != ShopOrderStateEnum.PENDING:  # type: ignore
-                        outcome = "invalid_state"
-                    else:
-                        shop_order.state = ShopOrderStateEnum.DENIED  # type: ignore
-                        outcome = "success"
-
-        if outcome == "economy_access_not_configured":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка отклонения покупки",
-                    "Роли с доступом к экономике не настроены.",
-                )
-            )
-            return
-
-        if outcome == "missing_permissions":
-            await interaction.followup.send(
-                view=MissingPermissionsViewV2(),
-                ephemeral=True,
-            )
-            return
-
-        if outcome == "order_not_found":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка отклонения покупки",
-                    "Заказ не найден в базе данных.",
-                )
-            )
-            return
-
-        elif outcome == "invalid_state":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка отклонения покупки",
-                    "Заказ уже был обработан ранее.",
-                )
-            )
-
-        elif outcome == "success":
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Покупка отклонена",
-                    f"Покупка товара **{view.item_name}** была отклонена.",
-                )
-            )
-
-            try:
-                await message.edit(view=view.make_component(disable_all=True))
-                await thread.edit(archived=True, locked=True)
-            except Exception as e:
-                logger.error(
-                    "[clans] Error occurred while editing message and thread: %s",  # noqa: E501
-                    e,
-                )
-                return
-
-            bot.dispatch(
-                "coins_shop_order_notify",
-                dto=CoinsShopOrderNotifyDTO(
-                    guild=guild,
-                    event_type="coins_shop_order_notify",
-                    user_id=cast(int, view.user_id),
-                    moderator_id=interaction.user.id,
-                    state=ShopOrderStateEnum.DENIED,
-                    user_balance_before=cast(float, view.user_balance_before),
-                    item_name=cast(str, view.item_name),
-                    item_price=cast(float, view.item_price),
-                    user_balance_after=cast(float, view.user_balance_after),
-                    custom_id=cast(int, view.custom_id),
-                    logging_webhook=economy_logging_webhook,
-                    notifications_webhook=nightcore_notifications_webhook,  # type: ignore
-                ),
-            )
 
 
 class CoinsShopOrderViewV2(LayoutView):
-    """Clan shop view v2."""
+    """Coins shop order view v2."""
 
     def __init__(
         self,
-        bot: "Nightcore",
         ping_roles_ids: list[int] | None = None,
         user_id: int | None = None,
         user_balance_before: float | None = None,
         user_balance_after: float | None = None,
         item_name: str | None = None,
         item_price: float | None = None,
-        custom_id: int | None = None,
-        _build: bool = False,
+        disable_buttons: bool = False,
     ) -> None:
         super().__init__(timeout=None)
 
-        self.bot = bot
-        self.ping_roles_ids = ping_roles_ids or []
-        self.user_id = user_id
-        self.user_balance_before = user_balance_before
-        self.user_balance_after = user_balance_after
-        self.item_name = item_name
-        self.item_price = item_price
-        self.custom_id = custom_id
+        """Create the coins shop order view component."""
+        container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
-        self.actions = CoinsShopOrderActionRow()
-
-        if _build:
-            self.make_component()
-
-    def _disable_buttons(self):
-        if self.actions:
-            for item in self.actions.children:
-                if isinstance(item, Button):
-                    item.disabled = True  # type: ignore
-
-    def parse_main_component_data(
-        self, components: list[MessageComponentType]
-    ) -> None:
-        """Parse main data from components."""
-
-        roles_pattern = re.compile(r"<@&(\d+)>")
-
-        pattern = re.compile(
-            r"""> Пользователь: <@(?:\d+)> \(`(?P<user_id>\d+)`\)\s*"""
-            r"""> Баланс пользователя \(до\): \*\*(?P<balance_before>[\d.]+)\*\*\s*"""  # noqa: E501
-            r"""> Баланс пользователя \(после\): \*\*(?P<balance_after>[\d.]+)\*\*\s*"""  # noqa: E501
-            r"""> Товар: \*\*(?P<item_name>[^*]+)\*\*\s*"""
-            r"""> Цена: \*\*(?P<price>[\d.]+)\*\*\s*"""
-            r"""> Идентификатор покупки: \*\*(?P<purchase_id>\d+)\*\*""",
-            re.MULTILINE,
-        )
-
-        for component in components:
-            if isinstance(component, ContainerOverride):
-                for item in component.children:
-                    if item.id == 2:  # type: ignore
-                        content = item.content  # type: ignore
-                        self.ping_roles_ids = [
-                            int(rid)
-                            for rid in roles_pattern.findall(content)  # type: ignore
-                        ]
-
-                    if item.id == 7:  # type: ignore
-                        content = item.content  # type: ignore
-                        try:
-                            match = pattern.search(str(content))  # type: ignore
-                            if not match:
-                                raise ValueError(
-                                    "No match found in the content."
-                                )
-                            self.user_id = int(match.group("user_id"))
-                            self.user_balance_before = float(
-                                match.group("balance_before")
-                            )
-                            self.user_balance_after = float(
-                                match.group("balance_after")
-                            )
-                            self.item_name = match.group("item_name")
-                            self.item_price = float(match.group("price"))
-                            self.custom_id = int(match.group("purchase_id"))
-
-                        except Exception as e:
-                            logger.exception(
-                                "[coins/shop/order] Error parsing component ID 7: %s",  # noqa: E501
-                                e,
-                            )
-        return None
-
-    def make_component(self, disable_all: bool = False) -> Self:
-        """Create the clan shop view component."""
-
-        self.clear_items()
-
-        container = Container[Self](
-            accent_color=Color.from_str("#5EC9B3")
-        )  # 1
-        container.add_item(  # 2
-            TextDisplay[Self](
-                f"{','.join(f'<@&{rid}>' for rid in self.ping_roles_ids)}"
+        if ping_roles_ids:
+            container.add_item(
+                TextDisplay[Self](
+                    f"{','.join(f'<@&{rid}>' for rid in ping_roles_ids)}"
+                )
             )
-        )
-        container.add_item(Separator[Self]())  # 3
-        container.add_item(  # 4
+
+        container.add_item(Separator[Self]())
+        container.add_item(
             TextDisplay[Self](
                 "## <:nightcorepShopping:1540451786853191790> Запрос на покупку товара"  # noqa: E501
             )
         )
-        container.add_item(Separator[Self]())  # 5
-
-        # 6
-        container.add_item(TextDisplay[Self]("### Информация о покупке:"))
-        # 7
-        container.add_item(
-            TextDisplay[Self](
-                f"> Пользователь: <@{self.user_id}> (`{self.user_id}`)\n"
-                f"> Баланс пользователя (до): **{self.user_balance_before}**\n"
-                f"> Баланс пользователя (после): **{self.user_balance_after}**\n"  # noqa: E501
-                f"> Товар: **{self.item_name}**\n"
-                f"> Цена: **{self.item_price}**\n"
-                f"> Идентификатор покупки: **{self.custom_id}**"
-            )
-        )
-        # 8
         container.add_item(Separator[Self]())
 
-        # 9 (10, 11)
-        container.add_item(self.actions)
+        container.add_item(TextDisplay[Self]("### Информация о покупке:"))
 
-        if disable_all:
-            self._disable_buttons()
+        container.add_item(
+            TextDisplay[Self](
+                f"> Пользователь: <@{user_id}> (`{user_id}`)\n"
+                f"> Баланс пользователя (до): **{user_balance_before}**\n"
+                f"> Баланс пользователя (после): **{user_balance_after}**\n"
+                f"> Товар: **{item_name}**\n"
+                f"> Цена: **{item_price}**"
+            )
+        )
+
+        container.add_item(Separator[Self]())
+
+        container.add_item(
+            ActionRow[Self](
+                Button(
+                    label="Одобрить",
+                    style=ButtonStyle.grey,
+                    emoji="<:nightcoreAccept:1540450035907436625>",
+                    custom_id="coins_shop:approve",
+                    disabled=disable_buttons,
+                ),
+                Button(
+                    label="Отклонить",
+                    style=ButtonStyle.grey,
+                    emoji="<:nightcoreDecline:1540450233417338960>",
+                    custom_id="coins_shop:decline",
+                    disabled=disable_buttons,
+                ),
+            )
+        )
+
+        container.add_item(Separator[Self]())
+
+        container.add_item(
+            TextDisplay[Self](
+                "Товар будет выдан после проверки модерацией вашего запроса."
+            )
+        )
 
         self.add_item(container)
-
-        return self

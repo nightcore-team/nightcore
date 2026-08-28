@@ -23,7 +23,7 @@ class CoinsShopOrderNotifyDTO(BaseEventDTO):
     user_balance_before: float
     user_balance_after: float
     item_name: str
-    item_price: float
+    item_cost: float
     custom_id: int
     state: ShopOrderStateEnum
     logging_webhook: DiscordWebhook | None
@@ -51,7 +51,7 @@ class CoinsShopOrderNotifyDTO(BaseEventDTO):
             .add_field(name="Предмет", value=f"**{self.item_name}**")
             .add_field(
                 name="Цена",
-                value=f"**{self.item_price}**",
+                value=f"**{self.item_cost}**",
             )
             .add_field(
                 name="Баланс до покупки",

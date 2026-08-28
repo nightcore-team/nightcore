@@ -4,8 +4,7 @@ Order notification view v2 component.
 Used for displaying notifications about shop order status changes.
 """
 
-from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from discord import Color
 from discord.ui import (
@@ -17,28 +16,21 @@ from discord.ui import (
 
 from src.utils._enums import ShopOrderStateEnum
 
-if TYPE_CHECKING:
-    from src.nightcore.bot import Nightcore
-
-from src.nightcore.utils import discord_ts
-
 
 class CoinsShopOrderNotifyViewV2(LayoutView):
     """Shop notify view v2."""
 
     def __init__(
         self,
-        bot: "Nightcore",
         state: ShopOrderStateEnum,
         moderator_id: int,
         user_balance_before: float,
         user_balance_after: float,
         item_name: str,
-        item_price: float,
+        item_cost: float,
         custom_id: int,
     ) -> None:
         super().__init__(timeout=None)
-        self.bot = bot
 
         container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
@@ -72,17 +64,10 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
                 f"> Баланс пользователя (до): **{user_balance_before}**\n"
                 f"> Баланс пользователя (после): **{user_balance_after}**\n"
                 f"> Товар: **{item_name}**\n"
-                f"> Цена: **{item_price}**\n"
+                f"> Цена: **{item_cost}**\n"
                 f"> Идентификатор покупки: **{custom_id}**"
             )
         )
         container.add_item(Separator[Self]())
-
-        now = datetime.now(UTC)
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Powered by {self.bot.user.name} in {discord_ts(now)}"  # type: ignore
-            )
-        )
 
         self.add_item(container)
