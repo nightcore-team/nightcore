@@ -37,8 +37,8 @@ class CoinsShopOrderViewV2(LayoutView):
                     f"{','.join(f'<@&{rid}>' for rid in ping_roles_ids)}"
                 )
             )
+            container.add_item(Separator[Self]())
 
-        container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](
                 "## <:nightcorepShopping:1540451786853191790> Запрос на покупку товара"  # noqa: E501

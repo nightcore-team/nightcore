@@ -40,8 +40,8 @@ class ClanShopViewV2(LayoutView):
                     f"{','.join(f'<@&{rid}>' for rid in ping_roles_ids)}"
                 )
             )
+            container.add_item(Separator[Self]())
 
-        container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](
                 "## <:nightcoreShoppingPurple:1540718246523568268> Запрос на покупку товара"  # noqa: E501
