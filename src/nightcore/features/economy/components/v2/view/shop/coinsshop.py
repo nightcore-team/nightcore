@@ -36,7 +36,7 @@ from src.nightcore.components.view.v2 import (
     MissingPermissionsViewV2,
 )
 from src.nightcore.services.config import specified_guild_config
-from src.utils._enums import ShopOrderStateEnum, ShopOrderTypeEnum
+from src.utils._enums import ShopOrderStateEnum
 
 from .order import CoinsShopOrderViewV2
 
@@ -205,7 +205,6 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         guild_id=guild.id,
                         user_id=interaction.user.id,
                         state=ShopOrderStateEnum.PENDING,
-                        type=ShopOrderTypeEnum.COINS,
                         payload={
                             "user_id": interaction.user.id,
                             "cost": float(price),

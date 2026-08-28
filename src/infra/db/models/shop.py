@@ -9,7 +9,7 @@ from src.infra.db.models._annot import (
 )
 from src.infra.db.models._mixins import IdIntegerMixin
 from src.infra.db.models.base import Base
-from src.utils._enums import ShopOrderStateEnum, ShopOrderTypeEnum
+from src.utils._enums import ShopOrderStateEnum
 
 
 class ShopOrderState(IdIntegerMixin, Base):
@@ -28,17 +28,6 @@ class ShopOrderState(IdIntegerMixin, Base):
         ),
         nullable=False,
     )
-
-    type: Mapped[ShopOrderTypeEnum] = mapped_column(
-        Enum(
-            ShopOrderTypeEnum,
-            native_enum=False,
-            values_callable=lambda x: [e.value for e in x],  # type: ignore
-            validate_strings=True,
-        ),
-        nullable=False,
-    )
-
     payload: Mapped[ClanShopOrderPayloadAnnot | CoinsShopOrderPayloadAnnot] = (
         mapped_column(
             JSON,

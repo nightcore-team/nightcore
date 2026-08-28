@@ -78,11 +78,6 @@ class ShopOrderStateEnum(Enum):
     DENIED = "denied"
 
 
-class ShopOrderTypeEnum(Enum):
-    CLAN = "clan"
-    COINS = "coins"
-
-
 class MultiplierTypeEnum(Enum):
     EXP = "exp"
     COINS = "coins"

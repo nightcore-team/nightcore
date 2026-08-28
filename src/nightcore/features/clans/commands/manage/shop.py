@@ -30,11 +30,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
-from src.utils._enums import (
-    ClanMemberRoleEnum,
-    ShopOrderStateEnum,
-    ShopOrderTypeEnum,
-)
+from src.utils._enums import ClanMemberRoleEnum, ShopOrderStateEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -213,7 +209,6 @@ async def shop(
                     guild_id=guild.id,
                     user_id=interaction.user.id,
                     state=ShopOrderStateEnum.PENDING,
-                    type=ShopOrderTypeEnum.CLAN,
                     payload={
                         "user_id": interaction.user.id,
                         "cost": selected_item.cost,  # type: ignore
