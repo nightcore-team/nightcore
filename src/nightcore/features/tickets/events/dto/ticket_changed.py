@@ -22,6 +22,7 @@ class TicketChangeEventData(TicketBaseEventData):
     moderator_id: int | None
     state: TicketStateEnum
     logging_webhook: DiscordWebhook | None = None
+    category: str = "ticket"
 
     def build_embed(self, bot: "Nightcore") -> discord.Embed:
         """Build a Discord embed for the ticket event."""
