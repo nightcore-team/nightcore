@@ -7,6 +7,9 @@ from discord import app_commands
 from discord.interactions import Interaction
 
 from src.nightcore.components.view.v2 import MissingPermissionsViewV2
+from src.nightcore.features.clans.components.v2.view.handlers import (
+    handle_clan_shop_interaction,
+)
 from src.nightcore.features.clans.components.v2.view.handlers.info import (
     handle_clan_info_button,
 )
@@ -64,6 +67,11 @@ async def setup(bot: "Nightcore") -> None:
 
                 case str() if custom_id.startswith("clan:"):
                     await handle_clan_info_button(interaction=interaction)
+
+                case str() if custom_id.startswith("clan_shop:"):
+                    await handle_clan_shop_interaction(
+                        interaction=interaction, custom_id=custom_id
+                    )
 
                 case str() if custom_id.startswith("role_request:"):
                     await handle_role_request_interaction(

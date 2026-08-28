@@ -76,3 +76,18 @@ class CasinoBetAnnot(TypedDict):
     bet: int
     selected_color: str
     result_coins: int | None
+
+
+class BaseShopOrderPayloadAnnot(TypedDict):
+    user_id: int
+    cost: int
+    item: str
+    balance_before: int
+    balance_after: int
+
+
+class ClanShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot):
+    clan_name: str
+
+
+class CoinsShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot): ...

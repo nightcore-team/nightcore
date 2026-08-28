@@ -24,7 +24,7 @@ class ClanShopOrderNotifyDTO(BaseEventDTO):
     clan_balance_before: float
     clan_balance_after: float
     item_name: str
-    item_price: float
+    item_cost: float
     custom_id: int
     state: ShopOrderStateEnum
     logging_webhook: DiscordWebhook | None
@@ -57,7 +57,7 @@ class ClanShopOrderNotifyDTO(BaseEventDTO):
             .add_field(name="Предмет", value=f"**{self.item_name}**")
             .add_field(
                 name="Цена",
-                value=f"**{self.item_price}**",
+                value=f"**{self.item_cost}**",
             )
             .add_field(
                 name="Баланс клана до покупки",

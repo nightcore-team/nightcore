@@ -331,7 +331,7 @@ async def get_all_pending_notifications(
 
 
 async def get_shop_order_state(
-    session: AsyncSession, *, guild_id: int, custom_id: str
+    session: AsyncSession, *, guild_id: int, custom_id: int
 ) -> ShopOrderState | None:
     """Get the shop order state from the database."""
     stmt = (

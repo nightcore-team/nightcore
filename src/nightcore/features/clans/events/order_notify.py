@@ -45,7 +45,10 @@ class ClanShopNotifyEvent(Cog):
 
         gather_list.append(send_webhook_message(bot=self.bot, dto=dto))
 
-        if not dto.notifications_webhook or not dto.notifications_webhook.valid:
+        if (
+            not dto.notifications_webhook
+            or not dto.notifications_webhook.valid
+        ):
             logger.error(
                 "[%s/log] No notifications webhook configured for guild %s.",
                 dto.event_type,
@@ -55,12 +58,11 @@ class ClanShopNotifyEvent(Cog):
         # Намагаємось відправити в ДМ
         if member:
             view = ShopNotifyViewV2(
-                bot=self.bot,
                 moderator_id=dto.moderator_id,
                 state=dto.state,
                 clan_name=dto.clan_name,
                 item_name=dto.item_name,
-                item_price=dto.item_price,
+                item_cost=dto.item_cost,
                 clan_balance_before=dto.clan_balance_before,
                 clan_balance_after=dto.clan_balance_after,
                 custom_id=dto.custom_id,
@@ -84,7 +86,10 @@ class ClanShopNotifyEvent(Cog):
                 )
 
                 # fallback
-                if dto.notifications_webhook and dto.notifications_webhook.valid:
+                if (
+                    dto.notifications_webhook
+                    and dto.notifications_webhook.valid
+                ):
                     gather_list.append(
                         send_to_webhook(
                             self.bot,
@@ -119,7 +124,7 @@ class ClanShopNotifyEvent(Cog):
             dto.user_id,
             dto.guild.id,
             dto.item_name,
-            dto.item_price,
+            dto.item_cost,
             dto.clan_balance_before,
             dto.clan_balance_after,
         )

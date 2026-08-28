@@ -30,7 +30,11 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
-from src.utils._enums import ClanMemberRoleEnum, ShopOrderStateEnum
+from src.utils._enums import (
+    ClanMemberRoleEnum,
+    ShopOrderStateEnum,
+    ShopOrderTypeEnum,
+)
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -193,14 +197,13 @@ async def shop(
             return
 
         view = ClanShopViewV2(
-            bot,
             ping_roles_ids=clan_buy_ping_roles_ids,
             user_id=interaction.user.id,
             clan_name=clan.name,
             clan_balance_before=clan.coins,
             clan_balance_after=clan.coins - selected_item.cost,  # type: ignore
             item_name=iname,
-            item_price=selected_item.cost,  # type: ignore
+            item_cost=selected_item.cost,  # type: ignore
         )
 
         try:
@@ -210,8 +213,18 @@ async def shop(
                     guild_id=guild.id,
                     user_id=interaction.user.id,
                     state=ShopOrderStateEnum.PENDING,
+                    type=ShopOrderTypeEnum.CLAN,
+                    payload={
+                        "user_id": interaction.user.id,
+                        "cost": selected_item.cost,  # type: ignore
+                        "item": iname,
+                        "balance_before": clan.coins,
+                        "balance_after": clan.coins - selected_item.cost,  # type: ignore
+                        "clan_name": clan.name,
+                    },
                 )
                 session.add(state)
+
         except Exception as e:
             logger.exception(
                 "[clans/shop] Failed to create shop order state: %s", e
@@ -226,8 +239,8 @@ async def shop(
             return
 
         try:
-            message, _ = await asyncio.gather(
-                thread.send(view=view.make_component()),
+            await asyncio.gather(
+                thread.send(view=view),
                 interaction.followup.send(
                     f"Ваш запрос на покупку был успешно создан: {thread.jump_url}",  # noqa: E501
                     ephemeral=True,
@@ -245,10 +258,6 @@ async def shop(
                 ephemeral=True,
             )
             return
-
-        view.custom_id = state.custom_id
-
-        asyncio.create_task(message.edit(view=view.make_component()))
 
         logger.info(
             "[command] - invoked user=%s guild=%s clan_name=%s item=%s clan_balance_before=%s clan_balance_after=%s",  # noqa: E501
