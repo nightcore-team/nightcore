@@ -159,18 +159,21 @@ class CountMessageEvent(Cog):
 
             levelup_webhook = levels_config.level_notify_webhook
 
-            exp_multiplier = (
-                multiplers_config.temp_exp_multiplier
-                or multiplers_config.base_exp_multiplier
-            )
-            coins_multiplier = (
-                multiplers_config.temp_coins_multiplier
-                or multiplers_config.base_coins_multiplier
-            )
+            exp_multiplier = multiplers_config.base_exp_multiplier
+            if multiplers_config.temp_exp_multiplier:
+                exp_multiplier *= multiplers_config.temp_exp_multiplier
+
+            coins_multiplier = multiplers_config.base_coins_multiplier
+            if multiplers_config.temp_coins_multiplier:
+                coins_multiplier *= multiplers_config.temp_coins_multiplier
+
             battlepass_multiplier = (
-                multiplers_config.temp_battlepass_multiplier
-                or multiplers_config.base_battlepass_multiplier
+                multiplers_config.base_battlepass_multiplier
             )
+            if multiplers_config.temp_battlepass_multiplier:
+                battlepass_multiplier *= (
+                    multiplers_config.temp_battlepass_multiplier
+                )
 
             # check bonus multiplier
             total_bonus_coins = 0
@@ -185,10 +188,11 @@ class CountMessageEvent(Cog):
             ]
 
             if user_bonus_roles:
-                bonus_coins_by_roles = sum(
+                total_bonus_coins = sum(
                     role.coins for role in user_bonus_roles
                 )
-                total_bonus_coins += bonus_coins_by_roles
+
+            total_coins = coins_multiplier + total_bonus_coins
 
             # count user exp and coins
             new_current_exp = user.current_exp + exp_multiplier
@@ -203,7 +207,7 @@ class CountMessageEvent(Cog):
                 user.exp_to_level = calculate_user_exp_to_level(
                     new_level_int + 1
                 )
-                user.coins += coins_multiplier
+                user.coins += total_coins
                 user.battle_pass_points += 100
 
             user.current_exp = new_current_exp
@@ -211,10 +215,8 @@ class CountMessageEvent(Cog):
             if is_level_up:
                 exp_to_level = user.exp_to_level - user.current_exp
             else:
-                user.coins += coins_multiplier
+                user.coins += total_coins
                 user.battle_pass_points += battlepass_multiplier
-
-            user.coins += total_bonus_coins
 
             new_level = await get_guild_level(
                 session, guild_id=guild.id, level=new_level_int
