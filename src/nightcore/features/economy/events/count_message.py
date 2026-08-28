@@ -177,6 +177,8 @@ class CountMessageEvent(Cog):
 
             # check bonus multiplier
             total_bonus_coins = 0
+            total_bonus_exp = 0
+            total_bonus_battlepass_points = 0
             bonus_roles: list[GuildBonusRole] = (
                 levels_config.bonus_access_roles_ids
             )
@@ -189,13 +191,22 @@ class CountMessageEvent(Cog):
 
             if user_bonus_roles:
                 total_bonus_coins = sum(
-                    role.coins for role in user_bonus_roles
+                    role.coins * coins_multiplier for role in user_bonus_roles
+                )
+                total_bonus_exp = sum(
+                    role.exp * exp_multiplier for role in user_bonus_roles
+                )
+                total_bonus_battlepass_points = sum(
+                    role.battlepass_points * battlepass_multiplier
+                    for role in user_bonus_roles
                 )
 
             total_coins = coins_multiplier + total_bonus_coins
 
             # count user exp and coins
-            new_current_exp = user.current_exp + exp_multiplier
+            new_current_exp = (
+                user.current_exp + exp_multiplier + total_bonus_exp
+            )
             exp_to_level = 0
 
             # keep total exp; exp_to_level is the threshold for next level
@@ -208,7 +219,9 @@ class CountMessageEvent(Cog):
                     new_level_int + 1
                 )
                 user.coins += total_coins
-                user.battle_pass_points += 100
+                user.battle_pass_points += (
+                    100 + battlepass_multiplier + total_bonus_battlepass_points
+                )
 
             user.current_exp = new_current_exp
 
@@ -216,7 +229,9 @@ class CountMessageEvent(Cog):
                 exp_to_level = user.exp_to_level - user.current_exp
             else:
                 user.coins += total_coins
-                user.battle_pass_points += battlepass_multiplier
+                user.battle_pass_points += (
+                    battlepass_multiplier + total_bonus_battlepass_points
+                )
 
             new_level = await get_guild_level(
                 session, guild_id=guild.id, level=new_level_int

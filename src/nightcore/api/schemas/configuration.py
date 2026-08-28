@@ -192,6 +192,8 @@ class GuildLevelRoleSchema(BaseGuildConfig):
 class GuildBonusRoleSchema(BaseGuildConfig):
     role_id: DiscordRoleID
     coins: int
+    exp: int
+    battlepass_points: int
 
 
 class GuildLevelsConfigSchema(BaseGuildConfig):

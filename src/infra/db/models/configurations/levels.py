@@ -52,6 +52,8 @@ class GuildBonusRole(IdIntegerMixin, Base):
         nullable=False,
     )
     coins: Mapped[int] = mapped_column(Integer, nullable=False)
+    exp: Mapped[int] = mapped_column(Integer, nullable=False)
+    battlepass_points: Mapped[int] = mapped_column(Integer, nullable=False)
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
