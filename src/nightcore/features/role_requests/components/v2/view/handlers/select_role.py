@@ -114,6 +114,14 @@ async def handle_role_select_button_callback(
                                 for item in guild_config.illegal_roles
                             ]
 
+                            org_illegal_roles_ids = [
+                                item.role_id
+                                for item in (
+                                    *guild_config.organizational_roles,
+                                    *guild_config.illegal_roles,
+                                )
+                            ]
+
                             outcome = "success"
     except Exception as e:
         logger.error(

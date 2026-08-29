@@ -98,9 +98,9 @@ class SendRoleRequestModal(Modal, title="Отправить запрос рол�
             )
             return
 
-        if 1 > rank > 11:
+        if rank < 1 or rank > 11:
             await interaction.followup.send(
-                view=ValidationErrorViewV2("Ранг должен быть между 1 и 10."),
+                view=ValidationErrorViewV2("Ранг должен быть от 1 до 10."),
                 ephemeral=True,
             )
             return
