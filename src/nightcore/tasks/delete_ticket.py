@@ -43,7 +43,7 @@ class DeleteTicketTask(Cog):
             _ticket = await session.merge(ticket_state)
             await session.delete(_ticket)
 
-    @tasks.loop(minutes=30)
+    @tasks.loop(hours=20)
     async def delete_ticket_task(self):
         """Task to delete tickets when their duration ends."""
         try:
