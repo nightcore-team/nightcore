@@ -1,7 +1,6 @@
 """Ticket Event Cog for Nightcore Bot."""
 
 import asyncio
-import contextlib
 import io
 import logging
 from collections.abc import Awaitable
@@ -17,6 +16,7 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.features.moderation.utils.punish_notify import (
     send_moderation_log,
 )
+from src.nightcore.features.tickets.components.v2 import LogDeletedTicketViewV2
 from src.nightcore.features.tickets.events.dto import TicketChangeEventData
 from src.nightcore.utils import ensure_messageable_channel_exists
 
@@ -103,11 +103,22 @@ class TicketChangeEvent(Cog):
 
         gather_list: list[Awaitable[None]] = []
 
-        message = f"Ваш тикет {ticket_channel.name} на сервере {data.guild.name} был удален. Для просмотра истории сообщений скачайте файл и откройте в браузере."  # noqa: E501
+        view = LogDeletedTicketViewV2(
+            ticket_channel_name=ticket_channel.name,
+            guild_name=data.guild.name,
+            log_file=transcript_file,
+        )
 
-        with contextlib.suppress(Exception):
+        try:
             user = await self.bot.fetch_user(data.author_id)
-            await user.send(content=message)
+            dm = await user.create_dm()
+
+            await dm.send(view=view, files=[transcript_file])
+
+        except Exception:
+            logger.error(
+                "Failed to send log ticket file to user", exc_info=True
+            )
 
         if data.logging_webhook and data.logging_webhook.valid:
             gather_list.append(
