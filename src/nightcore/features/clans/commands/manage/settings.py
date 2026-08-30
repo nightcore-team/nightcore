@@ -112,7 +112,7 @@ async def settings(
         if outcome is None:
             clan_entity = await get_clan_by_id(
                 session, guild_id=guild.id, clan_id=clan_id
-            )
+            , for_update=True)
             if not clan_entity:
                 outcome = "clan_not_found"
             else:
@@ -122,7 +122,7 @@ async def settings(
                 if new_leader:
                     clan_member = await get_clan_member(
                         session, guild_id=guild.id, user_id=new_leader.id
-                    )
+                    , for_update=True)
 
                     if clan_member is None:
                         if len(clan_entity.members) >= clan_entity.max_members:

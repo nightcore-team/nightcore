@@ -65,7 +65,7 @@ async def give_reward_by_type(
                 if drop_id not in color_cache:
                     color_cache[drop_id] = await get_color_by_id(
                         session, guild_id=user.guild_id, color_id=drop_id
-                    )
+                    , for_update=True)
                 color = color_cache[drop_id]
 
                 if color is None:
@@ -79,7 +79,7 @@ async def give_reward_by_type(
                             session,
                             config_type=GuildEconomyConfig,
                             guild_id=user.guild_id,
-                        )
+                         for_update=True)
 
                     compensation = (
                         guild_config.color_drop_compensation
@@ -95,7 +95,7 @@ async def give_reward_by_type(
                 if drop_id not in case_cache:
                     case_cache[drop_id] = await get_case_by_id(
                         session, guild_id=user.guild_id, case_id=drop_id
-                    )
+                    , for_update=True)
                 case = case_cache[drop_id]
 
                 if case is None:
@@ -138,13 +138,13 @@ async def format_cases_rewards(
                 case CaseDropTypeEnum.CASE.value:
                     case = await get_case_by_id(
                         session, guild_id=guild.id, case_id=drop["drop_id"]
-                    )
+                    , for_update=True)
 
                     drop["name"] = case.name if case else "unknown"
                 case CaseDropTypeEnum.COLOR.value:
                     color = await get_color_by_id(
                         session, guild_id=guild.id, color_id=drop["drop_id"]
-                    )
+                    , for_update=True)
 
                     if color is None:
                         drop["name"] = "unknown"
@@ -178,7 +178,7 @@ async def format_single_case_reward(
                 if drop_id not in case_cache:
                     case_cache[drop_id] = await get_case_by_id(
                         session, guild_id=guild.id, case_id=drop_id
-                    )
+                    , for_update=True)
                 reward_case = case_cache[drop_id]
 
                 drop["name"] = reward_case.name if reward_case else "unknown"
@@ -187,7 +187,7 @@ async def format_single_case_reward(
                 if drop_id not in color_cache:
                     color_cache[drop_id] = await get_color_by_id(
                         session, guild_id=guild.id, color_id=drop_id
-                    )
+                    , for_update=True)
                 color = color_cache[drop_id]
 
                 if color is None:
@@ -219,7 +219,7 @@ async def format_battlepass_levels_rewards(
             case CaseDropTypeEnum.CASE.value:
                 case = await get_case_by_id(
                     session, guild_id=guild.id, case_id=level.reward["drop_id"]
-                )
+                , for_update=True)
 
                 level.reward["name"] = case.name if case else "unknown case"
             case CaseDropTypeEnum.COLOR.value:
@@ -227,7 +227,7 @@ async def format_battlepass_levels_rewards(
                     session,
                     guild_id=guild.id,
                     color_id=level.reward["drop_id"],
-                )
+                 for_update=True)
 
                 if color is None:
                     level.reward["name"] = "unknown"
@@ -255,7 +255,7 @@ async def format_single_battlepass_level_reward(
         case CaseDropTypeEnum.CASE.value:
             case = await get_case_by_id(
                 session, guild_id=guild.id, case_id=level.reward["drop_id"]
-            )
+            , for_update=True)
 
             level.reward["name"] = case.name if case else "unknown case"
         case CaseDropTypeEnum.COLOR.value:
@@ -263,7 +263,7 @@ async def format_single_battlepass_level_reward(
                 session,
                 guild_id=guild.id,
                 color_id=level.reward["drop_id"],
-            )
+             for_update=True)
 
             if color is None:
                 level.reward["name"] = "unknown color"

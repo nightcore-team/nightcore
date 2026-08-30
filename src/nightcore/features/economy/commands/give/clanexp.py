@@ -59,7 +59,7 @@ async def give_clanexp(
         )
 
         db_clan = await get_clan_by_id(
-            session, guild_id=guild.id, clan_id=int(clan)
+            session, guild_id=guild.id, clan_id=int(clan, for_update=True)
         )
         if not db_clan:
             outcome = "clan_not_found"

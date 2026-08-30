@@ -70,7 +70,7 @@ async def delete(interaction: Interaction["Nightcore"], clan: str):
         try:
             dbclan = await get_clan_by_id(
                 session, guild_id=guild.id, clan_id=clan_id
-            )
+            , for_update=True)
 
             if not dbclan:
                 outcome = "clan_not_found"

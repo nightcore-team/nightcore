@@ -76,7 +76,7 @@ async def shop(
             guild_id=guild.id,
             config_type=GuildClansConfig,
             field_name="clan_buy_ping_roles_ids",
-        )
+         for_update=True)
         if not clan_member or clan_member.role not in [
             ClanMemberRoleEnum.LEADER,
             ClanMemberRoleEnum.DEPUTY,

@@ -85,7 +85,7 @@ async def change_deputy(
             guild_id=guild.id,
             user_id=user.id,
             with_relations=True,
-        )
+         for_update=True)
 
         if not leader:
             outcome = "not_in_clan"
@@ -96,7 +96,7 @@ async def change_deputy(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
-            )
+             for_update=True)
 
             if not clan_member or clan_member.clan_id != leader.clan_id:
                 outcome = "member_not_in_clan"

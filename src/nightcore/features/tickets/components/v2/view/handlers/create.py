@@ -68,7 +68,7 @@ async def handle_ticket_create_button(
             session,
             config_type=GuildTicketsConfig,
             guild_id=guild.id,
-        )
+         for_update=True)
 
         if not all(
             [
@@ -91,14 +91,14 @@ async def handle_ticket_create_button(
 
             dbuser, _ = await get_or_create_user(
                 session, guild_id=guild.id, user_id=user.id
-            )
+            , for_update=True)
 
             if dbuser.ticket_ban:
                 outcome = "user_ticket_banned"
             else:
                 last_ticket = await get_user_ticket(
                     session, guild_id=guild.id, user_id=user.id
-                )
+                , for_update=True)
 
                 if last_ticket:
                     outcome = "user_has_open_ticket"

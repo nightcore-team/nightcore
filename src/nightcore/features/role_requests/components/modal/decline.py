@@ -64,7 +64,7 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
         async with self.bot.uow.start() as session:
             last_rr = await get_latest_user_role_request(
                 session, guild_id=guild.id, user_id=self.user.id
-            )
+            , for_update=True)
             if not last_rr:
                 outcome = "role_request_not_found"
                 logger.warning(

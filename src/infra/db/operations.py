@@ -317,10 +317,13 @@ async def get_specified_field(  # noqa: UP047
     guild_id: int,
     config_type: type[GuildT],
     field_name: str,
+    for_update: bool = False,
 ) -> Any:
     """Get the specified field from the database."""
     column = getattr(config_type, field_name)
     stmt = select(column).where(config_type.guild_id == guild_id)
+    if for_update:
+        stmt = stmt.with_for_update()
     return await session.scalar(stmt)
 
 
@@ -773,7 +776,7 @@ async def get_user_clan(
 
 
 async def get_private_room_state(
-    session: AsyncSession, *, user_id: int
+    session: AsyncSession, *, user_id: int, for_update: bool = False
 ) -> PrivateRoomState | None:
     """Get the private room state for a user."""
     stmt = (
@@ -781,6 +784,8 @@ async def get_private_room_state(
         .where(PrivateRoomState.user_id == user_id)
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 

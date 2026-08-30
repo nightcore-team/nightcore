@@ -77,7 +77,7 @@ async def set_multiplier(
 
     async with specified_guild_config(
         bot, guild.id, GuildMultipliersConfig
-    ) as (
+    , for_update=True) as (
         guild_config,
         session,
     ):
@@ -89,7 +89,7 @@ async def set_multiplier(
                 multiplier_type=multiplier_type_enum,
                 multiplier=multiplier,
                 duration=parsed_duration,
-            )
+             for_update=True)
 
             if not created:
                 end_time = datetime.now(UTC) + timedelta(
