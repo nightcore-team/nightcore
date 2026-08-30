@@ -173,10 +173,16 @@ _ACCESS_COLUMNS: Final[
 
 
 async def get_specified_guild_config(  # noqa: UP047
-    session: AsyncSession, *, config_type: type[GuildT], guild_id: int
+    session: AsyncSession,
+    *,
+    config_type: type[GuildT],
+    guild_id: int,
+    for_update: bool = False,
 ) -> GuildT:
     """Get the guild configuration from the database."""
     get_stmt = select(config_type).where(config_type.guild_id == guild_id)
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
     config = await session.scalar(get_stmt)
 
     if config is not None:
@@ -193,7 +199,17 @@ async def get_specified_guild_config(  # noqa: UP047
     config = result.scalar_one_or_none()
 
     if config is None:
+        if for_update:
+            get_stmt = get_stmt.with_for_update()
         config = await session.scalar(get_stmt)
+        return config  # type: ignore
+
+    if for_update:
+        # lock the newly inserted row for R-M-W
+        get_stmt = select(config_type).where(
+            config_type.guild_id == guild_id
+        ).with_for_update()
+        config = await session.scalar(get_stmt)  # type: ignore
         return config  # type: ignore
 
     return config
@@ -668,6 +684,7 @@ async def get_clan_member(
     user_id: int,
     with_relations: bool = False,
     with_clan_members: bool = False,
+    for_update: bool = False,
 ) -> ClanMember | None:
     """Get the clan member configuration from the database."""
     stmt = select(ClanMember).where(
@@ -681,6 +698,8 @@ async def get_clan_member(
         stmt = stmt.options(
             selectinload(ClanMember.clan).selectinload(Clan.members)
         )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
@@ -691,11 +710,14 @@ async def get_clan_by_id(
     *,
     guild_id: int,
     clan_id: int | None = None,
+    for_update: bool = False,
 ) -> Clan | None:
     """Get clan by id."""
     stmt = select(Clan).where(Clan.guild_id == guild_id)
     if clan_id:
         stmt = stmt.where(Clan.id == clan_id)
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
@@ -703,13 +725,19 @@ async def get_clan_by_id(
 
 
 async def get_clan_by_name(
-    session: AsyncSession, *, guild_id: int, clan_name: str
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    clan_name: str,
+    for_update: bool = False,
 ) -> Clan | None:
     """Get the clan configuration from the database."""
 
     stmt = select(Clan).where(
         Clan.guild_id == guild_id, Clan.name == clan_name
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
@@ -720,6 +748,7 @@ async def get_user_clan(
     *,
     guild_id: int,
     user_id: int,
+    for_update: bool = False,
 ) -> Clan | None:
     """Get the clan of a user in a guild."""
 
@@ -728,6 +757,8 @@ async def get_user_clan(
         .join(ClanMember, ClanMember.clan_id == Clan.id)
         .where(Clan.guild_id == guild_id, ClanMember.user_id == user_id)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
@@ -828,6 +859,7 @@ async def get_ticket_state(
     *,
     guild_id: int,
     channel_id: int,
+    for_update: bool = False,
 ) -> TicketState | None:
     """Get the latest ticket state for a user in a guild."""
     stmt = (
@@ -838,6 +870,8 @@ async def get_ticket_state(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
@@ -848,6 +882,7 @@ async def get_user_ticket(
     *,
     guild_id: int,
     user_id: int,
+    for_update: bool = False,
 ) -> TicketState | None:
     """Get the latest ticket state for a user in a guild."""
     stmt = (
@@ -861,6 +896,8 @@ async def get_user_ticket(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
@@ -871,6 +908,7 @@ async def get_latest_user_role_request(
     *,
     guild_id: int | None,
     user_id: int,
+    for_update: bool = False,
 ) -> RoleRequestState | None:
     """Get the latest role request state for a user in a guild."""
     by_guild_id = RoleRequestState.guild_id == guild_id
@@ -886,6 +924,8 @@ async def get_latest_user_role_request(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 

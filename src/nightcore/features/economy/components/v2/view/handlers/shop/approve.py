@@ -94,6 +94,7 @@ async def handle_approve_coins_shop_order_button(
                         session=session,
                         guild_id=guild.id,
                         user_id=shop_order.user_id,  # type: ignore
+                        for_update=True,
                     )
 
                     if buyer.coins < shop_order.payload.get("cost"):  # type: ignore

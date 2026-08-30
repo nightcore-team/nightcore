@@ -40,7 +40,7 @@ async def handle_cancel(
 
     async with view.bot.uow.start() as session:
         last_rr = await get_latest_user_role_request(
-            session, guild_id=guild.id, user_id=user.id
+            session, guild_id=guild.id, user_id=user.id, for_update=True
         )
 
         if not last_rr or last_rr.state in (

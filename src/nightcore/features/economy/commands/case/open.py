@@ -68,6 +68,7 @@ async def open_case(
                 guild_id=guild.id,
                 user_id=member.id,
                 with_relations=True,
+                for_update=True,
             )
 
             logging_webhook = await get_specified_webhook(
