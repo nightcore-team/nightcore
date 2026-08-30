@@ -6,6 +6,9 @@ migration:
 migrate:
 	uv run alembic upgrade head
 
+erd:
+	uv run python scripts/generate_erd.py
+
 lint:
 	uv run ruff check --config=pyproject.toml .
 

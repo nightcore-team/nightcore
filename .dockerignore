@@ -62,3 +62,6 @@ docker-compose.yml
 
 # other
 # assets/
+
+scripts/
+schema.erd.json

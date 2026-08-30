@@ -214,3 +214,5 @@ typings/
 .redisinsight
 
 .DS_Store
+
+schema.erd.json
