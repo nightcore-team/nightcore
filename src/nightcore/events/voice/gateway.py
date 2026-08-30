@@ -40,13 +40,15 @@ class VoiceStateUpdateEvent(Cog):
             if before.channel is None and after.channel is not None:
                 async with self.bot.uow.start() as session:
                     private_room_state = await get_private_room_state(
-                        session, user_id=member.id
+                        session, user_id=member.id, for_update=True
                     )
-                    create_private_room_channel_id = await get_specified_channel(  # noqa: E501
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildPrivateChannelsConfig,
-                        channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
+                    create_private_room_channel_id = (
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildPrivateChannelsConfig,
+                            channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
+                        )
                     )
                     logging_webhook = await get_specified_webhook(
                         session,
@@ -67,39 +69,58 @@ class VoiceStateUpdateEvent(Cog):
                             try:
                                 await member.move_to(_ch)  # type: ignore
                                 logger.info(
-                                    "[voice] Moved %s to their existing private room %s",  # noqa: E501
+                                    "[voice] Moved %s to their existing "
+                                    "private room %s",
                                     member,
-                                    _ch.name,
+                                    _ch.name,  # type: ignore[attr-defined]
                                 )
                                 return
                             except Exception as e:
                                 logger.error(
-                                    "Error moving %s to their private room %s: %s",  # noqa: E501
+                                    "Error moving %s to their private room "
+                                    "%s: %s",
                                     member,
-                                    _ch.name,
+                                    _ch.name,  # type: ignore[attr-defined]
                                     e,
                                 )
                                 try:
                                     asyncio.gather(
                                         member.move_to(None),
                                         member.send(
-                                            f"Произошла ошибка при перемещении вас в ваш приватный канал. Пожалуйста, зайдите сами в {_ch.mention}."  # noqa: E501
+                                            f"Произошла ошибка при "
+                                            f"перемещении вас в ваш "
+                                            f"приватный канал. Пожалуйста, "
+                                            f"зайдите сами в "
+                                            f"{_ch.mention}."  # type: ignore
                                         ),
                                     )
                                 except Exception as e:
                                     logger.error(
-                                        "Error moving %s to None or sending message: %s",  # noqa: E501
+                                        "Error moving %s to None or sending "
+                                        "message: %s",
                                         member,
                                         e,
                                     )
                                 return
 
                         else:
+                            # Stale record: channel not found, delete with lock
                             async with self.bot.uow.start() as session:
-                                await session.delete(private_room_state)
-                                await session.flush()
+                                fresh = await get_private_room_state(
+                                    session,
+                                    user_id=member.id,
+                                    for_update=True,
+                                )
+                                if (
+                                    fresh is not None
+                                    and fresh.channel_id
+                                    == private_room_state.channel_id
+                                ):
+                                    await session.delete(fresh)
+                                    await session.flush()
                             logger.info(
-                                "[voice] Private room channel %s for %s not found, creating a new one",  # noqa: E501
+                                "[voice] Private room channel %s for %s not "
+                                "found, creating a new one",
                                 private_room_state.channel_id,
                                 member,
                             )
@@ -122,7 +143,8 @@ class VoiceStateUpdateEvent(Cog):
                         )
                     except Exception as e:
                         logger.error(
-                            "[voice/join] Error dispatching voice channel join event: %s",  # noqa: E501
+                            "[voice/join] Error dispatching voice channel "
+                            "join event: %s",
                             e,
                         )
                 logger.info(
@@ -139,7 +161,7 @@ class VoiceStateUpdateEvent(Cog):
             elif before.channel is not None and after.channel is None:
                 async with self.bot.uow.start() as session:
                     private_room_state = await get_private_room_state(
-                        session, user_id=member.id
+                        session, user_id=member.id, for_update=True
                     )
                     logging_webhook = await get_specified_webhook(
                         session,
@@ -168,7 +190,8 @@ class VoiceStateUpdateEvent(Cog):
                         )
                     except Exception as e:
                         logger.error(
-                            "[voice/leave] Error dispatching voice channel leave event: %s",  # noqa: E501
+                            "[voice/leave] Error dispatching voice channel "
+                            "leave event: %s",
                             e,
                         )
                 logger.info(
@@ -189,13 +212,15 @@ class VoiceStateUpdateEvent(Cog):
             ):
                 async with self.bot.uow.start() as session:
                     private_room_state = await get_private_room_state(
-                        session, user_id=member.id
+                        session, user_id=member.id, for_update=True
                     )
-                    create_private_room_channel_id = await get_specified_channel(  # noqa: E501
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildPrivateChannelsConfig,
-                        channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
+                    create_private_room_channel_id = (
+                        await get_specified_channel(
+                            session,
+                            guild_id=guild.id,
+                            config_type=GuildPrivateChannelsConfig,
+                            channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
+                        )
                     )
                     logging_webhook = await get_specified_webhook(
                         session,
@@ -210,7 +235,8 @@ class VoiceStateUpdateEvent(Cog):
                     and after.channel.id == create_private_room_channel_id
                 ):
                     logger.info(
-                        "[voice] %s switched to create-private channel %s, moving back to %s",  # noqa: E501
+                        "[voice] %s switched to create-private channel %s, "
+                        "moving back to %s",
                         member,
                         after.channel.name,
                         before.channel.name,
@@ -261,7 +287,8 @@ class VoiceStateUpdateEvent(Cog):
                         private_room_state,
                     )
                     logger.info(
-                        "[voice] %s left their private channel %s -> %s; scheduled delete",  # noqa: E501
+                        "[voice] %s left their private channel %s -> %s; "
+                        "scheduled delete",
                         member,
                         before.channel.name,
                         after.channel.name,
@@ -283,7 +310,8 @@ class VoiceStateUpdateEvent(Cog):
                         "create_private_room", member, after.channel
                     )
                     logger.info(
-                        "[voice] %s switched to create-private channel %s; scheduled create",  # noqa: E501
+                        "[voice] %s switched to create-private channel %s; "
+                        "scheduled create",
                         member,
                         after.channel.name,
                     )

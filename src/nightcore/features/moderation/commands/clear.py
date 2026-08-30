@@ -67,6 +67,26 @@ class Clear(Cog):
                 limit=amount,
                 check=lambda m: m.author == user if user else True,  # type: ignore
             )
+        except discord.Forbidden as e:
+            logger.warning("[command] - Forbidden clear messages: %s", e)
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка очистки сообщений",
+                    "Не удалось очистить сообщения в текущем канале.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException as e:
+            logger.exception("[command] - HTTP clear messages: %s", e)
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка очистки сообщений",
+                    "Не удалось очистить сообщения в текущем канале.",
+                ),
+                ephemeral=True,
+            )
+            return
         except Exception as e:
             logger.exception("[command] - Failed to clear messages: %s", e)
             await interaction.followup.send(
@@ -78,23 +98,29 @@ class Clear(Cog):
             )
             return
 
+        # Dispatch after successful Discord action
+        try:
+            self.bot.dispatch(
+                "message_clear",
+                data=MessageClearEventData(
+                    moderator=interaction.user,  # type: ignore
+                    category=self.__class__.__name__.lower(),
+                    channel_cleared_id=channel.id,  # type: ignore
+                    amount=amount,
+                    created_at=discord.utils.utcnow().astimezone(tz=UTC),
+                ),
+            )
+        except Exception as e:
+            logger.exception(
+                "[event] - Failed to dispatch message_clear event: %s", e
+            )
+
         await interaction.followup.send(
             view=SuccessViewV2(
                 "Сообщения очищены",
                 f"Успешно очищено {amount} сообщений из канала {'от ' + user.mention if user else ''}",  # noqa: E501
             ),
             ephemeral=True,
-        )
-
-        self.bot.dispatch(
-            "message_clear",
-            data=MessageClearEventData(
-                moderator=interaction.user,  # type: ignore
-                category=self.__class__.__name__.lower(),
-                channel_cleared_id=channel.id,  # type: ignore
-                amount=amount,
-                created_at=discord.utils.utcnow().astimezone(tz=UTC),
-            ),
         )
 
         logger.info(

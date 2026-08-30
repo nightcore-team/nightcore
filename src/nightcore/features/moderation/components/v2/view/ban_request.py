@@ -149,17 +149,17 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
             )
 
         try:
-            view.bot.dispatch("user_banned", data=data)
-        except Exception as e:
-            logger.exception(
-                "[event] - Failed to dispatch user_banned event: %s", e
-            )
-
-        try:
             await guild.ban(
                 target,
                 reason=view.reason,
                 delete_message_seconds=view.delete_seconds,
+            )
+        except discord.NotFound:
+            # Idempotent: already banned
+            logger.info(
+                "User %s already banned in guild %s (idempotent)",
+                target.id,
+                guild.id,
             )
         except (discord.Forbidden, discord.HTTPException) as e:
             logger.exception(
@@ -176,6 +176,14 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
             )
 
             return
+
+        # Dispatch after successful Discord action; handler is idempotent
+        try:
+            view.bot.dispatch("user_banned", data=data)
+        except Exception as e:
+            logger.exception(
+                "[event] - Failed to dispatch user_banned event: %s", e
+            )
 
         return
 

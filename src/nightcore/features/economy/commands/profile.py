@@ -59,6 +59,7 @@ class Profile(Cog):
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
+                for_update=True,
             )
 
             user_clan_member = await get_clan_member(

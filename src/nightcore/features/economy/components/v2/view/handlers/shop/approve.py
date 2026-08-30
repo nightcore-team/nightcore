@@ -52,6 +52,7 @@ async def handle_approve_coins_shop_order_button(
             session=session,
             guild_id=guild.id,
             custom_id=thread.id,
+            for_update=True,
         )
 
         economy_logging_webhook = await get_specified_webhook(

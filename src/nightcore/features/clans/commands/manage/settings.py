@@ -108,21 +108,36 @@ async def settings(
     old_channel_id: int | None = None
     leader_in_clan: bool = True
 
+    # Deferred Discord IO - captured inside transaction, executed after commit
+    pending_old_channel_id: int | None = None
+    pending_new_channel: TextChannel | None = None
+    pending_role_id_for_channel: int | None = None
+    before_leader_id: int | None = None
+    dto_role_id: int | None = None
+    dto_channel_id: int | None = None
+
     async with bot.uow.start() as session:
         if outcome is None:
             clan_entity = await get_clan_by_id(
-                session, guild_id=guild.id, clan_id=clan_id
-            , for_update=True)
+                session, guild_id=guild.id, clan_id=clan_id, for_update=True
+            )
             if not clan_entity:
                 outcome = "clan_not_found"
             else:
                 clan_name = clan_entity.name  # DTO field
+                dto_role_id = clan_entity.role_id
+                dto_channel_id = clan_entity.clan_channel_id
+                if clan_entity.leader is not None:
+                    before_leader_id = clan_entity.leader.id
 
                 # change leader
                 if new_leader:
                     clan_member = await get_clan_member(
-                        session, guild_id=guild.id, user_id=new_leader.id
-                    , for_update=True)
+                        session,
+                        guild_id=guild.id,
+                        user_id=new_leader.id,
+                        for_update=True,
+                    )
 
                     if clan_member is None:
                         if len(clan_entity.members) >= clan_entity.max_members:
@@ -144,15 +159,19 @@ async def settings(
                                 )
                                 outcome = "leader_change_internal_error"
 
-                            await create_clan_member(
-                                session,
-                                guild_id=guild.id,
-                                clan_id=clan_entity.id,
-                                user_id=new_leader.id,
-                                role=ClanMemberRoleEnum.LEADER,
-                            )
-
-                            leader_in_clan = False
+                            # Keep business logic: create member even if
+                            # previous flush failed is original behavior;
+                            # guard to avoid creating on outcome.
+                            if outcome is None:
+                                await create_clan_member(
+                                    session,
+                                    guild_id=guild.id,
+                                    clan_id=clan_entity.id,
+                                    user_id=new_leader.id,
+                                    role=ClanMemberRoleEnum.LEADER,
+                                )
+                                leader_in_clan = False
+                                changed_leader_to = new_leader.id
                     else:
                         if clan_member.clan_id != clan_entity.id:
                             outcome = "new_leader_not_in_clan"
@@ -188,6 +207,7 @@ async def settings(
                                 old_role_id = clan_entity.role_id
                                 clan_entity.role_id = new_role.id
                                 changed_role_to = new_role.id
+                                dto_role_id = new_role.id
                             except Exception as e:
                                 logger.error(
                                     "[clans] Error changing clan role in guild %s: %s",  # noqa: E501
@@ -196,43 +216,14 @@ async def settings(
                                 )
                                 outcome = "role_change_internal_error"
 
-                # change clan channel
+                # change clan channel - DB mutation only, IO deferred
                 if outcome is None and new_channel:
-                    old_channel_id = clan_entity.clan_channel_id
+                    pending_old_channel_id = clan_entity.clan_channel_id
+                    old_channel_id = pending_old_channel_id
+                    pending_new_channel = new_channel
+                    pending_role_id_for_channel = clan_entity.role_id
+                    dto_channel_id = new_channel.id
                     clan_entity.clan_channel_id = new_channel.id
-
-                    if old_channel_id is not None:
-                        channel = await ensure_messageable_channel_exists(
-                            guild, old_channel_id
-                        )
-                        if channel is not None:
-                            asyncio.create_task(
-                                safe_delete_channel(
-                                    channel, "Удаление старого канала клана"
-                                )
-                            )
-
-                    clan_role = await ensure_role_exists(
-                        guild, clan_entity.role_id
-                    )
-
-                    overwrites = {
-                        guild.default_role: PermissionOverwrite(
-                            read_message_history=False,
-                            read_messages=False,
-                        ),
-                    }
-
-                    if clan_role:
-                        overwrites[clan_role] = PermissionOverwrite(
-                            read_message_history=True,
-                            read_messages=True,
-                            send_messages=True,
-                            attach_files=True,
-                            add_reactions=True,
-                        )
-
-                    await new_channel.edit(overwrites=overwrites)
 
                 # change clan name
                 if outcome is None and new_name:
@@ -242,6 +233,10 @@ async def settings(
                         try:
                             old_name = clan_entity.name
                             clan_entity.name = new_name
+                            # keep clan_name as original for success view?
+                            # clan_name already holds original
+                            dto_channel_id = clan_entity.clan_channel_id
+                            # dto_role_id already captured
                         except Exception as e:
                             logger.error(
                                 "[clans] Error changing clan name in guild %s: %s",  # noqa: E501
@@ -249,6 +244,56 @@ async def settings(
                                 e,
                             )
                             outcome = "name_change_internal_error"
+
+    # Discord IO outside transaction - channel overwrites & old channel cleanup
+    if outcome is None and pending_new_channel is not None:
+        # Use captured role id (after possible role change)
+        try:
+            if pending_old_channel_id is not None:
+                channel = await ensure_messageable_channel_exists(
+                    guild, pending_old_channel_id
+                )
+                if channel is not None:
+                    asyncio.create_task(
+                        safe_delete_channel(
+                            channel, "Удаление старого канала клана"
+                        )
+                    )
+
+            clan_role = await ensure_role_exists(
+                guild, pending_role_id_for_channel  # type: ignore[arg-type]
+            )
+
+            overwrites = {
+                guild.default_role: PermissionOverwrite(
+                    read_message_history=False,
+                    read_messages=False,
+                ),
+            }
+
+            if clan_role:
+                overwrites[clan_role] = PermissionOverwrite(
+                    read_message_history=True,
+                    read_messages=True,
+                    send_messages=True,
+                    attach_files=True,
+                    add_reactions=True,
+                )
+
+            try:
+                await pending_new_channel.edit(overwrites=overwrites)
+            except Exception as e:
+                logger.error(
+                    "[clans] Error editing clan channel overwrites in guild %s: %s",  # noqa: E501
+                    guild.id,
+                    e,
+                )
+        except Exception as e:
+            logger.error(
+                "[clans] Error handling clan channel IO in guild %s: %s",
+                guild.id,
+                e,
+            )
 
     if outcome == "clan_not_found":
         await interaction.response.send_message(
@@ -375,19 +420,24 @@ async def settings(
     actions: list[ClanManageAction] = []
 
     if new_leader is not None:
+        # before_leader_id captured under FOR UPDATE, fallback to 0
+        before_mention = (
+            f"<@{before_leader_id}>" if before_leader_id else "неизвестно"
+        )
         clan_change_leader_action = ClanManageAction(
             type=ClanManageActionEnum.CHANGE_LEADER,
-            before=f"<@{clan_entity.leader.id}>",  # type: ignore The clan will always exist here because of the checks on lines 86 and 139
+            before=before_mention,
             after=new_leader.mention,
         )
 
         actions.append(clan_change_leader_action)
 
     if new_role is not None and old_role_id is not None:
+        # dto_role_id holds the new role id after commit
         clan_change_role_action = ClanManageAction(
             type=ClanManageActionEnum.CHANGE_ROLE,
             before=f"<@&{old_role_id}> ('{old_role_id}')",
-            after=f"<@&{clan_entity.role_id}> ('{clan_entity.role_id}')",  # type: ignore The clan will always exist here because of the checks on lines 86 and 139
+            after=f"<@&{dto_role_id}> ('{dto_role_id}')",
         )
 
         actions.append(clan_change_role_action)
@@ -396,7 +446,7 @@ async def settings(
         clan_change_channel_action = ClanManageAction(
             type=ClanManageActionEnum.CHANGE_CHANNEL,
             before=f"<#{old_channel_id}> ('{old_channel_id}')",
-            after=f"<#{clan_entity.clan_channel_id}> ('{clan_entity.clan_channel_id}')",  # type: ignore The clan will always exist here because of the checks on lines 86 and 139  # noqa: E501
+            after=f"<#{dto_channel_id}> ('{dto_channel_id}')",  # noqa: E501
         )
 
         actions.append(clan_change_channel_action)
@@ -414,7 +464,7 @@ async def settings(
         guild=guild,
         event_type="clan_manage_notify",
         actor_id=interaction.user.id,
-        clan_name=clan,
+        clan_name=clan,  # type: ignore[arg-type]
         actions=actions,
         logging_webhook=clans_logging_webhook,
     )
@@ -431,15 +481,16 @@ async def settings(
         ephemeral=True,
     )
 
-    if not leader_in_clan:
+    if not leader_in_clan and changed_leader_to is not None:
+        # Use dto_role_id which is the current role id
         role = await ensure_role_exists(
             guild=guild,
-            role_id=clan_entity.role_id,  # type: ignore
+            role_id=dto_role_id,  # type: ignore[arg-type]
         )
 
         if role:
             try:
-                await new_leader.add_roles(role)  # type: ignore
+                await new_leader.add_roles(role)  # type: ignore[union-attr]
             except Exception:
                 await interaction.followup.send(
                     view=ErrorViewV2(

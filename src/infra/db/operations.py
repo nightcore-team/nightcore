@@ -356,17 +356,19 @@ async def get_all_pending_notifications(
 
 
 async def get_shop_order_state(
-    session: AsyncSession, *, guild_id: int, custom_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    custom_id: int,
+    for_update: bool = False,
 ) -> ShopOrderState | None:
     """Get the shop order state from the database."""
-    stmt = (
-        select(ShopOrderState)
-        .where(
-            ShopOrderState.guild_id == guild_id,
-            ShopOrderState.custom_id == custom_id,
-        )
-        .with_for_update()
+    stmt = select(ShopOrderState).where(
+        ShopOrderState.guild_id == guild_id,
+        ShopOrderState.custom_id == custom_id,
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
@@ -798,7 +800,34 @@ async def create_temp_punish(
     category: str,
     end_time: datetime,
 ) -> TempPunish:
-    """Create a new temporary punishment entry in the database."""
+    """Create a new temporary punishment entry in the database.
+
+    Idempotent: if an active TempPunish for the same guild/user/category
+    already exists (end_time in the future), its end_time is updated
+    to the later of the two values instead of inserting a duplicate.
+    Uses SELECT ... FOR UPDATE to serialize concurrent inserts.
+    """
+    # Check for existing active punish with row-level lock
+    existing_stmt = (
+        select(TempPunish)
+        .where(
+            TempPunish.guild_id == guild_id,
+            TempPunish.user_id == user_id,
+            func.lower(TempPunish.category) == category.lower(),
+        )
+        .order_by(TempPunish.end_time.desc().nulls_last())
+        .limit(1)
+        .with_for_update()
+    )
+    res = await session.execute(existing_stmt)
+    existing = res.scalar_one_or_none()
+    now = datetime.now(UTC)
+    if existing is not None and existing.end_time is not None:
+        # If existing is still active, extend it idempotently
+        if existing.end_time > now:
+            if end_time > existing.end_time:
+                existing.end_time = end_time
+            return existing
     temp_punish = TempPunish(
         guild_id=guild_id,
         user_id=user_id,
@@ -828,6 +857,7 @@ async def get_latest_temp_punish(
     guild_id: int,
     user_id: int,
     category: str,
+    for_update: bool = False,
 ) -> TempPunish | None:
     """Get the latest temporary punishment for a user in a guild."""
     stmt = (
@@ -840,6 +870,8 @@ async def get_latest_temp_punish(
         .order_by(TempPunish.end_time.asc().nulls_last())
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
@@ -1640,12 +1672,18 @@ async def get_custom_component_by_id(
 
 
 async def get_color_by_id(
-    session: AsyncSession, *, guild_id: int, color_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    color_id: int,
+    for_update: bool = False,
 ) -> Color | None:
     """Get a color by id for a guild."""
     stmt = select(Color).where(
         Color.guild_id == guild_id, Color.id == color_id
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
@@ -1786,10 +1824,16 @@ async def get_cases_by_input(
 
 
 async def get_case_by_id(
-    session: AsyncSession, *, guild_id: int, case_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    case_id: int,
+    for_update: bool = False,
 ) -> Case | None:
     """Get a color by id for a guild."""
     stmt = select(Case).where(Case.guild_id == guild_id, Case.id == case_id)
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 

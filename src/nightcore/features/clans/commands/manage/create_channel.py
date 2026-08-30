@@ -1,5 +1,6 @@
 """Create clan channel command."""
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -27,6 +28,7 @@ from src.nightcore.features.clans.utils import clans_autocomplete
 from src.nightcore.utils.object import (
     ensure_category_exists,
     ensure_role_exists,
+    safe_delete_channel,
 )
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -77,7 +79,7 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
         )
         return
 
-    # Get clan from database
+    # Get clan from database with FOR UPDATE to lock row before check
     outcome = ""
     clan_name = ""
     clan_role_id = 0
@@ -86,8 +88,8 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
 
     async with bot.uow.start() as session:
         dbclan = await get_clan_by_id(
-            session, guild_id=guild.id, clan_id=clan_id
-        , for_update=True)
+            session, guild_id=guild.id, clan_id=clan_id, for_update=True
+        )
 
         if not dbclan:
             outcome = "clan_not_found"
@@ -139,7 +141,7 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
     if not create_clan_channel_category_id:
         raise FieldNotConfiguredError("категория кланов")
 
-    # Ensure clan role exists
+    # Ensure clan role exists - Discord IO outside transaction
     clan_role = await ensure_role_exists(guild, clan_role_id)
     if clan_role is None:
         await interaction.followup.send(
@@ -150,7 +152,7 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
         )
         return
 
-    # Ensure category exists
+    # Ensure category exists - Discord IO outside transaction
     category = await ensure_category_exists(
         guild, create_clan_channel_category_id
     )
@@ -168,7 +170,9 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
         )
         return
 
-    # Create the clan channel
+    # Create the clan channel - Discord IO outside transaction
+    # Then attach to DB with SELECT FOR UPDATE to close race
+    channel = None
     try:
         channel = await guild.create_text_channel(
             name=f"{clan_name}-clan",
@@ -185,10 +189,14 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             reason=f"Создание канала для клана {clan_name}",
         )
 
+        # Second transaction: lock row again and double-check  # noqa: E501
+        # channel still free  # noqa: E501
         async with bot.uow.start() as session:
-            dbclan = await session.merge(dbclan)
+            dbclan_locked = await get_clan_by_id(
+                session, guild_id=guild.id, clan_id=clan_id, for_update=True
+            )
 
-            if not dbclan:
+            if not dbclan_locked:
                 logger.error(
                     "[clans/create_channel] Clan %s not found in database "
                     "during channel creation in guild %s",
@@ -196,14 +204,47 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
                     guild.id,
                 )
                 outcome = "clan_not_found_on_update"
+            elif dbclan_locked.clan_channel_id is not None:
+                # Race: another concurrent request already created channel
+                logger.warning(
+                    "[clans/create_channel] Race on clan %s channel creation "
+                    "in guild %s: channel already exists %s",
+                    clan_id,
+                    guild.id,
+                    dbclan_locked.clan_channel_id,
+                )
+                outcome = "channel_exists_race"
             else:
-                dbclan.clan_channel_id = channel.id
+                dbclan_locked.clan_channel_id = channel.id
 
         if outcome == "clan_not_found_on_update":
+            # cleanup orphan channel
+            if channel is not None:
+                asyncio.create_task(
+                    safe_delete_channel(
+                        channel, "Откат канала клана - клан не найден"
+                    )
+                )
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка обновления информации о клане",
                     "Клан не найден в базе данных при обновлении информации о канале.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+            return
+
+        if outcome == "channel_exists_race":
+            if channel is not None:
+                asyncio.create_task(
+                    safe_delete_channel(
+                        channel, "Откат канала клана - гонка каналов"
+                    )
+                )
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка создания канала клана",
+                    "Для данного клана уже существует канал.",
                 ),
                 ephemeral=True,
             )
@@ -244,6 +285,19 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
         )
 
     except Exception as e:
+        # If channel was created but DB failed with unexpected error, cleanup
+        if channel is not None and outcome not in (
+            "clan_not_found_on_update",
+            "channel_exists_race",
+        ):
+            try:
+                asyncio.create_task(
+                    safe_delete_channel(
+                        channel, "Откат канала клана - ошибка БД"
+                    )
+                )
+            except Exception:
+                pass
         logger.error(
             "[clans/create_channel] Error creating clan channel in "
             "guild %s: %s",

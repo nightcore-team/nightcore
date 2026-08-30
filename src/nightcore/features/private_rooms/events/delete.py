@@ -5,8 +5,11 @@ import logging
 import discord
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildLoggingConfig, PrivateRoomState
-from src.infra.db.operations import get_specified_webhook
+from src.infra.db.models import GuildLoggingConfig
+from src.infra.db.operations import (
+    get_private_room_state,
+    get_specified_webhook,
+)
 from src.nightcore.bot import Nightcore
 from src.nightcore.features.private_rooms.components.embed import (
     PrivateRoomLogEmbed,
@@ -26,16 +29,18 @@ class DeletePrivateRoomEvent(Cog):
         self,
         member: discord.Member,
         channel: discord.VoiceChannel,
-        private_room_state: PrivateRoomState,
+        private_room_state,  # detached, re-fetched with lock
     ):
         """Handle delete private room events."""
         guild = member.guild
 
+        # Delete Discord channel first (idempotent)
         try:
             await channel.delete(reason="Deleting private room on user leave")
         except discord.NotFound as e:
             logger.error(
-                "[private_rooms/event] Private room channel not found for %s: %s",  # noqa: E501
+                "[private_rooms/event] Private room channel not found for "  # noqa: E501
+                "%s: %s",
                 member,
                 e,
             )
@@ -47,9 +52,35 @@ class DeletePrivateRoomEvent(Cog):
             )
             return
 
+        # DB delete with SELECT FOR UPDATE and idempotency
+        log_webhook = None
         try:
             async with self.bot.uow.start() as session:
-                await session.delete(private_room_state)
+                fresh_state = await get_private_room_state(
+                    session, user_id=member.id, for_update=True
+                )
+                if fresh_state is None:
+                    logger.info(
+                        "[private_rooms/event] Private room state already "
+                        "deleted for %s, idempotent",
+                        member,
+                    )
+                elif fresh_state.channel_id != channel.id:
+                    logger.warning(
+                        "[private_rooms/event] Private room channel mismatch "
+                        "for %s: expected %s, DB has %s; skipping delete",
+                        member,
+                        channel.id,
+                        fresh_state.channel_id,
+                    )
+                else:
+                    await session.delete(fresh_state)
+                    logger.info(
+                        "[private_rooms/event] Deleted private room record "
+                        "for %s channel %s",
+                        member,
+                        channel.id,
+                    )
 
                 log_webhook = await get_specified_webhook(
                     session,
@@ -59,21 +90,29 @@ class DeletePrivateRoomEvent(Cog):
                 )
                 if log_webhook is None:
                     logger.warning(
-                        f"[logging] Logging channel (private_rooms) not configured for guild {guild.id}"  # noqa: E501
+                        "[logging] Logging channel (private_rooms) not "
+                        "configured for guild %s",
+                        guild.id,
                     )
                     return
 
         except Exception as e:
             logger.error(
-                "[private_rooms/event] Error deleting private room record for %s: %s",  # noqa: E501
+                "[private_rooms/event] Error deleting private room record "
+                "for %s: %s",
                 member,
                 e,
             )
             return
 
+        if log_webhook is None:
+            return
+
         if not log_webhook.valid:
             logger.warning(
-                f"[logging] Logging webhook (private_rooms) invalid for guild {guild.id}"  # noqa: E501
+                "[logging] Logging webhook (private_rooms) invalid for "  # noqa: E501
+                "guild %s",
+                guild.id,
             )
             return
 

@@ -69,6 +69,7 @@ class Paint(Cog):
                 guild_id=guild.id,
                 user_id=member.id,
                 with_relations=True,
+                for_update=True,
             )
 
             guild_colors = await get_guild_colors(session, guild_id=guild.id)
