@@ -91,7 +91,7 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     )
 
     @staticmethod
-    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:  # noqa: D102
         if "economy_shop_items" in config:
             shop_items: list[Any] = config["economy_shop_items"] or []
             config["economy_shop_items"] = [

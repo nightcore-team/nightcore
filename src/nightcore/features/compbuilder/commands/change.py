@@ -69,7 +69,5 @@ async def change(
         )
         return
 
-    await interaction.response.send_modal(
-        ChangeComponentModal(bot, cmp)
-    )
+    await interaction.response.send_modal(ChangeComponentModal(bot, cmp))
     return

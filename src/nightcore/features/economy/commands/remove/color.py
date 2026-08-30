@@ -88,13 +88,11 @@ async def remove_color(
 
         if not outcome:
             user_record, _ = await get_or_create_user(
-                session,
-                guild_id=guild.id,
-                user_id=user.id,
-             for_update=True)
+                session, guild_id=guild.id, user_id=user.id, for_update=True
+            )
             color = await get_color_by_id(
-                session, guild_id=guild.id, color_id=color_id
-            , for_update=True)
+                session, guild_id=guild.id, color_id=color_id, for_update=True
+            )
 
             if color is None:
                 outcome = "unknown_color"

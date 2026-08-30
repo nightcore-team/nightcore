@@ -42,13 +42,11 @@ class VoiceStateUpdateEvent(Cog):
                     private_room_state = await get_private_room_state(
                         session, user_id=member.id, for_update=True
                     )
-                    create_private_room_channel_id = (
-                        await get_specified_channel(
-                            session,
-                            guild_id=guild.id,
-                            config_type=GuildPrivateChannelsConfig,
-                            channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
-                        )
+                    create_private_room_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildPrivateChannelsConfig,
+                        channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
                     )
                     logging_webhook = await get_specified_webhook(
                         session,
@@ -214,13 +212,11 @@ class VoiceStateUpdateEvent(Cog):
                     private_room_state = await get_private_room_state(
                         session, user_id=member.id, for_update=True
                     )
-                    create_private_room_channel_id = (
-                        await get_specified_channel(
-                            session,
-                            guild_id=guild.id,
-                            config_type=GuildPrivateChannelsConfig,
-                            channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
-                        )
+                    create_private_room_channel_id = await get_specified_channel(
+                        session,
+                        guild_id=guild.id,
+                        config_type=GuildPrivateChannelsConfig,
+                        channel_type=ChannelType.CREATE_PRIVATE_VOICE_CHANNEL,
                     )
                     logging_webhook = await get_specified_webhook(
                         session,

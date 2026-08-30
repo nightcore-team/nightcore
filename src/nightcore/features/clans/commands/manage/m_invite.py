@@ -58,8 +58,8 @@ async def moder_invite(
     async with bot.uow.start() as session:
         # get clanmember
         dbclan = await get_clan_by_id(
-            session, guild_id=guild.id, clan_id=clan_id
-        , for_update=True)
+            session, guild_id=guild.id, clan_id=clan_id, for_update=True
+        )
 
         if dbclan is None:
             outcome = "clan_not_found"
@@ -68,8 +68,11 @@ async def moder_invite(
                 outcome = "limit_reached"
             else:
                 invited_user_clan_member = await get_clan_member(
-                    session, guild_id=guild.id, user_id=user.id
-                , for_update=True)
+                    session,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    for_update=True,
+                )
                 if invited_user_clan_member:
                     outcome = "invited_already_in_clan"
                 else:

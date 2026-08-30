@@ -146,12 +146,8 @@ class RainbowRoleTask(Cog):
                     secondary_hue = (
                         (step + HUE_OFFSET) % PALETTE_SIZE
                     ) / PALETTE_SIZE
-                    primary = discord.Color.from_hsv(
-                        primary_hue, 1.0, 1.0
-                    )
-                    secondary = discord.Color.from_hsv(
-                        secondary_hue, 1.0, 1.0
-                    )
+                    primary = discord.Color.from_hsv(primary_hue, 1.0, 1.0)
+                    secondary = discord.Color.from_hsv(secondary_hue, 1.0, 1.0)
                     next_step = (step + 1) % PALETTE_SIZE
 
                 if not await RainbowRoleTask._apply_color(
