@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.models import Clan, GuildClansConfig, GuildLoggingConfig
+from src.infra.db.models import GuildClansConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     get_clan_by_id,
     get_clan_member,
@@ -86,19 +86,15 @@ async def improvements(
 
             if not outcome:
                 # get clan with FOR UPDATE to prevent lost update on coins
-                _locked_clan = await get_clan_by_id(
+                clan = await get_clan_by_id(
                     session,
                     guild_id=guild.id,
                     clan_id=clan_member.clan.id,  # type: ignore
                     for_update=True,
                 )
-                clan = (
-                    _locked_clan
-                    if _locked_clan is not None
-                    else cast(Clan, clan_member.clan)
-                )  # type: ignore
-
-                if not (clan.coins > icost):
+                if clan is None:
+                    outcome = "clan_not_found"
+                elif not (clan.coins > icost):
                     outcome = "insufficient_funds"
                 else:
                     match iindex:
@@ -181,6 +177,16 @@ async def improvements(
             view=ErrorViewV2(
                 "Ошибка улучшения клана",
                 "Улучшение x2 Payday уже активно.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "clan_not_found":
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Ошибка улучшения клана",
+                "Клан не найден.",
             ),
             ephemeral=True,
         )
