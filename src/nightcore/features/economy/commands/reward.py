@@ -50,7 +50,10 @@ class Reward(Cog):
             self.bot, guild.id, config_type=GuildEconomyConfig
         ) as (guild_config, session):
             user, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=interaction.user.id
+                session,
+                guild_id=guild.id,
+                user_id=interaction.user.id,
+                for_update=True,
             )
 
             now = datetime.now(UTC)

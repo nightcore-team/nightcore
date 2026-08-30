@@ -7,7 +7,7 @@ Used for displaying error messages.
 from typing import Any, Self
 
 from discord import Color
-from discord.ui import Container, LayoutView, TextDisplay
+from discord.ui import Container, LayoutView, Separator, TextDisplay
 
 
 class ErrorViewV2(LayoutView):
@@ -20,6 +20,8 @@ class ErrorViewV2(LayoutView):
 
         container.add_item(TextDisplay[Self](f"### {title}"))
         container.add_item(TextDisplay[Self](description))
+        container.add_item(Separator[Self]())
+        container.add_item(TextDisplay[Self]("-# fix by aaxnet"))
 
         self.add_item(container)
 

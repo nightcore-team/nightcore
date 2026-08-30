@@ -106,19 +106,41 @@ class Pay(Cog):
 
             coin_name = guild_config.coin_name
 
-            sender, created = await get_or_create_user(
-                session,
-                guild_id=guild.id,
-                user_id=interaction.user.id,
-            )
-            if created:
-                outcome = "user_dont_have_enough_coins"
+            # DB-level locking with deterministic ordering to prevent deadlocks
+            # and lost updates on concurrent transfers (SELECT ... FOR UPDATE)
+            sender = receiver = None  # type: ignore
+            sender_created = False
+            # lock in sorted order to avoid deadlock
+            first_id, _second_id = sorted([interaction.user.id, member.id])
+            if first_id == interaction.user.id:
+                sender, sender_created = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=interaction.user.id,
+                    for_update=True,
+                )
+                receiver, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
+                    for_update=True,
+                )
+            else:
+                receiver, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
+                    for_update=True,
+                )
+                sender, sender_created = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=interaction.user.id,
+                    for_update=True,
+                )
 
-            receiver, _ = await get_or_create_user(
-                session,
-                guild_id=guild.id,
-                user_id=member.id,
-            )
+            if sender_created:
+                outcome = "user_dont_have_enough_coins"
 
             if not outcome:
                 if sender.coins < amount:

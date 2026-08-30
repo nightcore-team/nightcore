@@ -153,6 +153,7 @@ class CountMessageEvent(Cog):
                 session,
                 guild_id=guild.id,
                 user_id=message.author.id,
+                for_update=True,
             )
 
             user.messages_count += 1

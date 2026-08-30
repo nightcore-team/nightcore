@@ -31,8 +31,13 @@ class CountVoiceActivityEvent(Cog):
                 session,
                 guild_id=member.guild.id,
                 user_id=member.id,
+                for_update=True,
             )
 
+            # DB-level locking guarantees only one concurrent start wins;
+            # if already counting we keep earliest start (idempotent)
+            if user.temp_voice_activity is not None:
+                return
             user.temp_voice_activity = now
 
         logger.info(
@@ -53,6 +58,7 @@ class CountVoiceActivityEvent(Cog):
                 session,
                 guild_id=member.guild.id,
                 user_id=member.id,
+                for_update=True,
             )
 
             # If not currently counting, skip

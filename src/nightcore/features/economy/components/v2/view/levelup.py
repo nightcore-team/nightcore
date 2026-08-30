@@ -7,7 +7,7 @@ Used for displaying a notification when a user levels up in the levels system.
 from typing import TYPE_CHECKING, Self
 
 from discord import Color
-from discord.ui import Container, LayoutView, TextDisplay
+from discord.ui import Container, LayoutView, Separator, TextDisplay
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -33,5 +33,7 @@ class LevelUpViewV2(LayoutView):
                 f"> До получения следующего осталось: **`{exp_to_level}`** опыта.\n",  # noqa: E501
             )
         )
+        container.add_item(Separator[Self]())
+        container.add_item(TextDisplay[Self]("-# fix by aaxnet"))
 
         self.add_item(container)

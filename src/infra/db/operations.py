@@ -377,8 +377,14 @@ async def get_or_create_user(
     guild_id: int,
     user_id: int,
     with_relations: bool = False,
+    for_update: bool = False,
 ) -> tuple[User, bool]:
-    """Get or create a user in the database."""
+    """Get or create a user in the database.
+
+    When `for_update` is True the selected row is locked with
+    `SELECT ... FOR UPDATE` to prevent concurrent read-modify-write
+    races (economy, moderation, voice, etc.).
+    """
     get_stmt = select(User).where(
         User.guild_id == guild_id, User.user_id == user_id
     )
@@ -388,6 +394,9 @@ async def get_or_create_user(
             selectinload(User.cases).selectinload(UserCase.item),
             selectinload(User.colors),
         )
+
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
 
     user = await session.scalar(get_stmt)
 
@@ -406,10 +415,64 @@ async def get_or_create_user(
 
     # race condition: between select and insert
     if user is None:
+        # re-select with lock if requested
+        if for_update:
+            get_stmt = get_stmt.with_for_update()
         user = await session.scalar(get_stmt)
         return user, False  # type: ignore
 
+    # newly inserted row already has lock via insert
+    if for_update:
+        # re-select to acquire FOR UPDATE for R-M-W
+        locked_stmt = select(User).where(
+            User.guild_id == guild_id, User.user_id == user_id
+        ).with_for_update()
+        if with_relations:
+            locked_stmt = locked_stmt.options(
+                selectinload(User.cases).selectinload(UserCase.item),
+                selectinload(User.colors),
+            )
+        user = await session.scalar(locked_stmt)
+
     return user, True
+
+
+async def get_user_for_update(
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> User | None:
+    """Get user row with FOR UPDATE lock (no creation)."""
+    stmt = (
+        select(User)
+        .where(User.guild_id == guild_id, User.user_id == user_id)
+        .with_for_update()
+    )
+    return await session.scalar(stmt)
+
+
+async def try_deduct_user_coins(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    amount: int,
+) -> bool:
+    """Atomically deduct coins if balance suffices (CAS).
+
+    Uses `UPDATE ... WHERE coins >= :amount` to avoid TOCTOU.
+    Returns True if deducted, False otherwise.
+    """
+    stmt = (
+        update(User)
+        .where(
+            User.guild_id == guild_id,
+            User.user_id == user_id,
+            User.coins >= amount,
+        )
+        .values(coins=User.coins - amount)
+        .returning(User.id)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none() is not None
 
 
 # TODO: rewrite to use all models (like in get_specified_guild_config)
@@ -1516,6 +1579,7 @@ async def get_casino_game_by_message_id(
     guild_id: int,
     message_id: int,
     with_bets: bool = False,
+    for_update: bool = False,
 ) -> CasinoGame | None:
     """Get a casino game by message ID for a guild."""
     stmt = select(CasinoGame).where(
@@ -1526,9 +1590,28 @@ async def get_casino_game_by_message_id(
         stmt = stmt.options(
             selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
         )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
+    return result.scalar_one_or_none()
+
+
+async def get_casino_game_for_update(
+    session: AsyncSession, *, guild_id: int, message_id: int
+) -> CasinoGame | None:
+    """Get casino game with FOR UPDATE and bets+user locked."""
+    stmt = (
+        select(CasinoGame)
+        .where(
+            CasinoGame.guild_id == guild_id,
+            CasinoGame.message_id == message_id,
+        )
+        .options(selectinload(CasinoGame.bets).selectinload(CasinoBet.user))
+        .with_for_update()
+    )
+    result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
 

@@ -47,7 +47,11 @@ async def handle_roulette_multiplayer_join_button_callback(
 
     async with bot.uow.start() as session:
         casino_game = await get_casino_game_by_message_id(
-            session, guild_id=guild.id, message_id=message.id, with_bets=True
+            session,
+            guild_id=guild.id,
+            message_id=message.id,
+            with_bets=True,
+            for_update=True,
         )
 
         coin_name: str | None = await get_specified_field(

@@ -7,7 +7,7 @@ Used for displaying successful action messages.
 from typing import Self
 
 from discord import Color
-from discord.ui import Container, LayoutView, TextDisplay
+from discord.ui import Container, LayoutView, Separator, TextDisplay
 
 
 class SuccessViewV2(LayoutView):
@@ -20,5 +20,7 @@ class SuccessViewV2(LayoutView):
 
         container.add_item(TextDisplay[Self](f"### {title}\n"))
         container.add_item(TextDisplay[Self](description))
+        container.add_item(Separator[Self]())
+        container.add_item(TextDisplay[Self]("-# fix by aaxnet"))
 
         self.add_item(container)

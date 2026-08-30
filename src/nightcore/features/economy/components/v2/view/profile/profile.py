@@ -109,5 +109,7 @@ class UserProfileViewV2(LayoutView):
                 user_id=user_id,
             )
         )
+        container.add_item(Separator())
+        container.add_item(TextDisplay[Self]("-# fix by aaxnet"))
 
         self.add_item(container)
