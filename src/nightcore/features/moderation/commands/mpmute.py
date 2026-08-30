@@ -146,12 +146,14 @@ class MpMute(Cog):
             )
             return
 
+        await interaction.response.defer(thinking=True)
+
         end_time = calculate_end_time(parsed_duration)
 
         # Try cache first
         mrole = await ensure_role_exists(guild, mute_role_id)
         if mrole is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=ErrorViewV2(
                     "Роль блокировки не найдена",
                     f"Роль блокировки с ID {mute_role_id} "
@@ -161,46 +163,71 @@ class MpMute(Cog):
             )
             return
 
-        has_role = has_any_role(member, mrole.id)
-
-        if not has_role:
-            try:
-                await member.add_roles(mrole, reason=reason)  # type: ignore
-            except Exception as e:
-                logger.exception("Failed to add role: %s", e)
-                await interaction.response.send_message(
+        # Discord state is not DB - make idempotent
+        if has_any_role(member, mrole.id):
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка блокировки",
+                    f"{member.mention} уже заблокирован на торговой площадке.",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+            return
+        try:
+            await member.add_roles(mrole, reason=reason)  # type: ignore
+        except discord.Forbidden as e:
+            logger.warning("Failed to add mpmute role (forbidden): %s", e)
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка выдачи роли",
+                    "Не удалось выдать роль блокировки "
+                    "торговой площадки пользователю.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException as e:
+            logger.exception("Failed to add mpmute role (http): %s", e)
+            if has_any_role(member, mrole.id):
+                await interaction.followup.send(
                     view=ErrorViewV2(
-                        "Ошибка выдачи роли",
-                        "Не удалось выдать роль блокировки "
-                        "торговой площадки пользователю.",
+                        "Ошибка блокировки",
+                        f"{member.mention} уже заблокирован на торговой площадке.",  # noqa: E501
                     ),
                     ephemeral=True,
                 )
                 return
-        else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=ErrorViewV2(
-                    "Ошибка блокировки",
-                    f"{member.mention} уже заблокирован на торговой площадке.",
+                    "Ошибка выдачи роли",
+                    "Не удалось выдать роль блокировки "
+                    "торговой площадки пользователю.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except Exception as e:
+            logger.exception("Failed to add role: %s", e)
+            if has_any_role(member, mrole.id):
+                await interaction.followup.send(
+                    view=ErrorViewV2(
+                        "Ошибка блокировки",
+                        f"{member.mention} уже заблокирован на торговой площадке.",  # noqa: E501
+                    ),
+                    ephemeral=True,
+                )
+                return
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка выдачи роли",
+                    "Не удалось выдать роль блокировки "
+                    "торговой площадки пользователю.",
                 ),
                 ephemeral=True,
             )
             return
 
-        await interaction.response.defer(thinking=True)
-
-        await interaction.followup.send(
-            view=PunishViewV2(
-                bot=self.bot,
-                user_id=member.id,
-                punish_type="mpmute",
-                moderator_id=interaction.user.id,  # type: ignore
-                reason=reason,
-                duration=duration,
-                mode="server",
-            )
-        )
-
+        # Dispatch after successful Discord action; handler is idempotent
         try:
             self.bot.dispatch(
                 "user_muted",
@@ -222,6 +249,18 @@ class MpMute(Cog):
                 "[event] - Failed to dispatch user_muted event: %s", e
             )
             return
+
+        await interaction.followup.send(
+            view=PunishViewV2(
+                bot=self.bot,
+                user_id=member.id,
+                punish_type="mpmute",
+                moderator_id=interaction.user.id,  # type: ignore
+                reason=reason,
+                duration=duration,
+                mode="server",
+            )
+        )
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s reason=%s",

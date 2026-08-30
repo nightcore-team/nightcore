@@ -80,6 +80,7 @@ async def give_color(
                 guild_id=guild.id,
                 user_id=user.id,
                 with_relations=True,
+                for_update=True,
             )
             color = await get_color_by_id(
                 session, guild_id=guild.id, color_id=color_id

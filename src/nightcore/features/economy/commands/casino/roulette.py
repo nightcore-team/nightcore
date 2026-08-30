@@ -118,6 +118,7 @@ async def roulette(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
+                for_update=True,
             )
             logging_webhook = await get_specified_webhook(
                 session,

@@ -68,7 +68,10 @@ async def handle_role_select_button_callback(
                 outcome = "user_banned"
             else:
                 last_rr = await get_latest_user_role_request(
-                    session, guild_id=guild.id, user_id=user.id
+                    session,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    for_update=True,
                 )
 
                 if last_rr and last_rr.state == RoleRequestStateEnum.PENDING:

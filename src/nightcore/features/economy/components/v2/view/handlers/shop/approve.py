@@ -52,6 +52,7 @@ async def handle_approve_coins_shop_order_button(
             session=session,
             guild_id=guild.id,
             custom_id=thread.id,
+            for_update=True,
         )
 
         economy_logging_webhook = await get_specified_webhook(
@@ -94,6 +95,7 @@ async def handle_approve_coins_shop_order_button(
                         session=session,
                         guild_id=guild.id,
                         user_id=shop_order.user_id,  # type: ignore
+                        for_update=True,
                     )
 
                     if buyer.coins < shop_order.payload.get("cost"):  # type: ignore

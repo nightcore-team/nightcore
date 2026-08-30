@@ -44,6 +44,7 @@ async def send_battlepass_claim_view(
             session,
             guild_id=guild.id,
             user_id=target_user_id,
+            for_update=True,
         )
 
         user_level = user_record.battle_pass_level

@@ -110,8 +110,19 @@ class JoinMultiplayerRouletteModal(
         bets: list[CasinoBetAnnot] = []
 
         async with bot.uow.start() as session:
+            # Lock game row before user (SELECT ... FOR UPDATE)
+            casino_game = await get_casino_game_by_message_id(
+                session,
+                guild_id=guild.id,
+                message_id=self.message.id,
+                with_bets=True,
+                for_update=True,
+            )
             user_record, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=interaction.user.id
+                session,
+                guild_id=guild.id,
+                user_id=interaction.user.id,
+                for_update=True,
             )
             coin_name: str | None = await get_specified_field(
                 session,
@@ -123,38 +134,40 @@ class JoinMultiplayerRouletteModal(
             if user_record.coins < amount:
                 outcome = "insufficient_funds"
             else:
-                casino_game = await get_casino_game_by_message_id(
-                    session,
-                    guild_id=guild.id,
-                    message_id=self.message.id,
-                    with_bets=True,
-                )
                 if not casino_game:
                     outcome = "game_not_found"
                 else:
                     if casino_game.state == CasinoGameStateEnum.FINISHED:
                         outcome = "game_finished"
                     else:
-                        bet = CasinoBet(
-                            user_id=user_record.id,
-                            amount=amount * 2,
-                            color=selected_color,
-                            game_id=casino_game.id,
+                        # prevent duplicate join by same user
+                        already_in = any(
+                            b.user.user_id == interaction.user.id  # type: ignore
+                            for b in casino_game.bets
                         )
+                        if already_in:
+                            outcome = "already_joined"
+                        else:
+                            bet = CasinoBet(
+                                user_id=user_record.id,
+                                amount=amount * 2,
+                                color=selected_color,
+                                game_id=casino_game.id,
+                            )
 
-                        casino_game.end_time = datetime.now(UTC) + timedelta(
-                            minutes=1
-                        )
+                            casino_game.end_time = datetime.now(
+                                UTC
+                            ) + timedelta(minutes=1)
 
-                        session.add(bet)
-                        await session.flush()
+                            session.add(bet)
+                            await session.flush()
 
-                        # Refresh relationship
-                        await session.refresh(casino_game, ["bets"])
+                            # Refresh relationship
+                            await session.refresh(casino_game, ["bets"])
 
-                        user_record.coins -= amount
+                            user_record.coins -= amount
 
-                        outcome = "success"
+                            outcome = "success"
 
                         for bet in casino_game.bets:
                             if bet.user.user_id == casino_game.initiator_id:  # type: ignore
@@ -197,6 +210,16 @@ class JoinMultiplayerRouletteModal(
                 view=ErrorViewV2(
                     "Ошибка присоединения",
                     "Игра уже завершена. Вы не можете присоединиться к ней.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        if outcome == "already_joined":
+            await interaction.response.send_message(
+                view=ErrorViewV2(
+                    "Ошибка присоединения",
+                    "Вы уже участвуете в этой игре.",
                 ),
                 ephemeral=True,
             )

@@ -163,26 +163,62 @@ class VMute(Cog):
             )
             return
 
-        has_role = has_any_role(member, mrole.id)
-
-        if not has_role:
-            try:
-                await member.add_roles(mrole, reason=reason)  # type: ignore
-            except Exception as e:
-                logger.exception("Failed to add role: %s", e)
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка блокировки",
-                        "Не удалось добавить роль мута пользователю.",
-                    ),
-                    ephemeral=True,
-                )
-                return
-        else:
+        # Discord state is not DB - make idempotent
+        if has_any_role(member, mrole.id):
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка блокировки",
                     f"{member.mention} уже заблокирован.",
+                ),
+                ephemeral=True,
+            )
+            return
+        try:
+            await member.add_roles(mrole, reason=reason)  # type: ignore
+        except discord.Forbidden as e:
+            logger.warning("Failed to add vmute role (forbidden): %s", e)
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка блокировки",
+                    "Не удалось добавить роль мута пользователю.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException as e:
+            logger.exception("Failed to add vmute role (http): %s", e)
+            if has_any_role(member, mrole.id):
+                await interaction.followup.send(
+                    view=ErrorViewV2(
+                        "Ошибка блокировки",
+                        f"{member.mention} уже заблокирован.",
+                    ),
+                    ephemeral=True,
+                )
+                return
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка блокировки",
+                    "Не удалось добавить роль мута пользователю.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except Exception as e:
+            logger.exception("Failed to add role: %s", e)
+            if has_any_role(member, mrole.id):
+                await interaction.followup.send(
+                    view=ErrorViewV2(
+                        "Ошибка блокировки",
+                        f"{member.mention} уже заблокирован.",
+                    ),
+                    ephemeral=True,
+                )
+                return
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка блокировки",
+                    "Не удалось добавить роль мута пользователю.",
                 ),
                 ephemeral=True,
             )
@@ -205,18 +241,7 @@ class VMute(Cog):
                     e,
                 )
 
-        await interaction.followup.send(
-            view=PunishViewV2(
-                bot=self.bot,
-                user_id=member.id,
-                punish_type="vmute",
-                moderator_id=interaction.user.id,
-                reason=reason,
-                duration=duration,
-                mode="server",
-            )
-        )
-
+        # Dispatch after successful Discord action; handler is idempotent
         try:
             self.bot.dispatch(
                 "user_muted",
@@ -238,6 +263,18 @@ class VMute(Cog):
                 "[event] - Failed to dispatch user_muted event: %s", e
             )
             return
+
+        await interaction.followup.send(
+            view=PunishViewV2(
+                bot=self.bot,
+                user_id=member.id,
+                punish_type="vmute",
+                moderator_id=interaction.user.id,
+                reason=reason,
+                duration=duration,
+                mode="server",
+            )
+        )
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s reason=%s",

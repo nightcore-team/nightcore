@@ -8,6 +8,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
+    get_clan_by_id,
     get_clan_member,
     get_specified_webhook,
 )
@@ -85,6 +86,7 @@ async def change_deputy(
             guild_id=guild.id,
             user_id=user.id,
             with_relations=True,
+            for_update=True,
         )
 
         if not leader:
@@ -96,37 +98,57 @@ async def change_deputy(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
+                for_update=True,
             )
 
             if not clan_member or clan_member.clan_id != leader.clan_id:
                 outcome = "member_not_in_clan"
             else:
-                clan_name = leader.clan.name
-                member_name = member.display_name
-                current_deputies_count = len(leader.clan.deputies)
-                max_deputies = leader.clan.max_deputies
+                # Lock Clan row for deputies count check to prevent race
+                # where two concurrent adds both see count < max.
+                clan_locked = await get_clan_by_id(
+                    session,
+                    guild_id=guild.id,
+                    clan_id=leader.clan_id,
+                    for_update=True,
+                )
+                if not clan_locked:
+                    outcome = "clan_not_found"
+                else:
+                    clan_name = clan_locked.name
+                    member_name = member.display_name
+                    # Access deputies after locking Clan row to get
+                    # fresh count under FOR UPDATE serialization.
+                    # clan_locked.deputies is selectin; accessing triggers
+                    # fresh SELECT after lock, ensuring accurate count.
+                    try:
+                        current_deputies_count = len(clan_locked.deputies)
+                    except Exception:
+                        # Fallback to leader's cached deputies if needed
+                        current_deputies_count = len(leader.clan.deputies)
+                    max_deputies = clan_locked.max_deputies
 
-                match option:
-                    case "add":
-                        if current_deputies_count >= max_deputies:
-                            outcome = "max_deputies_reached"
-                        elif clan_member.role == ClanMemberRoleEnum.DEPUTY:
-                            outcome = "already_deputy"
-                        else:
-                            clan_member.role = ClanMemberRoleEnum.DEPUTY
-                            await session.flush()
-                            outcome = "deputy_added"
+                    match option:
+                        case "add":
+                            if current_deputies_count >= max_deputies:
+                                outcome = "max_deputies_reached"
+                            elif clan_member.role == ClanMemberRoleEnum.DEPUTY:
+                                outcome = "already_deputy"
+                            else:
+                                clan_member.role = ClanMemberRoleEnum.DEPUTY
+                                await session.flush()
+                                outcome = "deputy_added"
 
-                    case "remove":
-                        if clan_member.role != ClanMemberRoleEnum.DEPUTY:
-                            outcome = "not_deputy"
-                        else:
-                            clan_member.role = ClanMemberRoleEnum.MEMBER
-                            await session.flush()
-                            outcome = "deputy_removed"
+                        case "remove":
+                            if clan_member.role != ClanMemberRoleEnum.DEPUTY:
+                                outcome = "not_deputy"
+                            else:
+                                clan_member.role = ClanMemberRoleEnum.MEMBER
+                                await session.flush()
+                                outcome = "deputy_removed"
 
-                    case _:
-                        outcome = "invalid_option"
+                        case _:
+                            outcome = "invalid_option"
 
     if outcome == "not_in_clan":
         await interaction.response.send_message(
@@ -195,6 +217,16 @@ async def change_deputy(
         )
         return
 
+    if outcome == "clan_not_found":
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Ошибка изменения заместителя",
+                "Клан не найден в базе данных.",
+            ),
+            ephemeral=True,
+        )
+        return
+
     async with bot.uow.start() as session:
         clans_logging_webhook = await get_specified_webhook(
             session,
@@ -218,7 +250,7 @@ async def change_deputy(
         guild=guild,
         event_type="clan_manage_notify",
         actor_id=interaction.user.id,
-        clan_name=leader.clan.name,  # type: ignore The clan will always exist here because of the checks on lines 91 and 132
+        clan_name=clan_name,
         actions=[clan_deputy_change_action],
         logging_webhook=clans_logging_webhook,
     )

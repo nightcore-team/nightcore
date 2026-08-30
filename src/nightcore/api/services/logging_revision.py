@@ -78,7 +78,10 @@ class LoggingRevisionService:
         revision_id = self.generate_revision_id()
 
         last_revision = await get_last_logging_revision(
-            session, guild_id=guild_id, config_type=config_type
+            session,
+            guild_id=guild_id,
+            config_type=config_type,
+            for_update=True,
         )
 
         session.add(

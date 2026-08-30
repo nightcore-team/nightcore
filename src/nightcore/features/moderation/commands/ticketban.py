@@ -105,7 +105,10 @@ class Ticketban(Cog):
                     outcome = "cannot_punish_moderator"
                 else:
                     u, _ = await get_or_create_user(
-                        session, guild_id=guild.id, user_id=member.id
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                        for_update=True,
                     )
                     if u.ticket_ban or await is_user_ticketbanned(
                         session, guild_id=guild.id, user_id=member.id

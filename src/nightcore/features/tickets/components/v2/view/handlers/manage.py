@@ -71,7 +71,7 @@ async def handle_ticket_pin_button(
         bot.uow.start() as session,
     ):
         ticket_state = await get_ticket_state(
-            session, guild_id=guild.id, channel_id=channel.id
+            session, guild_id=guild.id, channel_id=channel.id, for_update=True
         )
 
         if ticket_state is None:
@@ -233,9 +233,7 @@ async def handle_ticket_reopen_button(
         bot.uow.start() as session,
     ):
         ticket = await get_ticket_state(
-            session,
-            guild_id=guild.id,
-            channel_id=channel.id,
+            session, guild_id=guild.id, channel_id=channel.id, for_update=True
         )
 
         if ticket is None:
@@ -410,9 +408,7 @@ async def handle_ticket_close_button(
         bot.uow.start() as session,
     ):
         ticket = await get_ticket_state(
-            session,
-            guild_id=guild.id,
-            channel_id=channel.id,
+            session, guild_id=guild.id, channel_id=channel.id, for_update=True
         )
 
         if ticket is None:

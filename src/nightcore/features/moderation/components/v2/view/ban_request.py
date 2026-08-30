@@ -149,17 +149,17 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
             )
 
         try:
-            view.bot.dispatch("user_banned", data=data)
-        except Exception as e:
-            logger.exception(
-                "[event] - Failed to dispatch user_banned event: %s", e
-            )
-
-        try:
             await guild.ban(
                 target,
                 reason=view.reason,
                 delete_message_seconds=view.delete_seconds,
+            )
+        except discord.NotFound:
+            # Idempotent: already banned
+            logger.info(
+                "User %s already banned in guild %s (idempotent)",
+                target.id,
+                guild.id,
             )
         except (discord.Forbidden, discord.HTTPException) as e:
             logger.exception(
@@ -177,6 +177,14 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
 
             return
 
+        # Dispatch after successful Discord action; handler is idempotent
+        try:
+            view.bot.dispatch("user_banned", data=data)
+        except Exception as e:
+            logger.exception(
+                "[event] - Failed to dispatch user_banned event: %s", e
+            )
+
         return
 
     @button(
@@ -192,48 +200,49 @@ class ActionButtons(ActionRow["BanRequestViewV2"]):
         view = cast("BanRequestViewV2", self.view)
         user = cast(Member, interaction.user)
 
-        if view.is_closed:
-            await interaction.response.send_message(
-                "Этот запрос на бан уже был закрыт.",
-                ephemeral=True,
+        async with view.approve_lock:
+            if view.is_closed:
+                await interaction.response.send_message(
+                    "Этот запрос на бан уже был закрыт.",
+                    ephemeral=True,
+                )
+                return
+
+            if user.id in view.against:
+                await interaction.response.send_message(
+                    "Вы уже проголосовали.",
+                    ephemeral=True,
+                )
+                return
+
+            view.against.append(user.id)
+
+            view.against_moderators_text += f"- <@{user.id}>\n"
+
+            has_ban_role = has_any_role_from_sequence(
+                user, view.ban_access_roles_ids
             )
-            return
+            if (
+                has_ban_role
+                or interaction.user.id == view.author_id
+                or len(view.against) >= 4
+            ):
+                view.accent_color = discord.Color.from_str("#C0577A")
 
-        if user.id in view.against:
-            await interaction.response.send_message(
-                "Вы уже проголосовали.",
-                ephemeral=True,
-            )
-            return
+                view.is_closed = True
 
-        view.against.append(user.id)
+                await interaction.response.defer()
 
-        view.against_moderators_text += f"- <@{user.id}>\n"
-
-        has_ban_role = has_any_role_from_sequence(
-            user, view.ban_access_roles_ids
-        )
-        if (
-            has_ban_role
-            or interaction.user.id == view.author_id
-            or len(view.against) >= 4
-        ):
-            view.accent_color = discord.Color.from_str("#C0577A")
-
-            view.is_closed = True
+                await interaction.edit_original_response(
+                    view=view.make_component(disabled=True),
+                )
+                return
 
             await interaction.response.defer()
 
             await interaction.edit_original_response(
-                view=view.make_component(disabled=True),
+                view=view.make_component(),
             )
-            return
-
-        await interaction.response.defer()
-
-        await interaction.edit_original_response(
-            view=view.make_component(),
-        )
 
 
 class BanRequestViewV2(LayoutView):

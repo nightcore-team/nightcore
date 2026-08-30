@@ -65,6 +65,7 @@ async def handle_battlepass_claim_reward_button(
             guild_id=guild.id,
             user_id=interaction.user.id,
             with_relations=True,
+            for_update=True,
         )
 
         battlepass_levels = await get_guild_battlepass_levels(

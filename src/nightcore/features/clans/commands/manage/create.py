@@ -14,6 +14,7 @@ from src.infra.db.models import GuildClansConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     create_clan,
     create_clan_member,
+    get_clan_by_id,
     get_specified_field,
     get_specified_webhook,
 )
@@ -29,7 +30,10 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageNotifyDTO,
 )
 from src.nightcore.utils import safe_delete_role
-from src.nightcore.utils.object import ensure_category_exists
+from src.nightcore.utils.object import (  # noqa: E501
+    ensure_category_exists,
+    safe_delete_channel,
+)
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
@@ -96,6 +100,9 @@ async def create(
         )
         return
 
+    # Discord role creation before DB - if DB fails we cleanup orphan role
+    # (alternative would be create after DB but then we need  # noqa: E501
+    # placeholder role_id).  # noqa: E501
     try:
         clan_role = await guild.create_role(
             name=name,
@@ -262,69 +269,169 @@ async def create(
 
     # Only proceed with channel creation if clan was successfully created
     if outcome is None and create_channel and clan is not None:
-        if create_clan_channel_category_id:  # type: ignore
-            category = await ensure_category_exists(
-                guild, create_clan_channel_category_id
-            )
-
-            if category is None:
-                logger.error(
-                    "[clans] Error fetching create clan channel category for guild %s: category not found",  # noqa: E501
-                    guild.id,
-                )
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка создания канала клана",
-                        "Не удалось найти категорию для создания каналов кланов. ",  # noqa: E501
-                    ),
-                    ephemeral=True,
-                )
-                return
-            try:
-                channel = await guild.create_text_channel(
-                    name=f"{name}-clan",
-                    category=category,
-                    overwrites={
-                        guild.default_role: PermissionOverwrite(
-                            read_message_history=False,
-                            read_messages=False,
-                        ),
-                        clan_role: PermissionOverwrite(
-                            read_message_history=True,
-                            read_messages=True,
-                            send_messages=True,
-                            attach_files=True,
-                            add_reactions=True,
-                        ),
-                    },
-                )
-                async with bot.uow.start() as session:
-                    # clan is guaranteed to be not None here due to if check
-                    assert clan is not None
-                    merged_clan = await session.merge(clan)
-                    merged_clan.clan_channel_id = channel.id
-
-                await interaction.followup.send(
-                    view=SuccessViewV2(
-                        "Канал клана создан",
-                        f"Для клана **{name}** был создан текстовый канал в категории {category.mention}.",  # noqa: E501
-                    ),
-                    ephemeral=True,
-                )
-            except Exception as e:
-                logger.error(
-                    "[clans] Error creating clan channel in guild %s: %s",
-                    guild.id,
-                    e,
-                )
-                await interaction.followup.send(
-                    view=ErrorViewV2(
-                        "Ошибка создания канала клана",
-                        "Произошла ошибка при создании канала для клана.",
-                    ),
-                    ephemeral=True,
-                )
-                return
-
-        else:
+        if not create_clan_channel_category_id:  # type: ignore[truthy-bool]
             raise FieldNotConfiguredError("категория кланов")
+
+        category = await ensure_category_exists(
+            guild, create_clan_channel_category_id  # type: ignore[arg-type]
+        )
+
+        if category is None:
+            logger.error(
+                "[clans] Error fetching create clan channel category for guild %s: category not found",  # noqa: E501
+                guild.id,
+            )
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка создания канала клана",
+                    "Не удалось найти категорию для создания каналов кланов. ",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+            return
+
+        # Pre-check with FOR UPDATE to avoid unnecessary Discord IO  # noqa: E501
+        # This check is done in a short transaction without lock during IO.  # noqa: E501
+        async with bot.uow.start() as session:
+            pre_clan = await get_clan_by_id(
+                session, guild_id=guild.id, clan_id=clan.id, for_update=True
+            )
+            if pre_clan is None:
+                logger.error(
+                    "[clans] Clan %s not found before channel creation "  # noqa: E501
+                    "in guild %s",
+                    clan.id,
+                    guild.id,
+                )
+                await interaction.followup.send(
+                    view=ErrorViewV2(
+                        "Ошибка создания канала клана",
+                        "Клан не найден в базе данных.",
+                    ),
+                    ephemeral=True,
+                )
+                return
+            if pre_clan.clan_channel_id is not None:
+                await interaction.followup.send(
+                    view=ErrorViewV2(
+                        "Ошибка создания канала клана",
+                        "Для данного клана уже существует канал.",
+                    ),
+                    ephemeral=True,
+                )
+                return
+            # capture values for channel name (use fresh DB name)
+            clan_name_for_channel = pre_clan.name
+
+        channel = None
+        try:
+            channel = await guild.create_text_channel(
+                name=f"{clan_name_for_channel}-clan",
+                category=category,
+                overwrites={
+                    guild.default_role: PermissionOverwrite(
+                        read_message_history=False,
+                        read_messages=False,
+                    ),
+                    clan_role: PermissionOverwrite(
+                        read_message_history=True,
+                        read_messages=True,
+                        send_messages=True,
+                        attach_files=True,
+                        add_reactions=True,
+                    ),
+                },
+            )
+        except Exception as e:
+            logger.error(
+                "[clans] Error creating clan channel in guild %s: %s",
+                guild.id,
+                e,
+            )
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка создания канала клана",
+                    "Произошла ошибка при создании канала для клана.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        # SELECT FOR UPDATE before mutating to close race  # noqa: E501
+        try:
+            async with bot.uow.start() as session:
+                db_clan = await get_clan_by_id(
+                    session,  # noqa: E501
+                    guild_id=guild.id,
+                    clan_id=clan.id,
+                    for_update=True,
+                )
+                if db_clan is None:
+                    logger.error(
+                        "[clans/create] Clan %s not found in database "  # noqa: E501
+                        "during channel creation in guild %s",
+                        clan.id,
+                        guild.id,
+                    )
+                    # cleanup orphan channel
+                    asyncio.create_task(
+                        safe_delete_channel(
+                            channel, "Откат канала клана - клан не найден"
+                        )
+                    )
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка обновления информации о клане",
+                            "Клан не найден в базе данных при обновлении информации о канале.",  # noqa: E501
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+
+                if db_clan.clan_channel_id is not None:
+                    # Race: another request already set channel, cleanup orphan
+                    asyncio.create_task(
+                        safe_delete_channel(
+                            channel, "Откат канала клана - гонка каналов"
+                        )
+                    )
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка создания канала клана",
+                            "Для данного клана уже существует канал.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+
+                db_clan.clan_channel_id = channel.id
+
+        except Exception as e:
+            logger.error(
+                "[clans] Error updating clan channel in guild %s: %s",
+                guild.id,
+                e,
+            )
+            # cleanup orphan channel on DB error
+            if channel is not None:
+                asyncio.create_task(
+                    safe_delete_channel(
+                        channel, "Откат канала клана - ошибка БД"
+                    )
+                )
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка создания канала клана",
+                    "Произошла ошибка при сохранении канала для клана.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        await interaction.followup.send(
+            view=SuccessViewV2(
+                "Канал клана создан",
+                f"Для клана **{name}** был создан текстовый канал в категории {category.mention}.",  # noqa: E501
+            ),
+            ephemeral=True,
+        )

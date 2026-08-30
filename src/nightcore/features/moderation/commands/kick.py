@@ -119,6 +119,50 @@ class Kick(Cog):
         await interaction.response.defer(thinking=True)
 
         try:
+            await guild.kick(member, reason=reason)
+        except discord.Forbidden as e:
+            logger.warning("[command] - Forbidden kick user: %s", e)
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка кика",
+                    "Не удалось кикнуть пользователя.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except discord.NotFound:
+            # Idempotent: already kicked / not in guild
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка кика",
+                    "Пользователь уже не на сервере.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException as e:
+            logger.warning("[command] - Failed to kick user (http): %s", e)
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка кика",
+                    "Не удалось кикнуть пользователя.",
+                ),
+                ephemeral=True,
+            )
+            return
+        except Exception as e:
+            logger.warning("[command] - Failed to kick user: %s", e)
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка кика",
+                    "Не удалось кикнуть пользователя.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        # Dispatch after successful Discord action
+        try:
             self.bot.dispatch(
                 "user_kicked",
                 data=UserKickEventData(
@@ -134,19 +178,6 @@ class Kick(Cog):
         except Exception as e:
             logger.warning(
                 "[event] - Failed to dispatch user_kicked event: %s", e
-            )
-            return
-
-        try:
-            await guild.kick(member, reason=reason)
-        except Exception as e:
-            logger.warning("[command] - Failed to kick user: %s", e)
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка кика",
-                    "Не удалось кикнуть пользователя.",
-                ),
-                ephemeral=True,
             )
             return
 

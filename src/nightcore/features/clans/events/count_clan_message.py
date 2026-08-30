@@ -33,17 +33,28 @@ class CountClanMessageEvent(Cog):
         async with specified_guild_config(
             self.bot, guild.id, config_type=GuildClansConfig
         ) as (guild_config, session):
-            user = cast(
-                ClanMember,
-                await get_clan_member(
-                    session,
-                    guild_id=guild.id,
-                    user_id=author.id,
-                    with_relations=True,
-                ),
+            _user = await get_clan_member(
+                session,
+                guild_id=guild.id,
+                user_id=author.id,
+                with_relations=True,
+                for_update=True,
             )
+            if _user is None:
+                return
+            user = cast(ClanMember, _user)
 
-            clan = user.clan
+            # lock clan row explicitly for RMW on exp/level
+            from src.infra.db.operations import get_clan_by_id
+
+            clan = await get_clan_by_id(
+                session,
+                guild_id=guild.id,
+                clan_id=user.clan.id,
+                for_update=True,  # type: ignore
+            )
+            if clan is None:
+                return
 
             exp_multiplier = guild_config.base_exp_multiplier
             new_current_exp = clan.current_exp + exp_multiplier

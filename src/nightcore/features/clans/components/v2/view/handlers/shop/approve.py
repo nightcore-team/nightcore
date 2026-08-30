@@ -52,6 +52,7 @@ async def handle_approve_clan_shop_button(
             session=session,
             guild_id=guild.id,
             custom_id=thread.id,
+            for_update=True,
         )
 
         clans_logging_webhook = await get_specified_webhook(
@@ -94,6 +95,7 @@ async def handle_approve_clan_shop_button(
                         session=session,
                         guild_id=guild.id,
                         clan_name=shop_order.payload.get("clan_name"),  # type: ignore
+                        for_update=True,
                     )
                     if not clan:
                         outcome = "clan_not_found"

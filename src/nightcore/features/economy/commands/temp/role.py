@@ -124,7 +124,7 @@ async def give_role(
                 guild_id=guild.id,
                 user_id=user.id,
                 role_id=role.id,
-            )
+             for_update=True)
             if temp_role:
                 temp_role.end_time = now
             else:

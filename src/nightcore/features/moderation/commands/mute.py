@@ -188,23 +188,9 @@ class Mute(Cog):
                     )
                     return
 
-                has_role = has_any_role(member, mrole.id)
-
-                if not has_role:
-                    try:
-                        await member.add_roles(mrole, reason=reason)  # type: ignore
-                    except Exception as e:
-                        logger.exception("Failed to add role: %s", e)
-                        await interaction.followup.send(
-                            view=ErrorViewV2(
-                                "Ошибка добавления роли",
-                                "Не удалось добавить роль "
-                                "блокировки пользователю.",
-                            ),
-                            ephemeral=True,
-                        )
-                        return
-                else:
+                # Discord state is not DB - make idempotent:
+                # check then try, on failure re-check to handle race
+                if has_any_role(member, mrole.id):
                     await interaction.followup.send(
                         view=ErrorViewV2(
                             "Ошибка блокировки",
@@ -213,23 +199,112 @@ class Mute(Cog):
                         ephemeral=True,
                     )
                     return
-
-            case ConfigMuteTypeEnum.TIMEOUT:
                 try:
-                    if not member.is_timed_out():
-                        await member.timeout(end_time, reason=reason)
-                    else:
+                    await member.add_roles(mrole, reason=reason)  # type: ignore
+                except discord.Forbidden as e:
+                    logger.warning("Failed to add role (forbidden): %s", e)
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка добавления роли",
+                            "Не удалось добавить роль "
+                            "блокировки пользователю.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+                except discord.HTTPException as e:
+                    logger.exception("Failed to add role (http): %s", e)
+                    if has_any_role(member, mrole.id):
                         await interaction.followup.send(
                             view=ErrorViewV2(
                                 "Ошибка блокировки",
-                                f"{member.mention} уже в тайм-ауте.",
+                                f"У {member.mention} уже есть блокировка чата.",  # noqa: E501
                             ),
                             ephemeral=True,
                         )
                         return
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка добавления роли",
+                            "Не удалось добавить роль "
+                            "блокировки пользователю.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+                except Exception as e:
+                    logger.exception("Failed to add role: %s", e)
+                    if has_any_role(member, mrole.id):
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
+                                "Ошибка блокировки",
+                                f"У {member.mention} уже есть блокировка чата.",  # noqa: E501
+                            ),
+                            ephemeral=True,
+                        )
+                        return
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка добавления роли",
+                            "Не удалось добавить роль "
+                            "блокировки пользователю.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
 
+            case ConfigMuteTypeEnum.TIMEOUT:
+                if member.is_timed_out():
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка блокировки",
+                            f"{member.mention} уже в тайм-ауте.",  # noqa: E501
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+                try:
+                    await member.timeout(end_time, reason=reason)
+                except discord.Forbidden as e:
+                    logger.warning("Failed to timeout (forbidden): %s", e)
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка тайм-аута",
+                            "Не удалось установить тайм-аут пользователю.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+                except discord.HTTPException as e:
+                    logger.exception("Failed to timeout (http): %s", e)
+                    if member.is_timed_out():
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
+                                "Ошибка блокировки",
+                                f"{member.mention} уже в тайм-ауте.",  # noqa: E501
+                            ),
+                            ephemeral=True,
+                        )
+                        return
+                    await interaction.followup.send(
+                        view=ErrorViewV2(
+                            "Ошибка тайм-аута",
+                            "Не удалось установить тайм-аут пользователю.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
                 except Exception as e:
                     logger.exception("Failed to timeout member: %s", e)
+                    if member.is_timed_out():
+                        await interaction.followup.send(
+                            view=ErrorViewV2(
+                                "Ошибка блокировки",
+                                f"{member.mention} уже в тайм-ауте.",  # noqa: E501
+                            ),
+                            ephemeral=True,
+                        )
+                        return
                     await interaction.followup.send(
                         view=ErrorViewV2(
                             "Ошибка тайм-аута",
@@ -248,19 +323,8 @@ class Mute(Cog):
                 )
                 return
 
-        await interaction.followup.send(
-            view=PunishViewV2(
-                self.bot,
-                user_id=member.id,
-                punish_type="mute",
-                moderator_id=interaction.user.id,
-                duration=duration,
-                reason=reason,
-                mode="server",
-            ),
-            ephemeral=False,
-        )
-
+        # Dispatch after successful Discord action;
+        # TempPunish creation in handler is idempotent (upsert with FOR UPDATE)
         try:
             self.bot.dispatch(
                 "user_muted",
@@ -282,6 +346,19 @@ class Mute(Cog):
                 "[event] - Failed to dispatch user_muted event: %s", e
             )
             return
+
+        await interaction.followup.send(
+            view=PunishViewV2(
+                self.bot,
+                user_id=member.id,
+                punish_type="mute",
+                moderator_id=interaction.user.id,
+                duration=duration,
+                reason=reason,
+                mode="server",
+            ),
+            ephemeral=False,
+        )
 
         logger.info(
             "[command] - invoked user=%s guild=%s target=%s reason=%s",

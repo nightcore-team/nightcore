@@ -71,7 +71,10 @@ async def give_bp_exp(
         if not outcome:
             try:
                 user_record, _ = await get_or_create_user(
-                    session, guild_id=guild.id, user_id=user.id
+                    session,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    for_update=True,
                 )
                 user_record.battle_pass_points += amount
                 outcome = "success"

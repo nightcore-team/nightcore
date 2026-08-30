@@ -173,10 +173,16 @@ _ACCESS_COLUMNS: Final[
 
 
 async def get_specified_guild_config(  # noqa: UP047
-    session: AsyncSession, *, config_type: type[GuildT], guild_id: int
+    session: AsyncSession,
+    *,
+    config_type: type[GuildT],
+    guild_id: int,
+    for_update: bool = False,
 ) -> GuildT:
     """Get the guild configuration from the database."""
     get_stmt = select(config_type).where(config_type.guild_id == guild_id)
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
     config = await session.scalar(get_stmt)
 
     if config is not None:
@@ -193,7 +199,19 @@ async def get_specified_guild_config(  # noqa: UP047
     config = result.scalar_one_or_none()
 
     if config is None:
+        if for_update:
+            get_stmt = get_stmt.with_for_update()
         config = await session.scalar(get_stmt)
+        return config  # type: ignore
+
+    if for_update:
+        # lock the newly inserted row for R-M-W
+        get_stmt = (
+            select(config_type)
+            .where(config_type.guild_id == guild_id)
+            .with_for_update()
+        )
+        config = await session.scalar(get_stmt)  # type: ignore
         return config  # type: ignore
 
     return config
@@ -299,10 +317,13 @@ async def get_specified_field(  # noqa: UP047
     guild_id: int,
     config_type: type[GuildT],
     field_name: str,
+    for_update: bool = False,
 ) -> Any:
     """Get the specified field from the database."""
     column = getattr(config_type, field_name)
     stmt = select(column).where(config_type.guild_id == guild_id)
+    if for_update:
+        stmt = stmt.with_for_update()
     return await session.scalar(stmt)
 
 
@@ -322,26 +343,32 @@ async def get_all_pending_notifications(
     now: datetime,
 ) -> Sequence[NotifyState]:
     """Get all pending notifications."""
-    stmt = select(NotifyState).where(
-        NotifyState.state == NotifyStateEnum.PENDING,
-        NotifyState.end_time < now,
+    stmt = (
+        select(NotifyState)
+        .where(
+            NotifyState.state == NotifyStateEnum.PENDING,
+            NotifyState.end_time < now,
+        )
+        .with_for_update(skip_locked=True)
     )
     result = await session.scalars(stmt)
     return result.all()
 
 
 async def get_shop_order_state(
-    session: AsyncSession, *, guild_id: int, custom_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    custom_id: int,
+    for_update: bool = False,
 ) -> ShopOrderState | None:
     """Get the shop order state from the database."""
-    stmt = (
-        select(ShopOrderState)
-        .where(
-            ShopOrderState.guild_id == guild_id,
-            ShopOrderState.custom_id == custom_id,
-        )
-        .with_for_update()
+    stmt = select(ShopOrderState).where(
+        ShopOrderState.guild_id == guild_id,
+        ShopOrderState.custom_id == custom_id,
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
@@ -377,8 +404,14 @@ async def get_or_create_user(
     guild_id: int,
     user_id: int,
     with_relations: bool = False,
+    for_update: bool = False,
 ) -> tuple[User, bool]:
-    """Get or create a user in the database."""
+    """Get or create a user in the database.
+
+    When `for_update` is True the selected row is locked with
+    `SELECT ... FOR UPDATE` to prevent concurrent read-modify-write
+    races (economy, moderation, voice, etc.).
+    """
     get_stmt = select(User).where(
         User.guild_id == guild_id, User.user_id == user_id
     )
@@ -388,6 +421,9 @@ async def get_or_create_user(
             selectinload(User.cases).selectinload(UserCase.item),
             selectinload(User.colors),
         )
+
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
 
     user = await session.scalar(get_stmt)
 
@@ -406,10 +442,66 @@ async def get_or_create_user(
 
     # race condition: between select and insert
     if user is None:
+        # re-select with lock if requested
+        if for_update:
+            get_stmt = get_stmt.with_for_update()
         user = await session.scalar(get_stmt)
         return user, False  # type: ignore
 
+    # newly inserted row already has lock via insert
+    if for_update:
+        # re-select to acquire FOR UPDATE for R-M-W
+        locked_stmt = (
+            select(User)
+            .where(User.guild_id == guild_id, User.user_id == user_id)
+            .with_for_update()
+        )
+        if with_relations:
+            locked_stmt = locked_stmt.options(
+                selectinload(User.cases).selectinload(UserCase.item),
+                selectinload(User.colors),
+            )
+        user = await session.scalar(locked_stmt)
+
     return user, True
+
+
+async def get_user_for_update(
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> User | None:
+    """Get user row with FOR UPDATE lock (no creation)."""
+    stmt = (
+        select(User)
+        .where(User.guild_id == guild_id, User.user_id == user_id)
+        .with_for_update()
+    )
+    return await session.scalar(stmt)
+
+
+async def try_deduct_user_coins(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    amount: int,
+) -> bool:
+    """Atomically deduct coins if balance suffices (CAS).
+
+    Uses `UPDATE ... WHERE coins >= :amount` to avoid TOCTOU.
+    Returns True if deducted, False otherwise.
+    """
+    stmt = (
+        update(User)
+        .where(
+            User.guild_id == guild_id,
+            User.user_id == user_id,
+            User.coins >= amount,
+        )
+        .values(coins=User.coins - amount)
+        .returning(User.id)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none() is not None
 
 
 # TODO: rewrite to use all models (like in get_specified_guild_config)
@@ -605,6 +697,7 @@ async def get_clan_member(
     user_id: int,
     with_relations: bool = False,
     with_clan_members: bool = False,
+    for_update: bool = False,
 ) -> ClanMember | None:
     """Get the clan member configuration from the database."""
     stmt = select(ClanMember).where(
@@ -618,6 +711,8 @@ async def get_clan_member(
         stmt = stmt.options(
             selectinload(ClanMember.clan).selectinload(Clan.members)
         )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
@@ -628,11 +723,14 @@ async def get_clan_by_id(
     *,
     guild_id: int,
     clan_id: int | None = None,
+    for_update: bool = False,
 ) -> Clan | None:
     """Get clan by id."""
     stmt = select(Clan).where(Clan.guild_id == guild_id)
     if clan_id:
         stmt = stmt.where(Clan.id == clan_id)
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
@@ -640,13 +738,19 @@ async def get_clan_by_id(
 
 
 async def get_clan_by_name(
-    session: AsyncSession, *, guild_id: int, clan_name: str
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    clan_name: str,
+    for_update: bool = False,
 ) -> Clan | None:
     """Get the clan configuration from the database."""
 
     stmt = select(Clan).where(
         Clan.guild_id == guild_id, Clan.name == clan_name
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
@@ -657,6 +761,7 @@ async def get_user_clan(
     *,
     guild_id: int,
     user_id: int,
+    for_update: bool = False,
 ) -> Clan | None:
     """Get the clan of a user in a guild."""
 
@@ -665,13 +770,15 @@ async def get_user_clan(
         .join(ClanMember, ClanMember.clan_id == Clan.id)
         .where(Clan.guild_id == guild_id, ClanMember.user_id == user_id)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
 
 
 async def get_private_room_state(
-    session: AsyncSession, *, user_id: int
+    session: AsyncSession, *, user_id: int, for_update: bool = False
 ) -> PrivateRoomState | None:
     """Get the private room state for a user."""
     stmt = (
@@ -679,6 +786,8 @@ async def get_private_room_state(
         .where(PrivateRoomState.user_id == user_id)
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
@@ -691,7 +800,34 @@ async def create_temp_punish(
     category: str,
     end_time: datetime,
 ) -> TempPunish:
-    """Create a new temporary punishment entry in the database."""
+    """Create a new temporary punishment entry in the database.
+
+    Idempotent: if an active TempPunish for the same guild/user/category
+    already exists (end_time in the future), its end_time is updated
+    to the later of the two values instead of inserting a duplicate.
+    Uses SELECT ... FOR UPDATE to serialize concurrent inserts.
+    """
+    # Check for existing active punish with row-level lock
+    existing_stmt = (
+        select(TempPunish)
+        .where(
+            TempPunish.guild_id == guild_id,
+            TempPunish.user_id == user_id,
+            func.lower(TempPunish.category) == category.lower(),
+        )
+        .order_by(TempPunish.end_time.desc().nulls_last())
+        .limit(1)
+        .with_for_update()
+    )
+    res = await session.execute(existing_stmt)
+    existing = res.scalar_one_or_none()
+    now = datetime.now(UTC)
+    if existing is not None and existing.end_time is not None:
+        # If existing is still active, extend it idempotently
+        if existing.end_time > now:
+            if end_time > existing.end_time:
+                existing.end_time = end_time
+            return existing
     temp_punish = TempPunish(
         guild_id=guild_id,
         user_id=user_id,
@@ -706,7 +842,11 @@ async def get_expired_temp_infractions(
     session: AsyncSession,
 ) -> Sequence[TempPunish]:
     """Get the list of expired temporary punishments from the database."""
-    stmt = select(TempPunish).where(TempPunish.end_time <= datetime.now(UTC))
+    stmt = (
+        select(TempPunish)
+        .where(TempPunish.end_time <= datetime.now(UTC))
+        .with_for_update(skip_locked=True)
+    )
     result = await session.scalars(stmt)
     return result.all()
 
@@ -717,6 +857,7 @@ async def get_latest_temp_punish(
     guild_id: int,
     user_id: int,
     category: str,
+    for_update: bool = False,
 ) -> TempPunish | None:
     """Get the latest temporary punishment for a user in a guild."""
     stmt = (
@@ -729,6 +870,8 @@ async def get_latest_temp_punish(
         .order_by(TempPunish.end_time.asc().nulls_last())
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
@@ -765,6 +908,7 @@ async def get_ticket_state(
     *,
     guild_id: int,
     channel_id: int,
+    for_update: bool = False,
 ) -> TicketState | None:
     """Get the latest ticket state for a user in a guild."""
     stmt = (
@@ -775,6 +919,8 @@ async def get_ticket_state(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
@@ -785,6 +931,7 @@ async def get_user_ticket(
     *,
     guild_id: int,
     user_id: int,
+    for_update: bool = False,
 ) -> TicketState | None:
     """Get the latest ticket state for a user in a guild."""
     stmt = (
@@ -798,6 +945,8 @@ async def get_user_ticket(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
@@ -808,6 +957,7 @@ async def get_latest_user_role_request(
     *,
     guild_id: int | None,
     user_id: int,
+    for_update: bool = False,
 ) -> RoleRequestState | None:
     """Get the latest role request state for a user in a guild."""
     by_guild_id = RoleRequestState.guild_id == guild_id
@@ -823,12 +973,18 @@ async def get_latest_user_role_request(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
 
 async def get_last_logging_revision(
-    session: AsyncSession, *, guild_id: int, config_type: ConfigTypeEnum
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_type: ConfigTypeEnum,
+    for_update: bool = False,
 ) -> LoggingRevision | None:
     """Get the most recent logging revision for a guild.
 
@@ -852,6 +1008,8 @@ async def get_last_logging_revision(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
@@ -1314,13 +1472,17 @@ async def get_role_requests_to_delete(
         hours=config.bot.ROLE_REQUESTS_ALIVE_HOURS
     )
 
-    stmt = select(RoleRequestState).where(
-        RoleRequestState.state.in_(
-            [
-                "pending",
-            ]
-        ),
-        RoleRequestState.updated_at <= boundary,
+    stmt = (
+        select(RoleRequestState)
+        .where(
+            RoleRequestState.state.in_(
+                [
+                    "pending",
+                ]
+            ),
+            RoleRequestState.updated_at <= boundary,
+        )
+        .with_for_update(skip_locked=True)
     )
 
     result = await session.scalars(stmt)
@@ -1335,9 +1497,13 @@ async def get_tickets_to_delete(
         hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
     )
 
-    stmt = select(TicketState).where(
-        TicketState.state == TicketStateEnum.CLOSED,
-        TicketState.updated_at <= boundary,
+    stmt = (
+        select(TicketState)
+        .where(
+            TicketState.state == TicketStateEnum.CLOSED,
+            TicketState.updated_at <= boundary,
+        )
+        .with_for_update(skip_locked=True)
     )
 
     result = await session.scalars(stmt)
@@ -1348,7 +1514,11 @@ async def get_all_expired_temp_roles(
     session: AsyncSession,
 ) -> Sequence[TempRole]:
     """Get all expired temporary roles."""
-    stmt = select(TempRole).where(TempRole.end_time <= datetime.now(UTC))
+    stmt = (
+        select(TempRole)
+        .where(TempRole.end_time <= datetime.now(UTC))
+        .with_for_update(skip_locked=True)
+    )
     result = await session.scalars(stmt)
 
     return result.all()
@@ -1448,8 +1618,10 @@ async def get_all_expired_temp_multipliers(
 
     now = datetime.now(UTC)
 
-    stmt = select(TempEconomyMultiplier).where(
-        TempEconomyMultiplier.end_time <= now
+    stmt = (
+        select(TempEconomyMultiplier)
+        .where(TempEconomyMultiplier.end_time <= now)
+        .with_for_update(skip_locked=True)
     )
     result = await session.execute(stmt)
     return result.scalars().all()
@@ -1486,24 +1658,32 @@ async def get_custom_components_by_input(
 
 
 async def get_custom_component_by_id(
-    session: AsyncSession, *, guild_id: int, id: int
+    session: AsyncSession, *, guild_id: int, id: int, for_update: bool = False
 ) -> CustomComponent | None:
     """Get a custom component by name for a guild."""
     stmt = select(CustomComponent).where(
         CustomComponent.guild_id == guild_id, CustomComponent.id == id
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
 
 
 async def get_color_by_id(
-    session: AsyncSession, *, guild_id: int, color_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    color_id: int,
+    for_update: bool = False,
 ) -> Color | None:
     """Get a color by id for a guild."""
     stmt = select(Color).where(
         Color.guild_id == guild_id, Color.id == color_id
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
@@ -1516,6 +1696,7 @@ async def get_casino_game_by_message_id(
     guild_id: int,
     message_id: int,
     with_bets: bool = False,
+    for_update: bool = False,
 ) -> CasinoGame | None:
     """Get a casino game by message ID for a guild."""
     stmt = select(CasinoGame).where(
@@ -1526,9 +1707,28 @@ async def get_casino_game_by_message_id(
         stmt = stmt.options(
             selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
         )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
+    return result.scalar_one_or_none()
+
+
+async def get_casino_game_for_update(
+    session: AsyncSession, *, guild_id: int, message_id: int
+) -> CasinoGame | None:
+    """Get casino game with FOR UPDATE and bets+user locked."""
+    stmt = (
+        select(CasinoGame)
+        .where(
+            CasinoGame.guild_id == guild_id,
+            CasinoGame.message_id == message_id,
+        )
+        .options(selectinload(CasinoGame.bets).selectinload(CasinoBet.user))
+        .with_for_update()
+    )
+    result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
 
@@ -1558,11 +1758,15 @@ async def get_due_rainbow_roles(
     session: AsyncSession, *, now: datetime
 ) -> Sequence[RainbowRole]:
     """Get rainbow roles whose change deadline has arrived or is not set."""
-    stmt = select(RainbowRole).where(
-        or_(
-            RainbowRole.next_change_at.is_(None),
-            RainbowRole.next_change_at <= now,
+    stmt = (
+        select(RainbowRole)
+        .where(
+            or_(
+                RainbowRole.next_change_at.is_(None),
+                RainbowRole.next_change_at <= now,
+            )
         )
+        .with_for_update(skip_locked=True)
     )
     result = await session.execute(stmt)
 
@@ -1620,10 +1824,16 @@ async def get_cases_by_input(
 
 
 async def get_case_by_id(
-    session: AsyncSession, *, guild_id: int, case_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    case_id: int,
+    for_update: bool = False,
 ) -> Case | None:
     """Get a color by id for a guild."""
     stmt = select(Case).where(Case.guild_id == guild_id, Case.id == case_id)
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
@@ -1676,9 +1886,13 @@ async def get_active_casino_games(
     session: AsyncSession, *, dt: datetime
 ) -> Sequence[CasinoGame]:
     """Get all active casino games for a guild."""
-    stmt = select(CasinoGame).where(
-        CasinoGame.state == CasinoGameStateEnum.PENDING,
-        CasinoGame.end_time <= dt,
+    stmt = (
+        select(CasinoGame)
+        .where(
+            CasinoGame.state == CasinoGameStateEnum.PENDING,
+            CasinoGame.end_time <= dt,
+        )
+        .with_for_update(skip_locked=True)
     )
     stmt = stmt.options(
         selectinload(CasinoGame.bets).selectinload(CasinoBet.user)

@@ -40,7 +40,7 @@ class CreateProposalEvent(Cog):
             return
 
         async with specified_guild_config(
-            self.bot, guild.id, GuildProposalsConfig
+            self.bot, guild.id, GuildProposalsConfig, for_update=True
         ) as (guild_config, _):
             proposals_count = guild_config.proposals_count
 
