@@ -196,14 +196,6 @@ class Ban(Cog):
                     delete_messages_per=delete_messages_per,
                 )
                 try:
-                    self.bot.dispatch("user_banned", data=data)
-                except Exception as e:
-                    logger.warning(
-                        "[event] - Failed to dispatch user_banned event: %s", e
-                    )
-                    return
-
-                try:
                     await send_punish_dm_message(
                         self.bot,
                         guild_name=guild.name,
@@ -222,6 +214,14 @@ class Ban(Cog):
                     reason=reason,
                     delete_message_seconds=parsed_delete_messages_per,
                 )
+
+                try:
+                    self.bot.dispatch("user_banned", data=data)
+                except Exception as e:
+                    logger.warning(
+                        "[event] - Failed to dispatch user_banned event: %s", e
+                    )
+                    return
 
             except discord.HTTPException as e:
                 logger.warning(
