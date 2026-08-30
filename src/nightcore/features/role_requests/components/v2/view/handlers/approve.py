@@ -111,7 +111,8 @@ async def handle_approve(
             last_rr = await get_latest_user_role_request(
                 session,
                 guild_id=guild.id,
-                user_id=cast(int, view.interaction_user_id, for_update=True),
+                user_id=cast(int, view.interaction_user_id),
+                for_update=True,
             )
 
             if not last_rr:

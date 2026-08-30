@@ -1524,6 +1524,27 @@ async def get_all_expired_temp_roles(
     return result.all()
 
 
+async def get_temp_role_for_update(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    role_id: int,
+) -> TempRole | None:
+    """Get a temp role for update by guild_id, user_id, and role_id."""
+    stmt = (
+        select(TempRole)
+        .where(
+            TempRole.guild_id == guild_id,
+            TempRole.user_id == user_id,
+            TempRole.role_id == role_id,
+        )
+        .with_for_update()
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def get_total_users_count(session: AsyncSession) -> int:
     """Get the total number of users in the database."""
     stmt = select(func.count()).select_from(User)
@@ -1625,6 +1646,25 @@ async def get_all_expired_temp_multipliers(
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def get_temp_multiplier_for_update(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    multiplier_type: MultiplierTypeEnum,
+) -> TempEconomyMultiplier | None:
+    """Get a temp multiplier for update by guild_id and multiplier_type."""
+    stmt = (
+        select(TempEconomyMultiplier)
+        .where(
+            TempEconomyMultiplier.guild_id == guild_id,
+            TempEconomyMultiplier.multiplier_type == multiplier_type,
+        )
+        .with_for_update()
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def get_custom_components(

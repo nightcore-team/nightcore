@@ -246,7 +246,9 @@ async def format_battlepass_levels_rewards(
                     for_update=True,
                 )
 
-                level.reward["name"] = case_obj.name if case_obj else "unknown case"  # noqa: E501
+                level.reward["name"] = (
+                    case_obj.name if case_obj else "unknown case"
+                )  # noqa: E501
             case CaseDropTypeEnum.COLOR.value:
                 color = await get_color_by_id(
                     session,
@@ -286,7 +288,9 @@ async def format_single_battlepass_level_reward(
                 for_update=True,
             )
 
-            level.reward["name"] = case_obj.name if case_obj else "unknown case"  # noqa: E501
+            level.reward["name"] = (
+                case_obj.name if case_obj else "unknown case"
+            )  # noqa: E501
         case CaseDropTypeEnum.COLOR.value:
             color = await get_color_by_id(
                 session,

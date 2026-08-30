@@ -11,6 +11,7 @@ from src.infra.db.models import GuildMultipliersConfig
 from src.infra.db.operations import (
     get_all_expired_temp_multipliers,
     get_specified_guild_config,
+    get_temp_multiplier_for_update,
 )
 from src.utils._enums import MultiplierTypeEnum
 
@@ -52,7 +53,23 @@ class ResetTempMultiplierTask(Cog):
                 guild_id = temp_multiplier.guild_id
                 multiplier_type = temp_multiplier.multiplier_type
 
+                # Re-fetch with FOR UPDATE to lock the row
                 async with self.bot.uow.start() as session:
+                    locked_multiplier = await get_temp_multiplier_for_update(
+                        session,
+                        guild_id=temp_multiplier.guild_id,
+                        multiplier_type=temp_multiplier.multiplier_type,
+                    )
+                    if locked_multiplier is None:
+                        logger.info(
+    (
+        "[task] - Temp multiplier %s for guild %s already removed"
+    ),
+    temp_multiplier.multiplier_type.value,
+    temp_multiplier.guild_id,
+)
+                        continue
+
                     guild_config = await get_specified_guild_config(
                         session,
                         guild_id=guild_id,
