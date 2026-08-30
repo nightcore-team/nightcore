@@ -134,29 +134,23 @@ class ChooseImageModal(Modal, title="Выберите изображение"):
                 )
                 return
 
+        # Respond to interaction first (ephemeral confirmation)
+        await interaction.response.send_message(
+            content="Компонент отправлен.", ephemeral=True
+        )
+
+        # Then send to channel if specified
         if isinstance(component, Embed):
             content = self.role.mention if self.role and self.channel else None
 
             if self.channel:
                 await self.channel.send(content=content, embed=component)
-            else:
-                await interaction.response.send_message(
-                    content=content,
-                    embed=component,
-                    ephemeral=True,
-                )
         else:
             if self.channel is None:
-                await interaction.response.send_message(
-                    view=component,
-                    ephemeral=True,
-                )
+                # Already responded to interaction above
+                pass
             else:
                 if self.role:
                     await self.channel.send(self.role.mention)  # type: ignore
 
                 await self.channel.send(view=component)  # type: ignore
-
-        await interaction.response.send_message(
-            content="Компонент отправлен.", ephemeral=True
-        )

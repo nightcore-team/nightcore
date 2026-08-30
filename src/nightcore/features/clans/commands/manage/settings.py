@@ -261,7 +261,8 @@ async def settings(
                     )
 
             clan_role = await ensure_role_exists(
-                guild, pending_role_id_for_channel  # type: ignore[arg-type]
+                guild,
+                pending_role_id_for_channel,  # type: ignore[arg-type]
             )
 
             overwrites = {

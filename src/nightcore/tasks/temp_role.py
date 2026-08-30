@@ -8,7 +8,10 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import TempRole
-from src.infra.db.operations import get_all_expired_temp_roles
+from src.infra.db.operations import (
+    get_all_expired_temp_roles,
+    get_temp_role_for_update,
+)
 from src.nightcore.utils import (
     ensure_guild_exists,
     ensure_member_exists,
@@ -53,47 +56,69 @@ class DeleteTempRoleTask(Cog):
                 return
 
             for temp_role in temp_roles:
-                guild = await ensure_guild_exists(self.bot, temp_role.guild_id)
-                if guild is None:
-                    logger.info(
-                        "[task] - Guild %s not found",
-                        temp_role.guild_id,
+                # Re-fetch with FOR UPDATE to ensure we have
+                # the latest and lock the row
+                async with self.bot.uow.start() as session:
+                    locked_temp_role = await get_temp_role_for_update(
+                        session,
+                        guild_id=temp_role.guild_id,
+                        user_id=temp_role.user_id,
+                        role_id=temp_role.role_id,
                     )
-                    await self._delete_temp_role(temp_role)
-                    continue
+                    if locked_temp_role is None:
+                        logger.info(
+                            "[task] - Temp role %s already removed",
+                            temp_role.role_id,
+                        )
+                        continue
 
-                role = await ensure_role_exists(guild, temp_role.role_id)
-                if role is None:
+                    guild = await ensure_guild_exists(
+                        self.bot, locked_temp_role.guild_id
+                    )
+                    if guild is None:
+                        logger.info(
+                            "[task] - Guild %s not found",
+                            locked_temp_role.guild_id,
+                        )
+                        await session.delete(locked_temp_role)
+                        continue
+
+                    role = await ensure_role_exists(
+                        guild, locked_temp_role.role_id
+                    )
+                    if role is None:
+                        logger.info(
+                            "[task] - Role %s not found in guild %s",
+                            locked_temp_role.role_id,
+                            guild.id,
+                        )
+                        await session.delete(locked_temp_role)
+                        continue
+
+                    member = await ensure_member_exists(
+                        guild, locked_temp_role.user_id
+                    )
+                    if member is None:
+                        logger.info(
+                            "[task] - Member %s not found in guild %s",
+                            locked_temp_role.user_id,
+                            guild.id,
+                        )
+                        await session.delete(locked_temp_role)
+                        continue
+
+                    await member.remove_roles(
+                        role, reason="Temporary role expired"
+                    )
+
+                    await session.delete(locked_temp_role)
+
                     logger.info(
-                        "[task] - Role %s not found in guild %s",
-                        temp_role.role_id,
+                        "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
+                        locked_temp_role.role_id,
+                        member.id,
                         guild.id,
                     )
-                    await self._delete_temp_role(temp_role)
-                    continue
-
-                member = await ensure_member_exists(guild, temp_role.user_id)
-                if member is None:
-                    logger.info(
-                        "[task] - Member %s not found in guild %s",
-                        temp_role.user_id,
-                        guild.id,
-                    )
-                    await self._delete_temp_role(temp_role)
-                    continue
-
-                await member.remove_roles(
-                    role, reason="Temporary role expired"
-                )
-
-                await self._delete_temp_role(temp_role)
-
-                logger.info(
-                    "[task] - Removed temporary role %s from member %s in guild %s",  # noqa: E501
-                    temp_role.role_id,
-                    member.id,
-                    guild.id,
-                )
 
         except Exception as e:
             logger.exception(

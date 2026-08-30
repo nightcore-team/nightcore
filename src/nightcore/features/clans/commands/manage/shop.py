@@ -13,6 +13,7 @@ from src.infra.db.models import (
     ShopOrderState,
 )
 from src.infra.db.operations import (
+    get_clan_by_id,
     get_clan_member,
     get_clan_shop_item_by_name,
     get_specified_field,
@@ -76,7 +77,8 @@ async def shop(
             guild_id=guild.id,
             config_type=GuildClansConfig,
             field_name="clan_buy_ping_roles_ids",
-         for_update=True)
+            for_update=True,
+        )
         if not clan_member or clan_member.role not in [
             ClanMemberRoleEnum.LEADER,
             ClanMemberRoleEnum.DEPUTY,
@@ -91,12 +93,16 @@ async def shop(
             outcome = "unknown_item"
 
         if not outcome:
-            # get clan
-            clan = cast(Clan, clan_member.clan)  # type: ignore
-
-            if not (
-                clan.coins > selected_item.cost  # type: ignore
-            ):  # (icost can't be None here)
+            # get clan with FOR UPDATE to prevent double-spend
+            clan = await get_clan_by_id(
+                session,
+                guild_id=guild.id,
+                clan_id=clan_member.clan.id,  # type: ignore
+                for_update=True,
+            )
+            if clan is None:
+                outcome = "clan_not_found"
+            elif not (clan.coins > selected_item.cost):  # type: ignore
                 outcome = "insufficient_funds"
             else:
                 outcome = "success"

@@ -70,8 +70,11 @@ class Unrrban(Cog):
         ) as (_, session):
             try:
                 user_record, _ = await get_or_create_user(
-                    session, guild_id=guild.id, user_id=user.id
-                , for_update=True)
+                    session,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    for_update=True,
+                )
                 if user_record.role_request_ban:
                     user_record.role_request_ban = False
                 else:

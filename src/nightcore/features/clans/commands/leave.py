@@ -37,12 +37,29 @@ async def leave(interaction: Interaction["Nightcore"]):
     clan_name = ""
     clan_role_id = 0
 
+    # First, try to remove the role BEFORE deleting from DB
+    role = await ensure_role_exists(guild, clan_role_id)
+    if role and role in user.roles:
+        try:
+            await user.remove_roles(role, reason="Покинул клан")
+        except Exception:
+            await interaction.followup.send(
+                view=ErrorViewV2(
+                    "Ошибка выхода из клана",
+                    "Не удалось снять роль клана. Попробуйте позже.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+    # If role removal succeeded, now remove from DB
     async with bot.uow.start() as session:
         db_clan_member = await get_clan_member(
             session,
             guild_id=guild.id,
             user_id=user.id,
             with_relations=True,
+            for_update=True,
         )
 
         if not db_clan_member:
@@ -95,20 +112,6 @@ async def leave(interaction: Interaction["Nightcore"]):
             ephemeral=True,
         )
         return
-
-    role = await ensure_role_exists(guild, clan_role_id)
-
-    if role and role in user.roles:
-        try:
-            await user.remove_roles(role, reason="Покинул клан")
-        except Exception:
-            await interaction.followup.send(
-                view=ErrorViewV2(
-                    "Ошибка выхода из клана",
-                    "Вы покинули клан, но произошла ошибка при снятии роли",
-                )
-            )
-            return
 
     await interaction.followup.send(
         view=SuccessViewV2(

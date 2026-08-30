@@ -9,12 +9,13 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 from discord.http import MultipartParameters
 
-from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models import GuildEconomyConfig, User
 from src.infra.db.models.casino import CasinoGame
 from src.infra.db.operations import (
     get_active_casino_games,
     get_specified_field,
 )
+from sqlalchemy import select
 from src.utils._enums import (
     CasinoBetResultTypeEnum,
     CasinoGameStateEnum,
@@ -63,6 +64,25 @@ class MultiplayerRouletteTask(Cog):
                     config_type=GuildEconomyConfig,
                     field_name="coin_name",
                 )
+
+                bets_annot: list[CasinoBetAnnot] = []
+                initiator_id = 0
+                initiator_bet = 0
+                initiator_selected_color = ""
+                initiator_result_coins: int | None = None
+
+                num, color = spin_roulette()
+
+                # Lock all user rows involved in this game to prevent
+                # lost updates
+                user_ids = {bet.user.user_id for bet in game.bets}
+                if user_ids:
+                    stmt = (
+                        select(User)
+                        .where(User.id.in_(user_ids))
+                        .with_for_update()
+                    )
+                    await session.execute(stmt)
 
                 bets_annot: list[CasinoBetAnnot] = []
                 initiator_id = 0

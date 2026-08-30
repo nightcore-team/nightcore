@@ -273,7 +273,8 @@ async def create(
             raise FieldNotConfiguredError("категория кланов")
 
         category = await ensure_category_exists(
-            guild, create_clan_channel_category_id  # type: ignore[arg-type]
+            guild,
+            create_clan_channel_category_id,  # type: ignore[arg-type]
         )
 
         if category is None:

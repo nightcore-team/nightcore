@@ -37,27 +37,45 @@ class UnPunishTask(Cog):
         try:
             logger.info("[task] - Running unpunish task")
 
-            outcome = ""
             async with self.bot.uow.start() as session:
                 active_infractions = await get_expired_temp_infractions(
                     session
                 )
                 if not active_infractions:
-                    outcome = "no_expired_infractions"
-                else:
-                    for infraction in active_infractions:
-                        await session.delete(infraction)
+                    logger.info("[task] - No expired infractions found")
+                    return
 
-            if outcome == "no_expired_infractions":
-                logger.info("[task] - No expired infractions found")
-                return
-
-            # Dispatch events after successful commit
+            # Dispatch events first, then delete infractions
             for infraction in active_infractions:
-                handle_infraction_type_event(
-                    active_punish=infraction, bot=self.bot
-                )
-                logger.info("[task] - Unpunished user: %s", infraction.user_id)
+                try:
+                    handle_infraction_type_event(
+                        active_punish=infraction, bot=self.bot
+                    )
+                    logger.info(
+                        "[task] - Unpunished user: %s", infraction.user_id
+                    )
+                except Exception as e:
+                    logger.exception(
+                        "[task] - Error handling infraction %s: %s",
+                        infraction.id,
+                        e,
+                        exc_info=True,
+                    )
+                    # Continue with other infractions even if one fails
+                    continue
+
+            # Delete infractions after successful event handling
+            async with self.bot.uow.start() as session:
+                for infraction in active_infractions:
+                    try:
+                        await session.delete(infraction)
+                    except Exception as e:
+                        logger.exception(
+                            "[task] - Error deleting infraction %s: %s",
+                            infraction.id,
+                            e,
+                            exc_info=True,
+                        )
 
         except Exception as e:
             logger.exception(

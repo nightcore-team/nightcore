@@ -1,13 +1,15 @@
 """Command to send a valentine."""
 
 import logging
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, app_commands
-from discord.app_commands.checks import Cooldown
 from discord.interactions import Interaction
+from sqlalchemy import select
 
-from src.infra.db.models import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig, User
+from src.infra.db.operations import get_or_create_user, get_specified_webhook
 from src.nightcore.components.view.v2 import ErrorViewV2
 from src.nightcore.features.special_events.valentine._groups import (
     valentine as valentine_group,
@@ -21,63 +23,63 @@ from src.nightcore.features.special_events.valentine.events.dto.valentine_send i
 from src.nightcore.features.special_events.valentine.utils.valentine_image import (  # noqa: E501
     generate_valentine_image,
 )
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
 from src.utils._enums import ChannelType
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
-from src.infra.db.operations import get_or_create_user, get_specified_webhook
-from src.nightcore.utils.permissions import (
-    PermissionsFlagEnum,
-    check_required_permissions,
-)
-
 logger = logging.getLogger(__name__)
 
-# Cooldown mapping that tracks buckets
-_valentine_cooldowns: dict[tuple[int, int], Cooldown] = {}
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
 
 
-def _get_cooldown_key(
-    interaction: Interaction["Nightcore"],
-) -> tuple[int, int]:
-    """Get the cooldown key for interaction."""
-    guild_id = interaction.guild.id if interaction.guild else 0
-    return (guild_id, interaction.user.id)  # type: ignore
+async def _check_valentine_cooldown(
+    session,
+    guild_id: int,
+    user_id: int,
+) -> bool:
+    """Check if user can send valentine (cooldown check)."""
+    from sqlalchemy import select
+    from src.infra.db.models import User
+
+    stmt = (
+        select(User)
+        .where(User.guild_id == guild_id, User.user_id == user_id)
+        .with_for_update()
+    )
+    user = await session.scalar(stmt)
+    if user is None:
+        return True  # new user, no cooldown
+    if user.valentine_cooldown_until is None:
+        return True  # no cooldown
+    if user.valentine_cooldown_until <= datetime.now(UTC):
+        return True  # cooldown expired
+    return False  # still on cooldown
 
 
-def _reset_cooldown_for_interaction(
-    interaction: Interaction["Nightcore"],
+async def _set_valentine_cooldown(
+    session,
+    guild_id: int,
+    user_id: int,
 ) -> None:
-    """Reset cooldown for the given interaction."""
-    key = _get_cooldown_key(interaction)
-    if key in _valentine_cooldowns:
-        _valentine_cooldowns[key].reset()
-        logger.debug(
-            "Reset cooldown for user %s in guild %s",
-            interaction.user.id,
-            key[0],
+    """Set valentine cooldown for user (20 minutes)."""
+    user = await session.scalar(
+        select(User)
+        .where(User.guild_id == guild_id, User.user_id == user_id)
+        .with_for_update()
+    )
+    if user:
+        user.valentine_cooldown_until = datetime.now(UTC) + timedelta(
+            minutes=20
         )
 
 
-# Custom cooldown implementation using dynamic_cooldown
-def _get_valentine_cooldown(
-    interaction: Interaction["Nightcore"],
-) -> Cooldown | None:
-    """Get or create cooldown for interaction."""
-    key = _get_cooldown_key(interaction)
-
-    if key not in _valentine_cooldowns:
-        _valentine_cooldowns[key] = Cooldown(1, 20 * 60)
-
-    return _valentine_cooldowns[key]
-
-
 @valentine_group.command(name="send", description="Отправить валентинку")  # type: ignore
-@app_commands.checks.dynamic_cooldown(
-    _get_valentine_cooldown,
-    key=_get_cooldown_key,
-)
 @app_commands.describe(
     user="Пользователь, которому вы хотите отправить валентинку",
     where_to_send="Куда вы хотите отправить валентинку",
@@ -110,8 +112,25 @@ async def send_valentine(
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
 
+    # Check valentine cooldown using database
+    async with bot.uow.start() as session:
+        can_send = await _check_valentine_cooldown(
+            session, guild.id, interaction.user.id
+        )
+        if not can_send:
+            await interaction.response.send_message(
+                view=ErrorViewV2(
+                    "Ошибка отправки валентинки",
+                    (
+                        "Вы можете отправлять валентинки "
+                        "не чаще одного раза в 20 минут."
+                    ),
+                ),
+                ephemeral=True,
+            )
+            return
+
     if member.bot:
-        _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
             view=ErrorViewV2(
                 "Ошибка отправки валентинки",
@@ -122,7 +141,6 @@ async def send_valentine(
         return
 
     if member.id == interaction.user.id:
-        _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
             view=ErrorViewV2(
                 "Ошибка отправки валентинки",
@@ -161,7 +179,6 @@ async def send_valentine(
 
     except Exception as e:
         logger.exception("Error while sending valentine: %s", e)
-        _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
             view=ErrorViewV2(
                 "Ошибка отправки валентинки",
@@ -196,9 +213,13 @@ async def send_valentine(
                 "Валентинка успешно отправлена в личные сообщения получателя! ❤️",  # noqa: E501
                 ephemeral=True,
             )
+        # Set cooldown after successful send
+        async with bot.uow.start() as session:
+            await _set_valentine_cooldown(
+                session, guild.id, interaction.user.id
+            )
     except Exception as e:
         logger.exception("Error while sending valentine: %s", e)
-        _reset_cooldown_for_interaction(interaction)
         await interaction.response.send_message(
             view=ErrorViewV2(
                 "Ошибка отправки валентинки",

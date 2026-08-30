@@ -99,6 +99,9 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=1
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
+    valentine_cooldown_until: Mapped["datetime | None"] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     cases: Mapped[list["UserCase"]] = relationship(
         lazy="selectin",
         cascade="all, delete-orphan",
