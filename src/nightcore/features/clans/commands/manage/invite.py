@@ -49,6 +49,7 @@ async def invite(
             guild_id=guild.id,
             user_id=interaction.user.id,
             with_clan_members=True,
+            for_update=True,
         )
 
         if not interaction_clan_member:
@@ -59,7 +60,10 @@ async def invite(
                 outcome = "limit_reached"
             else:
                 invited_user_clan_member = await get_clan_member(
-                    session, guild_id=guild.id, user_id=user.id
+                    session,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    for_update=True,
                 )
                 if invited_user_clan_member:
                     outcome = "invited_already_in_clan"

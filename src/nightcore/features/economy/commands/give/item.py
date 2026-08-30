@@ -132,13 +132,15 @@ async def give_item(
                 item_name = "очки батлпасса"
 
             if not outcome:
-                for member in target_members:
+                # lock in sorted order to avoid deadlocks
+                for member in sorted(target_members, key=lambda m: m.id):
                     user_record, _ = await get_or_create_user(
                         session,
                         guild_id=guild.id,
                         user_id=member.id,
                         with_relations=item_type
                         in {CaseDropTypeEnum.CASE, CaseDropTypeEnum.COLOR},
+                        for_update=True,
                     )
 
                     if item_type == CaseDropTypeEnum.COINS:

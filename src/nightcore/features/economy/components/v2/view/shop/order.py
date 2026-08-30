@@ -86,7 +86,5 @@ class CoinsShopOrderViewV2(LayoutView):
                 "Товар будет выдан после проверки модерацией вашего запроса."
             )
         )
-        container.add_item(Separator[Self]())
-        container.add_item(TextDisplay[Self]("-# fix by aaxnet"))
 
         self.add_item(container)

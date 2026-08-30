@@ -53,16 +53,17 @@ async def kick(
     await interaction.response.defer(ephemeral=True, thinking=True)
 
     async with bot.uow.start() as session:
-        # get clanmember
+        # get clanmember with FOR UPDATE for consistent read
         interaction_clan_member = await get_clan_member(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
             with_relations=True,
+            for_update=True,
         )
 
         kicked_user_clan_member = await get_clan_member(
-            session, guild_id=guild.id, user_id=user.id
+            session, guild_id=guild.id, user_id=user.id, for_update=True
         )
 
     if not interaction_clan_member:
@@ -136,7 +137,20 @@ async def kick(
                 channel_type=ChannelType.LOGGING_CLANS,
             )
 
-            await session.delete(kicked_user_clan_member)
+            # re-fetch with FOR UPDATE to prevent concurrent kick/leave race
+            locked_member = await get_clan_member(
+                session,
+                guild_id=guild.id,
+                user_id=user.id,
+                for_update=True,
+            )
+            if (
+                locked_member is None
+                or locked_member.clan_id != interaction_clan_member.clan_id
+            ):
+                outcome = "already_kicked"
+            else:
+                await session.delete(locked_member)
     except Exception as e:
         logger.exception(
             "[clans] Failed to delete clanmember in guild %s: %s",
@@ -145,6 +159,16 @@ async def kick(
         )
 
         outcome = "db_error"
+
+    if outcome == "already_kicked":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка кика пользователя",
+                "Пользователь уже не в клане.",
+            ),
+            ephemeral=True,
+        )
+        return
 
     if outcome == "db_error":
         await interaction.followup.send(

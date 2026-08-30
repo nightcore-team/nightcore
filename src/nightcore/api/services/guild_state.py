@@ -154,6 +154,7 @@ class GuildStateService:
                 session,
                 config_type=type_,
                 guild_id=member.guild.id,
+                for_update=True,
             )
 
             current_state = pydantic_type.model_construct(

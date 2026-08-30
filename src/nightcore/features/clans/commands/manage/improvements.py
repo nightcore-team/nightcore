@@ -6,7 +6,11 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import Clan, GuildClansConfig, GuildLoggingConfig
-from src.infra.db.operations import get_clan_member, get_specified_webhook
+from src.infra.db.operations import (
+    get_clan_by_id,
+    get_clan_member,
+    get_specified_webhook,
+)
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
     MissingPermissionsViewV2,
@@ -63,6 +67,7 @@ async def improvements(
             guild_id=guild.id,
             user_id=interaction.user.id,
             with_relations=True,
+            for_update=True,
         )
         if not clan_member or clan_member.role not in [
             ClanMemberRoleEnum.LEADER,
@@ -80,8 +85,18 @@ async def improvements(
                 outcome = "invalid_improvement"
 
             if not outcome:
-                # get clan
-                clan = cast(Clan, clan_member.clan)  # type: ignore
+                # get clan with FOR UPDATE to prevent lost update on coins
+                _locked_clan = await get_clan_by_id(
+                    session,
+                    guild_id=guild.id,
+                    clan_id=clan_member.clan.id,  # type: ignore
+                    for_update=True,
+                )
+                clan = (
+                    _locked_clan
+                    if _locked_clan is not None
+                    else cast(Clan, clan_member.clan)
+                )  # type: ignore
 
                 if not (clan.coins > icost):
                     outcome = "insufficient_funds"

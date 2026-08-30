@@ -41,7 +41,9 @@ async def delete_faq_page(
     outcome = ""
     page_to_delete: FAQPageAnnot | None = None
 
-    async with specified_guild_config(bot, guild.id, GuildFaqConfig) as (
+    async with specified_guild_config(
+        bot, guild.id, GuildFaqConfig, for_update=True
+    ) as (
         guild_config,
         _,
     ):

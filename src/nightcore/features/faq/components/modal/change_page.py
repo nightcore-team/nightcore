@@ -79,7 +79,7 @@ class ChangeFAQPageModal(Modal, title="Настроить страницу"):
         outcome = ""
 
         async with specified_guild_config(
-            self.bot, guild.id, GuildFaqConfig
+            self.bot, guild.id, GuildFaqConfig, for_update=True
         ) as (
             guild_config,
             _,

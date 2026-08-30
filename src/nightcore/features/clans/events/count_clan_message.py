@@ -40,10 +40,20 @@ class CountClanMessageEvent(Cog):
                     guild_id=guild.id,
                     user_id=author.id,
                     with_relations=True,
+                    for_update=True,
                 ),
             )
 
-            clan = user.clan
+            # lock clan row explicitly for RMW on exp/level
+            from src.infra.db.operations import get_clan_by_id
+
+            _clan_locked = await get_clan_by_id(
+                session,
+                guild_id=guild.id,
+                clan_id=user.clan.id,
+                for_update=True,  # type: ignore
+            )
+            clan = _clan_locked if _clan_locked is not None else user.clan
 
             exp_multiplier = guild_config.base_exp_multiplier
             new_current_exp = clan.current_exp + exp_multiplier

@@ -83,6 +83,5 @@ class BattlepassClaimViewV2(LayoutView):
             )
         )
         container.add_item(Separator[Self]())
-        container.add_item(TextDisplay[Self]("-# fix by aaxnet"))
 
         self.add_item(container)

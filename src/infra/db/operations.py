@@ -206,9 +206,11 @@ async def get_specified_guild_config(  # noqa: UP047
 
     if for_update:
         # lock the newly inserted row for R-M-W
-        get_stmt = select(config_type).where(
-            config_type.guild_id == guild_id
-        ).with_for_update()
+        get_stmt = (
+            select(config_type)
+            .where(config_type.guild_id == guild_id)
+            .with_for_update()
+        )
         config = await session.scalar(get_stmt)  # type: ignore
         return config  # type: ignore
 
@@ -338,9 +340,13 @@ async def get_all_pending_notifications(
     now: datetime,
 ) -> Sequence[NotifyState]:
     """Get all pending notifications."""
-    stmt = select(NotifyState).where(
-        NotifyState.state == NotifyStateEnum.PENDING,
-        NotifyState.end_time < now,
+    stmt = (
+        select(NotifyState)
+        .where(
+            NotifyState.state == NotifyStateEnum.PENDING,
+            NotifyState.end_time < now,
+        )
+        .with_for_update(skip_locked=True)
     )
     result = await session.scalars(stmt)
     return result.all()
@@ -440,9 +446,11 @@ async def get_or_create_user(
     # newly inserted row already has lock via insert
     if for_update:
         # re-select to acquire FOR UPDATE for R-M-W
-        locked_stmt = select(User).where(
-            User.guild_id == guild_id, User.user_id == user_id
-        ).with_for_update()
+        locked_stmt = (
+            select(User)
+            .where(User.guild_id == guild_id, User.user_id == user_id)
+            .with_for_update()
+        )
         if with_relations:
             locked_stmt = locked_stmt.options(
                 selectinload(User.cases).selectinload(UserCase.item),
@@ -800,7 +808,11 @@ async def get_expired_temp_infractions(
     session: AsyncSession,
 ) -> Sequence[TempPunish]:
     """Get the list of expired temporary punishments from the database."""
-    stmt = select(TempPunish).where(TempPunish.end_time <= datetime.now(UTC))
+    stmt = (
+        select(TempPunish)
+        .where(TempPunish.end_time <= datetime.now(UTC))
+        .with_for_update(skip_locked=True)
+    )
     result = await session.scalars(stmt)
     return result.all()
 
@@ -931,7 +943,11 @@ async def get_latest_user_role_request(
 
 
 async def get_last_logging_revision(
-    session: AsyncSession, *, guild_id: int, config_type: ConfigTypeEnum
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    config_type: ConfigTypeEnum,
+    for_update: bool = False,
 ) -> LoggingRevision | None:
     """Get the most recent logging revision for a guild.
 
@@ -955,6 +971,8 @@ async def get_last_logging_revision(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
 
     result = await session.execute(stmt)
 
@@ -1417,13 +1435,17 @@ async def get_role_requests_to_delete(
         hours=config.bot.ROLE_REQUESTS_ALIVE_HOURS
     )
 
-    stmt = select(RoleRequestState).where(
-        RoleRequestState.state.in_(
-            [
-                "pending",
-            ]
-        ),
-        RoleRequestState.updated_at <= boundary,
+    stmt = (
+        select(RoleRequestState)
+        .where(
+            RoleRequestState.state.in_(
+                [
+                    "pending",
+                ]
+            ),
+            RoleRequestState.updated_at <= boundary,
+        )
+        .with_for_update(skip_locked=True)
     )
 
     result = await session.scalars(stmt)
@@ -1438,9 +1460,13 @@ async def get_tickets_to_delete(
         hours=config.bot.CLOSED_TICKET_ALIVE_HOURS
     )
 
-    stmt = select(TicketState).where(
-        TicketState.state == TicketStateEnum.CLOSED,
-        TicketState.updated_at <= boundary,
+    stmt = (
+        select(TicketState)
+        .where(
+            TicketState.state == TicketStateEnum.CLOSED,
+            TicketState.updated_at <= boundary,
+        )
+        .with_for_update(skip_locked=True)
     )
 
     result = await session.scalars(stmt)
@@ -1451,7 +1477,11 @@ async def get_all_expired_temp_roles(
     session: AsyncSession,
 ) -> Sequence[TempRole]:
     """Get all expired temporary roles."""
-    stmt = select(TempRole).where(TempRole.end_time <= datetime.now(UTC))
+    stmt = (
+        select(TempRole)
+        .where(TempRole.end_time <= datetime.now(UTC))
+        .with_for_update(skip_locked=True)
+    )
     result = await session.scalars(stmt)
 
     return result.all()
@@ -1551,8 +1581,10 @@ async def get_all_expired_temp_multipliers(
 
     now = datetime.now(UTC)
 
-    stmt = select(TempEconomyMultiplier).where(
-        TempEconomyMultiplier.end_time <= now
+    stmt = (
+        select(TempEconomyMultiplier)
+        .where(TempEconomyMultiplier.end_time <= now)
+        .with_for_update(skip_locked=True)
     )
     result = await session.execute(stmt)
     return result.scalars().all()
@@ -1589,12 +1621,14 @@ async def get_custom_components_by_input(
 
 
 async def get_custom_component_by_id(
-    session: AsyncSession, *, guild_id: int, id: int
+    session: AsyncSession, *, guild_id: int, id: int, for_update: bool = False
 ) -> CustomComponent | None:
     """Get a custom component by name for a guild."""
     stmt = select(CustomComponent).where(
         CustomComponent.guild_id == guild_id, CustomComponent.id == id
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
@@ -1681,11 +1715,15 @@ async def get_due_rainbow_roles(
     session: AsyncSession, *, now: datetime
 ) -> Sequence[RainbowRole]:
     """Get rainbow roles whose change deadline has arrived or is not set."""
-    stmt = select(RainbowRole).where(
-        or_(
-            RainbowRole.next_change_at.is_(None),
-            RainbowRole.next_change_at <= now,
+    stmt = (
+        select(RainbowRole)
+        .where(
+            or_(
+                RainbowRole.next_change_at.is_(None),
+                RainbowRole.next_change_at <= now,
+            )
         )
+        .with_for_update(skip_locked=True)
     )
     result = await session.execute(stmt)
 
@@ -1799,9 +1837,13 @@ async def get_active_casino_games(
     session: AsyncSession, *, dt: datetime
 ) -> Sequence[CasinoGame]:
     """Get all active casino games for a guild."""
-    stmt = select(CasinoGame).where(
-        CasinoGame.state == CasinoGameStateEnum.PENDING,
-        CasinoGame.end_time <= dt,
+    stmt = (
+        select(CasinoGame)
+        .where(
+            CasinoGame.state == CasinoGameStateEnum.PENDING,
+            CasinoGame.end_time <= dt,
+        )
+        .with_for_update(skip_locked=True)
     )
     stmt = stmt.options(
         selectinload(CasinoGame.bets).selectinload(CasinoBet.user)

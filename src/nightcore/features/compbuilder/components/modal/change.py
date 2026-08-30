@@ -85,21 +85,43 @@ class ChangeComponentModal(Modal, title="Изменение компонента
 
         changed_fields: list[str] = []
         if name:
-            self.component.name = name
             changed_fields.append("name")
         if text:
-            self.component.text = text
             changed_fields.append("text")
         if component_type:
-            self.component.type = component_type
             changed_fields.append("type")
         if author_text:
-            self.component.author_text = author_text
             changed_fields.append("author_text")
 
         try:
             async with self.bot.uow.start() as session:
-                _ = await session.merge(self.component)
+                from src.infra.db.operations import get_custom_component_by_id
+
+                locked = await get_custom_component_by_id(
+                    session,
+                    guild_id=self.component.guild_id,
+                    id=self.component.id,
+                    for_update=True,
+                )
+                if locked is None:
+                    await interaction.response.send_message(
+                        view=ErrorViewV2(
+                            "Ошибка изменения компонента",
+                            "Компонент не найден.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+                # apply changes to locked row (inside same transaction)
+                if name:
+                    locked.name = name
+                if text:
+                    locked.text = text
+                if component_type:
+                    locked.type = component_type
+                if author_text:
+                    locked.author_text = author_text
+                _ = locked
         except Exception as e:
             logger.error(
                 "[compbuilder/change] Failed to change component %s: %s",

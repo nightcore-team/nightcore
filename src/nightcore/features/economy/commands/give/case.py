@@ -86,6 +86,7 @@ async def give_case(
                     guild_id=guild.id,
                     user_id=user.id,
                     with_relations=True,
+                    for_update=True,
                 )
 
                 case = await get_case_by_id(

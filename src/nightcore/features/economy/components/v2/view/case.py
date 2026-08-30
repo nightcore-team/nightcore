@@ -80,7 +80,6 @@ class CaseOpenViewV2(LayoutView):
             )
         )
         container.add_item(Separator())
-        container.add_item(TextDisplay(Self)("-# fix by aaxnet"))
 
         self.add_item(container)
 
@@ -185,8 +184,7 @@ class CaseHelpViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"-# Page {self.current_page + 1} "
-                f"of {len(self.pages)} | fix by aaxnet"
+                f"-# Page {self.current_page + 1} of {len(self.pages)}"
             )
         )
 
