@@ -15,11 +15,7 @@ class ClansPaydayViewV2(LayoutView):
 
         container = Container[Self](accent_color=Color.from_str("#9B7EDE"))
 
-        container.add_item(
-            TextDisplay[Self](
-                "## <:nightcoreCrownPurple:1540714328209100923> PayDay"
-            )
-        )
+        container.add_item(TextDisplay[Self]("## PayDay"))
         container.add_item(Separator[Self]())
 
         container.add_item(

@@ -392,9 +392,7 @@ class NotifyTimedOutViewV2(LayoutView):
 
         # header
         container.add_item(
-            TextDisplay[Self](
-                f"### <:nightcoreNotifyEnd:1540731907829145622> Оповещение от <@{moderator_id}>"  # noqa: E501
-            )
+            TextDisplay[Self](f"### Оповещение от <@{moderator_id}>")
         )
 
         # body
