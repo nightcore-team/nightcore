@@ -33,7 +33,9 @@ class Battlepass(Cog):
     async def claim(self, interaction: Interaction[Nightcore]):
         """Claim your battlepass rewards."""
 
-        await send_battlepass_claim_view(self.bot, interaction)
+        await send_battlepass_claim_view(
+            self.bot, interaction, interaction.user.id
+        )
 
 
 async def setup(bot: Nightcore) -> None:
