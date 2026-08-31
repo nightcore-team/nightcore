@@ -44,8 +44,8 @@ class FractionRole(Cog):
         self.bot = bot
 
     @app_commands.command(  # type: ignore
-        name="fraction_role",
-        description="Выдать пользователю фракционную роль.",
+        name="give_role",
+        description="Выдать пользователю роль.",
     )
     @app_commands.guild_only()
     @app_commands.describe(
@@ -61,7 +61,7 @@ class FractionRole(Cog):
     )
     @app_commands.autocomplete(role=fraction_roles_autocomplete)
     @check_required_permissions(PermissionsFlagEnum.UNSAFE)  # type: ignore
-    async def fraction_role(
+    async def give_role(
         self,
         interaction: Interaction,
         user: Member,
@@ -111,7 +111,7 @@ class FractionRole(Cog):
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка выдачи роли",
-                    "Роль не найдена в списке фракционных ролей.",
+                    "Роль не найдена в списке для выдачи.",
                 )
             )
             return

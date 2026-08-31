@@ -32,7 +32,7 @@ def create_bot(
         # moderation commands
         "src.nightcore.features.moderation.commands.changestat",
         "src.nightcore.features.moderation.commands.kick",
-        "src.nightcore.features.moderation.commands.fraction_role",
+        "src.nightcore.features.moderation.commands.give_role",
         "src.nightcore.features.moderation.commands.infractions",
         "src.nightcore.features.moderation.commands.setname",
         "src.nightcore.features.moderation.commands.clear",
