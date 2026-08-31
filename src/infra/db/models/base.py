@@ -13,4 +13,5 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize the raw config payload (identity by default)."""
         return config

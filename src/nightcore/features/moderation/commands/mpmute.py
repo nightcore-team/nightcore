@@ -168,7 +168,7 @@ class MpMute(Cog):
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка блокировки",
-                    f"{member.mention} уже заблокирован на торговой площадке.",  # noqa: E501
+                    f"{member.mention} уже заблокирован на торговой площадке.",
                 ),
                 ephemeral=True,
             )

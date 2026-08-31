@@ -5,7 +5,7 @@ import logging
 import discord
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildLoggingConfig
+from src.infra.db.models import GuildLoggingConfig, PrivateRoomState
 from src.infra.db.operations import (
     get_private_room_state,
     get_specified_webhook,
@@ -29,7 +29,8 @@ class DeletePrivateRoomEvent(Cog):
         self,
         member: discord.Member,
         channel: discord.VoiceChannel,
-        private_room_state,  # detached, re-fetched with lock
+        # detached, re-fetched with lock
+        private_room_state: PrivateRoomState | None,
     ):
         """Handle delete private room events."""
         guild = member.guild
@@ -39,7 +40,7 @@ class DeletePrivateRoomEvent(Cog):
             await channel.delete(reason="Deleting private room on user leave")
         except discord.NotFound as e:
             logger.error(
-                "[private_rooms/event] Private room channel not found for "  # noqa: E501
+                "[private_rooms/event] Private room channel not found for "
                 "%s: %s",
                 member,
                 e,
@@ -105,12 +106,9 @@ class DeletePrivateRoomEvent(Cog):
             )
             return
 
-        if log_webhook is None:
-            return
-
         if not log_webhook.valid:
             logger.warning(
-                "[logging] Logging webhook (private_rooms) invalid for "  # noqa: E501
+                "[logging] Logging webhook (private_rooms) invalid for "
                 "guild %s",
                 guild.id,
             )

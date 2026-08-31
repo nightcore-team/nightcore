@@ -1,3 +1,5 @@
+"""Guild role request configuration models."""
+
 from typing import Any
 
 from sqlalchemy import (
@@ -69,6 +71,7 @@ class GuildRoleRequestConfig(IdIntegerMixin, Base):
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize organizational roles in the raw config payload."""
         if "organizational_roles" in config:
             org_roles: list[Any] = config["organizational_roles"] or []
             config["organizational_roles"] = [

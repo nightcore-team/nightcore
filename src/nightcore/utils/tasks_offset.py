@@ -1,3 +1,5 @@
+"""Task offset manager to stagger scheduled bot tasks."""
+
 import asyncio
 
 
@@ -8,6 +10,7 @@ class TaskOffsetManager:
         self._max_offset = 0
 
     def get_offset(self, name: str) -> float:
+        """Return the stable sleep offset for the given task name."""
         task_offset = self._task_offsets.get(name)
 
         if task_offset is not None:
@@ -18,5 +21,6 @@ class TaskOffsetManager:
         return self._task_offsets.setdefault(name, self._max_offset)
 
     async def sleep(self, name: str) -> None:
+        """Sleep for the task's stable offset duration."""
         offset = self.get_offset(name)
         await asyncio.sleep(offset)

@@ -1,3 +1,5 @@
+"""Guild forum configuration model."""
+
 from typing import Any
 
 from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer
@@ -45,6 +47,7 @@ class GuildForumConfig(IdIntegerMixin, Base):
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize the notify webhook in the raw config payload."""
         if "notify_webhook" in config:
             webhook = config["notify_webhook"]
             config["notify_webhook"] = (

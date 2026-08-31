@@ -4,11 +4,11 @@ import logging
 
 import discord
 from discord.ext.commands import Cog  # type: ignore
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildLoggingConfig, PrivateRoomState
 from src.infra.db.operations import (
+    create_private_room_state,
     get_private_room_state,
     get_specified_webhook,
 )
@@ -71,6 +71,7 @@ class CreatePrivateRoomEvent(Cog):
                         e,
                     )
                 return
+
             # Stale DB record: channel not found, remove with lock
             async with self.bot.uow.start() as session:
                 stale = await get_private_room_state(
@@ -79,7 +80,7 @@ class CreatePrivateRoomEvent(Cog):
                 if (
                     stale is not None
                     and stale.channel_id == existing_channel_id
-                ):  # noqa: E501
+                ):
                     await session.delete(stale)
                     logger.info(
                         "[private_rooms/event] Removed stale private room "
@@ -121,23 +122,18 @@ class CreatePrivateRoomEvent(Cog):
         existing_after: PrivateRoomState | None = None
         try:
             async with self.bot.uow.start() as session:
-                stmt = (
-                    insert(PrivateRoomState)
-                    .values(
-                        guild_id=guild.id,
-                        user_id=member.id,
-                        channel_id=private_channel.id,
-                    )
-                    .on_conflict_do_nothing(index_elements=["user_id"])
-                    .returning(PrivateRoomState)
+                inserted = await create_private_room_state(
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
+                    channel_id=private_channel.id,
                 )
-                result = await session.execute(stmt)
-                inserted = result.scalar_one_or_none()
                 if inserted is None:
                     race_lost = True
                     existing_after = await get_private_room_state(
                         session, user_id=member.id, for_update=True
                     )
+
         except IntegrityError as e:
             logger.warning(
                 "[private_rooms/event] IntegrityError on private room "
@@ -267,7 +263,7 @@ class CreatePrivateRoomEvent(Cog):
 
         if not log_webhook.valid:
             logger.warning(
-                "[logging] Logging webhook (private_rooms) invalid for "  # noqa: E501
+                "[logging] Logging webhook (private_rooms) invalid for "
                 "guild %s",
                 guild.id,
             )

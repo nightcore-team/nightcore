@@ -30,7 +30,7 @@ from src.nightcore.features.clans.events.dto.clan_manage_notify import (
     ClanManageNotifyDTO,
 )
 from src.nightcore.utils import safe_delete_role
-from src.nightcore.utils.object import (  # noqa: E501
+from src.nightcore.utils.object import (
     ensure_category_exists,
     safe_delete_channel,
 )
@@ -101,8 +101,8 @@ async def create(
         return
 
     # Discord role creation before DB - if DB fails we cleanup orphan role
-    # (alternative would be create after DB but then we need  # noqa: E501
-    # placeholder role_id).  # noqa: E501
+    # (alternative would be create after DB but then we need
+    # placeholder role_id).
     try:
         clan_role = await guild.create_role(
             name=name,
@@ -285,7 +285,7 @@ async def create(
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка создания канала клана",
-                    "Не удалось найти категорию для создания каналов кланов. ",  # noqa: E501
+                    "Не удалось найти категорию для создания каналов кланов. ",
                 ),
                 ephemeral=True,
             )
@@ -299,7 +299,7 @@ async def create(
             )
             if pre_clan is None:
                 logger.error(
-                    "[clans] Clan %s not found before channel creation "  # noqa: E501
+                    "[clans] Clan %s not found before channel creation "
                     "in guild %s",
                     clan.id,
                     guild.id,
@@ -358,18 +358,18 @@ async def create(
             )
             return
 
-        # SELECT FOR UPDATE before mutating to close race  # noqa: E501
+        # SELECT FOR UPDATE before mutating to close race
         try:
             async with bot.uow.start() as session:
                 db_clan = await get_clan_by_id(
-                    session,  # noqa: E501
+                    session,
                     guild_id=guild.id,
                     clan_id=clan.id,
                     for_update=True,
                 )
                 if db_clan is None:
                     logger.error(
-                        "[clans/create] Clan %s not found in database "  # noqa: E501
+                        "[clans/create] Clan %s not found in database "
                         "during channel creation in guild %s",
                         clan.id,
                         guild.id,
@@ -414,12 +414,9 @@ async def create(
                 e,
             )
             # cleanup orphan channel on DB error
-            if channel is not None:
-                asyncio.create_task(
-                    safe_delete_channel(
-                        channel, "Откат канала клана - ошибка БД"
-                    )
-                )
+            asyncio.create_task(
+                safe_delete_channel(channel, "Откат канала клана - ошибка БД")
+            )
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка создания канала клана",

@@ -216,6 +216,7 @@ DISCORD_WEBHOOK_TOKEN_MAX_LENGTH = 90
 
 
 def validate_discord_webhook(v: Any) -> str:
+    """Validate and return a Discord webhook URL string."""
     value = str(v).strip()
 
     match = DISCORD_WEBHOOK_RE.match(value)

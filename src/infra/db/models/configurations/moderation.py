@@ -1,3 +1,5 @@
+"""Guild moderation configuration models."""
+
 from typing import Any
 
 from sqlalchemy import (
@@ -139,6 +141,7 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize fraction roles access in the raw config payload."""
         if "fraction_roles_access_roles_ids" in config:
             fraction_roles: list[Any] = (
                 config["fraction_roles_access_roles_ids"] or []

@@ -42,7 +42,7 @@ class VoiceStateUpdateEvent(Cog):
                     private_room_state = await get_private_room_state(
                         session, user_id=member.id, for_update=True
                     )
-                    create_private_room_channel_id = await get_specified_channel(
+                    private_room_channel_id = await get_specified_channel(
                         session,
                         guild_id=guild.id,
                         config_type=GuildPrivateChannelsConfig,
@@ -56,8 +56,8 @@ class VoiceStateUpdateEvent(Cog):
                     )
 
                 if (
-                    create_private_room_channel_id
-                    and after.channel.id == create_private_room_channel_id
+                    private_room_channel_id
+                    and after.channel.id == private_room_channel_id
                 ):
                     if private_room_state:
                         _ch = await ensure_messageable_channel_exists(
@@ -212,7 +212,7 @@ class VoiceStateUpdateEvent(Cog):
                     private_room_state = await get_private_room_state(
                         session, user_id=member.id, for_update=True
                     )
-                    create_private_room_channel_id = await get_specified_channel(
+                    private_room_channel_id = await get_specified_channel(
                         session,
                         guild_id=guild.id,
                         config_type=GuildPrivateChannelsConfig,
@@ -227,8 +227,8 @@ class VoiceStateUpdateEvent(Cog):
 
                 if (
                     private_room_state
-                    and create_private_room_channel_id
-                    and after.channel.id == create_private_room_channel_id
+                    and private_room_channel_id
+                    and after.channel.id == private_room_channel_id
                 ):
                     logger.info(
                         "[voice] %s switched to create-private channel %s, "
@@ -292,8 +292,8 @@ class VoiceStateUpdateEvent(Cog):
 
                 elif (
                     not private_room_state
-                    and create_private_room_channel_id
-                    and after.channel.id == create_private_room_channel_id
+                    and private_room_channel_id
+                    and after.channel.id == private_room_channel_id
                 ):
                     self.bot.dispatch(
                         "voice_channel_switch",

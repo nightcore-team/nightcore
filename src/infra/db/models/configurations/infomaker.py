@@ -1,3 +1,5 @@
+"""Guild infomaker configuration model."""
+
 from typing import Any
 
 from sqlalchemy import ARRAY, BigInteger, ForeignKey
@@ -49,6 +51,7 @@ class GuildInfomakerConfig(IdIntegerMixin, Base):
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize admin roles logging webhook in the raw payload."""
         if "admins_roles_logging_webhook" in config:
             admins_webhook = config["admins_roles_logging_webhook"]
             config["admins_roles_logging_webhook"] = (

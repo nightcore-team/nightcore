@@ -39,7 +39,7 @@ class BanMemberEvent(Cog):
 
         if not logging_members_webhook.valid:
             logger.info(
-                f"[logging] Logging webhook (bans) invalid in guild {guild.id}"  # noqa: E501
+                f"[logging] Logging webhook (bans) invalid in guild {guild.id}"
             )
             return
 

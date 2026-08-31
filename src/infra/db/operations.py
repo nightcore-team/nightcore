@@ -446,7 +446,7 @@ async def get_or_create_user(
         if for_update:
             get_stmt = get_stmt.with_for_update()
         user = await session.scalar(get_stmt)
-        return user, False  # type: ignore
+        return user, False  # type: ignore[return-value]
 
     # newly inserted row already has lock via insert
     if for_update:
@@ -463,7 +463,7 @@ async def get_or_create_user(
             )
         user = await session.scalar(locked_stmt)
 
-    return user, True
+    return user, True  # type: ignore[return-value]
 
 
 async def get_user_for_update(
@@ -792,6 +792,32 @@ async def get_private_room_state(
     return res.scalar_one_or_none()
 
 
+async def create_private_room_state(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    channel_id: int,
+) -> PrivateRoomState | None:
+    """Create a private room state for a user (idempotent per user).
+
+    Returns the newly inserted row, or ``None`` if a state already
+    exists for the user (race condition / duplicate insert).
+    """
+    stmt = (
+        insert(PrivateRoomState)
+        .values(
+            guild_id=guild_id,
+            user_id=user_id,
+            channel_id=channel_id,
+        )
+        .on_conflict_do_nothing(index_elements=["user_id"])
+        .returning(PrivateRoomState)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def create_temp_punish(
     session: AsyncSession,
     *,
@@ -822,12 +848,13 @@ async def create_temp_punish(
     res = await session.execute(existing_stmt)
     existing = res.scalar_one_or_none()
     now = datetime.now(UTC)
-    if existing is not None and existing.end_time is not None:
+
+    if existing is not None and existing.end_time > now:
         # If existing is still active, extend it idempotently
-        if existing.end_time > now:
-            if end_time > existing.end_time:
-                existing.end_time = end_time
-            return existing
+        if end_time > existing.end_time:
+            existing.end_time = end_time
+        return existing
+
     temp_punish = TempPunish(
         guild_id=guild_id,
         user_id=user_id,
@@ -835,6 +862,7 @@ async def create_temp_punish(
         end_time=end_time,
     )
     session.add(temp_punish)
+
     return temp_punish
 
 
@@ -992,6 +1020,7 @@ async def get_last_logging_revision(
         session: The async database session.
         guild_id: The ID of the guild to get the revision for.
         config_type: The type of the configuration to filter by.
+        for_update: SELECT ... FOR UPDATE to lock db record.
 
     Returns:
         The most recent LoggingRevision or None when none exist.
@@ -1338,6 +1367,7 @@ async def get_temp_role(
     guild_id: int,
     user_id: int,
     role_id: int,
+    for_update: bool = False,
 ) -> TempRole | None:
     """Get the temporary role for a user in a guild."""
     stmt = (
@@ -1349,6 +1379,8 @@ async def get_temp_role(
         )
         .limit(1)
     )
+    if for_update:
+        stmt = stmt.with_for_update()
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
@@ -1579,8 +1611,13 @@ async def get_or_create_temp_multiplier(
     multiplier_type: MultiplierTypeEnum,
     multiplier: int = 1,
     duration: int = 3600,  # 1 година в секундах
+    for_update: bool = False,
 ) -> tuple[TempEconomyMultiplier, bool]:
-    """Get or create a temporary economy multiplier for a guild."""
+    """Get or create a temporary economy multiplier for a guild.
+
+    When ``for_update`` is True the existing row (if any) is locked with
+    ``SELECT ... FOR UPDATE`` to serialize concurrent read-modify-write.
+    """
 
     stmt = (
         insert(TempEconomyMultiplier)
@@ -1597,12 +1634,14 @@ async def get_or_create_temp_multiplier(
     res = await session.execute(stmt)
     created = res.scalar_one_or_none() is not None
 
-    entity = await session.scalar(
-        select(TempEconomyMultiplier).where(
-            TempEconomyMultiplier.guild_id == guild_id,
-            TempEconomyMultiplier.multiplier_type == multiplier_type,
-        )
+    select_stmt = select(TempEconomyMultiplier).where(
+        TempEconomyMultiplier.guild_id == guild_id,
+        TempEconomyMultiplier.multiplier_type == multiplier_type,
     )
+    if for_update:
+        select_stmt = select_stmt.with_for_update()
+
+    entity = await session.scalar(select_stmt)
 
     return entity, created  # type: ignore
 

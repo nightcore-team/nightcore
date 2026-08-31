@@ -1,6 +1,6 @@
 """Permissions enums for the bot."""
 
-from enum import Enum
+from enum import StrEnum
 
 from src.infra.db.models import (
     GuildClansConfig,
@@ -9,7 +9,7 @@ from src.infra.db.models import (
 )
 
 
-class PermissionsFlagEnum(str, Enum):
+class PermissionsFlagEnum(StrEnum):
     """Enum representing permission flags."""
 
     NONE = "nonetype"

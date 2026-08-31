@@ -1,3 +1,5 @@
+"""Guild logging configuration model."""
+
 from typing import Any
 
 from sqlalchemy import ARRAY, BigInteger, ForeignKey
@@ -164,6 +166,7 @@ class GuildLoggingConfig(IdIntegerMixin, Base):  #
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize webhook fields in the raw config payload."""
         for k, v in config.items():
             if k.endswith("_webhook"):
                 config[k] = DiscordWebhook(**v) if v is not None else None

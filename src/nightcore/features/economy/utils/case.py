@@ -179,7 +179,7 @@ async def format_single_case_reward(
     guild: Guild,
     is_color_compensation: bool | None = None,
 ):
-    """Resolve and format single case drop."""  # noqa: E501
+    """Resolve and format single case drop."""
 
     color_cache: dict[int, Color | None] = {}
     case_cache: dict[int, Case | None] = {}
@@ -232,7 +232,7 @@ async def format_battlepass_levels_rewards(
     coin_name: str | None,
     guild: Guild,
 ):
-    """Resolve and format battlepass rewards."""  # noqa: E501
+    """Resolve and format battlepass rewards."""
 
     for level in levels:
         match level.reward["type"]:
@@ -248,7 +248,7 @@ async def format_battlepass_levels_rewards(
 
                 level.reward["name"] = (
                     case_obj.name if case_obj else "unknown case"
-                )  # noqa: E501
+                )
             case CaseDropTypeEnum.COLOR.value:
                 color = await get_color_by_id(
                     session,
@@ -275,7 +275,7 @@ async def format_single_battlepass_level_reward(
     coin_name: str | None,
     guild: Guild,
 ):
-    """Resolve and format battlepass reward."""  # noqa: E501
+    """Resolve and format battlepass reward."""
 
     match level.reward["type"]:
         case CaseDropTypeEnum.COINS.value:
@@ -290,7 +290,7 @@ async def format_single_battlepass_level_reward(
 
             level.reward["name"] = (
                 case_obj.name if case_obj else "unknown case"
-            )  # noqa: E501
+            )
         case CaseDropTypeEnum.COLOR.value:
             color = await get_color_by_id(
                 session,

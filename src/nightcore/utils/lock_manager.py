@@ -1,3 +1,5 @@
+"""Async lock manager for serializing access to shared resources."""
+
 import asyncio
 from collections.abc import Hashable
 from contextlib import asynccontextmanager
@@ -26,6 +28,7 @@ class AsyncioLockManager:
 
     @asynccontextmanager
     async def acquire(self, type_: AsyncioLockTypeEnum, key: Hashable):
+        """Acquire a per-key async lock, releasing it when done."""
         k = (type_, key)
         if k not in self._locks:
             self._locks[k] = _LockEntry()

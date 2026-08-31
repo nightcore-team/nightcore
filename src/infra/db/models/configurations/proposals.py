@@ -1,3 +1,5 @@
+"""Guild proposals configuration model."""
+
 from typing import Any
 
 from sqlalchemy import BigInteger, Integer

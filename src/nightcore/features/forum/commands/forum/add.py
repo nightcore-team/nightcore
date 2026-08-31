@@ -1,3 +1,5 @@
+"""Command to configure or update the forum section for a guild."""
+
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
 async def forum_add(
     interaction: Interaction["Nightcore"], section_id: int, prefix_id: int
 ):
+    """Bind the guild forum section and prefix to the given ids."""
     guild = cast(Guild, interaction.guild)
 
     try:

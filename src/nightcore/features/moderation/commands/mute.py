@@ -258,7 +258,7 @@ class Mute(Cog):
                     await interaction.followup.send(
                         view=ErrorViewV2(
                             "Ошибка блокировки",
-                            f"{member.mention} уже в тайм-ауте.",  # noqa: E501
+                            f"{member.mention} уже в тайм-ауте.",
                         ),
                         ephemeral=True,
                     )
@@ -281,7 +281,7 @@ class Mute(Cog):
                         await interaction.followup.send(
                             view=ErrorViewV2(
                                 "Ошибка блокировки",
-                                f"{member.mention} уже в тайм-ауте.",  # noqa: E501
+                                f"{member.mention} уже в тайм-ауте.",
                             ),
                             ephemeral=True,
                         )
@@ -300,7 +300,7 @@ class Mute(Cog):
                         await interaction.followup.send(
                             view=ErrorViewV2(
                                 "Ошибка блокировки",
-                                f"{member.mention} уже в тайм-ауте.",  # noqa: E501
+                                f"{member.mention} уже в тайм-ауте.",
                             ),
                             ephemeral=True,
                         )

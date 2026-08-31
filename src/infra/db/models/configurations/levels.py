@@ -1,3 +1,5 @@
+"""Guild levels configuration models."""
+
 from typing import Any
 
 from sqlalchemy import (

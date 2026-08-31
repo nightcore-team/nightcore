@@ -43,6 +43,17 @@ async def give_clanexp(
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
 
+    try:
+        clan_id = int(clan)
+    except ValueError:
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Ошибка выдачи кланового опыта",
+                "Неверный идентификатор клана.",
+            )
+        )
+        return
+
     user = cast(Member, interaction.user)
 
     outcome = ""
@@ -59,7 +70,7 @@ async def give_clanexp(
         )
 
         db_clan = await get_clan_by_id(
-            session, guild_id=guild.id, clan_id=int(clan, for_update=True)
+            session, guild_id=guild.id, clan_id=clan_id, for_update=True
         )
         if not db_clan:
             outcome = "clan_not_found"

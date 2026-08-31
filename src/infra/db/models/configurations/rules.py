@@ -98,6 +98,7 @@ class GuildRulesConfig(IdIntegerMixin, Base):
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize guild rules in the raw config payload."""
         raw_rules = config.get("guild_rules")
 
         if raw_rules is not None:

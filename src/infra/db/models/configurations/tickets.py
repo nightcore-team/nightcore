@@ -1,3 +1,5 @@
+"""Guild tickets configuration model."""
+
 from typing import Any
 
 from sqlalchemy import BigInteger, Integer

@@ -1,3 +1,5 @@
+"""Guild clans configuration models."""
+
 from typing import Any
 
 from sqlalchemy import (
@@ -83,6 +85,7 @@ class GuildClansConfig(IdIntegerMixin, Base):
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize clan shop items in the raw config payload."""
         if "clan_shop_items" in config:
             shop_items: list[Any] = config["clan_shop_items"] or []
             config["clan_shop_items"] = [

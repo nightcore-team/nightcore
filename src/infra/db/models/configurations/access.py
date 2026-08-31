@@ -1,3 +1,5 @@
+"""Guild access configuration model."""
+
 from typing import Any
 
 from sqlalchemy import (

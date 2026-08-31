@@ -1,6 +1,7 @@
 """Create clan channel command."""
 
 import asyncio
+import contextlib
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -189,8 +190,8 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             reason=f"Создание канала для клана {clan_name}",
         )
 
-        # Second transaction: lock row again and double-check  # noqa: E501
-        # channel still free  # noqa: E501
+        # Second transaction: lock row again and double-check
+        # channel still free
         async with bot.uow.start() as session:
             dbclan_locked = await get_clan_by_id(
                 session, guild_id=guild.id, clan_id=clan_id, for_update=True
@@ -219,12 +220,11 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
 
         if outcome == "clan_not_found_on_update":
             # cleanup orphan channel
-            if channel is not None:
-                asyncio.create_task(
-                    safe_delete_channel(
-                        channel, "Откат канала клана - клан не найден"
-                    )
+            asyncio.create_task(
+                safe_delete_channel(
+                    channel, "Откат канала клана - клан не найден"
                 )
+            )
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка обновления информации о клане",
@@ -235,12 +235,11 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             return
 
         if outcome == "channel_exists_race":
-            if channel is not None:
-                asyncio.create_task(
-                    safe_delete_channel(
-                        channel, "Откат канала клана - гонка каналов"
-                    )
+            asyncio.create_task(
+                safe_delete_channel(
+                    channel, "Откат канала клана - гонка каналов"
                 )
+            )
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка создания канала клана",
@@ -290,14 +289,12 @@ async def create_channel(interaction: Interaction["Nightcore"], clan: str):
             "clan_not_found_on_update",
             "channel_exists_race",
         ):
-            try:
+            with contextlib.suppress(Exception):
                 asyncio.create_task(
                     safe_delete_channel(
                         channel, "Откат канала клана - ошибка БД"
                     )
                 )
-            except Exception:
-                pass
         logger.error(
             "[clans/create_channel] Error creating clan channel in "
             "guild %s: %s",

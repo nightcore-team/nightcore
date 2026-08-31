@@ -1,3 +1,5 @@
+"""Command to delete the forum configuration for a guild."""
+
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -24,6 +26,7 @@ logger = logging.getLogger(__name__)
 async def forum_delete(
     interaction: Interaction["Nightcore"],
 ):
+    """Delete the guild forum configuration."""
     guild = cast(Guild, interaction.guild)
 
     try:

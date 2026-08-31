@@ -1,3 +1,5 @@
+"""Guild FAQ configuration model."""
+
 from typing import Any
 
 from sqlalchemy import JSON, BigInteger, text

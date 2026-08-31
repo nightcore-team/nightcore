@@ -127,8 +127,8 @@ async def settings(
                 clan_name = clan_entity.name  # DTO field
                 dto_role_id = clan_entity.role_id
                 dto_channel_id = clan_entity.clan_channel_id
-                if clan_entity.leader is not None:
-                    before_leader_id = clan_entity.leader.id
+
+                before_leader_id = clan_entity.leader.id
 
                 # change leader
                 if new_leader:
@@ -447,7 +447,7 @@ async def settings(
         clan_change_channel_action = ClanManageAction(
             type=ClanManageActionEnum.CHANGE_CHANNEL,
             before=f"<#{old_channel_id}> ('{old_channel_id}')",
-            after=f"<#{dto_channel_id}> ('{dto_channel_id}')",  # noqa: E501
+            after=f"<#{dto_channel_id}> ('{dto_channel_id}')",
         )
 
         actions.append(clan_change_channel_action)
