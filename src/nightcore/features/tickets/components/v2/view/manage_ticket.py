@@ -106,7 +106,7 @@ class ManageTicketViewV2(BaseErrorViewV2, LayoutView):
         # Main text
         container.add_item(
             TextDisplay[Self](
-                f"### <:nightcoreTicketNew:1540818406977052812> Обращение от пользователя <@{interaction_user_id}> \n> Если у вас есть жалобы на работу модераторов, пожалуйста, обратитесь на [форум Arz Guard](https://forum.arzguard.com)."  # noqa: E501
+                f"### <:nightcoreTicketNew:1540818406977052812> Обращение от пользователя <@{interaction_user_id}>"  # noqa: E501
             )
         )
 

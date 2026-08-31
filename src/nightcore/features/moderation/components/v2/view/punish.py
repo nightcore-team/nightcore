@@ -78,15 +78,6 @@ class PunishViewV2(LayoutView):
         container.add_item(TextDisplay[Self](meta_description))
         container.add_item(Separator[Self]())
 
-        if mode != "expired":
-            container.add_item(
-                TextDisplay[Self](
-                    "-# Если вы считаете, что это наказание было выдано...\n"
-                    "-# ...ошибочно/несправедливо - обратитесь на [Arz Guard forum](https://forum.arzguard.com)."
-                )
-            )
-            container.add_item(Separator[Self]())
-
         self.add_item(container)
 
     def _get_punishment_text(
