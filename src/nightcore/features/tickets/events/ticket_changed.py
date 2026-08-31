@@ -100,6 +100,11 @@ class TicketChangeEvent(Cog):
             filename=f"ticket-{data.channel_id}-transcript.html",
         )
 
+        dm_transcript_file = discord.File(
+            fp=io.BytesIO(transcript.encode()),
+            filename=f"ticket-{data.channel_id}-transcript.html",
+        )
+
         gather_list: list[Awaitable[None]] = []
 
         try:
@@ -109,7 +114,7 @@ class TicketChangeEvent(Cog):
             await dm.send(
                 f"Ваш тикет {ticket_channel.name} на сервере {data.guild.name} был удален.\n"  # noqa: E501
                 "Для просмотра истории сообщений загрузите файл и откройте в браузере.",  # noqa: E501
-                files=[transcript_file],
+                files=[dm_transcript_file],
             )
 
         except Exception:
