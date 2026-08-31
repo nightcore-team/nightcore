@@ -1,9 +1,9 @@
 """Command to delete the forum configuration for a guild."""
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from discord import Guild, Interaction
+from discord import Interaction
 
 from src.infra.db.models import GuildForumConfig
 from src.infra.db.operations import get_specified_guild_config
@@ -27,7 +27,13 @@ async def forum_delete(
     interaction: Interaction["Nightcore"],
 ):
     """Delete the guild forum configuration."""
-    guild = cast(Guild, interaction.guild)
+    guild = interaction.guild
+    if guild is None:
+        await interaction.response.send_message(
+            content="Команда доступна только на сервере.",
+            ephemeral=True,
+        )
+        return
 
     try:
         async with interaction.client.uow.start() as session:
@@ -37,11 +43,18 @@ async def forum_delete(
                 guild_id=guild.id,
             )
 
+            if config is None:
+                await interaction.response.send_message(
+                    content="Конфиг не найден!",
+                    ephemeral=True,
+                )
+                return
+
             await session.delete(config)
 
     except Exception as e:
         logger.error(
-            "[forum/add] failed to delete config for guild %s: %e",
+            "[forum/delete] failed to delete config for guild %s: %s",
             guild.id,
             e,
         )

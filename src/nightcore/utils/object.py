@@ -52,7 +52,7 @@ async def ensure_role_exists(guild: Guild, role_id: int) -> Role | None:
 
 def ensure_channel_is_messageable(channel: GuildChannel | Thread) -> bool:
     """Check if a channel is messageable."""
-    return isinstance(channel, TextChannel | Thread)
+    return isinstance(channel, (TextChannel, Thread))
 
 
 async def ensure_message_exists(

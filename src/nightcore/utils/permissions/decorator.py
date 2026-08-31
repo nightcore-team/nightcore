@@ -148,8 +148,11 @@ async def has_specified_permission(
         config_type=config_type,
         field_name=field_name,
     )
-    if not roles_access_ids:
+    if roles_access_ids is None:
         raise FieldNotConfiguredError(access_name)
+
+    if not roles_access_ids:
+        return False
 
     return bool(has_any_role_from_sequence(user, roles_access_ids))
 
@@ -170,7 +173,10 @@ async def _check_user_permission(
 
     member = cast(Member, interaction.user)
     bot = interaction.client
-    guild = cast(Guild, interaction.guild)
+    guild = interaction.guild
+    if guild is None:
+        return False
+    guild = cast(Guild, guild)
 
     if not hasattr(member, "guild_permissions"):
         return False

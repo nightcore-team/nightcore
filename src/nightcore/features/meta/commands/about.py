@@ -3,11 +3,11 @@
 import logging
 import os
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import discord
 import psutil  # type: ignore
-from discord import Guild, app_commands
+from discord import app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.utils import snowflake_time
 
@@ -33,6 +33,7 @@ class About(Cog):
         name="about",
         description="Информация о боте",
     )
+    @app_commands.guild_only()  # type: ignore
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
     async def about(
         self,
@@ -40,10 +41,17 @@ class About(Cog):
         ephemeral: bool = True,
     ):
         """Display information about the bot."""
+        guild = interaction.guild
+        if guild is None:
+            await interaction.response.send_message(
+                "Команда доступна только на сервере.",
+                ephemeral=True,
+            )
+            return
 
         try:
             p = psutil.Process(os.getpid())
-            mem_bytes = p.memory_info().rss  # resident set size in bytes
+            mem_bytes = p.memory_info().rss
         except Exception as e:
             logger.exception("[command] - Failed to get memory info: %s", e)
             mem_bytes = 0
@@ -72,7 +80,7 @@ class About(Cog):
         logger.info(
             "[command] - invoked user=%s guild=%s",
             interaction.user.id,
-            cast(Guild, interaction.guild).id,
+            guild.id,
         )
 
 

@@ -13,6 +13,7 @@ from nightforo import (
     ThreadsGetParams,
     ThreadUpdateParams,
 )
+from sqlalchemy.exc import IntegrityError
 
 from src.infra.api.forum.utils import extract_discord_id
 from src.infra.db.models import GuildForumConfig
@@ -73,21 +74,54 @@ class ForumComplaintProcessor:
             return
 
         for config, threads in filtered_threads.items():
+            if (
+                not config.available
+                or not config.notify_webhook
+                or not config.notify_webhook.valid
+                or not config.is_active
+            ):
+                logger.info(
+                    "[forum] Skipping guild %s due to incomplete forum config",
+                    config.guild_id,
+                )
+                continue
             for thread in threads:
-                async with self.bot.uow.start() as session:
-                    processed_thread = await get_or_create_processed_thread(
-                        session, thread_id=thread.thread_id
+                should_process = False
+                try:
+                    async with self.bot.uow.start() as session:
+                        existing = await get_or_create_processed_thread(
+                            session, thread_id=thread.thread_id
+                        )
+                        # get_or_create returns existing object if already
+                        # processed, None if newly created.
+                        if existing is not None:
+                            should_process = False
+                        else:
+                            try:
+                                await session.flush()
+                            except IntegrityError:
+                                logger.info(
+                                    "[forum] Thread %s race: already processed",  # noqa: E501
+                                    thread.thread_id,
+                                )
+                                should_process = False
+                            else:
+                                should_process = True
+                except IntegrityError:
+                    logger.info(
+                        "[forum] Thread %s integrity error on commit, skipping",  # noqa: E501
+                        thread.thread_id,
                     )
-
-                if processed_thread is not None:
+                    continue
+                except Exception as e:
+                    logger.exception(
+                        "[forum] Failed to mark thread %s as processed: %s",
+                        thread.thread_id,
+                        e,
+                    )
                     continue
 
-                if (
-                    not config.available
-                    or not config.notify_webhook
-                    or not config.notify_webhook.valid
-                    or not config.is_active
-                ):
+                if not should_process:
                     continue
 
                 await self._process_single_thread(config, thread)
@@ -106,7 +140,9 @@ class ForumComplaintProcessor:
             thread.view_url,
         )
         discord_id = extract_discord_id(thread.title)
-        reason = extract_str_by_pattern(thread.title, r"Причина:\s*(.+)$")
+        reason = extract_str_by_pattern(thread.title, r"(?s)Причина:\s*(.+)")
+        if reason is not None:
+            reason = reason.strip()
         logger.info(
             "[forum] Extracted from thread %s: discord_id=%s, reason='%s'",
             thread.thread_id,
@@ -121,8 +157,19 @@ class ForumComplaintProcessor:
             logger.info("[forum] Guild with ID %s not found", server.guild_id)
             return
 
-        member = await ensure_member_exists(guild, discord_id)
-        if not member:
+        member = None
+        if discord_id is not None:
+            try:
+                member = await ensure_member_exists(guild, discord_id)
+            except Exception as e:
+                logger.exception(
+                    "[forum] Failed to ensure member %s in guild %s: %s",
+                    discord_id,
+                    server.guild_id,
+                    e,
+                )
+                member = None
+        if discord_id is not None and not member:
             logger.info(
                 "[forum] Member with Discord ID %s not found in guild %s",
                 discord_id,
@@ -207,13 +254,27 @@ class ForumComplaintProcessor:
             )
             return
 
+        if not thread.view_url:
+            logger.info(
+                "[forum] Missing view_url for thread %s, skipping webhook",
+                thread.thread_id,
+            )
+            return
+
+        if discord_id is None:
+            logger.info(
+                "[forum] Missing discord_id for thread %s, skipping webhook",
+                thread.thread_id,
+            )
+            return
+
         await send_to_webhook(
             self.bot,
             server.notify_webhook,
             ComplaintViewV2(
                 self.bot,
-                url=thread.view_url if thread.view_url else "",
-                moderator_id=discord_id if discord_id else 0,
+                url=thread.view_url,
+                moderator_id=discord_id,
                 ping_role_id=server.role_id,
                 reason=reason if reason else "Не указана",
             ),

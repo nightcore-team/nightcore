@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 async def open_case(
     interaction: Interaction["Nightcore"],
     case_id: app_commands.Transform[int, StrToIntTransformer],
-    amount: int = 1,
+    amount: app_commands.Range[int, 1, 100] = 1,
 ):
     """Open case and get reward."""
 
@@ -82,9 +82,11 @@ async def open_case(
 
             if user_case is None:
                 outcome = "no_case"
+            elif amount < 1:
+                outcome = "invalid_amount"
             else:
                 opened_case_item = user_case.item
-                if amount > 1 and user_case.amount < amount:
+                if user_case.amount < amount:
                     outcome = "no_many_cases"
                 else:
                     rewards = opened_case_item.open(amount=amount)
@@ -130,6 +132,24 @@ async def open_case(
         await interaction.response.send_message(
             view=ValidationErrorViewV2(
                 "У вас нет такого кейса для открытия.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "invalid_amount":
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
+                "Количество кейсов для открытия должно быть от 1 до 100.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "no_many_cases":
+        await interaction.response.send_message(
+            view=ValidationErrorViewV2(
+                "У вас недостаточно кейсов для открытия.",
             ),
             ephemeral=True,
         )
