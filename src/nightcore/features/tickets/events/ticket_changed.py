@@ -136,7 +136,6 @@ class TicketChangeEvent(Cog):
                 "[tickets/event] on_ticket_deleted - Guild: %s, logging channel is not set",  # noqa: E501
                 data.guild.id,
             )
-            return
 
         gather_list.append(ticket_channel.delete(reason="Ticket deleted"))
 
