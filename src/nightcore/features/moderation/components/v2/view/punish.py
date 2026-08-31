@@ -76,7 +76,6 @@ class PunishViewV2(LayoutView):
             guild_name=guild_name,
         )
         container.add_item(TextDisplay[Self](meta_description))
-        container.add_item(Separator[Self]())
 
         self.add_item(container)
 
