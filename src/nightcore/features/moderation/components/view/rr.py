@@ -57,7 +57,7 @@ class RemoveOrgRoleSelect(discord.ui.View):
         try:
             await self.member.remove_roles(
                 *roles,
-                reason=self.reason or "Снятие организационных ролей через /rr",
+                reason=self.reason or "Снятие запрашиваемых ролей через /rr",
                 atomic=False,
             )
         except Exception as e:

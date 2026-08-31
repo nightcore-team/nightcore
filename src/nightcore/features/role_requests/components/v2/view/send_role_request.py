@@ -22,7 +22,7 @@ class SelectOrgRoleActionRow(ActionRow["SendRoleRequestView"]):
         super().__init__()
 
         org_select = Select["SendRoleRequestView"](
-            placeholder="Выберите вашу организацию.",
+            placeholder="Выберите нужную роль.",
             min_values=1,
             max_values=1,
             custom_id="role_request:select_org_role",
@@ -60,7 +60,7 @@ class OtherRoleRequestButtons(ActionRow["SendRoleRequestView"]):
 
         self.add_item(
             Button["SendRoleRequestView"](
-                label="Снять организационные роли",
+                label="Снять запрашиваемые роли",
                 custom_id="role_request:remove_roles",
                 style=ButtonStyle.grey,
                 emoji="<:nightcoreOrgRole:1540815640951136347>",
@@ -91,7 +91,7 @@ class SendRoleRequestView(LayoutView):
         # main text
         container.add_item(
             TextDisplay[Self](
-                "**Для запроса роли, пожалуйста, выберите вашу организацию...**\n"  # noqa: E501
+                "**Для запроса роли, пожалуйста, выберите нужную роль...**\n"
                 "**...из списка ниже.**"
             )
         )

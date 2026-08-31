@@ -1,4 +1,4 @@
-"""Handle the remove organization roles button interaction."""
+"""Handle the remove roles button interaction."""
 
 import logging
 from collections.abc import Sequence
@@ -43,8 +43,8 @@ async def handle_remove_roles(
     if outcome == "no_org_roles_configured":
         await interaction.response.send_message(
             view=ErrorViewV2(
-                "Не удалось снять организационные роли",
-                "Организационные роли не настроены на этом сервере.",
+                "Не удалось снять запрашиваемые роли",
+                "Запрашиваемые роли не настроены на этом сервере.",
             ),
             ephemeral=True,
         )
@@ -54,7 +54,7 @@ async def handle_remove_roles(
         if not has_any_role_from_sequence(user, org_roles_ids):
             await interaction.response.send_message(
                 view=ErrorViewV2(
-                    "Не удалось снять организационные роли",
+                    "Не удалось снять запрашиваемые роли",
                     "У вас нет ролей для снятия.",
                 ),
                 ephemeral=True,
@@ -72,7 +72,7 @@ async def handle_remove_roles(
         try:
             await user.remove_roles(
                 *roles_to_remove,
-                reason="Снятие организационных ролей",
+                reason="Снятие запрашиваемых ролей",
             )
         except Exception as e:
             logger.error(
@@ -84,7 +84,7 @@ async def handle_remove_roles(
             )
             await interaction.followup.send(
                 view=ErrorViewV2(
-                    "Не удалось снять организационные роли",
+                    "Не удалось снять запрашиваемые роли",
                     "Произошла ошибка при снятии ваших ролей.",
                 ),
             )
@@ -93,9 +93,9 @@ async def handle_remove_roles(
         await interaction.followup.send(
             view=SuccessViewV2(
                 "Снятие ролей успешно",
-                f"Ваши организационные роли "
+                "Ваши роли "
                 f"({', '.join(f'<@&{role.id}>' for role in roles_to_remove)})"
-                f" были сняты.",
+                " были сняты.",
             ),
         )
 

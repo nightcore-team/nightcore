@@ -124,7 +124,7 @@ class Rr(Cog):
             await interaction.response.send_message(
                 view=ErrorViewV2(
                     "Ошибка снятия роли",
-                    "У пользователя нет организационных ролей.",
+                    "У пользователя нет запрашиваемых ролей.",
                 ),
                 ephemeral=True,
             )
@@ -144,7 +144,7 @@ class Rr(Cog):
             try:
                 await member.remove_roles(
                     role,
-                    reason=reason or "Снятие организационных ролей через /rr",
+                    reason=reason or "Снятие запрашиваемых ролей через /rr",
                 )
             except Exception as e:
                 logger.exception("[command] - Failed to remove role: %s", e)
