@@ -778,12 +778,19 @@ async def get_user_clan(
 
 
 async def get_private_room_state(
-    session: AsyncSession, *, user_id: int, for_update: bool = False
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = False,
 ) -> PrivateRoomState | None:
-    """Get the private room state for a user."""
+    """Get the private room state for a user in a guild."""
     stmt = (
         select(PrivateRoomState)
-        .where(PrivateRoomState.user_id == user_id)
+        .where(
+            PrivateRoomState.guild_id == guild_id,
+            PrivateRoomState.user_id == user_id,
+        )
         .limit(1)
     )
     if for_update:
@@ -799,10 +806,10 @@ async def create_private_room_state(
     user_id: int,
     channel_id: int,
 ) -> PrivateRoomState | None:
-    """Create a private room state for a user (idempotent per user).
+    """Create a private room state for a user (idempotent per guild).
 
     Returns the newly inserted row, or ``None`` if a state already
-    exists for the user (race condition / duplicate insert).
+    exists for the user in the guild (race condition / duplicate insert).
     """
     stmt = (
         insert(PrivateRoomState)
@@ -811,7 +818,9 @@ async def create_private_room_state(
             user_id=user_id,
             channel_id=channel_id,
         )
-        .on_conflict_do_nothing(index_elements=["user_id"])
+        .on_conflict_do_nothing(
+            constraint="ux_private_room_guild_user"
+        )
         .returning(PrivateRoomState)
     )
     result = await session.execute(stmt)
@@ -1816,13 +1825,17 @@ async def update_rainbow_role_schedule(
     session: AsyncSession,
     *,
     guild_id: int,
+    role_id: int,
     next_change_at: datetime | None,
     current_step: int | None,
 ) -> None:
     """Update a rainbow role's change deadline and offset step."""
     stmt = (
         update(RainbowRole)
-        .where(RainbowRole.guild_id == guild_id)
+        .where(
+            RainbowRole.guild_id == guild_id,
+            RainbowRole.role_id == role_id,
+        )
         .values(
             next_change_at=next_change_at,
             current_step=current_step,

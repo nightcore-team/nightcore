@@ -2,6 +2,7 @@
 
 from sqlalchemy import (
     BigInteger,
+    CheckConstraint,
     Enum,
     ForeignKey,
     Index,
@@ -29,19 +30,29 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
     )  # Discord role for the clan
 
     # Economy & progression
-    coins: Mapped[int] = mapped_column(nullable=False, default=0)
+    coins: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
     current_exp: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     exp_to_level: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
+        Integer, nullable=False, default=0, server_default=text("0")
     )
-    level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    level: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
 
     # Limits and config
-    max_deputies: Mapped[int] = mapped_column(nullable=False, default=1)
-    max_members: Mapped[int] = mapped_column(nullable=False, default=10)
-    payday_multipler: Mapped[int] = mapped_column(nullable=False, default=1)
+    max_deputies: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
+    max_members: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=10, server_default=text("10")
+    )
+    payday_multipler: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
     invite_message: Mapped[str | None] = mapped_column(nullable=True)
 
     # channel
@@ -80,6 +91,31 @@ class Clan(IdIntegerMixin, Base, CreatedAtMixin):
     __table_args__ = (
         # уникальное название клана в пределах гильдии
         UniqueConstraint("guild_id", "name", name="uq_clan_guild_name"),
+        CheckConstraint("coins >= 0", name="ck_clan_coins_nonnegative"),
+        CheckConstraint(
+            "current_exp >= 0", name="ck_clan_current_exp_nonnegative"
+        ),
+        CheckConstraint(
+            "exp_to_level >= 0", name="ck_clan_exp_to_level_nonnegative"
+        ),
+        CheckConstraint("level >= 0", name="ck_clan_level_nonnegative"),
+        CheckConstraint(
+            "max_deputies >= 0", name="ck_clan_max_deputies_nonnegative"
+        ),
+        CheckConstraint(
+            "max_members >= 0", name="ck_clan_max_members_nonnegative"
+        ),
+        CheckConstraint(
+            "payday_multipler >= 0",
+            name="ck_clan_payday_multipler_nonnegative",
+        ),
+        # Trigram GIN index for fast ILIKE search on clan name
+        Index(
+            "ix_clan_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"},
+        ),
     )
 
 

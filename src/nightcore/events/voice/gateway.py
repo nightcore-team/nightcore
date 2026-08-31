@@ -13,10 +13,35 @@ from src.infra.db.operations import (
     get_specified_webhook,
 )
 from src.nightcore.bot import Nightcore
-from src.nightcore.utils import ensure_messageable_channel_exists
 from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
+
+
+async def _ensure_voice_channel_exists(
+    guild: discord.Guild, channel_id: int
+) -> discord.VoiceChannel | None:
+    """Ensure voice channel exists, fetching if not cached."""
+    channel = guild.get_channel(channel_id)
+    if channel is not None:
+        if isinstance(channel, discord.VoiceChannel):
+            return channel
+        return None
+    try:
+        channel = await guild.fetch_channel(channel_id)  # type: ignore[assignment]
+        if isinstance(channel, discord.VoiceChannel):
+            return channel
+        return None
+    except discord.NotFound:
+        return None
+    except discord.HTTPException as e:
+        logger.error(
+            "[voice] Failed fetching voice channel %s in guild %s: %s",
+            channel_id,
+            guild.id,
+            e,
+        )
+        return None
 
 
 class VoiceStateUpdateEvent(Cog):
@@ -40,7 +65,10 @@ class VoiceStateUpdateEvent(Cog):
             if before.channel is None and after.channel is not None:
                 async with self.bot.uow.start() as session:
                     private_room_state = await get_private_room_state(
-                        session, user_id=member.id, for_update=True
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                        for_update=True,
                     )
                     private_room_channel_id = await get_specified_channel(
                         session,
@@ -60,7 +88,7 @@ class VoiceStateUpdateEvent(Cog):
                     and after.channel.id == private_room_channel_id
                 ):
                     if private_room_state:
-                        _ch = await ensure_messageable_channel_exists(
+                        _ch = await _ensure_voice_channel_exists(
                             guild, private_room_state.channel_id
                         )
                         if _ch:
@@ -82,7 +110,7 @@ class VoiceStateUpdateEvent(Cog):
                                     e,
                                 )
                                 try:
-                                    asyncio.gather(
+                                    await asyncio.gather(
                                         member.move_to(None),
                                         member.send(
                                             f"Произошла ошибка при "
@@ -106,6 +134,7 @@ class VoiceStateUpdateEvent(Cog):
                             async with self.bot.uow.start() as session:
                                 fresh = await get_private_room_state(
                                     session,
+                                    guild_id=guild.id,
                                     user_id=member.id,
                                     for_update=True,
                                 )
@@ -159,7 +188,10 @@ class VoiceStateUpdateEvent(Cog):
             elif before.channel is not None and after.channel is None:
                 async with self.bot.uow.start() as session:
                     private_room_state = await get_private_room_state(
-                        session, user_id=member.id, for_update=True
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                        for_update=True,
                     )
                     logging_webhook = await get_specified_webhook(
                         session,
@@ -210,7 +242,10 @@ class VoiceStateUpdateEvent(Cog):
             ):
                 async with self.bot.uow.start() as session:
                     private_room_state = await get_private_room_state(
-                        session, user_id=member.id, for_update=True
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                        for_update=True,
                     )
                     private_room_channel_id = await get_specified_channel(
                         session,

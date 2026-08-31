@@ -58,7 +58,10 @@ class DeletePrivateRoomEvent(Cog):
         try:
             async with self.bot.uow.start() as session:
                 fresh_state = await get_private_room_state(
-                    session, user_id=member.id, for_update=True
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
+                    for_update=True,
                 )
                 if fresh_state is None:
                     logger.info(

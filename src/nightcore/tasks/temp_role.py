@@ -4,6 +4,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
+import discord
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
@@ -43,16 +44,16 @@ class DeleteTempRoleTask(Cog):
         """Task to delete temporary roles when their duration ends."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            logger.info("[task] - Running delete temp role task")
-            async with self.bot.uow.start() as session:
-                temp_roles = await get_all_expired_temp_roles(session)
+        logger.info("[task] - Running delete temp role task")
+        async with self.bot.uow.start() as session:
+            temp_roles = await get_all_expired_temp_roles(session)
 
-            if not temp_roles:
-                logger.info("[task] - No expired temp roles found")
-                return
+        if not temp_roles:
+            logger.info("[task] - No expired temp roles found")
+            return
 
-            for temp_role in temp_roles:
+        for temp_role in temp_roles:
+            try:
                 guild = await ensure_guild_exists(self.bot, temp_role.guild_id)
                 if guild is None:
                     logger.info(
@@ -82,9 +83,38 @@ class DeleteTempRoleTask(Cog):
                     await self._delete_temp_role(temp_role)
                     continue
 
-                await member.remove_roles(
-                    role, reason="Temporary role expired"
-                )
+                try:
+                    await member.remove_roles(
+                        role, reason="Temporary role expired"
+                    )
+                except discord.NotFound as e:
+                    logger.warning(
+                        "[task] - Role %s or member %s not found in guild %s (already removed): %s",  # noqa: E501
+                        temp_role.role_id,
+                        temp_role.user_id,
+                        guild.id,
+                        e,
+                    )
+                    await self._delete_temp_role(temp_role)
+                    continue
+                except discord.HTTPException as e:
+                    logger.error(
+                        "[task] - HTTP error removing temp role %s from %s in guild %s: %s (will retry)",  # noqa: E501
+                        temp_role.role_id,
+                        member.id,
+                        guild.id,
+                        e,
+                    )
+                    continue
+                except Exception as e:
+                    logger.exception(
+                        "[task] - Unexpected error removing temp role %s from %s in guild %s: %s",  # noqa: E501
+                        temp_role.role_id,
+                        member.id,
+                        guild.id,
+                        e,
+                    )
+                    continue
 
                 await self._delete_temp_role(temp_role)
 
@@ -94,13 +124,15 @@ class DeleteTempRoleTask(Cog):
                     member.id,
                     guild.id,
                 )
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in delete temp role task iteration: %s",
-                e,
-                exc_info=True,
-            )
+            except Exception as e:
+                logger.exception(
+                    "[task] - Error processing temp role %s for user %s in guild %s: %s",  # noqa: E501
+                    temp_role.id,
+                    temp_role.user_id,
+                    temp_role.guild_id,
+                    e,
+                )
+                continue
 
     @delete_temp_role_task.before_loop
     async def before_delete_temp_role_task(self):

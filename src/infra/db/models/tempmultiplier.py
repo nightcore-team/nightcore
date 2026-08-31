@@ -2,7 +2,16 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Enum, Index, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    Index,
+    Integer,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -21,8 +30,12 @@ class TempEconomyMultiplier(IdIntegerMixin, Base):
         ),
         nullable=False,
     )
-    multiplier: Mapped[int] = mapped_column(nullable=False)
-    duration: Mapped[int] = mapped_column(nullable=False)
+    multiplier: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    duration: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     end_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
@@ -33,6 +46,10 @@ class TempEconomyMultiplier(IdIntegerMixin, Base):
             "multiplier_type",
             name="ux_temp_multiplier_guild_type",
         ),
+        CheckConstraint(
+            "multiplier >= 0", name="ck_temp_multiplier_nonnegative"
+        ),
+        CheckConstraint("duration >= 0", name="ck_temp_duration_nonnegative"),
         Index(
             "ix_temp_economy_multipliers_guild_type_end_time",
             "guild_id",

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     BigInteger,
+    CheckConstraint,
     Column,
     DateTime,
     ForeignKey,
@@ -44,6 +45,38 @@ if TYPE_CHECKING:
 class User(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint("guild_id", "user_id", name="ux_user_guild_user"),
+        CheckConstraint("coins >= 0", name="ck_user_coins_nonnegative"),
+        CheckConstraint("level >= 0", name="ck_user_level_nonnegative"),
+        CheckConstraint(
+            "messages_count >= 0",
+            name="ck_user_messages_count_nonnegative",
+        ),
+        CheckConstraint(
+            "current_exp >= 0", name="ck_user_current_exp_nonnegative"
+        ),
+        CheckConstraint(
+            "exp_to_level >= 0", name="ck_user_exp_to_level_nonnegative"
+        ),
+        CheckConstraint(
+            "voice_activity >= 0",
+            name="ck_user_voice_activity_nonnegative",
+        ),
+        CheckConstraint(
+            "battle_pass_level >= 0",
+            name="ck_user_battle_pass_level_nonnegative",
+        ),
+        CheckConstraint(
+            "battle_pass_points >= 0",
+            name="ck_user_battle_pass_points_nonnegative",
+        ),
+        CheckConstraint(
+            "sended_valentines >= 0",
+            name="ck_user_sended_valentines_nonnegative",
+        ),
+        CheckConstraint(
+            "received_valentines >= 0",
+            name="ck_user_received_valentines_nonnegative",
+        ),
         # Performance indexes for leaderboard queries
         Index("ix_user_guild_coins", "guild_id", text("coins DESC")),
         Index(
@@ -65,10 +98,14 @@ class User(IdIntegerMixin, Base):
 
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    coins: Mapped[int] = mapped_column(nullable=False, default=0)
-    level: Mapped[int] = mapped_column(nullable=False, default=0)
+    coins: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    level: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
     messages_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     sended_valentines: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default=text("0")
@@ -77,13 +114,13 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=0, server_default=text("0")
     )
     current_exp: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     exp_to_level: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     voice_activity: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=0
+        BigInteger, nullable=False, default=0, server_default=text("0")
     )
     temp_voice_activity: Mapped["datetime | None"] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -96,9 +133,11 @@ class User(IdIntegerMixin, Base):
         nullable=False, default=False
     )
     battle_pass_level: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=1
+        Integer, nullable=False, default=1, server_default=text("1")
     )
-    battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
+    battle_pass_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
     cases: Mapped[list["UserCase"]] = relationship(
         lazy="selectin",
         cascade="all, delete-orphan",
@@ -141,14 +180,15 @@ class UserCase(Base):
             ["user.guild_id", "user.user_id"],
             ondelete="CASCADE",
         ),
+        CheckConstraint("amount >= 0", name="ck_usercase_amount_nonnegative"),
     )
-    id: Mapped[int] = mapped_column(
-        autoincrement=True, nullable=False, primary_key=True
-    )
-    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     case_id: Mapped[int] = mapped_column(
-        ForeignKey("case.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("case.id", ondelete="CASCADE"), nullable=False
     )
-    amount: Mapped[int] = mapped_column(default=1)
+    amount: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
     item: Mapped["Case"] = relationship()

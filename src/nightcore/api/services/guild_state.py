@@ -12,13 +12,17 @@ from src.infra.db.operations import (
     get_specified_guild_config,
 )
 from src.infra.db.uow import UnitOfWork
-from src.nightcore.api.domain.exceptions.base import LogicalError
+from src.nightcore.api.domain.exceptions.base import (
+    ConfigValidationError,
+    LogicalError,
+)
 from src.nightcore.api.schemas.configuration import (
     CONFIG_SCHEMA_MODEL_MAP,
 )
 from src.nightcore.api.schemas.guild import ChannelInfoSchema, RoleInfoSchema
 from src.nightcore.api.utils.validators import (
     ValidationContext,
+    validate_discord_webhook_ownership,
 )
 from src.nightcore.bot import Nightcore
 from src.utils._enums import ConfigTypeEnum
@@ -105,6 +109,43 @@ class GuildStateService:
             mode="json"
         )
 
+    async def _validate_webhook_ownership(
+        self,
+        validated_model,
+        guild_id: int,
+    ) -> None:
+        """Validate webhook ownership via bot.fetch_webhook (400 not 500)."""
+
+        # Collect webhook URLs from model dump (handles nested structures)
+        dump = validated_model.model_dump(mode="json", exclude_unset=True)
+
+        async def _walk(obj: Any) -> None:
+            if isinstance(obj, dict):
+                # DiscordWebhookSchema has 'url' and 'valid' keys
+                if (
+                    "url" in obj
+                    and "valid" in obj
+                    and isinstance(obj["url"], str)
+                ):
+                    url = obj["url"]
+                    if url:
+                        await validate_discord_webhook_ownership(
+                            url, self._bot, expected_guild_id=guild_id
+                        )
+                for v in obj.values():
+                    await _walk(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    await _walk(item)
+
+        try:
+            await _walk(dump)
+        except ConfigValidationError:
+            raise
+        except Exception as exc:
+            # Ensure webhook validation errors map to 400, not 500
+            raise ConfigValidationError(str(exc)) from exc
+
     async def update_config(
         self,
         member: discord.Member,
@@ -138,6 +179,13 @@ class GuildStateService:
 
         context = await self._build_validation_context(member=member)
         validated_model = pydantic_type.model_validate(data, context=context)
+
+        # Ownership check after pydantic validation but before DB commit.
+        # This is a network call; we run it before acquiring DB lock to
+        # avoid holding the lock while awaiting Discord API.
+        await self._validate_webhook_ownership(
+            validated_model, guild_id=member.guild.id
+        )
 
         revision_data = validated_model.model_dump(
             mode="json", exclude_unset=True

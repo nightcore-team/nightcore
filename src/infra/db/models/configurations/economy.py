@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy import (
     ARRAY,
     BigInteger,
+    CheckConstraint,
     ForeignKey,
     Integer,
     String,
@@ -26,6 +27,7 @@ class GuildEconomyShopItem(IdIntegerMixin, Base):
             deferrable=True,
             initially="DEFERRED",
         ),
+        CheckConstraint("cost >= 0", name="ck_economy_shop_cost_nonnegative"),
     )
 
     guild_id: Mapped[int] = mapped_column(
@@ -34,7 +36,9 @@ class GuildEconomyShopItem(IdIntegerMixin, Base):
         nullable=False,
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    cost: Mapped[int] = mapped_column(Integer, nullable=False)
+    cost: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
 
 
 class GuildRewardBonus(IdIntegerMixin, Base):
@@ -46,6 +50,9 @@ class GuildRewardBonus(IdIntegerMixin, Base):
             deferrable=True,
             initially="DEFERRED",
         ),
+        CheckConstraint(
+            "coins >= 0", name="ck_reward_bonus_coins_nonnegative"
+        ),
     )
 
     guild_id: Mapped[int] = mapped_column(
@@ -53,7 +60,9 @@ class GuildRewardBonus(IdIntegerMixin, Base):
         ForeignKey("guildeconomyconfig.guild_id", ondelete="CASCADE"),
         nullable=False,
     )
-    coins: Mapped[int] = mapped_column(Integer, nullable=False)
+    coins: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
@@ -90,6 +99,17 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     )
     color_drop_compensation: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default=text("0")
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "base_reward_bonus >= 0",
+            name="ck_economy_base_reward_nonnegative",
+        ),
+        CheckConstraint(
+            "color_drop_compensation >= 0",
+            name="ck_economy_color_comp_nonnegative",
+        ),
     )
 
     @staticmethod

@@ -17,7 +17,7 @@ class GuildForumConfig(IdIntegerMixin, Base):
         BigInteger, nullable=False, unique=True
     )
     section_id: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, unique=True
+        BigInteger, nullable=True, unique=True
     )
     _notify_webhook_id: Mapped[int | None] = mapped_column(
         "notify_webhook_id",

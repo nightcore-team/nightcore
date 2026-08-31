@@ -40,20 +40,12 @@ class CheckForumTask(Cog):
         """Task to check the forum for new posts and updates."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            logger.info("[task] - Running check forum task")
+        logger.info("[task] - Running check forum task")
 
-            async with self.bot.uow.start() as session:
-                guilds = await get_active_forum_guilds(session)
+        async with self.bot.uow.start() as session:
+            guilds = await get_active_forum_guilds(session)
 
-            await self.service.process_servers(guilds)
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in check forum task iteration: %s",
-                e,
-                exc_info=True,
-            )
+        await self.service.process_servers(guilds)
 
     @check_forum_task.before_loop
     async def before_check_forum_task(self):

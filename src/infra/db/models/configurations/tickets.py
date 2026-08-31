@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy import BigInteger, Integer
+from sqlalchemy import BigInteger, CheckConstraint, Integer, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -16,7 +16,7 @@ class GuildTicketsConfig(IdIntegerMixin, Base):
         BigInteger, nullable=False, unique=True
     )
     tickets_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
+        Integer, nullable=False, default=0, server_default=text("0")
     )
     new_tickets_category_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
@@ -32,6 +32,12 @@ class GuildTicketsConfig(IdIntegerMixin, Base):
     )
     create_ticket_ping_role_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "tickets_count >= 0", name="ck_tickets_count_nonnegative"
+        ),
     )
 
     __version__ = 1

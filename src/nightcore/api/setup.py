@@ -18,14 +18,31 @@ def create_fastapi(bot: Nightcore) -> FastAPI:
 
     app = FastAPI(title="Nightcore API")
 
+    # CORS hardening: explicit origins, no wildcard with credentials
+    allowed_origins = [
+        config.api.DASHBOARD_FRONTEND_URI,
+    ]
+    # Wildcard origin check: deny "*" when credentials are enabled
+    if "*" in allowed_origins:
+        raise ValueError(
+            "Wildcard origin '*' is not allowed with allow_credentials=True"
+        )
+    # Also reject empty origins
+    allowed_origins = [o for o in allowed_origins if o]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            config.api.DASHBOARD_FRONTEND_URI,
-        ],
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
-        allow_headers=["*"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+        ],
+        max_age=600,
     )
 
     for exc_type, handler in EXCEPTION_HANDLERS.items():

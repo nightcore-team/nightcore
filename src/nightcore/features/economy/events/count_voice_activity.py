@@ -26,6 +26,7 @@ class CountVoiceActivityEvent(Cog):
         """Start counting voice activity for a user."""
         now = datetime.now(UTC)
 
+        started = False
         async with self.bot.uow.start() as session:
             user, _ = await get_or_create_user(
                 session,
@@ -36,9 +37,17 @@ class CountVoiceActivityEvent(Cog):
 
             # DB-level locking guarantees only one concurrent start wins;
             # if already counting we keep earliest start (idempotent)
-            if user.temp_voice_activity is not None:
-                return
-            user.temp_voice_activity = now
+            # Handle early return outside tx to ensure rollback path correct  # noqa: E501
+            if user.temp_voice_activity is None:
+                user.temp_voice_activity = now
+                started = True
+            else:
+                # already counting – no modification, let tx commit empty  # noqa: E501
+                # (UoW will handle commit failure without double-rollback)  # noqa: E501
+                started = False
+
+        if not started:
+            return
 
         logger.info(
             "[voice/count] Start counting user voice %s activity in guild %s in %s",  # noqa: E501
@@ -53,6 +62,7 @@ class CountVoiceActivityEvent(Cog):
         """End counting voice activity for a user and update their stats."""
         now = datetime.now(UTC)
 
+        should_log = False
         async with self.bot.uow.start() as session:
             user, _ = await get_or_create_user(
                 session,
@@ -61,14 +71,20 @@ class CountVoiceActivityEvent(Cog):
                 for_update=True,
             )
 
-            # If not currently counting, skip
+            # If not currently counting, skip – handle early return outside tx  # noqa: E501
             if user.temp_voice_activity is None:
-                return
+                should_log = False
+            else:
+                total_seconds = (  # noqa: E501
+                    (now - user.temp_voice_activity).total_seconds()
+                )
 
-            total_seconds = (now - user.temp_voice_activity).total_seconds()
+                user.voice_activity += int(total_seconds)
+                user.temp_voice_activity = None
+                should_log = True
 
-            user.voice_activity += int(total_seconds)
-            user.temp_voice_activity = None
+        if not should_log:
+            return
 
         logger.info(
             "[voice/count] Stop counting user voice %s activity in guild %s in %s",  # noqa: E501

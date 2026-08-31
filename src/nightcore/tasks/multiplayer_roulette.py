@@ -5,6 +5,7 @@ import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+import discord
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 from discord.http import MultipartParameters
@@ -107,7 +108,7 @@ class MultiplayerRouletteTask(Cog):
                 message_id = game.message_id
                 channel_id = game.channel_id
 
-            # Send Discord message outside transaction
+            # Send Discord message outside transaction with retry
             await asyncio.sleep(0.2)  # to avoid rate limits
 
             view = MultiplayerRouletteViewV2(
@@ -123,19 +124,44 @@ class MultiplayerRouletteTask(Cog):
                 disable_buttons=True,
             )
 
-            asyncio.create_task(
-                self.bot.http.edit_message(
-                    message_id=message_id,
-                    channel_id=channel_id,
-                    params=MultipartParameters(
-                        payload={
-                            "components": view.to_components(),
-                        },
-                        multipart=None,
-                        files=None,
-                    ),
-                )
-            )
+            for attempt in range(3):
+                try:
+                    await self.bot.http.edit_message(
+                        message_id=message_id,
+                        channel_id=channel_id,
+                        params=MultipartParameters(
+                            payload={
+                                "components": view.to_components(),
+                            },
+                            multipart=None,
+                            files=None,
+                        ),
+                    )
+                    break
+                except discord.HTTPException as e:
+                    logger.warning(
+                        "[task] HTTP error editing roulette message %s "
+                        "in channel %s (attempt %s/3): %s",
+                        message_id,
+                        channel_id,
+                        attempt + 1,
+                        e,
+                    )
+                    if attempt == 2:
+                        logger.error(
+                            "[task] Failed to edit roulette message %s "
+                            "after 3 attempts",
+                            message_id,
+                        )
+                    else:
+                        await asyncio.sleep(1 + attempt * 2)
+                except Exception as e:
+                    logger.exception(
+                        "[task] Unexpected error editing roulette message %s: %s",  # noqa: E501
+                        message_id,
+                        e,
+                    )
+                    break
 
             logger.info(
                 "[task] - Ended multiplayer roulette game %s in guild %s",
@@ -155,28 +181,22 @@ class MultiplayerRouletteTask(Cog):
     @tasks.loop(seconds=15)
     async def end_multiplayer_roulette_game_task(self):
         """Task to add reputation points to clans."""
-        try:
-            logger.info("[task] - Running end multiplayer roulette task")
+        await self.bot.task_manager.sleep(__name__)
 
-            async with self.bot.uow.start() as session:
-                casino_games = await get_active_casino_games(
-                    session, dt=datetime.now(UTC)
-                )
+        logger.info("[task] - Running end multiplayer roulette task")
 
-            if not casino_games:
-                logger.info("[task] - No multiplayer roulette games to end")
-                return
-
-            # Process each game in its own transaction
-            for game in casino_games:
-                await self._process_single_game(game)
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in end multiplayer roulette game task iteration: %s",  # noqa: E501
-                e,
-                exc_info=True,
+        async with self.bot.uow.start() as session:
+            casino_games = await get_active_casino_games(
+                session, dt=datetime.now(UTC)
             )
+
+        if not casino_games:
+            logger.info("[task] - No multiplayer roulette games to end")
+            return
+
+        # Process each game in its own transaction
+        for game in casino_games:
+            await self._process_single_game(game)
 
     @end_multiplayer_roulette_game_task.before_loop
     async def before_end_multiplayer_roulette_game_task(self):

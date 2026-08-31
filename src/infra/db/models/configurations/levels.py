@@ -4,10 +4,12 @@ from typing import Any
 
 from sqlalchemy import (
     BigInteger,
+    CheckConstraint,
     Enum,
     ForeignKey,
     Integer,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +28,7 @@ class GuildLevel(IdIntegerMixin, Base):
             deferrable=True,
             initially="DEFERRED",
         ),
+        CheckConstraint("level >= 0", name="ck_guild_level_nonnegative"),
     )
 
     guild_id: Mapped[int] = mapped_column(
@@ -33,7 +36,9 @@ class GuildLevel(IdIntegerMixin, Base):
         ForeignKey("guildlevelsconfig.guild_id", ondelete="CASCADE"),
         nullable=False,
     )
-    level: Mapped[int] = mapped_column(Integer, nullable=False)
+    level: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
@@ -46,6 +51,12 @@ class GuildBonusRole(IdIntegerMixin, Base):
             deferrable=True,
             initially="DEFERRED",
         ),
+        CheckConstraint("coins >= 0", name="ck_bonus_coins_nonnegative"),
+        CheckConstraint("exp >= 0", name="ck_bonus_exp_nonnegative"),
+        CheckConstraint(
+            "battlepass_points >= 0",
+            name="ck_bonus_battlepass_nonnegative",
+        ),
     )
 
     guild_id: Mapped[int] = mapped_column(
@@ -53,9 +64,15 @@ class GuildBonusRole(IdIntegerMixin, Base):
         ForeignKey("guildlevelsconfig.guild_id", ondelete="CASCADE"),
         nullable=False,
     )
-    coins: Mapped[int] = mapped_column(Integer, nullable=False)
-    exp: Mapped[int] = mapped_column(Integer, nullable=False)
-    battlepass_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    coins: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    exp: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    battlepass_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 

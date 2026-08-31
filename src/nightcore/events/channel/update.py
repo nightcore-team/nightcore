@@ -1,7 +1,7 @@
 """Handle guild channel update events."""
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 import discord
@@ -30,17 +30,25 @@ class UpdateChannelHandler(Cog):
         """Handle guild channel update event."""
         guild = cast(Guild, new.guild)  # type: ignore
         outcome = ""
+        logging_channels_webhook = None
 
-        async with self.bot.uow.start(readonly=True) as session:
-            if not (
-                logging_channels_webhook := await get_specified_webhook(
+        try:
+            async with self.bot.uow.start(readonly=True) as session:
+                logging_channels_webhook = await get_specified_webhook(
                     session,
                     guild_id=guild.id,
                     config_type=GuildLoggingConfig,
                     channel_type=ChannelType.LOGGING_CHANNELS,
                 )
-            ):
-                outcome = "channel_not_configured"
+                if not logging_channels_webhook:
+                    outcome = "channel_not_configured"
+        except Exception as e:
+            logger.exception(
+                "[logging] Failed to fetch logging webhook for guild %s: %s",
+                guild.id,
+                e,
+            )
+            return
 
         if outcome == "channel_not_configured" or not logging_channels_webhook:
             logger.info(
@@ -90,6 +98,52 @@ class UpdateChannelHandler(Cog):
             )
 
         if embed.fields:
+            # Include audit log attribution with time window
+            try:
+                after_time = datetime.now(UTC) - timedelta(minutes=5)
+                async for entry in guild.audit_logs(
+                    limit=5,
+                    action=discord.AuditLogAction.channel_update,
+                    after=after_time,
+                ):
+                    if (
+                        entry.target
+                        and getattr(entry.target, "id", None) == new.id
+                        and entry.created_at.replace(tzinfo=UTC)
+                        >= after_time
+                    ):
+                        if entry.user:
+                            embed.add_field(
+                                name="Модератор",
+                                value=f"{entry.user.mention} ({entry.user.id})",  # noqa: E501
+                                inline=False,
+                            )
+                        if entry.reason:
+                            embed.add_field(
+                                name="Причина",
+                                value=entry.reason,
+                                inline=False,
+                            )
+                        break
+            except discord.Forbidden as e:
+                logger.warning(
+                    "[logging] Missing permissions to access audit logs in guild %s: %s",  # noqa: E501
+                    guild.id,
+                    e,
+                )
+            except discord.HTTPException as e:
+                logger.error(
+                    "[logging] HTTP error while fetching audit logs in guild %s: %s",  # noqa: E501
+                    guild.id,
+                    e,
+                )
+            except Exception as e:
+                logger.exception(
+                    "[logging] Unexpected error fetching audit logs in guild %s: %s",  # noqa: E501
+                    guild.id,
+                    e,
+                )
+
             await send_to_webhook(
                 self.bot,
                 logging_channels_webhook,
@@ -128,7 +182,7 @@ class UpdateChannelHandler(Cog):
         new_topic = getattr(new, "topic", None)  # type: ignore
 
         if old_topic != new_topic:
-            if new_topic or new_topic:
+            if old_topic or new_topic:
                 value = f"{old_topic} → {new_topic}"
         else:
             return

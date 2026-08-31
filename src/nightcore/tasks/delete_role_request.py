@@ -4,6 +4,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
+import discord
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
@@ -49,17 +50,17 @@ class DeleteRoleRequestTask(Cog):
         """Task to delete role requests when their duration ends."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            logger.info("[task] - Running delete role request task")
+        logger.info("[task] - Running delete role request task")
 
-            async with self.bot.uow.start() as session:
-                all_rr = await get_role_requests_to_delete(session)
+        async with self.bot.uow.start() as session:
+            all_rr = await get_role_requests_to_delete(session)
 
-            if not all_rr:
-                logger.info("[task] - No role requests to delete")
-                return
+        if not all_rr:
+            logger.info("[task] - No role requests to delete")
+            return
 
-            for rr in all_rr:
+        for rr in all_rr:
+            try:
                 guild = await ensure_guild_exists(self.bot, rr.guild_id)
                 if not guild:
                     logger.info(
@@ -132,13 +133,37 @@ class DeleteRoleRequestTask(Cog):
                     logger.error(
                         "Failed to create CheckRoleRequestView: %s", e
                     )
-                    return
+                    continue
 
                 try:
                     updated_view = await rr_message.edit(view=view)
+                except discord.NotFound as e:
+                    logger.warning(
+                        "Role request message %s not found for edit in guild %s: %s",  # noqa: E501
+                        rr.message_id,
+                        guild.id,
+                        e,
+                    )
+                    continue
+                except discord.HTTPException as e:
+                    logger.error(
+                        "Failed to edit role request message for user %s in guild %s: %s",  # noqa: E501
+                        rr.author_id,
+                        guild.id,
+                        e,
+                    )
+                    continue
+                except Exception as e:
+                    logger.exception(
+                        "Unexpected error editing role request message for user %s: %s",  # noqa: E501
+                        rr.author_id,
+                        e,
+                    )
+                    continue
 
-                    asyncio.create_task(
-                        updated_view.reply(
+                for attempt in range(3):
+                    try:
+                        await updated_view.reply(
                             view=RoleRequestStateView(
                                 self.bot,
                                 moderator_id=rr.moderator_id,
@@ -147,22 +172,36 @@ class DeleteRoleRequestTask(Cog):
                                 state=RoleRequestStateEnum.EXPIRED,
                             )
                         )
-                    )
-                except Exception as e:
-                    logger.error(
-                        "Failed to edit role request message for user %s in guild %s: %s",  # noqa: E501
-                        rr.author_id,
-                        guild.id,
-                        e,
-                    )
-                    return
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in delete role request task iteration: %s",
-                e,
-                exc_info=True,
-            )
+                        break
+                    except discord.HTTPException as e:
+                        logger.warning(
+                            "Failed to reply role request state view for user %s (attempt %s/3): %s",  # noqa: E501
+                            rr.author_id,
+                            attempt + 1,
+                            e,
+                        )
+                        if attempt == 2:
+                            logger.error(
+                                "Failed to send RoleRequestStateView after 3 attempts for user %s",  # noqa: E501
+                                rr.author_id,
+                            )
+                        else:
+                            await asyncio.sleep(1 + attempt)
+                    except Exception as e:
+                        logger.exception(
+                            "Unexpected error replying role request state view for user %s: %s",  # noqa: E501
+                            rr.author_id,
+                            e,
+                        )
+                        break
+            except Exception as e:
+                logger.exception(
+                    "[task] - Error processing role request %s in guild %s: %s",  # noqa: E501
+                    rr.id,
+                    rr.guild_id,
+                    e,
+                )
+                continue
 
     @delete_role_request_task.before_loop
     async def before_delete_role_request_task(self):

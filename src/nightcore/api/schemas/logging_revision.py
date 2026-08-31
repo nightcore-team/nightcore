@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import SettingsConfigDict
 
 from src.utils._enums import ConfigTypeEnum
@@ -24,8 +24,8 @@ class ListLoggingRevisionRequestSchema(Base):
     user_id: DiscordId | None = None
     date_from: datetime | None = None
     date_to: datetime | None = None
-    limit: int = 100
-    offset: int = 0
+    limit: int = Field(default=100, ge=1, le=100)
+    offset: int = Field(default=0, ge=0, le=100)
 
 
 class LoggingRevisionRequestSchema(Base):

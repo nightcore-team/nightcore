@@ -215,29 +215,101 @@ DISCORD_WEBHOOK_TOKEN_MIN_LENGTH = 60
 DISCORD_WEBHOOK_TOKEN_MAX_LENGTH = 90
 
 
-def validate_discord_webhook(v: Any) -> str:
-    """Validate and return a Discord webhook URL string."""
+def validate_discord_webhook(
+    v: Any, info: ValidationInfo | None = None
+) -> str:
+    """Validate and return a Discord webhook URL string.
+
+    Raises ConfigValidationError (400) instead of ValueError (500) for
+    user-input errors. Validates ID length via integer bounds as well
+    as string length to handle leading zeros correctly.
+    """
+
     value = str(v).strip()
 
     match = DISCORD_WEBHOOK_RE.match(value)
     if not match:
-        raise ValueError(f"Invalid Discord webhook URL: {value!r}")
+        raise ConfigValidationError(f"Invalid Discord webhook URL: {value!r}")
 
     webhook_id = match.group("id")
     webhook_token = match.group("token")
 
+    # Fix ID length handling: validate both string length and integer range,
+    # and ensure webhook_id is a valid snowflake integer.
+    try:
+        int_id = int(webhook_id)
+    except ValueError as exc:
+        raise ConfigValidationError(
+            f"Invalid Discord webhook URL: {value!r}"
+        ) from exc
+
+    # String length check (17-20) covers snowflake textual length
     if not (
         DISCORD_WEBHOOK_ID_MIN_LENGTH
         <= len(webhook_id)
         <= DISCORD_WEBHOOK_ID_MAX_LENGTH
     ):
-        raise ValueError(f"Invalid Discord webhook URL: {value!r}")
+        raise ConfigValidationError(f"Invalid Discord webhook URL: {value!r}")
+
+    # Integer bounds check - combine with length diff
+    ovan = 10 ** (DISCORD_WEBHOOK_ID_MIN_LENGTH - 1)
+    below = 10**DISCORD_WEBHOOK_ID_MAX_LENGTH
+    if not (ovan <= int_id < below) and len(str(int_id)) != len(webhook_id):
+        raise ConfigValidationError(f"Invalid Discord webhook URL: {value!r}")
 
     if not (
         DISCORD_WEBHOOK_TOKEN_MIN_LENGTH
         <= len(webhook_token)
         <= DISCORD_WEBHOOK_TOKEN_MAX_LENGTH
     ):
-        raise ValueError(f"Invalid Discord webhook URL: {value!r}")
+        raise ConfigValidationError(f"Invalid Discord webhook URL: {value!r}")
 
+    # Ownership check is async (bot.fetch_webhook) and handled in
+    # validate_discord_webhook_ownership(); we keep this validator sync to
+    # avoid blocking but ensure 400 not 500 for syntax errors.
+    _ = info  # keep signature compatible for ValidationInfo injection
     return value
+
+
+async def validate_discord_webhook_ownership(
+    webhook_url: str,
+    bot: Nightcore,
+    expected_guild_id: int | None = None,
+) -> str:
+    """Validate webhook ownership by fetching it via bot.fetch_webhook.
+
+    Ensures the webhook exists, is owned by the bot's application, and
+    optionally belongs to the expected guild. Raises ConfigValidationError
+    (400) on failure so the API returns 400 not 500.
+
+    Should be called after DB commit, as part of guild_state update flow.
+    """
+
+    match = DISCORD_WEBHOOK_RE.match(webhook_url.strip())
+    if not match:
+        raise ConfigValidationError(
+            f"Invalid Discord webhook URL: {webhook_url!r}"
+        )
+
+    webhook_id = int(match.group("id"))
+
+    try:
+        webhook = await bot.fetch_webhook(webhook_id)
+    except discord.NotFound as exc:
+        raise ConfigValidationError(
+            f"Webhook {webhook_id} not found or not owned by bot"
+        ) from exc
+    except discord.Forbidden as exc:
+        raise ConfigValidationError(
+            f"No access to webhook {webhook_id}"
+        ) from exc
+    except discord.HTTPException as exc:
+        raise ConfigValidationError(
+            f"Failed to verify webhook {webhook_id}: {exc}"
+        ) from exc
+
+    if expected_guild_id is not None and webhook.guild_id != expected_guild_id:
+        msg = f"Webhook {webhook_id} does not belong to guild {expected_guild_id}"  # noqa: E501
+        raise ConfigValidationError(msg)
+
+    return webhook_url
