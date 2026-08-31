@@ -30,7 +30,7 @@ class ImageCache:
     def set_image(self, path: str, image: ImageFile):
         """Caches an image object with the specified path."""
 
-        self._images[path] = image
+        self._images[path] = image.copy()  # type: ignore[assignment]
 
     def _get_cached_image(self, path: str) -> LoadedImage | None:
         image = self._images.get(path, None)

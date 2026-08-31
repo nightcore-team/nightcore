@@ -96,7 +96,7 @@ async def shop(
             clan = cast(Clan, clan_member.clan)  # type: ignore
 
             if not (
-                clan.coins > selected_item.cost  # type: ignore
+                clan.coins >= selected_item.cost  # type: ignore
             ):  # (icost can't be None here)
                 outcome = "insufficient_funds"
             else:

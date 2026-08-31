@@ -58,6 +58,15 @@ async def give_item(
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
+    if amount <= 0:
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка выдачи",
+                "Количество должно быть больше 0.",
+            ),
+        )
+        return
+
     target_members = [
         member
         for member in role.members
