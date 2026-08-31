@@ -1,5 +1,6 @@
 """A utility for creating and manipulating images with text for Discord."""
 
+import asyncio
 import io
 
 import aiofiles
@@ -70,7 +71,12 @@ class ImageBuilder:
         async with aiofiles.open(path, "rb") as f:
             content = await f.read()
 
-        image = Image.open(io.BytesIO(content))
+        def _open_image() -> LoadedImage:
+            img = Image.open(io.BytesIO(content))
+            img.load()
+            return img
+
+        image = await asyncio.to_thread(_open_image)
 
         if self._cache is not None:
             self._cache.set_image(path, image)
@@ -98,4 +104,4 @@ class ImageBuilder:
         self.image.save(buffer, format="PNG")
 
         async with aiofiles.open(path, "wb") as file:
-            await file.write(buffer.getbuffer())
+            await file.write(buffer.getvalue())

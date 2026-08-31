@@ -1,9 +1,9 @@
 """Command to configure or update the forum section for a guild."""
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from discord import Guild, Interaction
+from discord import Interaction
 from sqlalchemy.exc import IntegrityError
 
 from src.infra.db.models import GuildForumConfig
@@ -28,22 +28,46 @@ async def forum_add(
     interaction: Interaction["Nightcore"], section_id: int, prefix_id: int
 ):
     """Bind the guild forum section and prefix to the given ids."""
-    guild = cast(Guild, interaction.guild)
+    guild = interaction.guild
+    if guild is None:
+        await interaction.response.send_message(
+            content="Команда доступна только на сервере.",
+            ephemeral=True,
+        )
+        return
+
+    await interaction.response.defer(ephemeral=True)
 
     try:
         async with interaction.client.uow.start() as session:
-            config = await get_guild_forum_config(session, guild_id=guild.id)
-            if config is None:
-                config = GuildForumConfig(
-                    guild_id=guild.id,
-                    prefix_id=prefix_id,
-                    section_id=section_id,
+            try:
+                config = await get_guild_forum_config(
+                    session, guild_id=guild.id
                 )
-                session.add(config)
-            else:
-                config.section_id = section_id
-                config.prefix_id = prefix_id
+                if config is None:
+                    config = GuildForumConfig(
+                        guild_id=guild.id,
+                        prefix_id=prefix_id,
+                        section_id=section_id,
+                    )
+                    session.add(config)
+                else:
+                    config.section_id = section_id
+                    config.prefix_id = prefix_id
 
+                await session.flush()
+            except IntegrityError:
+                logger.warning(
+                    "[forum/add] section %s is already bound to another guild"
+                    " (guild %s)",
+                    section_id,
+                    guild.id,
+                )
+                await interaction.followup.send(
+                    content="Данный раздел уже занят другой гильдией!",
+                    ephemeral=True,
+                )
+                return
     except IntegrityError:
         logger.warning(
             "[forum/add] section %s is already bound to another guild"
@@ -51,7 +75,7 @@ async def forum_add(
             section_id,
             guild.id,
         )
-        await interaction.response.send_message(
+        await interaction.followup.send(
             content="Данный раздел уже занят другой гильдией!",
             ephemeral=True,
         )
@@ -62,12 +86,12 @@ async def forum_add(
             guild.id,
             e,
         )
-        await interaction.response.send_message(
+        await interaction.followup.send(
             content="Произошла неизвестная ошибка при создании конфига!",
             ephemeral=True,
         )
         return
 
-    await interaction.response.send_message(
+    await interaction.followup.send(
         content="Конфиг успешно создан или обновлён", ephemeral=True
     )

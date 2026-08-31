@@ -51,6 +51,7 @@ async def change_color(
 
     logging_webhook = None
     outcome = None
+    before_role_id: int | None = None
 
     if new_role.position >= member.top_role.position:
         await interaction.response.send_message(
@@ -91,6 +92,7 @@ async def change_color(
             if color is None:
                 outcome = "color_not_found"
             else:
+                before_role_id = color.role_id
                 color.role_id = new_role.id
 
             logging_webhook = await get_specified_webhook(
@@ -148,7 +150,7 @@ async def change_color(
         )
         return
 
-    item = ChangedRole(before_id=color.role_id, after_id=new_role.id)  # type: ignore
+    item = ChangedRole(before_id=before_role_id, after_id=new_role.id)  # type: ignore
 
     dto = ItemChangeNotifyEventDTO(
         guild=guild,

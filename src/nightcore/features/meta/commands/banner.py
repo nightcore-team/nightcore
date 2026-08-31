@@ -32,32 +32,38 @@ class Banner(Cog):
         ephemeral: bool = True,
     ):
         """Send a message displaying the user's banner."""
+        target = user if user is not None else interaction.user
 
-        if user is None:
-            u = interaction.user  # type: ignore
-        else:
-            u = self.bot.get_user(user.id)  # type: ignore
-            if u is None:
-                try:
-                    u = await self.bot.fetch_user(user.id)
-                except discord.NotFound:
-                    await interaction.response.send_message(
-                        "Пользователь не найден.",
-                        ephemeral=True,
-                    )
-                    return
+        try:
+            fetched = await self.bot.fetch_user(target.id)  # type: ignore
+        except discord.NotFound:
+            await interaction.response.send_message(
+                "Пользователь не найден.",
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException as e:
+            logger.exception(
+                "[command] - failed to fetch user %s: %s",
+                target.id,  # type: ignore
+                e,
+            )
+            await interaction.response.send_message(
+                "Не удалось получить информацию о пользователе.",
+                ephemeral=True,
+            )
+            return
 
-        if u.banner:
+        if fetched.banner:
             await interaction.response.send_message(
                 embed=Embed(
-                    title=f"Баннер пользователя {user.display_name}",  # type: ignore
+                    title=f"Баннер пользователя {fetched.display_name}",
                     color=discord.Color.from_str("#D896C8"),
                 ).set_image(
-                    url=u.banner.url  # type: ignore
+                    url=fetched.banner.url
                 ),
                 ephemeral=ephemeral,
             )
-
         else:
             await interaction.response.send_message(
                 "У пользователя нет баннера.",
@@ -67,7 +73,7 @@ class Banner(Cog):
             "[command] - invoked user=%s guild=%s target=%s",
             interaction.user.id,  # type: ignore
             interaction.guild.id if interaction.guild else None,
-            user.id,  # type: ignore
+            fetched.id,
         )
 
 

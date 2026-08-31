@@ -97,7 +97,10 @@ async def give_case(
                     outcome = "unknown_case"
                 else:
                     if user_case := user_record.get_case(case.id):
-                        user_case.amount += amount
+                        if user_case.amount + amount < 0:
+                            outcome = "cannot_give_negative_amount"
+                        else:
+                            user_case.amount += amount
                     else:
                         if amount < 1:
                             outcome = "cannot_give_negative_amount"

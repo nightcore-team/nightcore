@@ -187,7 +187,7 @@ async def send_rr_channel_log(
             )
             return
 
-    if not isinstance(channel, (discord.TextChannel | discord.Thread)):
+    if not isinstance(channel, (discord.TextChannel, discord.Thread)):
         logger.warning(
             "[event] %s: channel %s not messageable (%s)",
             event_data.category,

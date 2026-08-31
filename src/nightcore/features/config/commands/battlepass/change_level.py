@@ -119,45 +119,55 @@ async def change_level(
         if battlepass_level is None:
             outcome = "level_not_found"
         else:
-            if new_required_exp is not None:
-                battlepass_level.exp_required = new_required_exp
-
+            # Pre-validate reward id before any mutation
+            validated_color = None
+            validated_case = None
             if new_reward_type is not None:
-                battlepass_level.reward["type"] = new_reward_type.value
-
                 match new_reward_type:
-                    case CaseDropTypeEnum.CUSTOM:
-                        battlepass_level.reward["name"] = new_reward  # type: ignore
                     case CaseDropTypeEnum.COLOR:
-                        color = await get_color_by_id(
+                        validated_color = await get_color_by_id(
                             session,
                             guild_id=guild.id,
                             color_id=new_reward_id,  # type: ignore
                         )
-
-                        if color is None:
+                        if validated_color is None:
                             outcome = "drop_with_entered_id_not_found"
-                        else:
-                            battlepass_level.reward["drop_id"] = color.id
-
                     case CaseDropTypeEnum.CASE:
-                        case = await get_case_by_id(
+                        validated_case = await get_case_by_id(
                             session,
                             guild_id=guild.id,
                             case_id=new_reward_id,  # type: ignore
                         )
-
-                        if case is None:
+                        if validated_case is None:
                             outcome = "drop_with_entered_id_not_found"
-                        else:
-                            battlepass_level.reward["drop_id"] = case.id
                     case _:
                         pass
 
-            if new_reward_amount is not None:
-                battlepass_level.reward["amount"] = new_reward_amount
+            if not outcome:
+                if new_required_exp is not None:
+                    battlepass_level.exp_required = new_required_exp
 
-            attributes.flag_modified(battlepass_level, "reward")
+                if new_reward_type is not None:
+                    battlepass_level.reward["type"] = new_reward_type.value
+
+                    match new_reward_type:
+                        case CaseDropTypeEnum.CUSTOM:
+                            battlepass_level.reward["name"] = new_reward  # type: ignore
+                        case CaseDropTypeEnum.COLOR:
+                            battlepass_level.reward["drop_id"] = (
+                                validated_color.id  # type: ignore
+                            )
+                        case CaseDropTypeEnum.CASE:
+                            battlepass_level.reward["drop_id"] = (
+                                validated_case.id  # type: ignore
+                            )
+                        case _:
+                            pass
+
+                if new_reward_amount is not None:
+                    battlepass_level.reward["amount"] = new_reward_amount
+
+                attributes.flag_modified(battlepass_level, "reward")
 
     if outcome == "level_not_found":
         await interaction.response.send_message(
