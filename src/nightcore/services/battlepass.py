@@ -65,7 +65,7 @@ async def send_battlepass_claim_view(
             return
 
     level_index = user_level - 1
-    disable_button = False
+    disable_button = interaction.user.id != user_id
 
     if user_level > len(battlepass_levels):
         disable_button = True
