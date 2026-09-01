@@ -55,7 +55,15 @@ class GuildOnlyTree(app_commands.CommandTree):
                 )
             return False
 
-        return await self.subscription_check(interaction)  # type: ignore
+        if not await self.subscription_check(interaction):  # type: ignore
+            with contextlib.suppress(discord.InteractionResponded):
+                await interaction.response.send_message(
+                    "Команды недоступны до оплаты бота.\nОплата производится в [телеграм](https://t.me/nightcoretgbot) ",  # noqa: E501
+                    ephemeral=True,
+                )
+            return False
+
+        return True
 
     async def subscription_check(
         self, interaction: discord.Interaction["Nightcore"]
