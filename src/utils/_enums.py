@@ -215,3 +215,12 @@ class InactiveRequestStateEnum(Enum):
 class RainbowColorChangeTypeEnum(Enum):
     RANDOM = "random"
     OFFSET = "offset"
+
+
+class GuildStatusEnum(StrEnum):
+    """Possible statuses of a guild subscription."""
+
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    NOT_FOUND = "not_found"
+    NOT_PAID = "not_paid"
