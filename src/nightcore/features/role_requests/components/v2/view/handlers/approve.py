@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@check_required_permissions(PermissionsFlagEnum.MODERATION_ACCESS)
+@check_required_permissions(PermissionsFlagEnum.NONE)
 async def handle_approve(
     interaction: Interaction["Nightcore"],
     view: "CheckRoleRequestView",
