@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy import BigInteger, Integer
+from sqlalchemy import BigInteger, CheckConstraint, Integer, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -17,7 +17,13 @@ class GuildProposalsConfig(IdIntegerMixin, Base):
         BigInteger, nullable=True
     )
     proposals_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "proposals_count >= 0", name="ck_proposals_count_nonnegative"
+        ),
     )
 
     __version__ = 1

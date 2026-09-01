@@ -2,7 +2,7 @@
 
 import random
 
-from sqlalchemy import JSON, BigInteger, UniqueConstraint, text
+from sqlalchemy import JSON, BigInteger, Index, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._annot import CaseDropAnnot
@@ -13,6 +13,13 @@ from src.infra.db.models.base import Base
 class Case(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint("guild_id", "name", name="ux_name_guild_case"),
+        # Trigram GIN index for fast ILIKE search on case name
+        Index(
+            "ix_case_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"},
+        ),
     )
 
     name: Mapped[str] = mapped_column(nullable=False)

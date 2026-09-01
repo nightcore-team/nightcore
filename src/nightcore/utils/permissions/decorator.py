@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable, Sequence
 from functools import wraps
 from typing import (
@@ -32,6 +33,8 @@ from .types import PERMISSION_CONFIG_MAP, PermissionsFlagEnum
 P = ParamSpec("P")
 T = TypeVar("T")
 CogT = TypeVar("CogT", bound="Cog")
+
+logger = logging.getLogger(__name__)
 
 
 @overload
@@ -99,6 +102,10 @@ def check_required_permissions(
                     f"Interaction not found in {func.__class__.__qualname__} arguments"  # noqa: E501
                 )
 
+            # Guild-only enforcement: deny DM usage explicitly
+            if interaction.guild is None:
+                raise app_commands.NoPrivateMessage()
+
             has_permission = await _check_user_permission(
                 interaction, permissions_flag
             )
@@ -148,8 +155,14 @@ async def has_specified_permission(
         config_type=config_type,
         field_name=field_name,
     )
+    # Empty list as deny: treat missing/empty config as no access
     if not roles_access_ids:
-        raise FieldNotConfiguredError(access_name)
+        logger.warning(
+            "Permission deny: empty access list for '%s' in guild %s",
+            access_name,
+            guild_id,
+        )
+        return False
 
     return bool(has_any_role_from_sequence(user, roles_access_ids))
 
@@ -167,6 +180,9 @@ async def _check_user_permission(
     Returns:
         True if user has permission, False otherwise
     """
+    # Guild None check at start: deny if not in guild
+    if interaction.guild is None:
+        return False
 
     member = cast(Member, interaction.user)
     bot = interaction.client
@@ -179,12 +195,16 @@ async def _check_user_permission(
         return member.guild_permissions.administrator
 
     if permissions == PermissionsFlagEnum.UNSAFE:
-        """
-            >>> UNSAFE permission bypasses all checks and always returns True.
-            So, if a command is marked with UNSAFE, it means that you have
-            to check manually user's permissions inside the command implementation.
-        """  # noqa: E501
-
+        # Require explicit audit for UNSAFE bypass
+        qualified = getattr(
+            getattr(interaction, "command", None), "qualified_name", "unknown"
+        )
+        logger.warning(
+            "UNSAFE permission bypass audited: user=%s guild=%s command=%s",
+            getattr(member, "id", "unknown"),
+            getattr(guild, "id", "DM"),
+            qualified,
+        )
         return True
 
     if permissions == PermissionsFlagEnum.BOT_ACCESS:
@@ -199,13 +219,22 @@ async def _check_user_permission(
                 permissions
             ]
 
-            return await has_specified_permission(
-                member,
-                session=session,
-                guild_id=guild.id,
-                config_type=config_type,
-                field_name=field_name,
-                access_name=access_name,
-            )
+            try:
+                return await has_specified_permission(
+                    member,
+                    session=session,
+                    guild_id=guild.id,
+                    config_type=config_type,
+                    field_name=field_name,
+                    access_name=access_name,
+                )
+            except FieldNotConfiguredError as exc:
+                # Deny not 500: log and deny access
+                logger.warning(
+                    "FieldNotConfigured deny: %s for guild %s",
+                    exc.field_name,
+                    guild.id,
+                )
+                return False
 
     return False

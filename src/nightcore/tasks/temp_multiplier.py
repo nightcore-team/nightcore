@@ -36,19 +36,19 @@ class ResetTempMultiplierTask(Cog):
         """Task to reset temporary multipliers when their duration ends."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            logger.info("[task] - Running reset temp multiplier task")
+        logger.info("[task] - Running reset temp multiplier task")
 
-            async with self.bot.uow.start() as session:
-                temp_multipliers = await get_all_expired_temp_multipliers(
-                    session
-                )
+        async with self.bot.uow.start() as session:
+            temp_multipliers = await get_all_expired_temp_multipliers(
+                session
+            )
 
-            if not temp_multipliers:
-                logger.info("[task] - No expired temp multipliers found")
-                return
+        if not temp_multipliers:
+            logger.info("[task] - No expired temp multipliers found")
+            return
 
-            for temp_multiplier in temp_multipliers:
+        for temp_multiplier in temp_multipliers:
+            try:
                 guild_id = temp_multiplier.guild_id
                 multiplier_type = temp_multiplier.multiplier_type
 
@@ -88,13 +88,14 @@ class ResetTempMultiplierTask(Cog):
                     temp_multiplier.multiplier,
                     guild_id,
                 )
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in reset temp multiplier task iteration: %s",
-                e,
-                exc_info=True,
-            )
+            except Exception as e:
+                logger.exception(
+                    "[task] - Error processing temp multiplier %s in guild %s: %s",  # noqa: E501
+                    temp_multiplier.id,
+                    temp_multiplier.guild_id,
+                    e,
+                )
+                continue
 
     @reset_temp_multiplier_task.before_loop
     async def before_reset_temp_multiplier_task(self):

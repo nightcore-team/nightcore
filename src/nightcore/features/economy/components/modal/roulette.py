@@ -108,6 +108,8 @@ class JoinMultiplayerRouletteModal(
         initiator_bet = 0
         initiator_selected_color = ""
         bets: list[CasinoBetAnnot] = []
+        coin_name: str | None = None
+        game_state: CasinoGameStateEnum | None = None
 
         async with bot.uow.start() as session:
             # Lock game row before user (SELECT ... FOR UPDATE)
@@ -123,12 +125,6 @@ class JoinMultiplayerRouletteModal(
                 guild_id=guild.id,
                 user_id=interaction.user.id,
                 for_update=True,
-            )
-            coin_name: str | None = await get_specified_field(
-                session,
-                guild_id=guild.id,
-                config_type=GuildEconomyConfig,
-                field_name="coin_name",
             )
 
             if user_record.coins < amount:
@@ -162,27 +158,51 @@ class JoinMultiplayerRouletteModal(
                             session.add(bet)
                             await session.flush()
 
-                            # Refresh relationship
-                            await session.refresh(casino_game, ["bets"])
-
                             user_record.coins -= amount
 
                             outcome = "success"
+                            game_state = casino_game.state
 
-                        for bet in casino_game.bets:
-                            if bet.user.user_id == casino_game.initiator_id:  # type: ignore
-                                initiator_id = bet.user.user_id
-                                initiator_bet = bet.amount // 2
-                                initiator_selected_color = bet.color
-                            else:
-                                bets.append(
-                                    {
-                                        "user_id": bet.user.user_id,
-                                        "bet": bet.amount // 2,
-                                        "result_coins": None,
-                                        "selected_color": bet.color,
-                                    }
-                                )
+        # Bets building and refresh outside the FOR UPDATE lock
+        if outcome == "success":
+            async with bot.uow.start(readonly=True) as session:
+                fresh_game = await get_casino_game_by_message_id(
+                    session,
+                    guild_id=guild.id,
+                    message_id=self.message.id,
+                    with_bets=True,
+                    for_update=False,
+                )
+                coin_name = await get_specified_field(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildEconomyConfig,
+                    field_name="coin_name",
+                )
+                if fresh_game is not None:
+                    # use fresh state (refresh-like) without holding lock
+                    game_state = fresh_game.state
+                    for bet in fresh_game.bets:
+                        if bet.user.user_id == fresh_game.initiator_id:  # type: ignore
+                            initiator_id = bet.user.user_id
+                            initiator_bet = bet.amount // 2
+                            initiator_selected_color = bet.color
+                        else:
+                            bets.append(
+                                {
+                                    "user_id": bet.user.user_id,
+                                    "bet": bet.amount // 2,
+                                    "result_coins": None,
+                                    "selected_color": bet.color,
+                                }
+                            )
+                else:
+                    # fallback: if fetch failed, keep captured state
+                    game_state = game_state  # type: ignore
+        else:
+            # For error paths we still may want coin_name for consistency,
+            # but not required for error views.
+            pass
 
         if outcome == "insufficient_funds":
             await interaction.response.send_message(
@@ -228,7 +248,7 @@ class JoinMultiplayerRouletteModal(
         if outcome == "success":
             view = MultiplayerRouletteViewV2(
                 bot=bot,
-                state=casino_game.state,  # type: ignore
+                state=game_state,  # type: ignore
                 coin_name=coin_name,
                 initiator_id=initiator_id,
                 initiator_bet=initiator_bet,

@@ -99,19 +99,21 @@ class RainbowRoleTask(Cog):
     @tasks.loop(seconds=180)
     async def rainbow_role_task(self):
         """Task to cycle rainbow role colors."""
-        try:
-            now = datetime.now(UTC)
+        await self.bot.task_manager.sleep(__name__)
 
-            async with self.bot.uow.start() as session:
-                due_roles = await get_due_rainbow_roles(session, now=now)
+        now = datetime.now(UTC)
 
-            if not due_roles:
-                logger.info("[task] - No due rainbow roles")
-                return
+        async with self.bot.uow.start() as session:
+            due_roles = await get_due_rainbow_roles(session, now=now)
 
-            updates: dict[int, tuple[datetime, int | None]] = {}
+        if not due_roles:
+            logger.info("[task] - No due rainbow roles")
+            return
 
-            for rainbow in due_roles:
+        updates: dict[tuple[int, int], tuple[datetime, int | None]] = {}
+
+        for rainbow in due_roles:
+            try:
                 guild = await ensure_guild_exists(self.bot, rainbow.guild_id)
                 if guild is None:
                     logger.info(
@@ -155,7 +157,7 @@ class RainbowRoleTask(Cog):
                 ):
                     continue
 
-                updates[rainbow.guild_id] = (
+                updates[(rainbow.guild_id, rainbow.role_id)] = (
                     now
                     + timedelta(
                         seconds=random.randint(
@@ -171,26 +173,28 @@ class RainbowRoleTask(Cog):
                     guild.id,
                     rainbow.change_type.value,
                 )
+            except Exception as e:
+                logger.exception(
+                    "[task] - Error processing rainbow role %s in guild %s: %s",  # noqa: E501
+                    rainbow.role_id,
+                    rainbow.guild_id,
+                    e,
+                )
+                continue
 
-            if updates:
-                async with self.bot.uow.start() as session:
-                    for guild_id, (
-                        next_change_at,
-                        next_step,
-                    ) in updates.items():
-                        await update_rainbow_role_schedule(
-                            session,
-                            guild_id=guild_id,
-                            next_change_at=next_change_at,
-                            current_step=next_step,
-                        )
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in rainbow role task iteration: %s",
-                e,
-                exc_info=True,
-            )
+        if updates:
+            async with self.bot.uow.start() as session:
+                for (guild_id, role_id), (
+                    next_change_at,
+                    next_step,
+                ) in updates.items():
+                    await update_rainbow_role_schedule(
+                        session,
+                        guild_id=guild_id,
+                        role_id=role_id,
+                        next_change_at=next_change_at,
+                        current_step=next_step,
+                    )
 
     @rainbow_role_task.before_loop
     async def before_rainbow_role_task(self):

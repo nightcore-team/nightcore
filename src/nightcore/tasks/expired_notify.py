@@ -5,6 +5,7 @@ import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+import discord
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
@@ -55,18 +56,18 @@ class ExpiredNotifyTask(Cog):
         """Task to delete expired notifications."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            logger.info("[task] - Running expired notify task")
-            async with self.bot.uow.start() as session:
-                pending_notifications = await get_all_pending_notifications(
-                    session, now=datetime.now(UTC)
-                )
+        logger.info("[task] - Running expired notify task")
+        async with self.bot.uow.start() as session:
+            pending_notifications = await get_all_pending_notifications(
+                session, now=datetime.now(UTC)
+            )
 
-            if not pending_notifications:
-                logger.info("[task] - No pending notifications found")
-                return
+        if not pending_notifications:
+            logger.info("[task] - No pending notifications found")
+            return
 
-            for notify in pending_notifications:
+        for notify in pending_notifications:
+            try:
                 guild = await ensure_guild_exists(self.bot, notify.guild_id)
                 if guild is None:
                     logger.info(
@@ -147,27 +148,63 @@ class ExpiredNotifyTask(Cog):
 
                 try:
                     await notification_message.edit(view=view)
-                except Exception as e:
+                except discord.NotFound:
+                    logger.info(
+                        "[task] - Notification message %s not found for edit in guild %s, deleting",  # noqa: E501
+                        notification_message.id,
+                        guild.id,
+                    )
+                    await self._delete_notification(notify)
+                    continue
+                except discord.HTTPException as e:
                     logger.error(
                         "[task] - Failed to edit notification message %s in guild %s: %s",  # noqa: E501
                         notification_message.id,
                         guild.id,
                         e,
                     )
-
-                asyncio.create_task(
-                    send_to_webhook(
-                        self.bot,
-                        moderation_notifications_webhook,
-                        NotifyTimedOutViewV2(
-                            self.bot,
-                            notify.moderator_id,
-                            notification_message.jump_url,
-                        ),
-                        context="expired_notify",
-                        guild_id=guild.id,
+                    # continue to webhook/DB update despite edit failure
+                except Exception as e:
+                    logger.exception(
+                        "[task] - Unexpected error editing notification %s: %s",  # noqa: E501
+                        notification_message.id,
+                        e,
                     )
-                )
+
+                for attempt in range(3):
+                    try:
+                        ok = await send_to_webhook(
+                            self.bot,
+                            moderation_notifications_webhook,
+                            NotifyTimedOutViewV2(
+                                self.bot,
+                                notify.moderator_id,
+                                notification_message.jump_url,
+                            ),
+                            context="expired_notify",
+                            guild_id=guild.id,
+                        )
+                        if ok:
+                            break
+                        logger.warning(
+                            "[task] - Webhook send returned False for notify %s (attempt %s/3)",  # noqa: E501
+                            notify.id,
+                            attempt + 1,
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "[task] - Webhook send failed for notify %s (attempt %s/3): %s",  # noqa: E501
+                            notify.id,
+                            attempt + 1,
+                            e,
+                        )
+                    if attempt < 2:
+                        await asyncio.sleep(1 + attempt)
+                    else:
+                        logger.error(
+                            "[task] - Failed to send expired notify webhook for %s after 3 attempts",  # noqa: E501
+                            notify.id,
+                        )
 
                 try:
                     async with self.bot.uow.start() as session:
@@ -187,13 +224,14 @@ class ExpiredNotifyTask(Cog):
                     notify.user_id,
                     guild.id,
                 )
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in expired notify task iteration: %s",
-                e,
-                exc_info=True,
-            )
+            except Exception as e:
+                logger.exception(
+                    "[task] - Error processing notification %s in guild %s: %s",  # noqa: E501
+                    notify.id,
+                    notify.guild_id,
+                    e,
+                )
+                continue
 
     @expired_notify_task.before_loop
     async def before_expired_notify_task(self):

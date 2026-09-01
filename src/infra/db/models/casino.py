@@ -5,11 +5,14 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
     Index,
+    Integer,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -69,7 +72,10 @@ class CasinoGame(IdIntegerMixin, Base):
     )
     # end time of the game
     end_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=func.now()
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        default=func.now(),
     )
     # relathionship to bets
     bets: Mapped[list["CasinoBet"]] = relationship(
@@ -93,7 +99,9 @@ class CasinoGame(IdIntegerMixin, Base):
 
 class CasinoBet(IdIntegerMixin, Base):
     # amount of coins bet
-    amount: Mapped[int] = mapped_column(nullable=False)
+    amount: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     # chosen color for the bet
     color: Mapped[str] = mapped_column(nullable=False)
     # foreign key to the casino game
@@ -122,6 +130,7 @@ class CasinoBet(IdIntegerMixin, Base):
     game: Mapped["CasinoGame"] = relationship(back_populates="bets")
 
     __table_args__ = (
+        CheckConstraint("amount >= 0", name="ck_casinobet_amount_nonnegative"),
         # Composite index for user bet queries
         Index("ix_casino_bet_user_game", "user_id", "game_id"),
     )

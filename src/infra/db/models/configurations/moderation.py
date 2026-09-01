@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy import (
     ARRAY,
     BigInteger,
+    CheckConstraint,
     Enum,
     Float,
     ForeignKey,
@@ -138,6 +139,40 @@ class GuildModerationConfig(IdIntegerMixin, Base):  #
     inactive_channel_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )  #
+
+    __table_args__ = (
+        CheckConstraint("mute_score >= 0", name="ck_moderation_mute_score_nn"),
+        CheckConstraint("ban_score >= 0", name="ck_moderation_ban_score_nn"),
+        CheckConstraint("kick_score >= 0", name="ck_moderation_kick_score_nn"),
+        CheckConstraint(
+            "ticket_score >= 0", name="ck_moderation_ticket_score_nn"
+        ),
+        CheckConstraint(
+            "role_request_score >= 0",
+            name="ck_moderation_rr_score_nn",
+        ),
+        CheckConstraint(
+            "role_remove_score >= 0",
+            name="ck_moderation_role_remove_score_nn",
+        ),
+        CheckConstraint(
+            "ticket_ban_score >= 0",
+            name="ck_moderation_ticket_ban_score_nn",
+        ),
+        CheckConstraint(
+            "mpmute_score >= 0", name="ck_moderation_mpmute_score_nn"
+        ),
+        CheckConstraint(
+            "vmute_score >= 0", name="ck_moderation_vmute_score_nn"
+        ),
+        CheckConstraint(
+            "message_score >= 0", name="ck_moderation_message_score_nn"
+        ),
+        CheckConstraint(
+            "notification_score >= 0",
+            name="ck_moderation_notification_score_nn",
+        ),
+    )
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:

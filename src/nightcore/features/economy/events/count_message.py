@@ -141,14 +141,81 @@ class CountMessageEvent(Cog):
         is_level_up = False
         new_level_int = 0
 
-        async with self.bot.uow.start() as session:
+        # Phase 1: read configs without holding user FOR UPDATE lock
+        # This keeps row-level lock hold time minimal.
+        async with self.bot.uow.start(readonly=True) as session:
             multiplers_config = await get_specified_guild_config(
                 session, config_type=GuildMultipliersConfig, guild_id=guild.id
             )
             levels_config = await get_specified_guild_config(
                 session, config_type=GuildLevelsConfig, guild_id=guild.id
             )
+            # snapshot values before session closes (detached)
+            base_exp_multiplier = multiplers_config.base_exp_multiplier
+            temp_exp_multiplier = multiplers_config.temp_exp_multiplier
+            base_coins_multiplier = multiplers_config.base_coins_multiplier
+            temp_coins_multiplier = multiplers_config.temp_coins_multiplier
+            base_battlepass_multiplier = (
+                multiplers_config.base_battlepass_multiplier
+            )
+            temp_battlepass_multiplier = (
+                multiplers_config.temp_battlepass_multiplier
+            )
+            bonus_roles_snapshot: list[GuildBonusRole] = list(
+                levels_config.bonus_access_roles_ids or []
+            )
+            levelup_webhook = levels_config.level_notify_webhook
 
+        # Bonus calculation outside FOR UPDATE lock (pure CPU + author.roles)
+        exp_multiplier = base_exp_multiplier
+        if temp_exp_multiplier:
+            exp_multiplier *= temp_exp_multiplier
+
+        coins_multiplier = base_coins_multiplier
+        if temp_coins_multiplier:
+            coins_multiplier *= temp_coins_multiplier
+
+        battlepass_multiplier = base_battlepass_multiplier
+        if temp_battlepass_multiplier:
+            battlepass_multiplier *= temp_battlepass_multiplier
+
+        total_bonus_coins = 0
+        total_bonus_exp = 0
+        total_bonus_battlepass_points = 0
+
+        user_bonus_roles = [
+            bonus_role
+            for bonus_role in bonus_roles_snapshot
+            if bonus_role.role_id in [role.id for role in author.roles]
+        ]
+
+        if user_bonus_roles:
+            total_bonus_coins = sum(
+                role.coins * temp_coins_multiplier
+                if temp_coins_multiplier
+                else 1
+                for role in user_bonus_roles
+            )
+            total_bonus_exp = sum(
+                role.exp * temp_exp_multiplier
+                if temp_exp_multiplier
+                else 1
+                for role in user_bonus_roles
+            )
+            total_bonus_battlepass_points = sum(
+                role.battlepass_points * temp_battlepass_multiplier
+                if temp_battlepass_multiplier
+                else 1
+                for role in user_bonus_roles
+            )
+
+        total_coins = coins_multiplier + total_bonus_coins
+        exp_to_level = 0
+        new_level = None
+        all_level_role_ids: Sequence[int] = []
+
+        # Phase 2: lock user row and apply rewards
+        async with self.bot.uow.start() as session:
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
@@ -158,66 +225,10 @@ class CountMessageEvent(Cog):
 
             user.messages_count += 1
 
-            levelup_webhook = levels_config.level_notify_webhook
-
-            exp_multiplier = multiplers_config.base_exp_multiplier
-            if multiplers_config.temp_exp_multiplier:
-                exp_multiplier *= multiplers_config.temp_exp_multiplier
-
-            coins_multiplier = multiplers_config.base_coins_multiplier
-            if multiplers_config.temp_coins_multiplier:
-                coins_multiplier *= multiplers_config.temp_coins_multiplier
-
-            battlepass_multiplier = (
-                multiplers_config.base_battlepass_multiplier
-            )
-            if multiplers_config.temp_battlepass_multiplier:
-                battlepass_multiplier *= (
-                    multiplers_config.temp_battlepass_multiplier
-                )
-
-            # check bonus multiplier
-            total_bonus_coins = 0
-            total_bonus_exp = 0
-            total_bonus_battlepass_points = 0
-            bonus_roles: list[GuildBonusRole] = (
-                levels_config.bonus_access_roles_ids
-            )
-
-            user_bonus_roles = [
-                bonus_role
-                for bonus_role in bonus_roles
-                if bonus_role.role_id in [role.id for role in author.roles]
-            ]
-
-            if user_bonus_roles:
-                total_bonus_coins = sum(
-                    role.coins * multiplers_config.temp_coins_multiplier
-                    if multiplers_config.temp_coins_multiplier
-                    else 1
-                    for role in user_bonus_roles
-                )
-                total_bonus_exp = sum(
-                    role.exp * multiplers_config.temp_exp_multiplier
-                    if multiplers_config.temp_exp_multiplier
-                    else 1
-                    for role in user_bonus_roles
-                )
-                total_bonus_battlepass_points = sum(
-                    role.battlepass_points
-                    * multiplers_config.temp_battlepass_multiplier
-                    if multiplers_config.temp_battlepass_multiplier
-                    else 1
-                    for role in user_bonus_roles
-                )
-
-            total_coins = coins_multiplier + total_bonus_coins
-
             # count user exp and coins
             new_current_exp = (
                 user.current_exp + exp_multiplier + total_bonus_exp
             )
-            exp_to_level = 0
 
             # keep total exp; exp_to_level is the threshold for next level
             while new_current_exp >= user.exp_to_level:

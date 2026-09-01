@@ -1,6 +1,6 @@
 """User model for the Nightcore bot database."""
 
-from sqlalchemy import BigInteger, Index, text
+from sqlalchemy import BigInteger, CheckConstraint, Index, Integer, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
@@ -11,9 +11,12 @@ class TransferHistory(Base, IdIntegerMixin, CreatedAtMixin):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     receiver_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    amount: Mapped[int] = mapped_column(nullable=False, default=0)
+    amount: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
 
     __table_args__ = (
+        CheckConstraint("amount >= 0", name="ck_transfer_amount_nonnegative"),
         # Indexes for transfer history queries
         Index(
             "ix_transfer_guild_sender_created",

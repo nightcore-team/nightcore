@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy import (
     ARRAY,
     BigInteger,
+    CheckConstraint,
     ForeignKey,
     Integer,
     String,
@@ -27,6 +28,7 @@ class GuildClanShopItem(IdIntegerMixin, Base):
             deferrable=True,
             initially="DEFERRED",
         ),
+        CheckConstraint("cost >= 0", name="ck_clan_shop_cost_nonnegative"),
     )
 
     guild_id: Mapped[int] = mapped_column(
@@ -35,7 +37,9 @@ class GuildClanShopItem(IdIntegerMixin, Base):
         nullable=False,
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    cost: Mapped[int] = mapped_column(Integer, nullable=False)
+    cost: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
 
 
 class GuildClansConfig(IdIntegerMixin, Base):
@@ -81,6 +85,17 @@ class GuildClansConfig(IdIntegerMixin, Base):
     )
     clan_improvements: Mapped[list[int]] = mapped_column(
         ARRAY(Integer), nullable=False, default=list
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "clan_reputation_per_payday >= 0",
+            name="ck_clan_rep_nonnegative",
+        ),
+        CheckConstraint(
+            "base_exp_multiplier >= 0",
+            name="ck_clan_exp_mult_nonnegative",
+        ),
     )
 
     @staticmethod

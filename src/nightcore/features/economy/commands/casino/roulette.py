@@ -1,11 +1,13 @@
 """Command to play casino roulette game."""
 
+import contextlib
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 from discord import Guild, Member, Message, TextChannel, app_commands
 from discord.interactions import Interaction
+from sqlalchemy import update
 
 from src.infra.db.models import (
     CasinoBet,
@@ -53,16 +55,94 @@ logger = logging.getLogger(__name__)
 async def _send_multiplayer_roulette_message(
     bot: "Nightcore",
     channel: TextChannel,
-    casino_game: CasinoGame,
     view: MultiplayerRouletteViewV2,
+    guild_id: int,
+    initiator_id: int,
+    bet_amount: int,
+    selected_color: str,
 ) -> Message:
-    """Send multiplayer roulette message and persist message/channel ids."""
-    message = await channel.send(view=view)
-    async with bot.uow.start() as session:
-        casino_game = await session.merge(casino_game)  # type: ignore
-        casino_game.message_id = message.id
-        casino_game.channel_id = message.channel.id
+    """Send multiplayer roulette message and create game with message_id."""
 
+    # Fixes double-commit orphan: game is created after Discord send in a
+    # single transaction with message_id already known. For idempotency
+    # retry we use UPDATE WHERE message_id IS NULL pattern.
+    message = await channel.send(view=view)
+    try:
+        async with bot.uow.start() as session:
+            # Lock user for atomic balance deduction
+            user_record, _ = await get_or_create_user(
+                session,
+                guild_id=guild_id,
+                user_id=initiator_id,
+                for_update=True,
+            )
+            if user_record.coins < bet_amount:
+                # Not enough after send – clean up Discord message to avoid orphan  # noqa: E501
+                raise ValueError("insufficient_balance_after_send")
+
+            # Check for existing orphan pending game without message_id  # noqa: E501
+            # (defensive: if previous attempt created row but failed to set message_id)  # noqa: E501
+            # Try to claim orphan via UPDATE WHERE message_id IS NULL  # noqa: E501
+            # If no orphan, insert fresh game with message_id  # noqa: E501
+            # First attempt UPDATE for any pending game of this initiator without message_id  # noqa: E501
+            # This implements the required UPDATE WHERE message_id IS NULL pattern  # noqa: E501
+            stmt = (
+                update(CasinoGame)
+                .where(  # noqa: E501
+                    CasinoGame.guild_id == guild_id,
+                    CasinoGame.initiator_id == initiator_id,
+                    CasinoGame.game_type == CasinoGameTypeEnum.ROULETTE,  # noqa: E501
+                    CasinoGame.players_type == CasinoPlayersTypeEnum.MULTIPLAYER,  # noqa: E501
+                    CasinoGame.state == CasinoGameStateEnum.PENDING,  # noqa: E501
+                    CasinoGame.message_id.is_(None),
+                )
+                .values(message_id=message.id, channel_id=message.channel.id)
+                .returning(CasinoGame.id)
+            )
+            result = await session.execute(stmt)
+            claimed_id = result.scalar_one_or_none()
+
+            if claimed_id is not None:
+                # Claimed an orphan – add bet to it
+                # Need to fetch the claimed game for bet association
+                casino_game_id = claimed_id
+                # Ensure coin deduction and bet creation for claimed game
+                # Fetch the game is not needed for deduction, just create bet
+                casino_bet = CasinoBet(
+                    user_id=user_record.id,
+                    amount=bet_amount * 2,
+                    color=selected_color,
+                    game_id=casino_game_id,
+                )
+                session.add(casino_bet)
+                user_record.coins -= bet_amount
+            else:
+                # No orphan to claim – create fresh game with message_id in one tx  # noqa: E501
+                casino_game = CasinoGame(
+                    guild_id=guild_id,
+                    initiator_id=initiator_id,
+                    game_type=CasinoGameTypeEnum.ROULETTE,
+                    players_type=CasinoPlayersTypeEnum.MULTIPLAYER,
+                    state=CasinoGameStateEnum.PENDING,
+                    end_time=datetime.now(UTC) + timedelta(minutes=1),
+                    message_id=message.id,
+                    channel_id=message.channel.id,
+                )
+                session.add(casino_game)
+                await session.flush()
+                casino_bet = CasinoBet(
+                    user_id=user_record.id,
+                    amount=bet_amount * 2,
+                    color=selected_color,
+                    game_id=casino_game.id,
+                )
+                session.add(casino_bet)
+                user_record.coins -= bet_amount
+    except Exception:
+        # If DB commit fails after Discord send, delete Discord message to avoid orphan  # noqa: E501
+        with contextlib.suppress(Exception):
+            await message.delete()
+        raise
     return message
 
 
@@ -107,44 +187,47 @@ async def roulette(
     result: RouletteResult | None = None
     logging_webhook: DiscordWebhook | None = None
     new_balance = 0
-    casino_game_id: int | None = None
     casino_multiplayer_channel_id: int | None = None
+    guild_coin_name: str | None = None
 
-    async with specified_guild_config(
-        bot, guild_id=guild.id, config_type=GuildEconomyConfig
-    ) as (guild_config, session):
-        try:
-            user_record, _ = await get_or_create_user(
-                session,
-                guild_id=guild.id,
-                user_id=member.id,
-                for_update=True,
-            )
-            logging_webhook = await get_specified_webhook(
-                session,
-                guild_id=guild.id,
-                config_type=GuildLoggingConfig,
-                channel_type=ChannelType.LOGGING_ECONOMY,
-            )
-            casino_multiplayer_channel_id = (
-                guild_config.casino_multiplayer_channel_id
-            )
-
-            if user_record.coins < bet:
-                outcome = "insufficient_balance"
-            else:
-                casino_game = CasinoGame(
+    # Single-player and validation handled in one tx; multiplayer game creation  # noqa: E501
+    # is deferred until after Discord send to avoid double-commit orphan.  # noqa: E501
+    if type.value == "single":
+        async with specified_guild_config(
+            bot, guild_id=guild.id, config_type=GuildEconomyConfig
+        ) as (guild_config, session):
+            try:
+                user_record, _ = await get_or_create_user(
+                    session,
                     guild_id=guild.id,
-                    initiator_id=member.id,
-                    game_type=CasinoGameTypeEnum.ROULETTE,
-                    end_time=datetime.now(UTC),
+                    user_id=member.id,
+                    for_update=True,
                 )
-                casino_bet = CasinoBet(
-                    user_id=user_record.id,
-                    color=selected_color,
+                logging_webhook = await get_specified_webhook(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_ECONOMY,
                 )
+                casino_multiplayer_channel_id = (
+                    guild_config.casino_multiplayer_channel_id
+                )
+                guild_coin_name = guild_config.coin_name
 
-                if type.value == "single":
+                if user_record.coins < bet:
+                    outcome = "insufficient_balance"
+                else:
+                    casino_game = CasinoGame(
+                        guild_id=guild.id,
+                        initiator_id=member.id,
+                        game_type=CasinoGameTypeEnum.ROULETTE,
+                        end_time=datetime.now(UTC),
+                    )
+                    casino_bet = CasinoBet(
+                        user_id=user_record.id,
+                        color=selected_color,
+                    )
+
                     number, spin_color = spin_roulette()
                     result = RouletteResult(
                         number, spin_color, bet, selected_color
@@ -169,34 +252,58 @@ async def roulette(
                         abs(result.coins_change),
                         guild.id,
                     )
+
+                    session.add(casino_game)
+                    await session.flush()
+                    casino_bet.game_id = casino_game.id
+
+                    session.add(casino_bet)
+
+                    outcome = "success"
+
+            except Exception as e:
+                logger.exception(
+                    "[roulette] Error in roulette for user %s in guild %s: %s",
+                    member.id,
+                    guild.id,
+                    e,
+                )
+                outcome = "error"
+    else:
+        # Multiplayer: validate only, defer game creation until after send
+        async with specified_guild_config(
+            bot, guild_id=guild.id, config_type=GuildEconomyConfig
+        ) as (guild_config, session):
+            try:
+                user_record, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
+                    for_update=False,
+                )
+                logging_webhook = await get_specified_webhook(
+                    session,
+                    guild_id=guild.id,
+                    config_type=GuildLoggingConfig,
+                    channel_type=ChannelType.LOGGING_ECONOMY,
+                )
+                casino_multiplayer_channel_id = (
+                    guild_config.casino_multiplayer_channel_id
+                )
+                guild_coin_name = guild_config.coin_name
+
+                if user_record.coins < bet:
+                    outcome = "insufficient_balance"
                 else:
-                    casino_game.players_type = (
-                        CasinoPlayersTypeEnum.MULTIPLAYER
-                    )
-                    casino_game.state = CasinoGameStateEnum.PENDING
-                    casino_game.end_time = casino_game.end_time + timedelta(
-                        minutes=1
-                    )
-                    user_record.coins -= bet
-                    casino_bet.amount = bet * 2
-
-                session.add(casino_game)
-                await session.flush()
-                casino_game_id = casino_game.id
-                casino_bet.game_id = casino_game_id
-
-                session.add(casino_bet)
-
-                outcome = "success"
-
-        except Exception as e:
-            logger.exception(
-                "[roulette] Error in roulette for user %s in guild %s: %s",
-                member.id,
-                guild.id,
-                e,
-            )
-            outcome = "error"
+                    outcome = "success"
+            except Exception as e:
+                logger.exception(
+                    "[roulette] Error in roulette for user %s in guild %s: %s",
+                    member.id,
+                    guild.id,
+                    e,
+                )
+                outcome = "error"
 
     if outcome == "insufficient_balance":
         await interaction.response.send_message(
@@ -219,8 +326,8 @@ async def roulette(
         return
 
     if outcome == "success":
-        coin_name = guild_config.coin_name or "коины"
-        reward_coin_name = guild_config.coin_name or "коинов"
+        coin_name = guild_coin_name or "коины"
+        reward_coin_name = guild_coin_name or "коинов"
 
         if type.value == "single":
             if result is None:
@@ -319,9 +426,36 @@ async def roulette(
                 message = await _send_multiplayer_roulette_message(
                     bot=bot,
                     channel=channel,
-                    casino_game=casino_game,  # type: ignore
                     view=view,
+                    guild_id=guild.id,
+                    initiator_id=member.id,
+                    bet_amount=bet,
+                    selected_color=selected_color,
                 )
+            except ValueError as e:
+                if str(e) == "insufficient_balance_after_send":
+                    await interaction.response.send_message(
+                        view=ErrorViewV2(
+                            "Ошибка ставки",
+                            "У вас недостаточно коинов для ставки.",
+                        ),
+                        ephemeral=True,
+                    )
+                    return
+                logger.exception(
+                    "[roulette] Failed to send multiplayer "
+                    "roulette message in guild %s: %s",
+                    guild.id,
+                    e,
+                )
+                await interaction.response.send_message(
+                    view=ErrorViewV2(
+                        "Ошибка отправки",
+                        error_detail,
+                    ),
+                    ephemeral=True,
+                )
+                return
             except Exception as e:
                 logger.exception(
                     "[roulette] Failed to send multiplayer "

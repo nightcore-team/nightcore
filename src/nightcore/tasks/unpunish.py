@@ -34,37 +34,37 @@ class UnPunishTask(Cog):
         """Task to unpunish users when their punishment duration ends."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            logger.info("[task] - Running unpunish task")
+        logger.info("[task] - Running unpunish task")
 
-            outcome = ""
-            async with self.bot.uow.start() as session:
-                active_infractions = await get_expired_temp_infractions(
-                    session
-                )
-                if not active_infractions:
-                    outcome = "no_expired_infractions"
-                else:
-                    for infraction in active_infractions:
-                        await session.delete(infraction)
+        outcome = ""
+        async with self.bot.uow.start() as session:
+            active_infractions = await get_expired_temp_infractions(
+                session
+            )
+            if not active_infractions:
+                outcome = "no_expired_infractions"
+            else:
+                for infraction in active_infractions:
+                    await session.delete(infraction)
 
-            if outcome == "no_expired_infractions":
-                logger.info("[task] - No expired infractions found")
-                return
+        if outcome == "no_expired_infractions":
+            logger.info("[task] - No expired infractions found")
+            return
 
-            # Dispatch events after successful commit
-            for infraction in active_infractions:
+        # Dispatch events after successful commit
+        for infraction in active_infractions:
+            try:
                 handle_infraction_type_event(
                     active_punish=infraction, bot=self.bot
                 )
                 logger.info("[task] - Unpunished user: %s", infraction.user_id)
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in unpunish task iteration: %s",
-                e,
-                exc_info=True,
-            )
+            except Exception as e:
+                logger.exception(
+                    "[task] - Failed to dispatch unpunish for user %s: %s",
+                    infraction.user_id,
+                    e,
+                )
+                continue
 
     @un_punish_task.before_loop
     async def before_un_punish_task(self):

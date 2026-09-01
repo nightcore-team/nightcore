@@ -62,6 +62,17 @@ def get_user_id(
             detail="JWT token not found.",
         )
 
+    # Bearer prefix stripping is also handled in JWTTokenService, but keep
+    # explicit handling here for clarity and to avoid passing raw header twice
+    token = token.strip()
+    if token[:7].lower() == "bearer ":
+        token = token[7:].strip()
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="JWT token not found.",
+            )
+
     payload = jwt_token_service.decode(token)
 
     if payload is None:
@@ -74,15 +85,15 @@ def get_user_id(
 
     if user_id is None:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Bad token payload.",
         )
 
     try:
         return int(user_id)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Bad token payload.",
         ) from e
 

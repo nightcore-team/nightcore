@@ -38,13 +38,13 @@ class ClansPayDayTask(Cog):
         """Task to add reputation points to clans."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            logger.info("[task] - Running add clan reputation task")
+        logger.info("[task] - Running add clan reputation task")
 
-            view = ClansPaydayViewV2(bot=self.bot)
-            guilds = self.bot.guilds
+        view = ClansPaydayViewV2(bot=self.bot)
+        guilds = self.bot.guilds
 
-            for guild in guilds:
+        for guild in guilds:
+            try:
                 # Separate transaction per guild for better performance
                 async with self.bot.uow.start() as session:
                     clans = await get_clans_by_spec(session, guild_id=guild.id)
@@ -56,9 +56,18 @@ class ClansPayDayTask(Cog):
                     )
 
                     for clan in clans:
-                        # add reputation
-                        added = clan.payday_multipler * len(clan.members)
-                        clan.coins += added
+                        try:
+                            # add reputation
+                            added = clan.payday_multipler * len(clan.members)
+                            clan.coins += added
+                        except Exception as e:
+                            logger.exception(
+                                "[task] - Failed to add reputation to clan %s in guild %s: %s",  # noqa: E501
+                                clan.id,
+                                guild.id,
+                                e,
+                            )
+                            continue
 
                     # Get channel_id before session closes
                     webhook_url = (
@@ -68,12 +77,20 @@ class ClansPayDayTask(Cog):
                     )
 
                 for clan in clans:
-                    logger.info(
-                        "[task] - Added %s reputation to clan %s in guild %s",
-                        clan.payday_multipler * len(clan.members),
-                        clan.name,
-                        guild.id,
-                    )
+                    try:
+                        logger.info(
+                            "[task] - Added %s reputation to clan %s in guild %s",  # noqa: E501
+                            clan.payday_multipler * len(clan.members),
+                            clan.name,
+                            guild.id,
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "[task] - Logging failed for clan %s: %s",
+                            clan.name,
+                            e,
+                        )
+                        continue
 
                 if not webhook_url:
                     logger.info(
@@ -89,20 +106,28 @@ class ClansPayDayTask(Cog):
                     )
                     continue
 
-                await send_to_webhook(
-                    self.bot,
-                    webhook_url,
-                    view,
-                    context="clan_payday",
-                    guild_id=guild.id,
+                try:
+                    await send_to_webhook(
+                        self.bot,
+                        webhook_url,
+                        view,
+                        context="clan_payday",
+                        guild_id=guild.id,
+                    )
+                except Exception as e:
+                    logger.exception(
+                        "[task] - Failed to send clan payday webhook for guild %s: %s",  # noqa: E501
+                        guild.id,
+                        e,
+                    )
+                    continue
+            except Exception as e:
+                logger.exception(
+                    "[task] - Error processing guild %s in clan reputation task: %s",  # noqa: E501
+                    guild.id,
+                    e,
                 )
-
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in add clan reputation task iteration: %s",
-                e,
-                exc_info=True,
-            )
+                continue
 
     @add_clan_reputation_task.before_loop
     async def before_add_clan_reputation_task(self):

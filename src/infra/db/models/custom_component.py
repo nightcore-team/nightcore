@@ -30,4 +30,17 @@ class CustomComponent(IdIntegerMixin, CreatedAtMixin, Base):
             "guild_id",
             "name",
         ),
+        # Trigram GIN indexes for fast ILIKE search
+        Index(
+            "ix_custom_component_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_custom_component_text_trgm",
+            "text",
+            postgresql_using="gin",
+            postgresql_ops={"text": "gin_trgm_ops"},
+        ),
     )

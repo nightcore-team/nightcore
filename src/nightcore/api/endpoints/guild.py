@@ -1,5 +1,7 @@
 """Guild related endpoints."""
 
+import time
+from collections import defaultdict
 from typing import Annotated
 
 from fastapi import HTTPException, Query, status
@@ -25,6 +27,47 @@ from src.utils._enums import ConfigTypeEnum
 
 router = APIRouter(prefix="/guilds", tags=["Guild Endpoints"])
 
+# Per-user rate limiting: simple in-memory sliding window
+_RATE_LIMIT_WINDOW_SECONDS = 60.0
+_RATE_LIMIT_MAX_REQUESTS = 60
+_RATE_LIMIT_STORE: dict[int, list[float]] = defaultdict(list)
+
+
+def _check_per_user_rate_limit(user_id: int) -> None:
+    """Enforce per-user rate limit (60 req / 60s)."""
+
+    now = time.monotonic()
+    window_start = now - _RATE_LIMIT_WINDOW_SECONDS
+    timestamps = _RATE_LIMIT_STORE[user_id]
+    # Prune old entries
+    _RATE_LIMIT_STORE[user_id] = [t for t in timestamps if t > window_start]
+    if len(_RATE_LIMIT_STORE[user_id]) >= _RATE_LIMIT_MAX_REQUESTS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Try again later.",
+        )
+    _RATE_LIMIT_STORE[user_id].append(now)
+
+
+async def _has_roles_channels_access(member, access_service) -> bool:
+    """IDOR fix: require specific privileged config, not any configuration."""
+    # Check specific configs that legitimately need role/channel enumeration
+    for cfg in (
+        ConfigTypeEnum.ACCESS,
+        ConfigTypeEnum.MODERATION,
+        ConfigTypeEnum.ROLE_REQUEST,
+    ):
+        try:
+            if await access_service.has_config_access(
+                member=member, config_type=cfg
+            ):
+                return True
+        except Exception:
+            continue
+    # Fallback: administrator bypass
+    perms = getattr(member, "guild_permissions", None)
+    return bool(perms and getattr(perms, "administrator", False))
+
 
 @router.get(
     "/{guild_id}/available-configurations",
@@ -38,6 +81,8 @@ async def get_available_configurations(
     access_service: AccessServiceDependency,
 ):
     """Returns a list of accessible guild configurations for the authenticated user."""  # noqa: E501
+
+    _check_per_user_rate_limit(user_id)
 
     guild = bot.get_guild(guild_id)
 
@@ -71,6 +116,8 @@ async def get_guild_roles(
 ):
     """Get roles for a specific guild."""
 
+    _check_per_user_rate_limit(user_id)
+
     guild = bot.get_guild(guild_id)
 
     if guild is None:
@@ -86,14 +133,11 @@ async def get_guild_roles(
             detail="You are not a member of this guild",
         )
 
-    available_configurations = (
-        await access_service.get_available_configurations(member=member)
-    )
-
-    if len(available_configurations) < 1:
+    # IDOR fix: require specific config access, not any
+    if not await _has_roles_channels_access(member, access_service):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must have access to at least one configuration to get guild roles",  # noqa: E501
+            detail="You must have access to a privileged configuration to get guild roles",  # noqa: E501
         )
 
     return guild_state_service.get_roles(guild)
@@ -113,6 +157,8 @@ async def get_guild_channels(
 ):
     """Get channels for a specific guild."""
 
+    _check_per_user_rate_limit(user_id)
+
     guild = bot.get_guild(guild_id)
 
     if guild is None:
@@ -128,14 +174,11 @@ async def get_guild_channels(
             detail="You are not a member of this guild",
         )
 
-    available_configurations = (
-        await access_service.get_available_configurations(member=member)
-    )
-
-    if len(available_configurations) < 1:
+    # IDOR fix: require specific config access, not any
+    if not await _has_roles_channels_access(member, access_service):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must have access to at least one configuration to get guild channels",  # noqa: E501
+            detail="You must have access to a privileged configuration to get guild channels",  # noqa: E501
         )
 
     return guild_state_service.get_channels(guild)
@@ -155,6 +198,8 @@ async def get_guild_configuration(
     guild_state_service: GuildStateServiceDependency,
 ):
     """Get configuration for a specific guild."""
+
+    _check_per_user_rate_limit(user_id)
 
     guild = bot.get_guild(guild_id)
 
@@ -198,6 +243,8 @@ async def patch_guild_configuration(
     logging_revision_service: LoggingRevisionServiceDependency,
 ):
     """Update configuration for a specific guild."""
+
+    _check_per_user_rate_limit(user_id)
 
     guild = bot.get_guild(guild_id)
 
@@ -246,6 +293,8 @@ async def get_guild_logging_revisions(
     logging_revision_service: LoggingRevisionServiceDependency,
 ):
     """List logging revisions for a specific guild."""
+
+    _check_per_user_rate_limit(user_id)
 
     guild = bot.get_guild(guild_id)
 
@@ -312,6 +361,8 @@ async def get_guild_logging_revision(
     logging_revision_service: LoggingRevisionServiceDependency,
 ):
     """Get logging revision for specific guild by revision_id."""
+
+    _check_per_user_rate_limit(user_id)
 
     guild = bot.get_guild(guild_id)
 

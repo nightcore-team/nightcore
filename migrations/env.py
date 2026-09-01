@@ -1,18 +1,12 @@
-# import sys
-# import os
-
-# sys.path.insert(0, os.path.abspath("/app"))
-
-import asyncio  # noqa: I001
+import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-
-from src.config.config import config as project_config
-from src.infra.db.models import Base
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
+
+from src.infra.db.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,7 +15,12 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    try:
+        fileConfig(config.config_file_name)
+    except Exception:
+        # Don't fail migrations if logging config is invalid
+        # or already configured (e.g., in tests).
+        pass
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -29,13 +28,23 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
-
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-db_url = project_config.db.POSTGRES_DATABASE_URI
+
+def get_url() -> str | None:
+    """Lazily load DB URL to avoid import-time side effects."""
+    try:
+        from src.config.config import config as project_config
+
+        url = project_config.db.POSTGRES_DATABASE_URI
+        if url:
+            return url
+    except Exception:
+        pass
+    return config.get_main_option("sqlalchemy.url")
 
 
 def run_migrations_offline() -> None:
@@ -51,12 +60,15 @@ def run_migrations_offline() -> None:
     script output.
 
     """
+    url = get_url()
     context.configure(
-        url=db_url,
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        # dialect_opts={"paramstyle": "named"},
+        dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        compare_server_default=True,
+        render_as_batch=True,
     )
 
     with context.begin_transaction():
@@ -68,6 +80,8 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         compare_type=True,
+        compare_server_default=True,
+        render_as_batch=True,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -81,10 +95,14 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
-    configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = db_url # type: ignore
+    configuration = config.get_section(config.config_ini_section, {})
+    if configuration is None:
+        configuration = {}
+    configuration["sqlalchemy.url"] = get_url()  # type: ignore[assignment]
     connectable = async_engine_from_config(
-        configuration, prefix="sqlalchemy.", poolclass=pool.NullPool # type: ignore
+        configuration,
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,  # type: ignore[arg-type]
     )
 
     async with connectable.connect() as connection:

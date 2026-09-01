@@ -16,11 +16,36 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.features.private_rooms.components.embed import (
     PrivateRoomLogEmbed,
 )
-from src.nightcore.utils import ensure_messageable_channel_exists
 from src.nightcore.utils.webhook import send_to_webhook
 from src.utils._enums import ChannelType
 
 logger = logging.getLogger(__name__)
+
+
+async def _ensure_voice_channel_exists(
+    guild: discord.Guild, channel_id: int
+) -> discord.VoiceChannel | None:
+    """Ensure voice channel exists, fetching if not cached."""
+    channel = guild.get_channel(channel_id)
+    if channel is not None:
+        if isinstance(channel, discord.VoiceChannel):
+            return channel
+        return None
+    try:
+        channel = await guild.fetch_channel(channel_id)  # type: ignore[assignment]
+        if isinstance(channel, discord.VoiceChannel):
+            return channel
+        return None
+    except discord.NotFound:
+        return None
+    except discord.HTTPException as e:
+        logger.error(
+            "[private_rooms/event] Failed fetching voice channel %s in guild %s: %s",  # noqa: E501
+            channel_id,
+            guild.id,
+            e,
+        )
+        return None
 
 
 class CreatePrivateRoomEvent(Cog):
@@ -43,14 +68,17 @@ class CreatePrivateRoomEvent(Cog):
         has_existing = False
         async with self.bot.uow.start() as session:
             existing = await get_private_room_state(
-                session, user_id=member.id, for_update=True
+                session,
+                guild_id=guild.id,
+                user_id=member.id,
+                for_update=True,
             )
             if existing is not None:
                 existing_channel_id = existing.channel_id
                 has_existing = True
 
         if has_existing and existing_channel_id is not None:
-            _ch = await ensure_messageable_channel_exists(
+            _ch = await _ensure_voice_channel_exists(
                 guild, existing_channel_id
             )
             if _ch is not None:
@@ -75,7 +103,10 @@ class CreatePrivateRoomEvent(Cog):
             # Stale DB record: channel not found, remove with lock
             async with self.bot.uow.start() as session:
                 stale = await get_private_room_state(
-                    session, user_id=member.id, for_update=True
+                    session,
+                    guild_id=guild.id,
+                    user_id=member.id,
+                    for_update=True,
                 )
                 if (
                     stale is not None
@@ -131,7 +162,10 @@ class CreatePrivateRoomEvent(Cog):
                 if inserted is None:
                     race_lost = True
                     existing_after = await get_private_room_state(
-                        session, user_id=member.id, for_update=True
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                        for_update=True,
                     )
 
         except IntegrityError as e:
@@ -145,7 +179,10 @@ class CreatePrivateRoomEvent(Cog):
             try:
                 async with self.bot.uow.start() as session:
                     existing_after = await get_private_room_state(
-                        session, user_id=member.id, for_update=True
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                        for_update=True,
                     )
             except Exception:
                 existing_after = None
@@ -189,7 +226,7 @@ class CreatePrivateRoomEvent(Cog):
                     e,
                 )
             if existing_after is not None:
-                _ch = await ensure_messageable_channel_exists(
+                _ch = await _ensure_voice_channel_exists(
                     guild, existing_after.channel_id
                 )
                 if _ch is not None:
@@ -229,7 +266,10 @@ class CreatePrivateRoomEvent(Cog):
             try:
                 async with self.bot.uow.start() as session:
                     fresh = await get_private_room_state(
-                        session, user_id=member.id, for_update=True
+                        session,
+                        guild_id=guild.id,
+                        user_id=member.id,
+                        for_update=True,
                     )
                     if (
                         fresh is not None

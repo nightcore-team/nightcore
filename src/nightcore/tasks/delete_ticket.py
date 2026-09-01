@@ -46,16 +46,18 @@ class DeleteTicketTask(Cog):
     @tasks.loop(hours=20)
     async def delete_ticket_task(self):
         """Task to delete tickets when their duration ends."""
-        try:
-            logger.info("[task] - Running delete ticket task")
-            async with self.bot.uow.start() as session:
-                closed_tickets = await get_tickets_to_delete(session)
+        await self.bot.task_manager.sleep(__name__)
 
-            if not closed_tickets:
-                logger.info("[task] - No closed tickets found")
-                return
+        logger.info("[task] - Running delete ticket task")
+        async with self.bot.uow.start() as session:
+            closed_tickets = await get_tickets_to_delete(session)
 
-            for ticket in closed_tickets:
+        if not closed_tickets:
+            logger.info("[task] - No closed tickets found")
+            return
+
+        for ticket in closed_tickets:
+            try:
                 guild = await ensure_guild_exists(self.bot, ticket.guild_id)
                 if guild is None:
                     logger.info(
@@ -73,6 +75,20 @@ class DeleteTicketTask(Cog):
                         channel_type=ChannelType.LOGGING_TICKETS,
                     )
 
+                # Commit state before dispatching event
+                try:
+                    async with self.bot.uow.start() as session:
+                        _ticket = await session.merge(ticket)
+                        _ticket.state = TicketStateEnum.DELETED
+                except Exception as e:
+                    logger.exception(
+                        "[task] - Failed to delete ticket %s in guild %s: %s",
+                        ticket.id,
+                        ticket.guild_id,
+                        e,
+                    )
+                    continue
+
                 self.bot.dispatch(
                     "ticket_deleted",
                     data=TicketChangeEventData(
@@ -84,29 +100,19 @@ class DeleteTicketTask(Cog):
                         state=TicketStateEnum.DELETED,
                     ),
                 )
-                try:
-                    async with self.bot.uow.start() as session:
-                        _ticket = await session.merge(ticket)
-                        _ticket.state = TicketStateEnum.DELETED
-
-                except Exception as e:
-                    logger.exception(
-                        "[task] - Failed to delete ticket %s in guild %s: %s",
-                        ticket.id,
-                        ticket.guild_id,
-                        e,
-                    )
 
                 logger.info(
                     "[task] - Deleted ticket in guild %s",
                     ticket.guild_id,
                 )
-        except Exception as e:
-            logger.exception(
-                "[task] - Error in delete ticket task iteration: %s",
-                e,
-                exc_info=True,
-            )
+            except Exception as e:
+                logger.exception(
+                    "[task] - Error processing ticket %s in guild %s: %s",
+                    ticket.id,
+                    ticket.guild_id,
+                    e,
+                )
+                continue
 
     @delete_ticket_task.before_loop
     async def before_delete_ticket_task(self):

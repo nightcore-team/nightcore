@@ -2,7 +2,14 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Enum, Integer, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    Integer,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infra.db.models._mixins import IdIntegerMixin
@@ -13,7 +20,12 @@ from src.utils._enums import RainbowColorChangeTypeEnum
 class RainbowRole(IdIntegerMixin, Base):
     """A single rainbow role per guild."""
 
-    __table_args__ = (UniqueConstraint("guild_id", name="ux_guild_rainbow"),)
+    __table_args__ = (
+        UniqueConstraint("guild_id", name="ux_guild_rainbow"),
+        CheckConstraint(
+            "current_step >= 0", name="ck_rainbow_current_step_nonnegative"
+        ),
+    )
 
     role_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
