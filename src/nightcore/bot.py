@@ -2,8 +2,8 @@
 
 import contextlib
 import logging
-from datetime import UTC, datetime
-from typing import Any
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
 import discord
 import discordhealthcheck  # type: ignore
@@ -12,7 +12,10 @@ from discord.ext.commands import Bot  # type: ignore
 from nightforo import Client as XenforoClient
 
 from src.config.config import config
-from src.infra.db.operations import reset_users_voice_activity
+from src.infra.db.operations import (
+    get_guild_subscription,
+    reset_users_voice_activity,
+)
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.exceptions import CommandDontHavePermissionsFlagError
 from src.nightcore.features.economy.components.v2 import CoinsShopViewV2
@@ -23,6 +26,7 @@ from src.nightcore.features.proposals.components.v2 import ProposalViewV2
 from src.nightcore.utils import log_tree_summary
 from src.nightcore.utils.image_builder.cache import ImageCache
 from src.nightcore.utils.lock_manager import AsyncioLockManager
+from src.nightcore.utils.subscription_cache import SubscriptionCache
 from src.nightcore.utils.tasks_offset import TaskOffsetManager
 
 logger = logging.getLogger(__name__)
@@ -50,6 +54,35 @@ class GuildOnlyTree(app_commands.CommandTree):
                     ephemeral=True,
                 )
             return False
+
+        return await self.subscription_check(interaction)  # type: ignore
+
+    async def subscription_check(
+        self, interaction: discord.Interaction["Nightcore"]
+    ):
+        guild = cast(discord.Guild, interaction.guild)
+
+        cached = interaction.client.subscription_cache.get(guild.id)
+        if cached is not None:
+            return cached > datetime.now(UTC)
+
+        async with interaction.client.uow.start() as session:
+            sub = await get_guild_subscription(session, guild_id=guild.id)
+
+        if sub is None:
+            return False
+
+        if sub.is_whitelisted:
+            interaction.client.subscription_cache.set(
+                guild.id, datetime.now(UTC) + timedelta(minutes=5)
+            )
+            return True
+
+        if sub.expires_at is None or sub.expires_at < datetime.now(UTC):
+            return False
+
+        interaction.client.subscription_cache.set(guild.id, sub.expires_at)
+
         return True
 
 
@@ -69,6 +102,7 @@ class Nightcore(Bot):
         self.config = config
         self.lock_manager = AsyncioLockManager()
         self.task_manager = TaskOffsetManager()
+        self.subscription_cache = SubscriptionCache()
 
         super().__init__(
             command_prefix=".",
