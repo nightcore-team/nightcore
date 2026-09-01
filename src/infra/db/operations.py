@@ -1186,6 +1186,31 @@ async def count_logging_revisions(
     return await session.scalar(stmt) or 0
 
 
+async def delete_expired_logging_revisions(session: AsyncSession) -> None:
+    """Delete logging revisions older than 60 days.
+
+    Mirrors :func:`insert_moderation_message`: a single batch (at most 100
+    rows, ``FOR UPDATE SKIP LOCKED``) is pruned per call so concurrent
+    config updates never block on the cleanup.
+    """
+
+    expired_ids = (
+        select(LoggingRevision.revision_id)
+        .where(
+            LoggingRevision.created_at
+            <= datetime.now(UTC) - timedelta(days=60)
+        )
+        .order_by(LoggingRevision.created_at)
+        .limit(100)
+        .with_for_update(skip_locked=True)
+    )
+    stmt = delete(LoggingRevision).where(
+        LoggingRevision.revision_id.in_(expired_ids)
+    )
+
+    await session.execute(stmt)
+
+
 async def get_fraction_roles(
     session: AsyncSession, *, guild_id: int
 ) -> Sequence[int]:

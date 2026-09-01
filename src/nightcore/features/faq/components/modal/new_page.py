@@ -12,6 +12,7 @@ from discord.interactions import Interaction
 from discord.ui import Modal, TextInput
 from sqlalchemy.orm import attributes
 
+from src.config.config import config
 from src.infra.db.models import GuildFaqConfig
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.services.config import specified_guild_config
@@ -80,7 +81,13 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
             guild_config,
             _,
         ):
+            if len(guild_config.faq) >= config.bot.FAQ_PAGES_LIMIT:
+                outcome = "limit_reached"
+
             for page in guild_config.faq:
+                if outcome:
+                    break
+
                 if page["title"] == title:
                     outcome = "title_already_exists"
                     break
@@ -102,6 +109,16 @@ class NewFAQPageModal(Modal, title="Настроить страницу"):
                 attributes.flag_modified(guild_config, "faq")
 
                 outcome = "success"
+
+        if outcome == "limit_reached":
+            await interaction.response.send_message(
+                view=ErrorViewV2(
+                    "Ошибка создания страницы FAQ",
+                    f"Достигнут лимит страниц FAQ ({config.bot.FAQ_PAGES_LIMIT}).",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+            return
 
         if outcome == "title_already_exists":
             await interaction.response.send_message(
