@@ -15,4 +15,4 @@ lint:
 format:
 	uv run ruff format --config=pyproject.toml .
 
-.PHONY: migration migrate
+.PHONY: migration migrate erd lint format
