@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_cases_and_colors
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     get_guild_battlepass_levels,
@@ -64,7 +65,7 @@ async def handle_battlepass_claim_reward_button(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            with_relations=True,
+            options=user_load_cases_and_colors,
             for_update=True,
         )
 

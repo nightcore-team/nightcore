@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_cases
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
@@ -85,7 +86,7 @@ async def give_case(
                     session,
                     guild_id=guild.id,
                     user_id=user.id,
-                    with_relations=True,
+                    options=[user_load_cases],
                     for_update=True,
                 )
 

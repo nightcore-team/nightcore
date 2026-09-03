@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Role, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_cases, user_load_colors
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
@@ -134,12 +135,17 @@ async def give_item(
             if not outcome:
                 # lock in sorted order to avoid deadlocks
                 for member in sorted(target_members, key=lambda m: m.id):
+                    if item_type == CaseDropTypeEnum.CASE:
+                        load_options = [user_load_cases]
+                    elif item_type == CaseDropTypeEnum.COLOR:
+                        load_options = [user_load_colors]
+                    else:
+                        load_options = None
                     user_record, _ = await get_or_create_user(
                         session,
                         guild_id=guild.id,
                         user_id=member.id,
-                        with_relations=item_type
-                        in {CaseDropTypeEnum.CASE, CaseDropTypeEnum.COLOR},
+                        options=load_options,
                         for_update=True,
                     )
 

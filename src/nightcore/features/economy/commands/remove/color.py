@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_colors
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     get_color_by_id,
@@ -88,7 +89,11 @@ async def remove_color(
 
         if not outcome:
             user_record, _ = await get_or_create_user(
-                session, guild_id=guild.id, user_id=user.id, for_update=True
+                session,
+                guild_id=guild.id,
+                user_id=user.id,
+                options=[user_load_colors],
+                for_update=True,
             )
             color = await get_color_by_id(
                 session, guild_id=guild.id, color_id=color_id, for_update=True

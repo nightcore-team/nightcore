@@ -17,6 +17,7 @@ from discord.ui import (
     button,
 )
 
+from src.infra.db.loads import user_load_cases, user_load_colors
 from src.infra.db.operations import get_or_create_user
 
 if TYPE_CHECKING:
@@ -144,7 +145,7 @@ class UserProfileActionRow(ActionRow[LayoutView]):
                 session,
                 guild_id=self.guild_id,
                 user_id=self.user_id,
-                with_relations=True,
+                options=[user_load_colors],
             )
             colors: list[UserColor] = user_record.colors
 
@@ -177,7 +178,7 @@ class UserProfileActionRow(ActionRow[LayoutView]):
                 session,
                 guild_id=self.guild_id,
                 user_id=self.user_id,
-                with_relations=True,
+                options=[user_load_cases],
             )
             cases: list[UserCase] = user_record.cases
 

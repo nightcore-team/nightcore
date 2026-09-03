@@ -20,7 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import array, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlalchemy.orm import InstrumentedAttribute, Load, selectinload
 
 from src.config.config import config
 from src.infra.db.models import (
@@ -63,6 +63,7 @@ from src.infra.db.models import (
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
 )
+from src.infra.db.models.bank import BankProfile, Deposit
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
@@ -81,7 +82,6 @@ from src.infra.db.models.configurations.rules import (
 from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.rainbow import RainbowRole
-from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
@@ -403,10 +403,13 @@ async def get_or_create_user(
     *,
     guild_id: int,
     user_id: int,
-    with_relations: bool = False,
+    options: list[Load] | None = None,
     for_update: bool = False,
 ) -> tuple[User, bool]:
     """Get or create a user in the database.
+
+    When `options` is given, its eager-loading options are applied to the
+    SELECT so only the requested relations (e.g. cases, colors) are loaded.
 
     When `for_update` is True the selected row is locked with
     `SELECT ... FOR UPDATE` to prevent concurrent read-modify-write
@@ -416,11 +419,8 @@ async def get_or_create_user(
         User.guild_id == guild_id, User.user_id == user_id
     )
 
-    if with_relations:
-        get_stmt = get_stmt.options(
-            selectinload(User.cases).selectinload(UserCase.item),
-            selectinload(User.colors),
-        )
+    if options:
+        get_stmt = get_stmt.options(*options)
 
     if for_update:
         get_stmt = get_stmt.with_for_update()
@@ -456,14 +456,94 @@ async def get_or_create_user(
             .where(User.guild_id == guild_id, User.user_id == user_id)
             .with_for_update()
         )
-        if with_relations:
-            locked_stmt = locked_stmt.options(
-                selectinload(User.cases).selectinload(UserCase.item),
-                selectinload(User.colors),
-            )
+        if options:
+            locked_stmt = locked_stmt.options(*options)
         user = await session.scalar(locked_stmt)
 
     return user, True  # type: ignore[return-value]
+
+
+async def get_or_create_bank_profile(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = False,
+) -> tuple[BankProfile, bool]:
+    """Get or create a bank profile with its deposit.
+
+    The BankProfile and Deposit are created atomically within
+    the caller's transaction.
+
+    Returns:
+        tuple[BankProfile, bool]:
+            The bank profile and whether it was newly created.
+    """
+
+    get_stmt = (
+        select(BankProfile)
+        .where(
+            BankProfile.guild_id == guild_id,
+            BankProfile.user_id == user_id,
+        )
+        .options(
+            selectinload(BankProfile.deposit),
+        )
+    )
+
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
+
+    bank_profile = await session.scalar(get_stmt)
+
+    if bank_profile is not None:
+        return bank_profile, False
+
+    # Try to create the BankProfile.
+    insert_profile_stmt = (
+        insert(BankProfile)
+        .values(
+            guild_id=guild_id,
+            user_id=user_id,
+        )
+        .on_conflict_do_nothing(
+            constraint="ux_user_guild_bank_profile",
+        )
+        .returning(BankProfile)
+    )
+
+    result = await session.execute(insert_profile_stmt)
+    bank_profile = result.scalar_one_or_none()
+
+    if bank_profile is None:
+        # Another transaction created the profile.
+        #
+        # Re-select it. If for_update=True, wait for and lock
+        # the committed profile before using it.
+        if for_update:
+            get_stmt = get_stmt.with_for_update()
+
+        bank_profile = await session.scalar(get_stmt)
+
+        return bank_profile, False  # type: ignore[return-value]
+
+    # We created the profile, so create its deposit
+    # in the same transaction.
+    await session.execute(
+        insert(Deposit).values(
+            bank_profile_id=bank_profile.id,
+            coins=0,
+        )
+    )
+
+    # Load the relationship before returning.
+    bank_profile.deposit = await session.scalar(
+        select(Deposit).where(
+            Deposit.bank_profile_id == bank_profile.id,
+        )
+    )
+
+    return bank_profile, True
 
 
 async def get_user_for_update(

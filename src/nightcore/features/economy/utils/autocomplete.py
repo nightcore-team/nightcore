@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Final, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_cases, user_load_colors
 from src.infra.db.operations import (
     get_cases_by_input,
     get_guild_colors,
@@ -78,7 +79,7 @@ async def user_cases_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            with_relations=True,
+            options=[user_load_cases],
         )
 
     result: list[app_commands.Choice[str]] = []
@@ -115,7 +116,7 @@ async def user_colors_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            with_relations=True,
+            options=[user_load_colors],
         )
 
     for color in user.colors:
