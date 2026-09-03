@@ -1,5 +1,6 @@
 """Guild economy configuration models."""
 
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
@@ -7,6 +8,7 @@ from sqlalchemy import (
     BigInteger,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     text,
@@ -91,6 +93,21 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
     color_drop_compensation: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default=text("0")
     )
+    deposit_max_balance: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )  # Max amount a user can hold in their deposit account
+    deposit_base_interest_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4),
+        nullable=False,
+        default=0.0000,
+        server_default=text("0.0000"),
+    )  # Base annual interest rate for deposits (e.g. 0.0100 = 1%)
+    deposit_interest_cap_amount: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )  # Max interest a user can earn per payout cycle
+    extra_wallets_max_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )  # Max number of extra wallets a user can create
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:  # noqa: D102

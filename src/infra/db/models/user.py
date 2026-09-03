@@ -23,6 +23,9 @@ from src.infra.db.models.base import Base
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
 
+if TYPE_CHECKING:
+    from src.infra.db.models.bank import BankProfile
+
 user_colors = Table(
     "user_colors",
     Base.metadata,
@@ -100,12 +103,10 @@ class User(IdIntegerMixin, Base):
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
     cases: Mapped[list["UserCase"]] = relationship(
-        lazy="selectin",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
     colors: Mapped[list[Color]] = relationship(
-        lazy="selectin",
         secondary=user_colors,
         cascade="save-update, merge",
         passive_deletes=True,
@@ -115,6 +116,11 @@ class User(IdIntegerMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="selectin",
+    )
+    bank_profile: Mapped["BankProfile | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     def get_case(self, case_id: int) -> Optional["UserCase"]:
