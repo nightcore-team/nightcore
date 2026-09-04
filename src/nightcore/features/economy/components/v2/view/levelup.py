@@ -29,7 +29,7 @@ class LevelUpViewV2(LayoutView):
 
         container.add_item(
             TextDisplay[Self](
-                f"<:nightcoreLevelUp:1540402294275969024> <@{user_id}> повысил свой уровень до {new_level}!\n"  # noqa: E501
+                f"<@{user_id}> повысил свой уровень до {new_level}!\n"
                 f"> До получения следующего осталось: **`{exp_to_level}`** опыта.\n",  # noqa: E501
             )
         )
