@@ -16,12 +16,12 @@ if TYPE_CHECKING:
     from src.infra.db.models.user import User
 
 
-class BankProfile(IdIntegerMixin, CreatedAtMixin, Base):
+class BankAccount(IdIntegerMixin, CreatedAtMixin, Base):
     __table_args__ = (
         UniqueConstraint(
             "guild_id",
             "user_id",
-            name="ux_user_guild_bank_profile",
+            name="ux_user_guild_bank_account",
         ),
     )
 
@@ -36,20 +36,20 @@ class BankProfile(IdIntegerMixin, CreatedAtMixin, Base):
     )
 
     user: Mapped["User"] = relationship(
-        back_populates="bank_profile",
+        back_populates="bank_account",
         uselist=False,
         cascade="all, delete-orphan",
     )
 
     deposit: Mapped["Deposit | None"] = relationship(
-        back_populates="bank_profile",
+        back_populates="bank_account",
         uselist=False,
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
 
     extra_wallets: Mapped[list["ExtraWallet"]] = relationship(
-        back_populates="bank_profile",
+        back_populates="bank_account",
         lazy="selectin",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -57,8 +57,8 @@ class BankProfile(IdIntegerMixin, CreatedAtMixin, Base):
 
 
 class Deposit(IdIntegerMixin, CreatedAtMixin, UpdatedAtMixin, Base):
-    bank_profile_id: Mapped[int] = mapped_column(
-        ForeignKey("bankprofile.id", ondelete="CASCADE"),
+    bank_account_id: Mapped[int] = mapped_column(
+        ForeignKey("bankaccount.id", ondelete="CASCADE"),
         nullable=False,
         unique=True,
     )
@@ -69,14 +69,14 @@ class Deposit(IdIntegerMixin, CreatedAtMixin, UpdatedAtMixin, Base):
         server_default=text("0"),
     )
 
-    bank_profile: Mapped["BankProfile"] = relationship(
+    bank_account: Mapped["BankAccount"] = relationship(
         back_populates="deposit",
     )
 
 
 class ExtraWallet(IdIntegerMixin, CreatedAtMixin, UpdatedAtMixin, Base):
-    bank_profile_id: Mapped[int] = mapped_column(
-        ForeignKey("bankprofile.id", ondelete="CASCADE"),
+    bank_account_id: Mapped[int] = mapped_column(
+        ForeignKey("bankaccount.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -86,6 +86,8 @@ class ExtraWallet(IdIntegerMixin, CreatedAtMixin, UpdatedAtMixin, Base):
         server_default=text("0"),
     )
 
-    bank_profile: Mapped["BankProfile"] = relationship(
+    slot: Mapped[int] = mapped_column(nullable=False)
+
+    bank_account: Mapped["BankAccount"] = relationship(
         back_populates="extra_wallets",
     )

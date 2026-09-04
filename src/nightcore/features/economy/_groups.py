@@ -41,3 +41,16 @@ temp = app_commands.Group(
     description="Команды связанные с временной валютой или предметами.",
     guild_only=True,
 )
+
+bank = app_commands.Group(
+    name="bank",
+    description="Команды связанные с банковской системой.",
+    guild_only=True,
+)
+
+extra = app_commands.Group(
+    name="extra",
+    description="Команды связанные с дополнительными счетами в банке.",
+    guild_only=True,
+    parent=bank,
+)

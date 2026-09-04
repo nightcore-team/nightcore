@@ -63,7 +63,7 @@ from src.infra.db.models import (
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
 )
-from src.infra.db.models.bank import BankProfile, Deposit
+from src.infra.db.models.bank import BankAccount, Deposit, ExtraWallet
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
@@ -463,87 +463,110 @@ async def get_or_create_user(
     return user, True  # type: ignore[return-value]
 
 
-async def get_or_create_bank_profile(
+async def get_or_create_bank_account(
     session: AsyncSession,
     *,
     guild_id: int,
     user_id: int,
     for_update: bool = False,
-) -> tuple[BankProfile, bool]:
-    """Get or create a bank profile with its deposit.
+) -> tuple[BankAccount, bool]:
+    """Get or create a bank account with its deposit.
 
-    The BankProfile and Deposit are created atomically within
+    The BankAccount and Deposit are created atomically within
     the caller's transaction.
 
     Returns:
-        tuple[BankProfile, bool]:
-            The bank profile and whether it was newly created.
+        tuple[BankAccount, bool]:
+            The bank account and whether it was newly created.
     """
 
     get_stmt = (
-        select(BankProfile)
+        select(BankAccount)
         .where(
-            BankProfile.guild_id == guild_id,
-            BankProfile.user_id == user_id,
+            BankAccount.guild_id == guild_id,
+            BankAccount.user_id == user_id,
         )
         .options(
-            selectinload(BankProfile.deposit),
+            selectinload(BankAccount.deposit),
         )
     )
 
     if for_update:
         get_stmt = get_stmt.with_for_update()
 
-    bank_profile = await session.scalar(get_stmt)
+    bank_account = await session.scalar(get_stmt)
 
-    if bank_profile is not None:
-        return bank_profile, False
+    if bank_account is not None:
+        return bank_account, False
 
-    # Try to create the BankProfile.
-    insert_profile_stmt = (
-        insert(BankProfile)
+    # Try to create the BankAccount.
+    insert_account_stmt = (
+        insert(BankAccount)
         .values(
             guild_id=guild_id,
             user_id=user_id,
         )
         .on_conflict_do_nothing(
-            constraint="ux_user_guild_bank_profile",
+            constraint="ux_user_guild_bank_account",
         )
-        .returning(BankProfile)
+        .returning(BankAccount)
     )
 
-    result = await session.execute(insert_profile_stmt)
-    bank_profile = result.scalar_one_or_none()
+    result = await session.execute(insert_account_stmt)
+    bank_account = result.scalar_one_or_none()
 
-    if bank_profile is None:
-        # Another transaction created the profile.
+    if bank_account is None:
+        # Another transaction created the account.
         #
         # Re-select it. If for_update=True, wait for and lock
-        # the committed profile before using it.
+        # the committed account before using it.
         if for_update:
             get_stmt = get_stmt.with_for_update()
 
-        bank_profile = await session.scalar(get_stmt)
+        bank_account = await session.scalar(get_stmt)
 
-        return bank_profile, False  # type: ignore[return-value]
+        return bank_account, False  # type: ignore[return-value]
 
-    # We created the profile, so create its deposit
+    # We created the account, so create its deposit
     # in the same transaction.
     await session.execute(
         insert(Deposit).values(
-            bank_profile_id=bank_profile.id,
+            bank_account_id=bank_account.id,
             coins=0,
         )
     )
 
     # Load the relationship before returning.
-    bank_profile.deposit = await session.scalar(
+    bank_account.deposit = await session.scalar(
         select(Deposit).where(
-            Deposit.bank_profile_id == bank_profile.id,
+            Deposit.bank_account_id == bank_account.id,
         )
     )
 
-    return bank_profile, True
+    return bank_account, True
+
+
+async def create_extra_wallet(
+    session: AsyncSession, bank_account_id: int, coins: int = 0
+) -> ExtraWallet:
+    """Create new extra wallet."""
+
+    stmt_count = await session.scalar(
+        select(func.count())
+        .select_from(ExtraWallet)
+        .where(ExtraWallet.bank_account_id == bank_account_id)
+        .with_for_update()
+    )
+
+    if stmt_count is None or stmt_count >= 3:
+        raise ValueError("Maximum of 3 extra wallets per bank account")
+
+    wallet = ExtraWallet(
+        bank_account_id=bank_account_id, coins=coins, slot=stmt_count + 1
+    )
+    session.add(wallet)
+
+    return wallet
 
 
 async def get_user_for_update(

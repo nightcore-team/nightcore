@@ -1,3 +1,4 @@
+from .bank import BankAccountViewV2
 from .battlepass import BattlepassClaimViewV2
 from .case import CaseHelpViewV2, CaseOpenViewV2
 from .item import AwardNotificationViewV2
@@ -18,6 +19,7 @@ from .transfer import TransferCoinsViewV2
 
 __all__ = (
     "AwardNotificationViewV2",
+    "BankAccountViewV2",
     "BattlepassClaimViewV2",
     "CaseHelpViewV2",
     "CaseOpenViewV2",

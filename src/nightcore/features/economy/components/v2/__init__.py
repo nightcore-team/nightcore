@@ -1,5 +1,6 @@
 from .view import (
     AwardNotificationViewV2,
+    BankAccountViewV2,
     BattlepassClaimViewV2,
     CaseHelpViewV2,
     CaseOpenViewV2,
@@ -18,6 +19,7 @@ from .view import (
 
 __all__ = (
     "AwardNotificationViewV2",
+    "BankAccountViewV2",
     "BattlepassClaimViewV2",
     "CaseHelpViewV2",
     "CaseOpenViewV2",

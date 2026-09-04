@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from ._groups import bank as bank_group
 from ._groups import case as case_group
 from ._groups import casino as casino_group
 from ._groups import color as color_group
@@ -12,6 +13,7 @@ from ._groups import remove as remove_group
 from ._groups import temp as temp_group
 
 # SIDE-EFFECT IMPORTS
+from .commands.bank import account
 from .commands.case import (
     add_reward,
     delete_reward,
@@ -46,6 +48,7 @@ from .commands.remove import color as remove_color
 from .commands.temp import multiplier, role
 
 __all__ = (
+    "account",
     "add_reward",
     "bp_exp",
     "case",
@@ -84,3 +87,4 @@ async def setup(bot: "Nightcore"):
     bot.tree.add_command(temp_group)
     bot.tree.add_command(remove_group)
     bot.tree.add_command(rainbow_group)
+    bot.tree.add_command(bank_group)

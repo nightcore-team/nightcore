@@ -24,7 +24,7 @@ from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
 
 if TYPE_CHECKING:
-    from src.infra.db.models.bank import BankProfile
+    from src.infra.db.models.bank import BankAccount
 
 user_colors = Table(
     "user_colors",
@@ -117,7 +117,7 @@ class User(IdIntegerMixin, Base):
         passive_deletes=True,
         lazy="selectin",
     )
-    bank_profile: Mapped["BankProfile | None"] = relationship(
+    bank_account: Mapped["BankAccount | None"] = relationship(
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
@@ -91,3 +92,9 @@ class ClanShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot):
 
 
 class CoinsShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot): ...
+
+
+class ExtraWalletAnnot(TypedDict):
+    coins: int
+    slot: int
+    updated_at: datetime
