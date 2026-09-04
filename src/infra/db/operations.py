@@ -448,17 +448,18 @@ async def get_or_create_user(
         user = await session.scalar(get_stmt)
         return user, False  # type: ignore[return-value]
 
-    # newly inserted row already has lock via insert
-    if for_update:
-        # re-select to acquire FOR UPDATE for R-M-W
-        locked_stmt = (
-            select(User)
-            .where(User.guild_id == guild_id, User.user_id == user_id)
-            .with_for_update()
+    # newly inserted row — RETURNING doesn't apply eager-load options,
+    # so re-select whenever options were requested, and/or lock if needed.
+    if options or for_update:
+        reselect_stmt = select(User).where(
+            User.guild_id == guild_id, User.user_id == user_id
         )
         if options:
-            locked_stmt = locked_stmt.options(*options)
-        user = await session.scalar(locked_stmt)
+            reselect_stmt = reselect_stmt.options(*options)
+        if for_update:
+            reselect_stmt = reselect_stmt.with_for_update()
+
+        user = await session.scalar(reselect_stmt)
 
     return user, True  # type: ignore[return-value]
 
@@ -558,26 +559,76 @@ async def create_extra_wallet(
         .with_for_update()
     )
 
-    if stmt_count is None or stmt_count >= 3:
-        raise ValueError("Maximum of 3 extra wallets per bank account")
-
     wallet = ExtraWallet(
-        bank_account_id=bank_account_id, coins=coins, slot=stmt_count + 1
+        bank_account_id=bank_account_id,
+        coins=coins,
+        slot=stmt_count + 1 if stmt_count else 1,
     )
     session.add(wallet)
 
     return wallet
 
 
+async def get_user_deposit_for_update(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    for_update: bool = True,
+) -> Deposit | None:
+    """Get the deposit belonging to the given bank account.
+
+    Ownership is enforced via the WHERE clause (bank_account_id),
+    so a returned row is guaranteed to belong to that bank account.
+    """
+
+    stmt = select(Deposit).where(Deposit.bank_account_id == bank_account_id)
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    return await session.scalar(stmt)
+
+
+async def get_user_extra_wallet_for_update(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    wallet_id: int,
+    for_update: bool = True,
+) -> ExtraWallet | None:
+    """Get a specific extra wallet, scoped to its owning bank account.
+
+    Ownership is enforced via the WHERE clause (bank_account_id),
+    not just wallet_id — this prevents locking/using a wallet that
+    was passed in but belongs to a different account.
+    """
+
+    stmt = select(ExtraWallet).where(
+        ExtraWallet.id == wallet_id,
+        ExtraWallet.bank_account_id == bank_account_id,
+    )
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    return await session.scalar(stmt)
+
+
 async def get_user_for_update(
-    session: AsyncSession, *, guild_id: int, user_id: int
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = True,
 ) -> User | None:
     """Get user row with FOR UPDATE lock (no creation)."""
-    stmt = (
-        select(User)
-        .where(User.guild_id == guild_id, User.user_id == user_id)
-        .with_for_update()
+    stmt = select(User).where(
+        User.guild_id == guild_id, User.user_id == user_id
     )
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
     return await session.scalar(stmt)
 
 

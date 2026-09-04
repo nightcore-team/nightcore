@@ -50,7 +50,6 @@ class BankAccount(IdIntegerMixin, CreatedAtMixin, Base):
 
     extra_wallets: Mapped[list["ExtraWallet"]] = relationship(
         back_populates="bank_account",
-        lazy="selectin",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

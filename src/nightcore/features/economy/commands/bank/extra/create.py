@@ -59,14 +59,6 @@ async def extra_create(interaction: Interaction["Nightcore"]):
                 )
                 outcome = "success"
 
-    except ValueError:
-        logger.error(
-            "Limit extra wallets for user %s per guild %s has been exceeded",
-            interaction.user.id,
-            guild.id,
-        )
-        outcome = "max_wallets_limit_exceeded"
-
     except Exception as e:
         logger.error(
             "Failed to create extra wallet for user %s in guild %s",

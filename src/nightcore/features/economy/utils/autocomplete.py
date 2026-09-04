@@ -11,7 +11,11 @@ from typing import TYPE_CHECKING, Final, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.loads import user_load_cases, user_load_colors
+from src.infra.db.loads import (
+    user_load_bank_account_all,
+    user_load_cases,
+    user_load_colors,
+)
 from src.infra.db.operations import (
     get_cases_by_input,
     get_guild_colors,
@@ -224,3 +228,51 @@ async def _custom_reward_autocomplete() -> list[app_commands.Choice[str]]:
             value="Введите название вашей кастомной награды",
         )
     ]
+
+
+async def deposit_extra_wallets_autocomplete(
+    interaction: Interaction["Nightcore"], current: str
+):
+    """Autocomplete function to get user's deposit and extra wallets."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        user, _ = await get_or_create_user(
+            session,
+            guild_id=guild.id,
+            user_id=interaction.user.id,
+            options=[user_load_bank_account_all],
+        )
+
+    result: list[app_commands.Choice[str]] = []
+
+    if user.bank_account and user.bank_account.deposit:
+        result.append(app_commands.Choice(name="Депозит", value="deposit"))
+    else:
+        return result
+
+    for wallet in user.bank_account.extra_wallets:
+        result.append(
+            app_commands.Choice(
+                name=f"Extra-счёт #{wallet.slot}",
+                value=f"extra:{wallet.id}",
+            )
+        )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[colors/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
+# async def all_user_bank_accounts(
+#     interaction: Interaction["Nightcore"], current: str
+# ): ...

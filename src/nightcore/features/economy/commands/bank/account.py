@@ -7,9 +7,14 @@ from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_or_create_bank_account
+from src.infra.db.operations import (
+    get_or_create_bank_account,
+    get_or_create_user,
+)
+from src.nightcore.components.view.v2 import EntityNotFoundViewV2
 from src.nightcore.features.economy.components.v2 import BankAccountViewV2
 from src.nightcore.services.config import specified_guild_config
+from src.nightcore.utils import ensure_member_exists
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -38,7 +43,20 @@ async def account(
     """Check user's bank account."""
 
     guild = cast(Guild, interaction.guild)
-    member = user or interaction.user
+    member = interaction.user
+
+    if user:
+        member = await ensure_member_exists(guild, user.id)
+        if member is None:
+            await interaction.response.send_message(
+                view=EntityNotFoundViewV2(
+                    "пользователь",
+                ),
+                ephemeral=True,
+            )
+            return
+
+    await interaction.response.defer(thinking=True, ephemeral=True)
 
     async with specified_guild_config(
         interaction.client,
@@ -50,10 +68,16 @@ async def account(
     ):
         coin_name = guild_config.coin_name or "коинов"
 
-        bank_account, _ = await get_or_create_bank_account(
+        dbuser, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
             user_id=member.id,
+        )
+
+        bank_account, _ = await get_or_create_bank_account(
+            session,
+            guild_id=guild.id,
+            user_id=dbuser.id,
             for_update=True,
         )
 
@@ -78,7 +102,7 @@ async def account(
         ],
     )
 
-    await interaction.response.send_message(view=view, ephemeral=True)
+    await interaction.followup.send(view=view)
 
     logger.info(
         "[command] - invoked user=%s guild=%s target_user=%s",

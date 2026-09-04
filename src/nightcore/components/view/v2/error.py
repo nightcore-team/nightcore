@@ -74,9 +74,7 @@ class EntityNotFoundViewV2(ErrorViewV2):
     def __init__(self, entity: str) -> None:
         super().__init__(
             title="Сущность не найдена",
-            description=(
-                f"Указанная сущность `{entity}` не найдена на сервере."
-            ),
+            description=(f"Указанный(-ая) `{entity}` не найдена на сервере."),
         )
 
 
