@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.bank import Deposit, ExtraWallet
 from src.infra.db.operations import (
     get_or_create_bank_account,
@@ -17,6 +18,7 @@ from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.utils.autocomplete import (
     deposit_extra_wallets_autocomplete,
 )
+from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -58,7 +60,11 @@ async def top_up(
     new_target_balance: int | None = None
 
     try:
-        async with interaction.client.uow.start() as session:
+        async with specified_guild_config(
+            interaction.client,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+        ) as (guild_config, session):
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
@@ -102,16 +108,23 @@ async def top_up(
                     for_update=True,
                 )
 
-                if locked_user.coins < amount:
-                    outcome = "not_enough_coins"
-                else:
-                    locked_user.coins -= amount
-                    target.coins += amount
+                if choice == "deposit":
+                    deposit_max_balance = guild_config.deposit_max_balance
 
-                    new_user_balance = locked_user.coins
-                    new_target_balance = target.coins
+                    if (target.coins + amount) > deposit_max_balance:
+                        outcome = "deposit_max_balance_reached"
 
-                    outcome = "success"
+                if not outcome:
+                    if locked_user.coins < amount:
+                        outcome = "not_enough_coins"
+                    else:
+                        locked_user.coins -= amount
+                        target.coins += amount
+
+                        new_user_balance = locked_user.coins
+                        new_target_balance = target.coins
+
+                        outcome = "success"
 
     except Exception as e:
         logger.error(
@@ -143,6 +156,14 @@ async def top_up(
             view=ErrorViewV2(
                 "Ошибка пополнения счёта",
                 "Указанный счёт не был найден.\n> Убедитесь, что депозитный/extra счёт существует.",  # noqa: E501
+            )
+        )
+
+    elif outcome == "deposit_max_balance_reached":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта.",
+                "Достигнут лимит количества средств на депозитном счёте.",
             )
         )
 

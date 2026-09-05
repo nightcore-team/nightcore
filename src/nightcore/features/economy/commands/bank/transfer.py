@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     get_or_create_bank_account,
     get_or_create_user,
@@ -16,6 +17,7 @@ from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.utils.autocomplete import (
     all_user_bank_accounts_autocomplete,
 )
+from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.infra.db.models.bank import Deposit, ExtraWallet
@@ -94,7 +96,11 @@ async def transfer(
     account: Deposit | ExtraWallet | None = None
 
     try:
-        async with interaction.client.uow.start() as session:
+        async with specified_guild_config(
+            interaction.client,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+        ) as (guild_config, session):
             bank_account, _ = await get_or_create_bank_account(
                 session,
                 guild_id=guild.id,
@@ -162,13 +168,20 @@ async def transfer(
                     outcome = "not_enough_coins"
 
                 else:
-                    src.coins -= amount
-                    dst.coins += amount
+                    if isinstance(dst, "Deposit"):
+                        deposit_max_balance = guild_config.deposit_max_balance
 
-                    new_source_balance = src.coins
-                    new_target_balance = dst.coins
+                        if dst.coins + amount > deposit_max_balance:
+                            outcome = "deposit_max_balance_reached"
 
-                    outcome = "success"
+                    if not outcome:
+                        src.coins -= amount
+                        dst.coins += amount
+
+                        new_source_balance = src.coins
+                        new_target_balance = dst.coins
+
+                        outcome = "success"
 
     except Exception as e:
         logger.error(
@@ -208,6 +221,14 @@ async def transfer(
             view=ErrorViewV2(
                 "Ошибка перевода",
                 "Недостаточно средств на счёте списания.",
+            )
+        )
+
+    elif outcome == "deposit_max_balance_reached":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта.",
+                "Достигнут лимит количества средств на депозитном счёте.",
             )
         )
 
