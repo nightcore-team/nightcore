@@ -116,12 +116,12 @@ def parse_duration(text: str) -> int | None:
     if not text:
         return None
 
-    if len(text) > 5:
-        return None
-
     text = text.strip().lower()
 
     if not text:
+        return None
+
+    if len(text) > 5:
         return None
 
     if text.isdigit():
