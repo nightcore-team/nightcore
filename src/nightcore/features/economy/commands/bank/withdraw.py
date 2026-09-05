@@ -40,21 +40,25 @@ logger = logging.getLogger(__name__)
     account="Счёт, с которого снять деньги.",
     amount="Сумма для снятия.",
 )
-@app_commands.autocomplete(account=deposit_extra_wallets_autocomplete)
+@app_commands.autocomplete(from_wallet=deposit_extra_wallets_autocomplete)
+@app_commands.rename(from_wallet="from")
 @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
 async def withdraw(
     interaction: Interaction["Nightcore"],
-    account: app_commands.Choice[str],
+    from_wallet: app_commands.Choice[str],
     amount: app_commands.Range[int, 1],
 ):
     """Withdraw money from user's deposit/extra wallet to main."""
 
     guild = cast(Guild, interaction.guild)
-    choice = account.value
+    choice = from_wallet.value
 
     await interaction.response.defer(thinking=True, ephemeral=True)
 
     outcome = ""
+    new_user_balance: int | None = None
+    new_target_balance: int | None = None
+
     try:
         async with interaction.client.uow.start() as session:
             bank_account, _ = await get_or_create_bank_account(
@@ -100,6 +104,9 @@ async def withdraw(
 
                     source.coins -= amount
                     locked_user.coins += amount
+
+                    new_user_balance = locked_user.coins
+                    new_target_balance = source.coins
 
                     outcome = "success"
 
@@ -161,7 +168,8 @@ async def withdraw(
             view=SuccessViewV2(
                 "Снятие средств со счёта",
                 f"Вы успешно сняли {amount}"
-                f" <:nightcoreBanknoteDown:1545558909631201321> с {account_desc} счёта.",  # noqa: E501
+                f" <:nightcoreBanknoteDown:1545558909631201321> с {account_desc} счёта.\n"  # noqa: E501
+                f"> Ваш новый баланс: {new_user_balance}, баланс счёта: {new_target_balance} <:nightcoreBanknote:1540403146072002624>",  # noqa: E501
             )
         )
 

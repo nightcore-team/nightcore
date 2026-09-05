@@ -265,7 +265,7 @@ async def deposit_extra_wallets_autocomplete(
 
     end_autocomplete = time.perf_counter()
     logger.info(
-        "[colors/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        "[bank/autocomplete] Autocomplete for guild %s took %.4f seconds",
         guild.id,
         end_autocomplete - start_autocomplete,
     )
@@ -273,6 +273,43 @@ async def deposit_extra_wallets_autocomplete(
     return result
 
 
-# async def all_user_bank_accounts(
-#     interaction: Interaction["Nightcore"], current: str
-# ): ...
+async def all_user_bank_accounts_autocomplete(
+    interaction: Interaction["Nightcore"], current: str
+):
+    """Autocomplete function to get user's main balance, deposit and extra wallets."""  # noqa: E501
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        user, _ = await get_or_create_user(
+            session,
+            guild_id=guild.id,
+            user_id=interaction.user.id,
+            options=[user_load_bank_account_all],
+        )
+
+    result.append(app_commands.Choice(name="Основной", value="main"))
+
+    if user.bank_account and user.bank_account.deposit:
+        result.append(app_commands.Choice(name="Депозит", value="deposit"))
+
+    if user.bank_account:
+        for wallet in user.bank_account.extra_wallets:
+            result.append(
+                app_commands.Choice(
+                    name=f"Extra-счёт #{wallet.slot}",
+                    value=f"extra:{wallet.id}",
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[bank/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result[:25]

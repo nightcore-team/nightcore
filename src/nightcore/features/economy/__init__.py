@@ -13,7 +13,7 @@ from ._groups import remove as remove_group
 from ._groups import temp as temp_group
 
 # SIDE-EFFECT IMPORTS
-from .commands.bank import account
+from .commands.bank import account, top_up, transfer, withdraw
 from .commands.case import (
     add_reward,
     delete_reward,
@@ -74,6 +74,9 @@ __all__ = (
     "remove_color",
     "role",
     "roulette",
+    "top_up",
+    "transfer",
+    "withdraw",
 )
 
 
