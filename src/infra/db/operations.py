@@ -2,12 +2,16 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
     Boolean,
     ColumnElement,
+    Integer,
+    Numeric,
     asc,
+    bindparam,
     delete,
     exists,
     extract,
@@ -18,7 +22,11 @@ from sqlalchemy import (
     type_coerce,
     update,
 )
+from sqlalchemy import (
+    cast as sql_cast,
+)
 from sqlalchemy.dialects.postgresql import array, insert
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, Load, selectinload
 
@@ -612,6 +620,114 @@ async def get_user_extra_wallet_for_update(
         stmt = stmt.with_for_update()
 
     return await session.scalar(stmt)
+
+
+async def accrue_deposit_interest_for_guild(
+    session: AsyncSession, *, guild_id: int
+) -> int:
+    """Accrue interest on all deposits for a single guild.
+
+    Reads the guild's interest rate and optional balance cap, then applies
+    them via one or two atomic bulk UPDATEs (with cap / without cap).
+    The read-and-modify of `coins` happens inside Postgres itself (via the
+    SQL expression `coins = coins * (1 + rate)`), so concurrent
+    withdraw/deposit/transfer commands can't cause a lost update — whichever
+    transaction commits last simply sees the other's already-applied change.
+
+    Returns the number of deposits actually updated.
+    """
+    config = await session.scalar(
+        select(GuildEconomyConfig).where(
+            GuildEconomyConfig.guild_id == guild_id
+        )
+    )
+    if config is None or not config.deposit_base_interest_rate:
+        return 0
+
+    rate: Decimal = config.deposit_base_interest_rate
+    max_balance: int | None = config.deposit_max_balance
+
+    bank_accounts = await session.scalars(
+        select(BankAccount)
+        .where(BankAccount.guild_id == guild_id)
+        .options(selectinload(BankAccount.deposit))
+    )
+
+    deposit_ids_with_cap: list[dict[str, int]] = []
+    deposit_ids_without_cap: list[dict[str, int]] = []
+
+    for bank_account in bank_accounts:
+        deposit = bank_account.deposit
+        if deposit is None or deposit.coins <= 0:
+            continue
+
+        params = {"deposit_id": deposit.id}
+
+        if max_balance != 0:
+            deposit_ids_with_cap.append(params)
+        else:
+            deposit_ids_without_cap.append(params)
+
+    total_updated = 0
+
+    if deposit_ids_without_cap:
+        stmt = (
+            update(Deposit)
+            .where(Deposit.id == bindparam("deposit_id"))
+            .values(
+                coins=sql_cast(
+                    func.floor(
+                        Deposit.coins
+                        * (
+                            1
+                            + bindparam(
+                                "rate_p", value=rate, type_=Numeric(5, 4)
+                            )
+                        )
+                    ),
+                    Integer,
+                )
+            )
+        )
+
+        result = cast(
+            CursorResult[Any],
+            await session.execute(stmt, deposit_ids_without_cap),
+        )
+        total_updated += result.rowcount
+
+    if deposit_ids_with_cap:
+        stmt = (
+            update(Deposit)
+            .where(Deposit.id == bindparam("deposit_id"))
+            .values(
+                coins=sql_cast(
+                    func.least(
+                        func.floor(
+                            Deposit.coins
+                            * (
+                                1
+                                + bindparam(
+                                    "rate_p", value=rate, type_=Numeric(5, 4)
+                                )
+                            )
+                        ),
+                        bindparam(
+                            "max_balance_p", value=max_balance, type_=Integer
+                        ),
+                    ),
+                    Integer,
+                )
+            )
+        )
+
+        result = cast(
+            CursorResult[Any],
+            await session.execute(stmt, deposit_ids_with_cap),
+        )
+        total_updated += result.rowcount
+
+    return total_updated
 
 
 async def get_user_for_update(
