@@ -657,8 +657,6 @@ async def close_out_deposits_before_rate_change(
         result = await session.execute(stmt, params_with_cap)
         total_updated += cast(CursorResult[Any], result).rowcount
 
-    await session.commit()
-
     return total_updated
 
 
