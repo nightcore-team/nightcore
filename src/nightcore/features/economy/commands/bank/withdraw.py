@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_bank_account_only
 from src.infra.db.models.bank import Deposit, ExtraWallet
 from src.infra.db.operations import (
-    get_or_create_bank_account,
     get_or_create_user,
     get_user_deposit_for_update,
     get_user_extra_wallet_for_update,
@@ -17,6 +17,7 @@ from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.utils.autocomplete import (
     deposit_extra_wallets_autocomplete,
 )
+from src.nightcore.features.economy.utils.content import safe_split_wallet_id
 
 if TYPE_CHECKING:
     from src.infra.db.models.bank import Deposit, ExtraWallet
@@ -61,54 +62,65 @@ async def withdraw(
 
     try:
         async with interaction.client.uow.start() as session:
-            bank_account, _ = await get_or_create_bank_account(
+            user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
                 user_id=interaction.user.id,
+                options=[user_load_bank_account_only],
             )
 
-            source: Deposit | ExtraWallet | None = None
-
-            if choice == "deposit":
-                source = await get_user_deposit_for_update(
-                    session, bank_account_id=bank_account.id
-                )
-                if source is None:
-                    outcome = "deposit_not_found"
-
-            elif choice.startswith("extra:"):
-                wallet_id = int(choice.split(":", 1)[1])
-
-                source = await get_user_extra_wallet_for_update(
-                    session,
-                    bank_account_id=bank_account.id,
-                    wallet_id=wallet_id,
-                )
-                if source is None:
-                    outcome = "extra_wallet_not_found"
-
+            if user.bank_account is None:
+                outcome = "bank_account_not_found"
             else:
-                source = None
-                outcome = "specified_not_found"
+                source: Deposit | ExtraWallet | None = None
 
-            if not outcome and source is not None:
-                if source.coins < amount:
-                    outcome = "not_enough_coins"
-                else:
-                    locked_user, _ = await get_or_create_user(
+                if choice == "deposit":
+                    source = await get_user_deposit_for_update(
                         session,
+                        bank_account_id=user.bank_account.id,
                         guild_id=guild.id,
-                        user_id=interaction.user.id,
-                        for_update=True,
                     )
+                    if source is None:
+                        outcome = "deposit_not_found"
 
-                    source.coins -= amount
-                    locked_user.coins += amount
+                elif choice.startswith("extra:"):
+                    wallet_id = safe_split_wallet_id(choice)
 
-                    new_user_balance = locked_user.coins
-                    new_target_balance = source.coins
+                    if wallet_id is None:
+                        outcome = "extra_wallet_not_found"
+                    else:
+                        source = await get_user_extra_wallet_for_update(
+                            session,
+                            bank_account_id=user.bank_account.id,
+                            wallet_id=wallet_id,
+                            for_update=True,
+                        )
 
-                    outcome = "success"
+                    if source is None:
+                        outcome = "extra_wallet_not_found"
+
+                else:
+                    source = None
+                    outcome = "specified_not_found"
+
+                if not outcome and source is not None:
+                    if source.coins < amount:
+                        outcome = "not_enough_coins"
+                    else:
+                        locked_user, _ = await get_or_create_user(
+                            session,
+                            guild_id=guild.id,
+                            user_id=interaction.user.id,
+                            for_update=True,
+                        )
+
+                        source.coins -= amount
+                        locked_user.coins += amount
+
+                        new_user_balance = locked_user.coins
+                        new_target_balance = source.coins
+
+                        outcome = "success"
 
     except Exception as e:
         logger.error(
@@ -124,6 +136,14 @@ async def withdraw(
             view=ErrorViewV2(
                 "Ошибка снятия средств со счёта",
                 "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "bank_account_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
             )
         )
 

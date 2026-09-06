@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_bank_account_only
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.bank import Deposit, ExtraWallet
 from src.infra.db.operations import (
-    get_or_create_bank_account,
     get_or_create_user,
     get_user_deposit_for_update,
     get_user_extra_wallet_for_update,
@@ -18,6 +18,7 @@ from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy.utils.autocomplete import (
     deposit_extra_wallets_autocomplete,
 )
+from src.nightcore.features.economy.utils.content import safe_split_wallet_id
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -69,62 +70,69 @@ async def top_up(
                 session,
                 guild_id=guild.id,
                 user_id=interaction.user.id,
+                options=[user_load_bank_account_only],
             )
 
-            bank_account, _ = await get_or_create_bank_account(
-                session,
-                guild_id=guild.id,
-                user_id=user.id,
-            )
-
-            target: Deposit | ExtraWallet | None = None
-
-            if choice == "deposit":
-                target = await get_user_deposit_for_update(
-                    session, bank_account_id=bank_account.id, for_update=True
-                )
-                if target is None:
-                    outcome = "deposit_not_found"
-
-            elif choice.startswith("extra:"):
-                wallet_id = int(choice.split(":", 1)[1])
-                target = await get_user_extra_wallet_for_update(
-                    session,
-                    bank_account_id=bank_account.id,
-                    wallet_id=wallet_id,
-                    for_update=True,
-                )
-                if target is None:
-                    outcome = "extra_wallet_not_found"
-
+            if user.bank_account is None:
+                outcome = "bank_account_not_found"
             else:
-                outcome = "specified_not_found"
-
-            if not outcome and target is not None:
-                locked_user, _ = await get_or_create_user(
-                    session,
-                    guild_id=guild.id,
-                    user_id=interaction.user.id,
-                    for_update=True,
-                )
+                target: Deposit | ExtraWallet | None = None
 
                 if choice == "deposit":
-                    deposit_max_balance = guild_config.deposit_max_balance
+                    target = await get_user_deposit_for_update(
+                        session,
+                        bank_account_id=user.bank_account.id,
+                        config=guild_config,
+                        guild_id=guild.id,
+                    )
 
-                    if (target.coins + amount) > deposit_max_balance:
-                        outcome = "deposit_max_balance_reached"
+                    if target is None:
+                        outcome = "deposit_not_found"
 
-                if not outcome:
-                    if locked_user.coins < amount:
-                        outcome = "not_enough_coins"
+                elif choice.startswith("extra:"):
+                    wallet_id = safe_split_wallet_id(choice)
+
+                    if wallet_id is None:
+                        outcome = "extra_wallet_not_found"
                     else:
-                        locked_user.coins -= amount
-                        target.coins += amount
+                        target = await get_user_extra_wallet_for_update(
+                            session,
+                            bank_account_id=user.bank_account.id,
+                            wallet_id=wallet_id,
+                            for_update=True,
+                        )
 
-                        new_user_balance = locked_user.coins
-                        new_target_balance = target.coins
+                    if target is None:
+                        outcome = "extra_wallet_not_found"
 
-                        outcome = "success"
+                else:
+                    outcome = "specified_not_found"
+
+                if not outcome and target is not None:
+                    locked_user, _ = await get_or_create_user(
+                        session,
+                        guild_id=guild.id,
+                        user_id=interaction.user.id,
+                        for_update=True,
+                    )
+
+                    if choice == "deposit":
+                        deposit_max_balance = guild_config.deposit_max_balance
+
+                        if (target.coins + amount) > deposit_max_balance:
+                            outcome = "deposit_max_balance_reached"
+
+                    if not outcome:
+                        if locked_user.coins < amount:
+                            outcome = "not_enough_coins"
+                        else:
+                            locked_user.coins -= amount
+                            target.coins += amount
+
+                            new_user_balance = locked_user.coins
+                            new_target_balance = target.coins
+
+                            outcome = "success"
 
     except Exception as e:
         logger.error(
@@ -140,6 +148,14 @@ async def top_up(
             view=ErrorViewV2(
                 "Ошибка пополнения счёта",
                 "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "bank_account_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
             )
         )
 

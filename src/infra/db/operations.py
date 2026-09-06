@@ -2,12 +2,12 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
 from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
     Boolean,
     ColumnElement,
+    CursorResult,
     Integer,
     Numeric,
     asc,
@@ -23,10 +23,9 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy import (
-    cast as sql_cast,
+    cast as sa_cast,
 )
 from sqlalchemy.dialects.postgresql import array, insert
-from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, Load, selectinload
 
@@ -472,6 +471,197 @@ async def get_or_create_user(
     return user, True  # type: ignore[return-value]
 
 
+async def accrue_deposit_interest_if_due(
+    session: AsyncSession,
+    *,
+    deposit: Deposit,
+    config: GuildEconomyConfig | None,
+    locked: bool = True,
+) -> Deposit:
+    """Apply pending interest to a single deposit if at least one hour has passed since the last accrual.
+
+    `locked` tells this function whether the caller already holds a
+    row-level lock (FOR UPDATE) on `deposit`:
+
+    - `locked=True` (default; e.g. withdraw/deposit/transfer commands,
+      which always fetch the deposit with FOR UPDATE): safe to compute
+      the new balance in Python from the already-loaded `deposit.coins`
+      and assign it via the ORM. No concurrent transaction can be
+      mutating this row at the same time, so there's no lost-update
+      risk, and a plain ORM assignment means SQLAlchemy emits exactly
+      one UPDATE on flush/commit — no raw SQL, no manual re-sync.
+
+    - `locked=False` (e.g. read-only profile display without FOR
+      UPDATE): the balance must be computed atomically inside a single
+      SQL UPDATE, referencing the `coins` column directly rather than
+      a Python snapshot, so a concurrent withdraw/deposit/transfer
+      can't be silently overwritten (lost update). After the UPDATE,
+      the ORM object is expired rather than manually patched, so any
+      further read of `deposit.coins` transparently re-fetches the
+      now-correct value instead of relying on a hand-synced attribute.
+    """  # noqa: E501
+
+    now = datetime.now(UTC)
+    hours_elapsed = int(
+        (now - deposit.last_accrued_at).total_seconds() // 3600
+    )
+
+    if hours_elapsed <= 0:
+        return deposit
+
+    if config is None or not config.deposit_base_interest_rate:
+        deposit.last_accrued_at = now
+        return deposit
+
+    rate = config.deposit_base_interest_rate
+    max_balance = config.deposit_max_balance
+
+    if locked:
+        new_coins = deposit.coins * (1 + rate) ** hours_elapsed
+        if max_balance > 0:
+            new_coins = min(new_coins, max_balance)
+
+        deposit.coins = int(new_coins)  # floor
+        deposit.last_accrued_at = now
+
+        return deposit
+
+    new_coins_expr = func.floor(
+        Deposit.coins
+        * func.power(
+            1 + bindparam("rate_p", value=rate, type_=Numeric(5, 4)),
+            hours_elapsed,
+        )
+    )
+    if max_balance > 0:
+        new_coins_expr = func.least(
+            new_coins_expr,
+            bindparam("max_balance_p", value=max_balance, type_=Integer),
+        )
+
+    stmt = (
+        update(Deposit)
+        .where(Deposit.id == deposit.id)
+        .values(coins=sa_cast(new_coins_expr, Integer), last_accrued_at=now)
+    )
+    await session.execute(stmt)
+
+    # Deposit was mutated via raw SQL. Refresh immediately (not expire)
+    # because callers always read `deposit.coins`/`last_accrued_at`
+    # right after this call, still inside the same session — refresh
+    # guarantees the ORM object is fully synced now, rather than
+    # deferring the SELECT to whenever the attribute is next touched.
+    await session.refresh(
+        deposit, attribute_names=["coins", "last_accrued_at"]
+    )
+
+    return deposit
+
+
+async def close_out_deposits_before_rate_change(
+    session: AsyncSession, *, config: GuildEconomyConfig | None, guild_id: int
+) -> int:
+    """Force-accrue interest on every deposit in the guild, using the CURRENT config, right before it gets overwritten with a new rate.
+
+    Each deposit gets its own `hours_elapsed` (time since its own
+    `last_accrued_at`), so this is a bulk UPDATE per cap-group via
+    bindparam/executemany, not a naive `WHERE id IN (...)` (which
+    would incorrectly apply one shared hours_elapsed to every row).
+
+    Returns the number of deposits actually updated.
+    """  # noqa: E501
+
+    if config is None or not config.deposit_base_interest_rate:
+        return 0
+
+    rate = config.deposit_base_interest_rate
+    max_balance = config.deposit_max_balance
+    now = datetime.now(UTC)
+
+    deposits = await session.scalars(
+        select(Deposit)
+        .join(BankAccount, Deposit.bank_account_id == BankAccount.id)
+        .where(BankAccount.guild_id == guild_id)
+        .with_for_update()
+    )
+
+    params_with_cap: list[dict[str, int]] = []
+    params_without_cap: list[dict[str, int]] = []
+
+    for deposit in deposits:
+        hours_elapsed = int(
+            (now - deposit.last_accrued_at).total_seconds() // 3600
+        )
+        if hours_elapsed <= 0:
+            continue
+
+        row = {"deposit_id": deposit.id, "hours_p": hours_elapsed}
+
+        if max_balance > 0:
+            params_with_cap.append(row)
+        else:
+            params_without_cap.append(row)
+
+    total_updated = 0
+
+    if params_without_cap:
+        stmt = (
+            update(Deposit)
+            .where(Deposit.id == bindparam("deposit_id"))
+            .values(
+                coins=sa_cast(
+                    func.floor(
+                        Deposit.coins
+                        * func.power(
+                            1
+                            + bindparam(
+                                "rate_p", value=rate, type_=Numeric(5, 4)
+                            ),
+                            bindparam("hours_p", type_=Integer),
+                        )
+                    ),
+                    Integer,
+                ),
+                last_accrued_at=now,
+            )
+        )
+        result = await session.execute(stmt, params_without_cap)
+        total_updated += cast(CursorResult[Any], result).rowcount
+
+    if params_with_cap:
+        stmt = (
+            update(Deposit)
+            .where(Deposit.id == bindparam("deposit_id"))
+            .values(
+                coins=sa_cast(
+                    func.least(
+                        func.floor(
+                            Deposit.coins
+                            * func.power(
+                                1
+                                + bindparam(
+                                    "rate_p", value=rate, type_=Numeric(5, 4)
+                                ),
+                                bindparam("hours_p", type_=Integer),
+                            )
+                        ),
+                        bindparam(
+                            "max_balance_p", value=max_balance, type_=Integer
+                        ),
+                    ),
+                    Integer,
+                ),
+                last_accrued_at=now,
+            )
+        )
+        result = await session.execute(stmt, params_with_cap)
+        total_updated += cast(CursorResult[Any], result).rowcount
+
+    await session.commit()
+
+    return total_updated
+
+
 async def get_or_create_bank_account(
     session: AsyncSession,
     *,
@@ -581,20 +771,30 @@ async def get_user_deposit_for_update(
     session: AsyncSession,
     *,
     bank_account_id: int,
+    guild_id: int,
+    config: GuildEconomyConfig | None = None,
     for_update: bool = True,
 ) -> Deposit | None:
-    """Get the deposit belonging to the given bank account.
-
-    Ownership is enforced via the WHERE clause (bank_account_id),
-    so a returned row is guaranteed to belong to that bank account.
-    """
+    """Get the deposit belonging to the given bank account, applying any pending interest accrual first."""  # noqa: E501
 
     stmt = select(Deposit).where(Deposit.bank_account_id == bank_account_id)
-
     if for_update:
         stmt = stmt.with_for_update()
 
-    return await session.scalar(stmt)
+    deposit = await session.scalar(stmt)
+    if deposit is None:
+        return None
+
+    if config is None:
+        config = await session.scalar(
+            select(GuildEconomyConfig).where(
+                GuildEconomyConfig.guild_id == guild_id
+            )
+        )
+
+    return await accrue_deposit_interest_if_due(
+        session, deposit=deposit, config=config, locked=for_update
+    )
 
 
 async def get_user_extra_wallet_for_update(
@@ -620,114 +820,6 @@ async def get_user_extra_wallet_for_update(
         stmt = stmt.with_for_update()
 
     return await session.scalar(stmt)
-
-
-async def accrue_deposit_interest_for_guild(
-    session: AsyncSession, *, guild_id: int
-) -> int:
-    """Accrue interest on all deposits for a single guild.
-
-    Reads the guild's interest rate and optional balance cap, then applies
-    them via one or two atomic bulk UPDATEs (with cap / without cap).
-    The read-and-modify of `coins` happens inside Postgres itself (via the
-    SQL expression `coins = coins * (1 + rate)`), so concurrent
-    withdraw/deposit/transfer commands can't cause a lost update — whichever
-    transaction commits last simply sees the other's already-applied change.
-
-    Returns the number of deposits actually updated.
-    """
-    config = await session.scalar(
-        select(GuildEconomyConfig).where(
-            GuildEconomyConfig.guild_id == guild_id
-        )
-    )
-    if config is None or not config.deposit_base_interest_rate:
-        return 0
-
-    rate: Decimal = config.deposit_base_interest_rate
-    max_balance: int | None = config.deposit_max_balance
-
-    bank_accounts = await session.scalars(
-        select(BankAccount)
-        .where(BankAccount.guild_id == guild_id)
-        .options(selectinload(BankAccount.deposit))
-    )
-
-    deposit_ids_with_cap: list[dict[str, int]] = []
-    deposit_ids_without_cap: list[dict[str, int]] = []
-
-    for bank_account in bank_accounts:
-        deposit = bank_account.deposit
-        if deposit is None or deposit.coins <= 0:
-            continue
-
-        params = {"deposit_id": deposit.id}
-
-        if max_balance != 0:
-            deposit_ids_with_cap.append(params)
-        else:
-            deposit_ids_without_cap.append(params)
-
-    total_updated = 0
-
-    if deposit_ids_without_cap:
-        stmt = (
-            update(Deposit)
-            .where(Deposit.id == bindparam("deposit_id"))
-            .values(
-                coins=sql_cast(
-                    func.floor(
-                        Deposit.coins
-                        * (
-                            1
-                            + bindparam(
-                                "rate_p", value=rate, type_=Numeric(5, 4)
-                            )
-                        )
-                    ),
-                    Integer,
-                )
-            )
-        )
-
-        result = cast(
-            CursorResult[Any],
-            await session.execute(stmt, deposit_ids_without_cap),
-        )
-        total_updated += result.rowcount
-
-    if deposit_ids_with_cap:
-        stmt = (
-            update(Deposit)
-            .where(Deposit.id == bindparam("deposit_id"))
-            .values(
-                coins=sql_cast(
-                    func.least(
-                        func.floor(
-                            Deposit.coins
-                            * (
-                                1
-                                + bindparam(
-                                    "rate_p", value=rate, type_=Numeric(5, 4)
-                                )
-                            )
-                        ),
-                        bindparam(
-                            "max_balance_p", value=max_balance, type_=Integer
-                        ),
-                    ),
-                    Integer,
-                )
-            )
-        )
-
-        result = cast(
-            CursorResult[Any],
-            await session.execute(stmt, deposit_ids_with_cap),
-        )
-        total_updated += result.rowcount
-
-    return total_updated
 
 
 async def get_user_for_update(

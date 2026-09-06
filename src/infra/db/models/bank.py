@@ -1,8 +1,16 @@
 """Bank model for the Nightcore bot database."""
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, ForeignKey, UniqueConstraint, text
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._mixins import (
@@ -66,6 +74,12 @@ class Deposit(IdIntegerMixin, CreatedAtMixin, UpdatedAtMixin, Base):
         nullable=False,
         default=0,
         server_default=text("0"),
+    )
+
+    last_accrued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     bank_account: Mapped["BankAccount"] = relationship(
