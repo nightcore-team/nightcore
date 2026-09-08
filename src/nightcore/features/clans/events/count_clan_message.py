@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Member, Message
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import ClanMember, GuildClansConfig
+from src.infra.db.models import GuildClansConfig
 from src.infra.db.operations import get_clan_member
 from src.nightcore.features.economy.utils import (
     calculate_clan_exp_to_level,
@@ -33,16 +33,15 @@ class CountClanMessageEvent(Cog):
         async with specified_guild_config(
             self.bot, guild.id, config_type=GuildClansConfig
         ) as (guild_config, session):
-            _user = await get_clan_member(
+            user = await get_clan_member(
                 session,
                 guild_id=guild.id,
                 user_id=author.id,
                 with_relations=True,
                 for_update=True,
             )
-            if _user is None:
+            if user is None:
                 return
-            user = cast(ClanMember, _user)
 
             # lock clan row explicitly for RMW on exp/level
             from src.infra.db.operations import get_clan_by_id
