@@ -7,7 +7,7 @@ from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig, PrivateRoomState
 from src.infra.db.operations import (
-    get_private_room_state,
+    get_private_room_state_by_channel,
     get_specified_webhook,
 )
 from src.nightcore.bot import Nightcore
@@ -53,33 +53,31 @@ class DeletePrivateRoomEvent(Cog):
             )
             return
 
-        # DB delete with SELECT FOR UPDATE and idempotency
+        # DB delete with SELECT FOR UPDATE and idempotency. The room is keyed
+        # by its channel, so the member triggering the delete is not
+        # necessarily its owner.
         log_webhook = None
+        owner_id = (
+            private_room_state.user_id if private_room_state else member.id
+        )
         try:
             async with self.bot.uow.start() as session:
-                fresh_state = await get_private_room_state(
-                    session, user_id=member.id, for_update=True
+                fresh_state = await get_private_room_state_by_channel(
+                    session, channel_id=channel.id, for_update=True
                 )
                 if fresh_state is None:
                     logger.info(
-                        "[private_rooms/event] Private room state already "
-                        "deleted for %s, idempotent",
-                        member,
-                    )
-                elif fresh_state.channel_id != channel.id:
-                    logger.warning(
-                        "[private_rooms/event] Private room channel mismatch "
-                        "for %s: expected %s, DB has %s; skipping delete",
-                        member,
+                        "[private_rooms/event] Private room state for channel "
+                        "%s already deleted, idempotent",
                         channel.id,
-                        fresh_state.channel_id,
                     )
                 else:
+                    owner_id = fresh_state.user_id
                     await session.delete(fresh_state)
                     logger.info(
                         "[private_rooms/event] Deleted private room record "
-                        "for %s channel %s",
-                        member,
+                        "of %s for channel %s",
+                        owner_id,
                         channel.id,
                     )
 
@@ -116,7 +114,7 @@ class DeletePrivateRoomEvent(Cog):
 
         embed = PrivateRoomLogEmbed(
             title="Удаление приватной комнаты",
-            user_id=member.id,
+            user_id=owner_id,
             channel=channel,
             bot=self.bot,
         )
