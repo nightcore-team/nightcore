@@ -31,7 +31,7 @@ class UpdateChannelHandler(Cog):
         guild = cast(Guild, new.guild)  # type: ignore
         outcome = ""
 
-        async with self.bot.uow.start(readonly=True) as session:
+        async with self.bot.uow.start() as session:
             if not (
                 logging_channels_webhook := await get_specified_webhook(
                     session,
