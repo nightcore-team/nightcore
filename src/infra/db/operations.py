@@ -792,6 +792,21 @@ async def get_private_room_state(
     return res.scalar_one_or_none()
 
 
+async def get_private_room_state_by_channel(
+    session: AsyncSession, *, channel_id: int, for_update: bool = False
+) -> PrivateRoomState | None:
+    """Get the private room state bound to a voice channel."""
+    stmt = (
+        select(PrivateRoomState)
+        .where(PrivateRoomState.channel_id == channel_id)
+        .limit(1)
+    )
+    if for_update:
+        stmt = stmt.with_for_update()
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
 async def create_private_room_state(
     session: AsyncSession,
     *,
