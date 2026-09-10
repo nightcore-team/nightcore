@@ -25,6 +25,7 @@ from src.infra.db.models.color import Color
 
 if TYPE_CHECKING:
     from src.infra.db.models.bank import BankAccount
+    from src.infra.db.models.vip import VipStatus
 
 user_colors = Table(
     "user_colors",
@@ -102,6 +103,12 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=1
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
+    vip_status: Mapped["UserVipStatus | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
     cases: Mapped[list["UserCase"]] = relationship(
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -137,7 +144,32 @@ class User(IdIntegerMixin, Base):
                 return color
 
 
-class UserCase(Base):
+class UserVipStatus(IdIntegerMixin, Base):
+    __table_args__ = (
+        UniqueConstraint(
+            "vip_id", "user_id", "guild_id", name="ux_user_vip_guild_user"
+        ),
+        ForeignKeyConstraint(
+            ["guild_id", "user_id"],
+            ["user.guild_id", "user.user_id"],
+            ondelete="CASCADE",
+        ),
+    )
+
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    vip_id: Mapped[int] = mapped_column(
+        ForeignKey("vip.id", ondelete="CASCADE"), nullable=False
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )  # None = permanent VIP status; otherwise auto-removed once passed
+
+    user: Mapped["User"] = relationship(back_populates="vip")
+    vip: Mapped["VipStatus"] = relationship()
+
+
+class UserCase(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint(
             "case_id", "user_id", "guild_id", name="ux_user_case_guild_user"
@@ -148,9 +180,7 @@ class UserCase(Base):
             ondelete="CASCADE",
         ),
     )
-    id: Mapped[int] = mapped_column(
-        autoincrement=True, nullable=False, primary_key=True
-    )
+
     guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     case_id: Mapped[int] = mapped_column(
