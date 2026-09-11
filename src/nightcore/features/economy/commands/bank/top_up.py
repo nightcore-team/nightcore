@@ -10,6 +10,7 @@ from src.infra.db.loads import user_load_bank_account_only
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.bank import Deposit, ExtraWallet
 from src.infra.db.operations import (
+    accrue_deposit_interest_if_due,
     get_or_create_user,
     get_user_deposit_for_update,
     get_user_extra_wallet_for_update,
@@ -76,6 +77,15 @@ async def top_up(
             if user.bank_account is None:
                 outcome = "bank_account_not_found"
             else:
+                assert user.bank_account.deposit is not None
+
+                await accrue_deposit_interest_if_due(
+                    session,
+                    deposit=user.bank_account.deposit,
+                    config=guild_config,
+                    locked=False,
+                )
+
                 target: Deposit | ExtraWallet | None = None
 
                 if choice == "deposit":

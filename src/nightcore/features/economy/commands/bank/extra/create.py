@@ -7,10 +7,8 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.config.config import config
-from src.infra.db.operations import (
-    create_extra_wallet,
-    get_or_create_bank_account,
-)
+from src.infra.db.loads import user_load_bank_account_wallets
+from src.infra.db.operations import create_extra_wallet, get_or_create_user
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -42,22 +40,26 @@ async def extra_create(interaction: Interaction["Nightcore"]):
 
     try:
         async with interaction.client.uow.start() as session:
-            bank_account, _ = await get_or_create_bank_account(
+            user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
                 user_id=interaction.user.id,
-                for_update=True,
+                options=[user_load_bank_account_wallets],
             )
-            wallets_count = len(bank_account.extra_wallets)
 
-            if wallets_count >= config.bot.MAX_EXTRA_WALLETS:
-                outcome = "max_wallets_limit_exceeded"
+            if user.bank_account is None:
+                outcome = "bank_account_not_found"
+            else:
+                wallets_count = len(user.bank_account.extra_wallets)
 
-            if not outcome:
-                new_extra_wallet = await create_extra_wallet(
-                    session, bank_account_id=bank_account.id
-                )
-                outcome = "success"
+                if wallets_count >= config.bot.MAX_EXTRA_WALLETS:
+                    outcome = "max_wallets_limit_exceeded"
+
+                if not outcome:
+                    new_extra_wallet = await create_extra_wallet(
+                        session, bank_account_id=user.bank_account.id
+                    )
+                    outcome = "success"
 
     except Exception as e:
         logger.error(
@@ -68,7 +70,15 @@ async def extra_create(interaction: Interaction["Nightcore"]):
         )
         outcome = "failed_to_create"
 
-    if outcome == "max_wallets_limit_exceeded":
+    if outcome == "bank_account_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка создания дополнительного счёта",
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "max_wallets_limit_exceeded":
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка создания дополнительного счёта",
@@ -77,7 +87,7 @@ async def extra_create(interaction: Interaction["Nightcore"]):
         )
         return
 
-    if outcome == "failed_to_create":
+    elif outcome == "failed_to_create":
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка создания дополнительного счёта",
@@ -86,7 +96,7 @@ async def extra_create(interaction: Interaction["Nightcore"]):
         )
         return
 
-    if outcome == "success":
+    elif outcome == "success":
         await interaction.followup.send(
             view=SuccessViewV2(
                 "Создание дополнительного счёта",

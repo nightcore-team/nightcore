@@ -18,7 +18,17 @@ user_load_bank_account_all: Load = (
     .selectinload(BankAccount.extra_wallets)
 )
 
-user_load_bank_account_only: Load = Load(User).selectinload(User.bank_account)
+user_load_bank_account_wallets: Load = (
+    Load(User)
+    .selectinload(User.bank_account)
+    .selectinload(BankAccount.extra_wallets)
+)
+
+user_load_bank_account_only: Load = (
+    Load(User)
+    .selectinload(User.bank_account)
+    .selectinload(BankAccount.deposit)
+)
 
 user_load_casino_bets: Load = Load(User).selectinload(User.casino_bets)
 

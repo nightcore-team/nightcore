@@ -7,8 +7,10 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.loads import user_load_bank_account_only
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.bank import Deposit, ExtraWallet
 from src.infra.db.operations import (
+    accrue_deposit_interest_if_due,
     get_or_create_user,
     get_user_deposit_for_update,
     get_user_extra_wallet_for_update,
@@ -18,6 +20,7 @@ from src.nightcore.features.economy.utils.autocomplete import (
     deposit_extra_wallets_autocomplete,
 )
 from src.nightcore.features.economy.utils.content import safe_split_wallet_id
+from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
     from src.infra.db.models.bank import Deposit, ExtraWallet
@@ -61,7 +64,11 @@ async def withdraw(
     new_target_balance: int | None = None
 
     try:
-        async with interaction.client.uow.start() as session:
+        async with specified_guild_config(
+            interaction.client,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+        ) as (guild_config, session):
             user, _ = await get_or_create_user(
                 session,
                 guild_id=guild.id,
@@ -72,6 +79,15 @@ async def withdraw(
             if user.bank_account is None:
                 outcome = "bank_account_not_found"
             else:
+                assert user.bank_account.deposit is not None
+
+                await accrue_deposit_interest_if_due(
+                    session,
+                    deposit=user.bank_account.deposit,
+                    config=guild_config,
+                    locked=False,
+                )
+
                 source: Deposit | ExtraWallet | None = None
 
                 if choice == "deposit":
