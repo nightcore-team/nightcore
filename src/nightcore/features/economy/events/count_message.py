@@ -194,20 +194,20 @@ class CountMessageEvent(Cog):
                 total_bonus_coins = sum(
                     role.coins * multiplers_config.temp_coins_multiplier
                     if multiplers_config.temp_coins_multiplier
-                    else 1
+                    else role.coins
                     for role in user_bonus_roles
                 )
                 total_bonus_exp = sum(
                     role.exp * multiplers_config.temp_exp_multiplier
                     if multiplers_config.temp_exp_multiplier
-                    else 1
+                    else role.exp
                     for role in user_bonus_roles
                 )
                 total_bonus_battlepass_points = sum(
                     role.battlepass_points
                     * multiplers_config.temp_battlepass_multiplier
                     if multiplers_config.temp_battlepass_multiplier
-                    else 1
+                    else role.battlepass_points
                     for role in user_bonus_roles
                 )
 
