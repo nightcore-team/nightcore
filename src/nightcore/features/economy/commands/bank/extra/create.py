@@ -82,7 +82,7 @@ async def extra_create(interaction: Interaction["Nightcore"]):
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка создания дополнительного счёта",
-                "Достигнуло максимальное количество доступных счетов.",
+                "Достигнуто максимальное количество доступных счетов.",
             )
         )
         return

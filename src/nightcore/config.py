@@ -24,3 +24,4 @@ class Config(BaseEnvConfig):
     ]
     INACTIVE_FORUM_NODE_ID: int = 20
     MAX_EXTRA_WALLETS: int = 3
+    MAX_USER_VIPS: int = 3

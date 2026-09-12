@@ -89,6 +89,8 @@ from src.infra.db.models.configurations.rules import (
 from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.rainbow import RainbowRole
+from src.infra.db.models.user import UserVipStatus
+from src.infra.db.models.vip import VipStatus
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
@@ -469,6 +471,33 @@ async def get_or_create_user(
         user = await session.scalar(reselect_stmt)
 
     return user, True  # type: ignore[return-value]
+
+
+async def get_user_vip_statuses_for_update(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = True,
+) -> Sequence[UserVipStatus]:
+    """Get the user's all VIP statuses row.
+
+    Locking the UserVips row itself (not the parent User row) is what
+    lets this correctly contend with the expiry task, which locks the
+    same UserVip row when clearing expired statuses — preventing a
+    grant/replace and an expiry cleanup from racing on the same user.
+    """
+
+    stmt = select(UserVipStatus).where(
+        UserVipStatus.user_id == user_id, UserVipStatus.guild_id == guild_id
+    )
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
 
 
 async def accrue_deposit_interest_if_due(
@@ -2246,6 +2275,47 @@ async def get_cases_by_input(
     result = await session.scalars(stmt)
 
     return result.all()
+
+
+async def get_vip_statuses_by_input(
+    session: AsyncSession, *, guild_id: int, user_input: str
+) -> Sequence[VipStatus]:
+    """Get the list of VIP-statuses for a guild by user input."""
+
+    a = 0.7
+    similarity = (len(user_input) / 100) ** a
+
+    stmt = (
+        select(VipStatus)
+        .where(
+            VipStatus.guild_id == guild_id,
+            func.similarity(VipStatus.name, user_input) >= similarity,
+        )
+        .limit(25)
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
+async def get_vip_status_by_id(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    vip_id: int,
+    for_update: bool = False,
+) -> VipStatus | None:
+    """Get a VIP-status by id for a guild."""
+
+    stmt = select(VipStatus).where(
+        VipStatus.guild_id == guild_id, VipStatus.id == vip_id
+    )
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
 
 
 async def get_case_by_id(

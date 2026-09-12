@@ -18,7 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.infra.db.models._mixins import IdIntegerMixin
+from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
 from src.infra.db.models.base import Base
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
@@ -103,9 +103,8 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=1
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
-    vip_status: Mapped["UserVipStatus | None"] = relationship(
+    vip_statuses: Mapped[list["UserVipStatus"]] = relationship(
         back_populates="user",
-        uselist=False,
         cascade="all, delete-orphan",
         lazy="selectin",
     )
@@ -144,10 +143,13 @@ class User(IdIntegerMixin, Base):
                 return color
 
 
-class UserVipStatus(IdIntegerMixin, Base):
+class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
     __table_args__ = (
         UniqueConstraint(
-            "vip_id", "user_id", "guild_id", name="ux_user_vip_guild_user"
+            "vip_id", "user_id", "guild_id", name="ux_user_vip_guild"
+        ),
+        UniqueConstraint(
+            "vip_id", "user_id", "is_active", name="ux_user_active_vip_guild"
         ),
         ForeignKeyConstraint(
             ["guild_id", "user_id"],
@@ -161,6 +163,7 @@ class UserVipStatus(IdIntegerMixin, Base):
     vip_id: Mapped[int] = mapped_column(
         ForeignKey("vip.id", ondelete="CASCADE"), nullable=False
     )
+    is_active: Mapped[bool] = mapped_column(default=False, nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )  # None = permanent VIP status; otherwise auto-removed once passed

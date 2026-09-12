@@ -24,6 +24,7 @@ class AwardNotificationEventDTO(BaseEventDTO):
     moderator_id: int
     item_name: str
     amount: int
+    duration: str | None
     reason: str | None
 
     def build_component(self, bot: "Nightcore") -> Embed:
@@ -48,6 +49,10 @@ class AwardNotificationEventDTO(BaseEventDTO):
             .add_field(
                 name="Количество",
                 value=f"**{self.amount}**",
+            )
+            .add_field(
+                name="Длительность",
+                value=self.duration or "Не указана",
             )
             .add_field(
                 name="Причина",

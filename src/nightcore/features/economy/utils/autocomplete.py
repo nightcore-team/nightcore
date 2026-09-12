@@ -20,6 +20,7 @@ from src.infra.db.operations import (
     get_cases_by_input,
     get_guild_colors,
     get_or_create_user,
+    get_vip_statuses_by_input,
 )
 from src.utils._enums import CaseDropTypeEnum
 
@@ -313,3 +314,36 @@ async def all_user_bank_accounts_autocomplete(
     )
 
     return result[:25]
+
+
+async def guild_vip_statuses_autocomplete(
+    interaction: Interaction["Nightcore"],
+    user_input: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get all VIP-statuses for guild."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        guild_vip_statuses = await get_vip_statuses_by_input(
+            session, guild_id=guild.id, user_input=user_input
+        )
+
+        for vip_status in guild_vip_statuses:
+            result.append(
+                app_commands.Choice(
+                    name=vip_status.name,
+                    value=str(vip_status.id),
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[vip_statuses/autocomplete] Autocomplete for guild %s took %.4f seconds",  # noqa: E501
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
