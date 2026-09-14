@@ -88,7 +88,7 @@ class RainbowRoleTask(Cog):
             )
             return True
         except Exception as e:
-            logger.exception(
+            logger.warning(
                 "[task] Failed to update rainbow role %s in guild %s: %s",
                 role.id,
                 role.guild.id,
