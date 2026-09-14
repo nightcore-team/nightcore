@@ -117,7 +117,7 @@ async def handle_approve_coins_shop_order_button(
         return
 
     if outcome == "missing_permissions":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             view=MissingPermissionsViewV2(),
             ephemeral=True,
         )
