@@ -182,7 +182,7 @@ class ForumComplaintProcessor:
             return
 
         update_thread_params = ThreadUpdateParams(
-            prefix_id=6,
+            prefix_id=[6],
             sticky=True,
         )
 
