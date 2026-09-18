@@ -31,11 +31,22 @@ async def send_to_webhook(
     identity["username"] = bot.user.display_name
     identity["avatar_url"] = bot.user.display_avatar.url
 
+    allowed_mentions = discord.AllowedMentions(
+        everyone=False, users=False, roles=False
+    )
+
     try:
         if isinstance(component, discord.Embed):
-            await webhook.send(embed=component, files=files or [], **identity)
+            await webhook.send(
+                embed=component,
+                files=files or [],
+                **identity,
+                allowed_mentions=allowed_mentions,
+            )
         else:
-            await webhook.send(view=component, **identity)
+            await webhook.send(
+                view=component, **identity, allowed_mentions=allowed_mentions
+            )
         return True
     except (discord.NotFound, discord.Forbidden):
         async with bot.uow.start() as session:
