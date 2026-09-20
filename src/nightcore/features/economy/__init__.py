@@ -46,6 +46,7 @@ from .commands.rainbow import change as rainbow_change
 from .commands.rainbow import create as rainbow_create
 from .commands.rainbow import delete as rainbow_delete
 from .commands.remove import color as remove_color
+from .commands.remove import vip as remove_vip
 from .commands.temp import multiplier, role
 from .commands.vip import activate as vip_activate
 from .commands.vip import help as vip_help
@@ -75,6 +76,7 @@ __all__ = (
     "rainbow_create",
     "rainbow_delete",
     "remove_color",
+    "remove_vip",
     "role",
     "roulette",
     "top_up",
