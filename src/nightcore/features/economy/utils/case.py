@@ -11,8 +11,10 @@ from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.user import UserCase, UserVipStatus
 from src.infra.db.operations import (
+    accrue_deposit_interest_if_due,
     get_case_by_id,
     get_color_by_id,
+    get_or_create_bank_account,
     get_specified_guild_config,
     get_vip_status_by_id,
 )
@@ -143,6 +145,30 @@ async def give_reward_by_type(
                         seconds=duration
                     )
 
+                if guild_config is None:
+                    guild_config = await get_specified_guild_config(
+                        session,
+                        config_type=GuildEconomyConfig,
+                        guild_id=user.guild_id,
+                        for_update=True,
+                    )
+
+                bank_account, _ = await get_or_create_bank_account(
+                    session,
+                    guild_id=user.guild_id,
+                    user_id=user.user_id,
+                    for_update=True,
+                )
+
+                assert bank_account.deposit is not None
+
+                await accrue_deposit_interest_if_due(
+                    session,
+                    deposit=bank_account.deposit,
+                    config=guild_config,
+                    locked=False,
+                )
+
                 user_vip_status = next(
                     (
                         status
@@ -176,6 +202,7 @@ async def give_reward_by_type(
                 continue
 
     states.append(RewardOutcomeEnum.SUCCESS)
+
     return rewards, states
 
 
