@@ -46,7 +46,6 @@ class BankAccount(IdIntegerMixin, CreatedAtMixin, Base):
     user: Mapped["User"] = relationship(
         back_populates="bank_account",
         uselist=False,
-        cascade="all, delete-orphan",
     )
 
     deposit: Mapped["Deposit | None"] = relationship(

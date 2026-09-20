@@ -11,12 +11,14 @@ user_load_cases: Load = (
 
 user_load_colors: Load = Load(User).selectinload(User.colors)
 
-user_load_bank_account_all: Load = (
+user_load_bank_account_all: list[Load] = [
     Load(User)
     .selectinload(User.bank_account)
-    .selectinload(BankAccount.deposit)
-    .selectinload(BankAccount.extra_wallets)
-)
+    .selectinload(BankAccount.deposit),
+    Load(User)
+    .selectinload(User.bank_account)
+    .selectinload(BankAccount.extra_wallets),
+]
 
 user_load_bank_account_wallets: Load = (
     Load(User)
@@ -37,6 +39,6 @@ user_load_cases_and_colors: list[Load] = [user_load_cases, user_load_colors]
 user_load_all: list[Load] = [
     user_load_cases,
     user_load_colors,
-    user_load_bank_account_all,
+    *user_load_bank_account_all,
     user_load_casino_bets,
 ]

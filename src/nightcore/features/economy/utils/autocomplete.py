@@ -246,7 +246,7 @@ async def deposit_extra_wallets_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            options=[user_load_bank_account_all],
+            options=[*user_load_bank_account_all],
         )
 
     result: list[app_commands.Choice[str]] = []
@@ -289,7 +289,7 @@ async def all_user_bank_accounts_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            options=[user_load_bank_account_all],
+            options=[*user_load_bank_account_all],
         )
 
     result.append(app_commands.Choice(name="Основной", value="main"))
