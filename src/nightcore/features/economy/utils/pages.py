@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from src.infra.db.models import TransferHistory
 
 from src.infra.db.models.case import Case
+from src.infra.db.models.vip import VipStatus
 from src.nightcore.utils import discord_ts
 from src.utils._enums import CaseDropTypeEnum
 
@@ -100,6 +101,69 @@ def build_cases_help_pages(
 
     if not pages:
         pages = [[TextDisplay[Any]("Кейсы не настроены")]]
+
+    return pages
+
+
+def build_vip_statuses_help_pages(
+    vip_statuses: Sequence[VipStatus], vip_statuses_per_page: int = 4
+) -> list[list[TextDisplay[Any]]]:
+    """Build paginated pages for VIP-statuses help command."""
+
+    pages: list[list[TextDisplay[Any]]] = []
+    current: list[TextDisplay[Any]] = []
+    statuses_in_current_page = 0
+
+    for vip in vip_statuses:
+        if statuses_in_current_page >= vip_statuses_per_page:
+            pages.append(current)
+            current = []
+            statuses_in_current_page = 0
+
+        current.append(
+            TextDisplay(
+                f"### {vip.emoji_str if vip.emoji_str else ''} {vip.name}"
+            ),
+        )
+
+        perks: list[str] = []
+
+        if vip.deposit_max_balance:
+            perks.append(
+                f"> <:nightcoreInfinity:1551210202953547806> Лимит баланса депозитного счёта: **`{vip.deposit_max_balance}`**"  # noqa: E501
+            )
+
+        if vip.deposit_interest_rate:
+            rate = float(vip.deposit_interest_rate) * 100
+            perks.append(
+                f"> <:nightcorePercent:1545112163742519349> Процентная ставка по депозиту: **`{rate:.2f}%`**"  # noqa: E501
+            )
+
+        if vip.deposit_interest_cap_amount:
+            perks.append(
+                f"> <:nightcoreInfinity:1551210202953547806> Лимит начисления процентов: **`{vip.deposit_interest_cap_amount}`**"  # noqa: E501
+            )
+
+        if vip.shop_discount:
+            discount = float(vip.shop_discount) * 100
+            perks.append(
+                f"> <:nightcoreShopDiscount:1551212187614453820> Скидка в магазине: **`{discount:.2f}%`**"  # noqa: E501
+            )
+
+        if not perks:
+            current.append(
+                TextDisplay("> Преимущества данного VIP-статуса не настроены.")
+            )
+        else:
+            current.append(TextDisplay("\n".join(perks)))
+
+        statuses_in_current_page += 1
+
+    if current:
+        pages.append(current)
+
+    if not pages:
+        pages = [[TextDisplay[Any]("VIP-статусы не настроены")]]
 
     return pages
 

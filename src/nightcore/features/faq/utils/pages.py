@@ -17,7 +17,7 @@ from src.infra.db.models._annot import FAQPageAnnot
 
 def build_faq_page_components(
     pages: list[FAQPageAnnot],
-    items_per_page: int = 5,  # ✅ 5 FAQ items на сторінку
+    items_per_page: int = 5,
 ) -> list[list[Item[LayoutView]]]:
     """Build FAQ page components for the FAQ overview.
 

@@ -16,6 +16,7 @@ from .shop import (
 )
 from .top import UsersListViewV2
 from .transfer import TransferCoinsViewV2
+from .vip.help import VipStatusHelpViewV2
 
 __all__ = (
     "AwardNotificationViewV2",
@@ -34,4 +35,5 @@ __all__ = (
     "UserProfileActionRow",
     "UserProfileViewV2",
     "UsersListViewV2",
+    "VipStatusHelpViewV2",
 )

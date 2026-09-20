@@ -2257,6 +2257,16 @@ async def get_guild_cases(
     return result.scalars().all()
 
 
+async def get_guild_vip_statuses(
+    session: AsyncSession, *, guild_id: int
+) -> Sequence[VipStatus]:
+    """Get VIP-statuses by guild id."""
+    stmt = select(VipStatus).where(VipStatus.guild_id == guild_id)
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
 async def get_cases_by_input(
     session: AsyncSession, *, guild_id: int, user_input: str
 ) -> Sequence[Case]:

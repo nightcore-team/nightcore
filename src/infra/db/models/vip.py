@@ -18,6 +18,7 @@ class VipStatus(IdIntegerMixin, Base):
     name: Mapped[str] = mapped_column(nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     role_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    emoji_str: Mapped[str | None] = mapped_column(nullable=True)
     deposit_max_balance: Mapped[int] = mapped_column(
         nullable=False, default=0, server_default=text("0")
     )  # Max amount a user can hold in their deposit account

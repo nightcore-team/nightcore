@@ -54,3 +54,9 @@ extra = app_commands.Group(
     guild_only=True,
     parent=bank,
 )
+
+vip = app_commands.Group(
+    name="vip",
+    description="Команды связанные с VIP-статусами.",
+    guild_only=True,
+)
