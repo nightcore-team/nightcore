@@ -91,8 +91,8 @@ class CaseHelpPaginationActionRow(ActionRow["CaseHelpViewV2"]):
         """Handle case help pagination button callback."""
 
     @button(
-        style=ButtonStyle.grey,
-        emoji="<:41036arrowforwardios1:1442925401696632934>",
+        style=ButtonStyle.secondary,
+        emoji="<:nightcoreArrowLeftCyan:1540434220436951172>",
         custom_id="case:help:prev",
     )
     async def previous(
@@ -109,7 +109,7 @@ class CaseHelpPaginationActionRow(ActionRow["CaseHelpViewV2"]):
 
     @button(
         style=ButtonStyle.secondary,
-        emoji="<:41036arrowforwardios:1442924853085864178>",
+        emoji="<:nightcoreArrowRightCyan:1540434390780477551>",
         custom_id="case:help:next",
     )
     async def next(
