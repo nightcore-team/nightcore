@@ -52,27 +52,27 @@ def _sort_key(choice: str) -> tuple[int, int]:
 )
 @app_commands.guild_only()
 @app_commands.describe(
-    source="Счёт, с которого перевести деньги.",
-    target="Счёт, на который перевести деньги.",
+    from_wallet="Счёт, с которого перевести деньги.",
+    to_wallet="Счёт, на который перевести деньги.",
     amount="Сумма для перевода.",
 )
 @app_commands.autocomplete(
-    source=all_user_bank_accounts_autocomplete,
-    target=all_user_bank_accounts_autocomplete,
+    from_wallet=all_user_bank_accounts_autocomplete,
+    to_wallet=all_user_bank_accounts_autocomplete,
 )
 @app_commands.rename(from_wallet="from", to_wallet="to")
 @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
 async def transfer(
     interaction: Interaction["Nightcore"],
-    from_wallet: app_commands.Choice[str],
-    to_wallet: app_commands.Choice[str],
+    from_wallet: str,
+    to_wallet: str,
     amount: app_commands.Range[int, 1],
 ):
     """Transfer money between the user's own main balance / deposit / extra wallets."""  # noqa: E501
 
     guild = cast(Guild, interaction.guild)
-    source = from_wallet.value
-    target = to_wallet.value
+    source = from_wallet
+    target = to_wallet
 
     if source == target:
         await interaction.response.send_message(

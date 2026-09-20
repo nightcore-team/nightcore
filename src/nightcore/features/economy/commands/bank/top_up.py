@@ -47,13 +47,13 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
 async def top_up(
     interaction: Interaction["Nightcore"],
-    account: app_commands.Choice[str],
+    account: str,
     amount: app_commands.Range[int, 1],
 ):
     """Top up money from user's main balance into a deposit/extra wallet."""
 
     guild = cast(Guild, interaction.guild)
-    choice = account.value
+    choice = account
 
     await interaction.response.defer(thinking=True, ephemeral=True)
 

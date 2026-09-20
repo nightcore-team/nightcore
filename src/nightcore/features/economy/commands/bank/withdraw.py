@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 )
 @app_commands.guild_only()
 @app_commands.describe(
-    account="Счёт, с которого снять деньги.",
+    from_wallet="Счёт, с которого снять деньги.",
     amount="Сумма для снятия.",
 )
 @app_commands.autocomplete(from_wallet=deposit_extra_wallets_autocomplete)
@@ -49,13 +49,13 @@ logger = logging.getLogger(__name__)
 @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
 async def withdraw(
     interaction: Interaction["Nightcore"],
-    from_wallet: app_commands.Choice[str],
+    from_wallet: str,
     amount: app_commands.Range[int, 1],
 ):
     """Withdraw money from user's deposit/extra wallet to main."""
 
     guild = cast(Guild, interaction.guild)
-    choice = from_wallet.value
+    choice = from_wallet
 
     await interaction.response.defer(thinking=True, ephemeral=True)
 
