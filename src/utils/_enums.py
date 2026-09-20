@@ -123,6 +123,7 @@ class CaseDropTypeEnum(Enum):
     CASE = 4
     CUSTOM = 5
     BATTLEPASS_POINTS = 6
+    VIP = 7
 
     def to_str(self):
         match self:

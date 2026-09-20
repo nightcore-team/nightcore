@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from src.infra.db.models import (
@@ -45,6 +45,7 @@ class CaseDropAnnot(TypedDict):
     amount: int
     chance: int
     is_color_compensation: bool | None
+    duration: NotRequired[int | None]
 
 
 class FAQPageAnnot(TypedDict):
@@ -62,6 +63,7 @@ class BattlepassRewardAnnot(TypedDict):
     name: str
     amount: int
     is_color_compensation: bool | None
+    duration: NotRequired[int | None]
 
 
 class BattlepassLevelAnnot(TypedDict):

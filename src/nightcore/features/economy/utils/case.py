@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from src.config.config import config
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.battlepass_level import BattlepassLevel
-from src.infra.db.models.user import UserCase
+from src.infra.db.models.user import UserCase, UserVipStatus
 from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
     get_specified_guild_config,
+    get_vip_status_by_id,
 )
 from src.utils._enums import CaseDropTypeEnum
 
@@ -122,6 +125,51 @@ async def give_reward_by_type(
                     )
                     session.add(new_case)
 
+            case CaseDropTypeEnum.VIP.value:
+                vip_status = await get_vip_status_by_id(
+                    session,
+                    guild_id=user.guild_id,
+                    vip_id=drop_id,
+                )
+
+                if vip_status is None:
+                    states.append(RewardOutcomeEnum.REWARD_NOT_FOUND)
+                    continue
+
+                expires_at = None
+                duration = reward.get("duration")
+                if duration is not None:
+                    expires_at = datetime.now(UTC) + timedelta(
+                        seconds=duration
+                    )
+
+                user_vip_status = next(
+                    (
+                        status
+                        for status in user.vip_statuses
+                        if status.vip_id == vip_status.id
+                    ),
+                    None,
+                )
+
+                if user_vip_status is not None:
+                    if user_vip_status.expires_at is not None:
+                        user_vip_status.expires_at = expires_at
+                elif len(user.vip_statuses) < config.bot.MAX_USER_VIPS:
+                    user.vip_statuses.append(
+                        UserVipStatus(
+                            guild_id=user.guild_id,
+                            user_id=user.user_id,
+                            vip_id=vip_status.id,
+                            expires_at=expires_at,
+                        )
+                    )
+                else:
+                    states.append(RewardOutcomeEnum.REWARD_NOT_FOUND)
+                    continue
+
+                reward["name"] = vip_status.name
+
             case CaseDropTypeEnum.CUSTOM.value:
                 continue
             case _:
@@ -167,6 +215,15 @@ async def format_cases_rewards(
                     else:
                         role = guild.get_role(color.role_id)
                         drop["name"] = role.name if role else "unknown"
+                case CaseDropTypeEnum.VIP.value:
+                    vip_status = await get_vip_status_by_id(
+                        session,
+                        guild_id=guild.id,
+                        vip_id=drop["drop_id"],
+                    )
+                    drop["name"] = (
+                        vip_status.name if vip_status else "unknown VIP-status"
+                    )
                 case _:
                     ...
 
@@ -221,6 +278,16 @@ async def format_single_case_reward(
                 if drop["is_color_compensation"]:
                     drop["name"] += " (Компенсация за цвет)"
 
+            case CaseDropTypeEnum.VIP.value:
+                vip_status = await get_vip_status_by_id(
+                    session,
+                    guild_id=guild.id,
+                    vip_id=drop["drop_id"],
+                )
+                drop["name"] = (
+                    vip_status.name if vip_status else "unknown VIP-status"
+                )
+
             case _:
                 ...
 
@@ -264,6 +331,15 @@ async def format_battlepass_levels_rewards(
                     level.reward["name"] = (
                         role.name if role else "unknown role"
                     )
+            case CaseDropTypeEnum.VIP.value:
+                vip_status = await get_vip_status_by_id(
+                    session,
+                    guild_id=guild.id,
+                    vip_id=level.reward["drop_id"],
+                )
+                level.reward["name"] = (
+                    vip_status.name if vip_status else "unknown VIP-status"
+                )
             case _:
                 ...
 
@@ -304,5 +380,14 @@ async def format_single_battlepass_level_reward(
             else:
                 role = guild.get_role(color.role_id)
                 level.reward["name"] = role.name if role else "unknown role"
+        case CaseDropTypeEnum.VIP.value:
+            vip_status = await get_vip_status_by_id(
+                session,
+                guild_id=guild.id,
+                vip_id=level.reward["drop_id"],
+            )
+            level.reward["name"] = (
+                vip_status.name if vip_status else "unknown VIP-status"
+            )
         case _:
             ...
