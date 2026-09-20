@@ -118,6 +118,8 @@ async def transfer(
                 await accrue_deposit_interest_if_due(
                     session,
                     deposit=user.bank_account.deposit,
+                    guild_id=guild.id,
+                    user_id=user.id,
                     config=guild_config,
                     locked=False,
                 )
@@ -130,6 +132,7 @@ async def transfer(
                             bank_account_id=user.bank_account.id,
                             config=guild_config,
                             guild_id=guild.id,
+                            user_id=user.id,
                         )
 
                     elif choice.startswith("extra:"):

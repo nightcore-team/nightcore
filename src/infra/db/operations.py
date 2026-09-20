@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
@@ -525,10 +526,42 @@ async def get_active_user_vip_statuses(
     return result.scalars().all()
 
 
+def _get_effective_deposit_config(
+    config: GuildEconomyConfig | None,
+    vip_statuses: Sequence[VipStatus],
+) -> tuple[Decimal, int, int]:
+    """Resolve deposit settings from guild config and active VIP statuses."""
+
+    if config is None:
+        interest_rate = Decimal("0")
+        max_balance = 0
+        interest_cap = 0
+    else:
+        interest_rate = config.deposit_base_interest_rate
+        max_balance = config.deposit_max_balance
+        interest_cap = config.deposit_interest_cap_amount
+
+    for vip_status in vip_statuses:
+        if vip_status.deposit_interest_rate:
+            interest_rate = max(
+                interest_rate, vip_status.deposit_interest_rate
+            )
+        if vip_status.deposit_max_balance:
+            max_balance = max(max_balance, vip_status.deposit_max_balance)
+        if vip_status.deposit_interest_cap_amount:
+            interest_cap = max(
+                interest_cap, vip_status.deposit_interest_cap_amount
+            )
+
+    return interest_rate, max_balance, interest_cap
+
+
 async def accrue_deposit_interest_if_due(
     session: AsyncSession,
     *,
     deposit: Deposit,
+    guild_id: int,
+    user_id: int,
     config: GuildEconomyConfig | None,
     locked: bool = True,
 ) -> Deposit:
@@ -574,13 +607,18 @@ async def accrue_deposit_interest_if_due(
     if hours_elapsed <= 0:
         return deposit
 
-    if config is None or not config.deposit_base_interest_rate:
+    active_vip_statuses = await get_active_user_vip_statuses(
+        session,
+        guild_id=guild_id,
+        user_id=user_id,
+    )
+    rate, max_balance, cap = _get_effective_deposit_config(
+        config, active_vip_statuses
+    )
+
+    if not rate:
         deposit.last_accrued_at = now
         return deposit
-
-    rate = config.deposit_base_interest_rate
-    cap = config.deposit_interest_cap_amount
-    max_balance = config.deposit_max_balance
 
     if locked:
         base = min(deposit.coins, cap) if cap > 0 else deposit.coins
@@ -645,51 +683,64 @@ async def close_out_deposits_before_rate_change(
     Returns the number of deposits actually updated.
     """  # noqa: E501
 
-    if config is None or not config.deposit_base_interest_rate:
-        return 0
-
-    rate = config.deposit_base_interest_rate
-    cap = config.deposit_interest_cap_amount
-    max_balance = config.deposit_max_balance
     now = datetime.now(UTC)
 
-    deposits = await session.scalars(
-        select(Deposit)
+    deposit_rows = await session.execute(
+        select(Deposit, BankAccount.user_id)
         .join(BankAccount, Deposit.bank_account_id == BankAccount.id)
         .where(BankAccount.guild_id == guild_id)
         .with_for_update()
     )
 
-    params_with_cap: list[dict[str, int]] = []
-    params_without_cap: list[dict[str, int]] = []
+    active_vips_result = await session.execute(
+        select(VipStatus, UserVipStatus.user_id)
+        .join(UserVipStatus, UserVipStatus.vip_id == VipStatus.id)
+        .where(
+            UserVipStatus.guild_id == guild_id,
+            UserVipStatus.is_active.is_(True),
+        )
+    )
+    active_vips_by_user: dict[int, list[VipStatus]] = {}
+    for vip_status, user_id in active_vips_result.all():
+        active_vips_by_user.setdefault(user_id, []).append(vip_status)
 
-    for deposit in deposits:
+    params_with_cap: dict[tuple[Decimal, int, int], list[dict[str, int]]] = {}
+    params_without_cap: dict[
+        tuple[Decimal, int, int], list[dict[str, int]]
+    ] = {}
+
+    for deposit, user_id in deposit_rows.all():
         hours_elapsed = int(
             (now - deposit.last_accrued_at).total_seconds() // 3600
         )
         if hours_elapsed <= 0:
             continue
 
+        rate, max_balance, cap = _get_effective_deposit_config(
+            config, active_vips_by_user.get(user_id, [])
+        )
+        if not rate:
+            continue
+
+        key = (rate, max_balance, cap)
         row = {"deposit_id": deposit.id, "hours_p": hours_elapsed}
 
-        if max_balance > 0:
-            params_with_cap.append(row)
+        if max_balance:
+            params_with_cap.setdefault(key, []).append(row)
         else:
-            params_without_cap.append(row)
+            params_without_cap.setdefault(key, []).append(row)
 
     total_updated = 0
 
-    rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
-
-    if cap > 0:
+    for (rate, _max_balance, cap), rows in params_without_cap.items():
+        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
         cap_param = bindparam("cap_p", value=cap, type_=Integer)
-        base_expr = func.least(Deposit.coins, cap_param)
-        excess_expr = func.greatest(Deposit.coins - cap_param, 0)
-    else:
-        base_expr = Deposit.coins
-        excess_expr = 0
-
-    if params_without_cap:
+        if cap > 0:
+            base_expr = func.least(Deposit.coins, cap_param)
+            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
+        else:
+            base_expr = Deposit.coins
+            excess_expr = 0
         stmt = (
             update(Deposit)
             .where(Deposit.id == bindparam("deposit_id"))
@@ -707,10 +758,19 @@ async def close_out_deposits_before_rate_change(
                 last_accrued_at=now,
             )
         )
-        result = await session.execute(stmt, params_without_cap)
+        result = await session.execute(stmt, rows)
         total_updated += cast(CursorResult[Any], result).rowcount
 
-    if params_with_cap:
+    for (rate, max_balance, cap), rows in params_with_cap.items():
+        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
+        cap_param = bindparam("cap_p", value=cap, type_=Integer)
+        if cap > 0:
+            base_expr = func.least(Deposit.coins, cap_param)
+            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
+        else:
+            base_expr = Deposit.coins
+            excess_expr = 0
+
         stmt = (
             update(Deposit)
             .where(Deposit.id == bindparam("deposit_id"))
@@ -726,7 +786,9 @@ async def close_out_deposits_before_rate_change(
                             + excess_expr
                         ),
                         bindparam(
-                            "max_balance_p", value=max_balance, type_=Integer
+                            "max_balance_p",
+                            value=max_balance,
+                            type_=Integer,
                         ),
                     ),
                     Integer,
@@ -734,7 +796,7 @@ async def close_out_deposits_before_rate_change(
                 last_accrued_at=now,
             )
         )
-        result = await session.execute(stmt, params_with_cap)
+        result = await session.execute(stmt, rows)
         total_updated += cast(CursorResult[Any], result).rowcount
 
     return total_updated
@@ -850,6 +912,7 @@ async def get_user_deposit_for_update(
     *,
     bank_account_id: int,
     guild_id: int,
+    user_id: int,
     config: GuildEconomyConfig | None = None,
     for_update: bool = True,
 ) -> Deposit | None:
@@ -871,7 +934,12 @@ async def get_user_deposit_for_update(
         )
 
     return await accrue_deposit_interest_if_due(
-        session, deposit=deposit, config=config, locked=for_update
+        session,
+        deposit=deposit,
+        guild_id=guild_id,
+        user_id=user_id,
+        config=config,
+        locked=for_update,
     )
 
 

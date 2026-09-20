@@ -145,6 +145,12 @@ class User(IdIntegerMixin, Base):
 
 class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
     __table_args__ = (
+        Index(
+            "ix_user_vip_active_guild_user",
+            "guild_id",
+            "user_id",
+            postgresql_where=text("is_active = true"),
+        ),
         UniqueConstraint(
             "vip_id", "user_id", "guild_id", name="ux_user_vip_guild"
         ),

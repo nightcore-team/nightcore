@@ -165,6 +165,8 @@ async def give_reward_by_type(
                 await accrue_deposit_interest_if_due(
                     session,
                     deposit=bank_account.deposit,
+                    guild_id=user.guild_id,
+                    user_id=user.user_id,
                     config=guild_config,
                     locked=False,
                 )

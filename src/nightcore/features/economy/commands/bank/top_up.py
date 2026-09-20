@@ -82,6 +82,8 @@ async def top_up(
                 await accrue_deposit_interest_if_due(
                     session,
                     deposit=user.bank_account.deposit,
+                    guild_id=guild.id,
+                    user_id=user.id,
                     config=guild_config,
                     locked=False,
                 )
@@ -94,6 +96,7 @@ async def top_up(
                         bank_account_id=user.bank_account.id,
                         config=guild_config,
                         guild_id=guild.id,
+                        user_id=user.id,
                     )
 
                     if target is None:

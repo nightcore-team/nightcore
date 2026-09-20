@@ -84,6 +84,8 @@ async def withdraw(
                 await accrue_deposit_interest_if_due(
                     session,
                     deposit=user.bank_account.deposit,
+                    guild_id=guild.id,
+                    user_id=user.id,
                     config=guild_config,
                     locked=False,
                 )
@@ -95,6 +97,7 @@ async def withdraw(
                         session,
                         bank_account_id=user.bank_account.id,
                         guild_id=guild.id,
+                        user_id=user.id,
                     )
                     if source is None:
                         outcome = "deposit_not_found"

@@ -87,6 +87,8 @@ async def account(
         await accrue_deposit_interest_if_due(
             session,
             deposit=bank_account.deposit,
+            guild_id=guild.id,
+            user_id=dbuser.id,
             config=guild_config,
             locked=False,
         )
