@@ -30,7 +30,11 @@ from src.infra.db.models import (
     ShopOrderState,
 )
 from src.infra.db.models.configurations.economy import GuildEconomyShopItem
-from src.infra.db.operations import get_or_create_user, get_specified_field
+from src.infra.db.operations import (
+    get_active_user_vip_statuses,
+    get_or_create_user,
+    get_specified_field,
+)
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
     MissingPermissionsViewV2,
@@ -109,6 +113,23 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 guild_id=guild.id,
                 user_id=interaction.user.id,
             )
+            original_price = float(price)
+            active_vip_statuses = await get_active_user_vip_statuses(
+                session,
+                guild_id=guild.id,
+                user_id=interaction.user.id,
+            )
+            discount_vip = max(
+                active_vip_statuses,
+                key=lambda vip: vip.shop_discount,
+                default=None,
+            )
+            discount_percent = (
+                float(discount_vip.shop_discount) if discount_vip else 0
+            )
+            discount_amount = original_price * discount_percent
+            discounted_price = original_price - discount_amount
+
             if created:
                 outcome = "insufficient_funds"
             else:
@@ -120,7 +141,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 )
 
                 if not outcome:
-                    if not (buyer.coins >= float(price)):
+                    if not (buyer.coins >= discounted_price):
                         outcome = "insufficient_funds"
                     else:
                         outcome = "success"
@@ -193,9 +214,12 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                 ping_roles_ids=ping_roles_ids,  # type: ignore
                 user_id=interaction.user.id,
                 user_balance_before=buyer.coins,
-                user_balance_after=buyer.coins - float(price),
+                user_balance_after=buyer.coins - discounted_price,
                 item_name=item,
-                item_price=float(price),
+                item_price=discounted_price,
+                original_price=original_price,
+                discount_amount=discount_amount,
+                discount_vip_name=discount_vip.name if discount_vip else None,
             )
 
             try:
@@ -207,10 +231,16 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
                         state=ShopOrderStateEnum.PENDING,
                         payload={
                             "user_id": interaction.user.id,
-                            "cost": float(price),
+                            "cost": discounted_price,
                             "item": item,
                             "balance_before": buyer.coins,
-                            "balance_after": buyer.coins - float(price),
+                            "balance_after": buyer.coins - discounted_price,
+                            "original_cost": original_price,
+                            "discount_amount": discount_amount,
+                            "discount_percent": discount_percent * 100,
+                            "discount_vip_name": (
+                                discount_vip.name if discount_vip else None
+                            ),
                         },
                     )
                     session.add(state)

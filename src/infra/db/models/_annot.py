@@ -100,7 +100,11 @@ class ClanShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot):
     clan_name: str
 
 
-class CoinsShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot): ...
+class CoinsShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot):
+    original_cost: float
+    discount_amount: float
+    discount_percent: float
+    discount_vip_name: str | None
 
 
 class ExtraWalletAnnot(TypedDict):

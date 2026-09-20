@@ -146,6 +146,9 @@ async def handle_decline_coins_shop_order_button(
             user_balance_after=shop_order.payload.get("balance_after"),
             item_name=shop_order.payload.get("item"),
             item_price=shop_order.payload.get("cost"),
+            original_price=shop_order.payload.get("original_cost"),
+            discount_amount=shop_order.payload.get("discount_amount", 0),
+            discount_vip_name=shop_order.payload.get("discount_vip_name"),
             disable_buttons=True,
         )
 

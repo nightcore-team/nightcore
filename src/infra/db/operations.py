@@ -500,6 +500,31 @@ async def get_user_vip_statuses_for_update(
     return result.scalars().all()
 
 
+async def get_active_user_vip_statuses(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> Sequence[VipStatus]:
+    """Get the user's active VIP configurations."""
+
+    stmt = (
+        select(VipStatus)
+        .join(
+            UserVipStatus,
+            UserVipStatus.vip_id == VipStatus.id,
+        )
+        .where(
+            UserVipStatus.guild_id == guild_id,
+            UserVipStatus.user_id == user_id,
+            UserVipStatus.is_active.is_(True),
+        )
+    )
+
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
 async def accrue_deposit_interest_if_due(
     session: AsyncSession,
     *,
