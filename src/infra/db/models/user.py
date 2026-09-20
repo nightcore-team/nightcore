@@ -22,10 +22,10 @@ from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
 from src.infra.db.models.base import Base
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
+from src.infra.db.models.vip import VipStatus
 
 if TYPE_CHECKING:
     from src.infra.db.models.bank import BankAccount
-    from src.infra.db.models.vip import VipStatus
 
 user_colors = Table(
     "user_colors",
@@ -161,14 +161,14 @@ class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
     guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     vip_id: Mapped[int] = mapped_column(
-        ForeignKey("vip.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("vipstatus.id", ondelete="CASCADE"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(default=False, nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )  # None = permanent VIP status; otherwise auto-removed once passed
 
-    user: Mapped["User"] = relationship(back_populates="vip")
+    user: Mapped["User"] = relationship(back_populates="vip_statuses")
     vip: Mapped["VipStatus"] = relationship()
 
 
