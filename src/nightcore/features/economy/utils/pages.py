@@ -6,15 +6,19 @@ from typing import TYPE_CHECKING, Any
 from discord.ui import TextDisplay
 
 from src.config.config import config
+from src.infra.db.models._annot import UserVipStatusAnnot
 from src.infra.db.models.battlepass_level import BattlepassLevel
 
 if TYPE_CHECKING:
     from src.infra.db.models import TransferHistory
+    from src.infra.db.models.user import UserVipStatus
 
 from src.infra.db.models.case import Case
 from src.infra.db.models.vip import VipStatus
 from src.nightcore.utils import discord_ts
 from src.utils._enums import CaseDropTypeEnum
+
+VIP_STATUSES_PER_PAGE = 4
 
 
 def build_transfer_history_pages(
@@ -105,22 +109,13 @@ def build_cases_help_pages(
     return pages
 
 
-def build_vip_statuses_help_pages(
-    vip_statuses: Sequence[VipStatus], vip_statuses_per_page: int = 4
-) -> list[list[TextDisplay[Any]]]:
-    """Build paginated pages for VIP-statuses help command."""
-
-    pages: list[list[TextDisplay[Any]]] = []
-    current: list[TextDisplay[Any]] = []
-    statuses_in_current_page = 0
-
+def build_vip_statuses_content(
+    vip_statuses: Sequence[VipStatus],
+) -> list[TextDisplay[Any]]:
+    """Build the display content for VIP statuses."""
+    content: list[TextDisplay[Any]] = []
     for vip in vip_statuses:
-        if statuses_in_current_page >= vip_statuses_per_page:
-            pages.append(current)
-            current = []
-            statuses_in_current_page = 0
-
-        current.append(
+        content.append(
             TextDisplay(
                 f"### {vip.emoji_str if vip.emoji_str else ''} {vip.name}"
             ),
@@ -151,21 +146,66 @@ def build_vip_statuses_help_pages(
             )
 
         if not perks:
-            current.append(
+            content.append(
                 TextDisplay("> Преимущества данного VIP-статуса не настроены.")
             )
         else:
-            current.append(TextDisplay("\n".join(perks)))
+            content.append(TextDisplay("\n".join(perks)))
 
-        statuses_in_current_page += 1
+    return content
 
-    if current:
-        pages.append(current)
+
+def build_vip_statuses_help_pages(
+    vip_statuses: Sequence[VipStatus], vip_statuses_per_page: int = 3
+) -> list[list[TextDisplay[Any]]]:
+    """Build paginated pages for VIP-statuses help command."""
+
+    content = build_vip_statuses_content(vip_statuses)
+
+    pages = [
+        content[index : index + vip_statuses_per_page]
+        for index in range(0, len(content), vip_statuses_per_page)
+    ]
 
     if not pages:
         pages = [[TextDisplay[Any]("VIP-статусы не настроены")]]
 
     return pages
+
+
+def build_user_vip_statuses_content(
+    user_vip_statuses: Sequence["UserVipStatus"],
+    guild_vip_statuses: Sequence[VipStatus],
+) -> tuple[list[TextDisplay[Any]], list[UserVipStatusAnnot]]:
+    """Build content and statuses for a user's own VIP-statuses.
+
+    Also used after activation to rebuild the view with updated button states.
+
+    Returns:
+        Tuple of display content and the matching list of statuses.
+    """
+
+    config_by_id = {status.id: status for status in guild_vip_statuses}
+
+    owned_configs: list[VipStatus] = []
+    statuses: list[UserVipStatusAnnot] = []
+
+    for user_vip in user_vip_statuses:
+        config = config_by_id.get(user_vip.vip_id)
+        if config is None:
+            continue
+
+        owned_configs.append(config)
+        statuses.append(
+            {
+                "vip_id": user_vip.vip_id,
+                "name": config.name,
+                "emoji_str": config.emoji_str,
+                "is_active": user_vip.is_active,
+            }
+        )
+
+    return build_vip_statuses_content(owned_configs), statuses
 
 
 def build_battlepass_levels_pages(

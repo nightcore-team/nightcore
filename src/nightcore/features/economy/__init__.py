@@ -11,6 +11,7 @@ from ._groups import give as give_group
 from ._groups import rainbow as rainbow_group
 from ._groups import remove as remove_group
 from ._groups import temp as temp_group
+from ._groups import vip as vip_group
 
 # SIDE-EFFECT IMPORTS
 from .commands.bank import account, top_up, transfer, withdraw
@@ -46,6 +47,8 @@ from .commands.rainbow import create as rainbow_create
 from .commands.rainbow import delete as rainbow_delete
 from .commands.remove import color as remove_color
 from .commands.temp import multiplier, role
+from .commands.vip import activate as vip_activate
+from .commands.vip import help as vip_help
 
 __all__ = (
     "account",
@@ -76,6 +79,8 @@ __all__ = (
     "roulette",
     "top_up",
     "transfer",
+    "vip_activate",
+    "vip_help",
     "withdraw",
 )
 
@@ -91,3 +96,4 @@ async def setup(bot: "Nightcore"):
     bot.tree.add_command(remove_group)
     bot.tree.add_command(rainbow_group)
     bot.tree.add_command(bank_group)
+    bot.tree.add_command(vip_group)

@@ -72,6 +72,15 @@ class BattlepassLevelAnnot(TypedDict):
     reward: BattlepassRewardAnnot
 
 
+class UserVipStatusAnnot(TypedDict):
+    """User's VIP status with its config, used by the activate view."""
+
+    vip_id: int
+    name: str
+    emoji_str: str | None
+    is_active: bool
+
+
 class CasinoBetAnnot(TypedDict):
     user_id: int
     bet: int

@@ -15,6 +15,7 @@ from .view import (
     UserProfileActionRow,
     UserProfileViewV2,
     UsersListViewV2,
+    VipStatusActivateViewV2,
     VipStatusHelpViewV2,
 )
 
@@ -35,5 +36,6 @@ __all__ = (
     "UserProfileActionRow",
     "UserProfileViewV2",
     "UsersListViewV2",
+    "VipStatusActivateViewV2",
     "VipStatusHelpViewV2",
 )
