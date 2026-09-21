@@ -104,6 +104,9 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=1
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
+    battle_pass_additional_reward_claimed_level: Mapped[int | None] = (
+        mapped_column(Integer, nullable=True)
+    )
     vip_statuses: Mapped[list["UserVipStatus"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",

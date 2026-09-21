@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild
 
+from src.infra.db.loads import user_load_vip_statuses
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     get_guild_battlepass_levels,
@@ -44,6 +45,7 @@ async def send_battlepass_claim_view(
             session,
             guild_id=guild.id,
             user_id=target_user_id,
+            options=[user_load_vip_statuses],
             for_update=True,
         )
 
@@ -63,6 +65,11 @@ async def send_battlepass_claim_view(
                 ephemeral=True,
             )
             return
+
+        user_vip_ids = [
+            vip_status.vip_id for vip_status in user_record.vip_statuses
+        ]
+        claimed_level = user_record.battle_pass_additional_reward_claimed_level
 
     level_index = user_level - 1
     disable_button = interaction.user.id != user_id
@@ -84,6 +91,8 @@ async def send_battlepass_claim_view(
     reward_name = current_level.reward["name"]
     reward_amount = current_level.reward["amount"]
 
+    additional_reward = current_level.additional_reward or {}
+
     target_member = guild.get_member(target_user_id) or bot.get_user(
         target_user_id
     )
@@ -103,6 +112,13 @@ async def send_battlepass_claim_view(
         reward_amount=reward_amount,
         avatar_url=avatar_url,
         disable_button=disable_button,
+        additional_reward_type=additional_reward.get("name"),
+        additional_reward_amount=additional_reward.get("amount"),
+        additional_reward_access_vip_id=additional_reward.get("vip_id_access"),
+        user_vip_ids=user_vip_ids,
+        additional_reward_claimed=(
+            claimed_level is not None and claimed_level >= user_level
+        ),
     )
 
     await interaction.response.send_message(

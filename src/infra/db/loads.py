@@ -11,6 +11,8 @@ user_load_cases: Load = (
 
 user_load_colors: Load = Load(User).selectinload(User.colors)
 
+user_load_vip_statuses: Load = Load(User).selectinload(User.vip_statuses)
+
 user_load_bank_account_all: list[Load] = [
     Load(User)
     .selectinload(User.bank_account)
@@ -41,4 +43,5 @@ user_load_all: list[Load] = [
     user_load_colors,
     *user_load_bank_account_all,
     user_load_casino_bets,
+    user_load_vip_statuses,
 ]

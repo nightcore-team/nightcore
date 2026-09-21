@@ -382,43 +382,47 @@ async def format_single_battlepass_level_reward(
     coin_name: str | None,
     guild: Guild,
 ):
-    """Resolve and format battlepass reward."""
+    """Resolve and format battlepass rewards."""
 
-    match level.reward["type"]:
-        case CaseDropTypeEnum.COINS.value:
-            level.reward["name"] = coin_name or "коины"
-        case CaseDropTypeEnum.CASE.value:
-            case_obj = await get_case_by_id(
-                session,
-                guild_id=guild.id,
-                case_id=level.reward["drop_id"],
-                for_update=True,
-            )
+    async def _format_reward(reward: BattlepassRewardAnnot) -> None:
+        match reward["type"]:
+            case CaseDropTypeEnum.COINS.value:
+                reward["name"] = coin_name or "коины"
+            case CaseDropTypeEnum.CASE.value:
+                case_obj = await get_case_by_id(
+                    session,
+                    guild_id=guild.id,
+                    case_id=reward["drop_id"],
+                    for_update=True,
+                )
 
-            level.reward["name"] = (
-                case_obj.name if case_obj else "unknown case"
-            )
-        case CaseDropTypeEnum.COLOR.value:
-            color = await get_color_by_id(
-                session,
-                guild_id=guild.id,
-                color_id=level.reward["drop_id"],
-                for_update=True,
-            )
+                reward["name"] = case_obj.name if case_obj else "unknown case"
+            case CaseDropTypeEnum.COLOR.value:
+                color = await get_color_by_id(
+                    session,
+                    guild_id=guild.id,
+                    color_id=reward["drop_id"],
+                    for_update=True,
+                )
 
-            if color is None:
-                level.reward["name"] = "unknown color"
-            else:
-                role = guild.get_role(color.role_id)
-                level.reward["name"] = role.name if role else "unknown role"
-        case CaseDropTypeEnum.VIP.value:
-            vip_status = await get_vip_status_by_id(
-                session,
-                guild_id=guild.id,
-                vip_id=level.reward["drop_id"],
-            )
-            level.reward["name"] = (
-                vip_status.name if vip_status else "unknown VIP-status"
-            )
-        case _:
-            ...
+                if color is None:
+                    reward["name"] = "unknown color"
+                else:
+                    role = guild.get_role(color.role_id)
+                    reward["name"] = role.name if role else "unknown role"
+            case CaseDropTypeEnum.VIP.value:
+                vip_status = await get_vip_status_by_id(
+                    session,
+                    guild_id=guild.id,
+                    vip_id=reward["drop_id"],
+                )
+                reward["name"] = (
+                    vip_status.name if vip_status else "unknown VIP-status"
+                )
+            case _:
+                ...
+
+    await _format_reward(level.reward)
+
+    if level.additional_reward:
+        await _format_reward(level.additional_reward)

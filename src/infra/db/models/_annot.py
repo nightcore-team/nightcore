@@ -64,6 +64,7 @@ class BattlepassRewardAnnot(TypedDict):
     amount: int
     is_color_compensation: bool | None
     duration: NotRequired[int | None]
+    vip_id_access: NotRequired[int | None]
 
 
 class BattlepassLevelAnnot(TypedDict):
