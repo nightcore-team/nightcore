@@ -124,6 +124,7 @@ class CaseDropTypeEnum(Enum):
     CUSTOM = 5
     BATTLEPASS_POINTS = 6
     VIP = 7
+    REROLL = 8
 
     def to_str(self):
         match self:
@@ -131,6 +132,8 @@ class CaseDropTypeEnum(Enum):
                 return "BP points"
             case CaseDropTypeEnum.EXP:
                 return "опыт"
+            case CaseDropTypeEnum.REROLL:
+                return "реролл"
             case _:
                 return self.name
 
@@ -143,6 +146,12 @@ class CaseDropTypeEnum(Enum):
             or self == CaseDropTypeEnum.CASE
             or self == CaseDropTypeEnum.CUSTOM
         )
+
+
+class CaseOpenSessionStatus(StrEnum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    EXPIRED = "expired"
 
 
 class ItemChangeActionEnum(StrEnum):

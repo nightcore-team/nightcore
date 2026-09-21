@@ -1,7 +1,8 @@
 """Command to open case."""
 
 import logging
-from typing import TYPE_CHECKING, cast
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Any, cast
 
 from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
@@ -9,12 +10,18 @@ from discord.interactions import Interaction
 from src.infra.db.loads import user_load_cases_and_colors
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
+    create_case_open_session,
+    get_case_open_rewards_for_update,
     get_or_create_user,
+    get_pending_case_open_session,
     get_specified_webhook,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2, ValidationErrorViewV2
 from src.nightcore.features.economy._groups import case as case_group
-from src.nightcore.features.economy.components.v2 import CaseOpenViewV2
+from src.nightcore.features.economy.components.v2 import (
+    CaseOpenViewV2,
+    build_case_reroll_view,
+)
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils import user_cases_autocomplete
 from src.nightcore.features.economy.utils.case import (
@@ -59,6 +66,7 @@ async def open_case(
     reward_text = ""
     logging_webhook = None
     opened_case_item = None
+    pending_view_data: dict[str, Any] | None = None
 
     try:
         async with specified_guild_config(
@@ -72,6 +80,15 @@ async def open_case(
                 for_update=True,
             )
 
+            pending_session = await get_pending_case_open_session(
+                session,
+                guild_id=guild.id,
+                user_id=member.id,
+            )
+
+            if pending_session is not None:
+                outcome = "pending_session"
+
             logging_webhook = await get_specified_webhook(
                 session,
                 guild_id=guild.id,
@@ -79,43 +96,87 @@ async def open_case(
                 channel_type=ChannelType.LOGGING_ECONOMY,
             )
 
-            user_case = user.get_case(case_id)
+            user_case = user.get_case(case_id) if not outcome else None
 
-            if user_case is None:
-                outcome = "no_case"
-            else:
-                opened_case_item = user_case.item
-                if amount > 1 and user_case.amount < amount:
-                    outcome = "no_many_cases"
+            if not outcome:
+                if user_case is None:
+                    outcome = "no_case"
+
                 else:
-                    rewards = opened_case_item.open(amount=amount)
+                    opened_case_item = user_case.item
 
-                    if not rewards or all(
-                        reward is None for reward in rewards
-                    ):
-                        outcome = "no_case_reward_configured"
+                    if amount > 1 and user_case.amount < amount:
+                        outcome = "no_many_cases"
                     else:
-                        user_case.amount -= amount
+                        rewards = opened_case_item.open(amount=amount)
 
-                        result = await give_reward_by_type(
-                            session,
-                            rewards=rewards,  # pyright: ignore[reportArgumentType]
-                            user=user,
-                        )
+                        if not rewards or all(
+                            reward is None for reward in rewards
+                        ):
+                            outcome = "no_case_reward_configured"
+                        else:
+                            user_case.amount -= amount
 
-                        await format_single_case_reward(
-                            session,
-                            drops=result[0],  # pyright: ignore[reportArgumentType]
-                            coin_name=guild_config.coin_name,
-                            guild=guild,
-                        )
+                            if user.rerolls > 0:
+                                await format_single_case_reward(
+                                    session,
+                                    drops=rewards,  # pyright: ignore[reportArgumentType]
+                                    coin_name=guild_config.coin_name,
+                                    guild=guild,
+                                )
+                                pending_session = (
+                                    await create_case_open_session(
+                                        session,
+                                        guild_id=guild.id,
+                                        user_id=member.id,
+                                        case_id=case_id,
+                                        expires_at=datetime.now(UTC)
+                                        + timedelta(minutes=5),
+                                        rewards=rewards,  # type: ignore
+                                    )
+                                )
+                                reward_rows = (
+                                    await get_case_open_rewards_for_update(
+                                        session,
+                                        session_id=pending_session.id,
+                                    )
+                                )
+                                pending_view_data = {
+                                    "session_id": pending_session.id,
+                                    "case_name": opened_case_item.name,
+                                    "total_weight": sum(
+                                        drop["chance"]
+                                        for drop in opened_case_item.drop
+                                    ),  # type: ignore
+                                    "rewards": [
+                                        {
+                                            **dict(row.reward),
+                                            "reward_id": row.id,
+                                        }
+                                        for row in reward_rows
+                                    ],
+                                    "rerolls_left": user.rerolls,
+                                }
+                            else:
+                                result = await give_reward_by_type(
+                                    session,
+                                    rewards=rewards,  # type: ignore
+                                    user=user,
+                                )
 
-                        reward_text = ", ".join(
-                            reward["name"]  # type: ignore
-                            for reward in rewards
-                        )
+                                await format_single_case_reward(
+                                    session,
+                                    drops=result[0],  # type: ignore
+                                    coin_name=guild_config.coin_name,
+                                    guild=guild,
+                                )
 
-                        outcome = "success"
+                            reward_text = ", ".join(
+                                reward["name"]  # type: ignore
+                                for reward in rewards
+                            )
+
+                            outcome = "success"
 
     except Exception as e:
         logger.exception(
@@ -131,6 +192,16 @@ async def open_case(
         await interaction.response.send_message(
             view=ValidationErrorViewV2(
                 "У вас нет такого кейса для открытия.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "pending_session":
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Открытие кейса уже ожидает решения",
+                "Сначала завершите предыдущую сессию открытия кейса.",
             ),
             ephemeral=True,
         )
@@ -162,6 +233,16 @@ async def open_case(
                 view=ErrorViewV2(
                     "Ошибка открытия кейса",
                     "Кейс не найден после открытия.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        if pending_view_data is not None:
+            await interaction.response.send_message(
+                view=build_case_reroll_view(
+                    bot,
+                    **pending_view_data,
                 ),
                 ephemeral=True,
             )

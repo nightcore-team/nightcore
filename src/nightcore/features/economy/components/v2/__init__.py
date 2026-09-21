@@ -3,6 +3,7 @@ from .view import (
     BankAccountViewV2,
     BattlepassClaimViewV2,
     CaseHelpViewV2,
+    CaseOpenRerollViewV2,
     CaseOpenViewV2,
     CasesCollectionViewV2,
     CoinsShopOrderNotifyViewV2,
@@ -17,6 +18,7 @@ from .view import (
     UsersListViewV2,
     VipStatusActivateViewV2,
     VipStatusHelpViewV2,
+    build_case_reroll_view,
 )
 
 __all__ = (
@@ -24,6 +26,7 @@ __all__ = (
     "BankAccountViewV2",
     "BattlepassClaimViewV2",
     "CaseHelpViewV2",
+    "CaseOpenRerollViewV2",
     "CaseOpenViewV2",
     "CasesCollectionViewV2",
     "CoinsShopOrderNotifyViewV2",
@@ -38,4 +41,5 @@ __all__ = (
     "UsersListViewV2",
     "VipStatusActivateViewV2",
     "VipStatusHelpViewV2",
+    "build_case_reroll_view",
 )

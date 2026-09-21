@@ -70,6 +70,7 @@ class User(IdIntegerMixin, Base):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     coins: Mapped[int] = mapped_column(nullable=False, default=0)
+    rerolls: Mapped[int] = mapped_column(nullable=False, default=0)
     level: Mapped[int] = mapped_column(nullable=False, default=0)
     messages_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0

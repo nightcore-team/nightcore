@@ -15,6 +15,7 @@ from src.nightcore.features.clans.components.v2.view.handlers.info import (
 )
 from src.nightcore.features.economy.components.v2.view.handlers import (
     handle_battlepass_interaction,
+    handle_case_open_interaction,
     handle_coins_shop_interaction,
     handle_roulette_multiplayer_join_button_callback,
     handle_vip_interaction,
@@ -64,6 +65,12 @@ async def setup(bot: "Nightcore") -> None:
 
                 case str() if custom_id.startswith("battlepass"):
                     await handle_battlepass_interaction(
+                        interaction=interaction,
+                        custom_id=custom_id,
+                    )
+
+                case str() if custom_id.startswith("case:open:"):
+                    await handle_case_open_interaction(
                         interaction=interaction,
                         custom_id=custom_id,
                     )

@@ -32,6 +32,8 @@ from sqlalchemy.orm import InstrumentedAttribute, Load, selectinload
 
 from src.config.config import config
 from src.infra.db.models import (
+    CaseOpenReward,
+    CaseOpenSession,
     CasinoBet,
     CasinoGame,
     ChangeStat,
@@ -96,6 +98,7 @@ from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
 from src.utils._enums import (
+    CaseOpenSessionStatus,
     CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
@@ -499,6 +502,122 @@ async def get_user_vip_statuses_for_update(
     result = await session.execute(stmt)
 
     return result.scalars().all()
+
+
+async def create_case_open_session(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    case_id: int,
+    expires_at: datetime,
+    rewards: Sequence[dict[str, Any]],
+) -> CaseOpenSession:
+    """Create a pending case session and bulk-insert its rewards."""
+
+    case_session = CaseOpenSession(
+        guild_id=guild_id,
+        user_id=user_id,
+        case_id=case_id,
+        expires_at=expires_at,
+    )
+    session.add(case_session)
+    await session.flush()
+
+    await session.execute(
+        insert(CaseOpenReward),
+        [
+            {
+                "session_id": case_session.id,
+                "position": position,
+                "reward": reward,
+                "reroll_count": 0,
+            }
+            for position, reward in enumerate(rewards)
+        ],
+    )
+
+    return case_session
+
+
+async def get_case_open_session_for_update(
+    session: AsyncSession, *, session_id: int, for_update: bool = True
+) -> CaseOpenSession | None:
+    """Get a case session with a row lock."""
+
+    stmt = select(CaseOpenSession).where(CaseOpenSession.id == session_id)
+
+    if for_update:
+        stmt.with_for_update()
+
+    return await session.scalar(stmt)
+
+
+async def get_pending_case_open_session(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> CaseOpenSession | None:
+    """Get the user's pending case session."""
+
+    stmt = select(CaseOpenSession).where(
+        CaseOpenSession.guild_id == guild_id,
+        CaseOpenSession.user_id == user_id,
+        CaseOpenSession.status == CaseOpenSessionStatus.PENDING,
+    )
+    return await session.scalar(stmt)
+
+
+async def get_case_open_rewards_for_update(
+    session: AsyncSession,
+    *,
+    session_id: int,
+    reward_id: int | None = None,
+) -> Sequence[CaseOpenReward]:
+    """Get pending session rewards with row locks."""
+
+    stmt = select(CaseOpenReward).where(
+        CaseOpenReward.session_id == session_id
+    )
+    if reward_id is not None:
+        stmt = stmt.where(CaseOpenReward.id == reward_id)
+    stmt = stmt.order_by(CaseOpenReward.position).with_for_update()
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def get_expired_case_open_sessions_for_update(
+    session: AsyncSession,
+    *,
+    now: datetime,
+    limit: int = 100,
+) -> Sequence[CaseOpenSession]:
+    """Get expired pending case sessions in a bounded locked batch."""
+
+    stmt = (
+        select(CaseOpenSession)
+        .where(
+            CaseOpenSession.status == CaseOpenSessionStatus.PENDING,
+            CaseOpenSession.expires_at <= now,
+        )
+        .order_by(CaseOpenSession.expires_at)
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def delete_case_open_sessions(
+    session: AsyncSession,
+    *,
+    session_ids: Sequence[int],
+) -> None:
+    """Delete case sessions and their rewards cascade."""
+
+    stmt = delete(CaseOpenSession).where(CaseOpenSession.id.in_(session_ids))
+    await session.execute(stmt)
 
 
 async def get_active_user_vip_statuses(

@@ -67,6 +67,8 @@ async def give_reward_by_type(
                 user.current_exp += amount
             case CaseDropTypeEnum.COINS.value:
                 user.coins += amount
+            case CaseDropTypeEnum.REROLL.value:
+                user.rerolls += amount
             case CaseDropTypeEnum.BATTLEPASS_POINTS.value:
                 user.battle_pass_points += amount
             case CaseDropTypeEnum.COLOR.value:

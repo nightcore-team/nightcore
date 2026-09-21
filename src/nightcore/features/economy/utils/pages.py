@@ -109,6 +109,40 @@ def build_cases_help_pages(
     return pages
 
 
+def build_case_reroll_pages(
+    rewards: Sequence[dict[str, Any]],
+    total_weight: int,
+    rewards_per_page: int = 10,
+) -> list[list[dict[str, Any]]]:
+    """Build paginated chunks of pending case rewards for the reroll view.
+
+    Args:
+        rewards: Pending case reward rows enriched with the ``reward_id``.
+        total_weight: Sum of the case drop chances to compute percentages.
+        rewards_per_page: Number of rewards shown on a single page.
+
+    Returns:
+        Reward data chunks, each item carrying the reward fields plus a
+        precomputed ``chance_percent`` value.
+    """
+
+    if not rewards:
+        return [[]]
+
+    pages: list[list[dict[str, Any]]] = []
+    for index in range(0, len(rewards), rewards_per_page):
+        page = [
+            {
+                **reward,
+                "chance_percent": reward["chance"] / total_weight * 100,
+            }
+            for reward in rewards[index : index + rewards_per_page]
+        ]
+        pages.append(page)
+
+    return pages
+
+
 def build_vip_statuses_content(
     vip_statuses: Sequence[VipStatus],
 ) -> list[TextDisplay[Any]]:

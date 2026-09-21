@@ -133,6 +133,7 @@ def create_bot(
         "src.nightcore.tasks.temp_role",
         "src.nightcore.tasks.temp_multiplier",
         "src.nightcore.tasks.rainbow_role",
+        "src.nightcore.tasks.case_open",
     ]
 
     return Nightcore(
