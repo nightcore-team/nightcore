@@ -244,7 +244,7 @@ async def open_case(
                     bot,
                     **pending_view_data,
                 ),
-                ephemeral=True,
+                ephemeral=False,
             )
             return
 
