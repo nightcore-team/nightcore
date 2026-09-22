@@ -150,7 +150,7 @@ class JoinMultiplayerRouletteModal(
                         else:
                             bet = CasinoBet(
                                 user_id=user_record.id,
-                                amount=amount * 2,
+                                amount=amount,
                                 color=selected_color,
                                 game_id=casino_game.id,
                             )
@@ -172,13 +172,13 @@ class JoinMultiplayerRouletteModal(
                         for bet in casino_game.bets:
                             if bet.user.user_id == casino_game.initiator_id:  # type: ignore
                                 initiator_id = bet.user.user_id
-                                initiator_bet = bet.amount // 2
+                                initiator_bet = bet.amount
                                 initiator_selected_color = bet.color
                             else:
                                 bets.append(
                                     {
                                         "user_id": bet.user.user_id,
-                                        "bet": bet.amount // 2,
+                                        "bet": bet.amount,
                                         "result_coins": None,
                                         "selected_color": bet.color,
                                     }

@@ -1936,23 +1936,38 @@ async def get_user_casino_bet_by_game_id(
     return result.scalar_one_or_none()
 
 
-async def get_active_casino_games(
+async def get_expired_casino_game_ids(
     session: AsyncSession, *, dt: datetime
-) -> Sequence[CasinoGame]:
-    """Get all active casino games for a guild."""
-    stmt = (
-        select(CasinoGame)
-        .where(
-            CasinoGame.state == CasinoGameStateEnum.PENDING,
-            CasinoGame.end_time <= dt,
-        )
-        .with_for_update(skip_locked=True)
-    )
-    stmt = stmt.options(
-        selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
+) -> Sequence[int]:
+    """Get ids of pending casino games whose end time has passed."""
+    stmt = select(CasinoGame.id).where(
+        CasinoGame.state == CasinoGameStateEnum.PENDING,
+        CasinoGame.end_time <= dt,
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def get_expired_casino_game_for_update(
+    session: AsyncSession, *, game_id: int, dt: datetime
+) -> CasinoGame | None:
+    """Lock a pending casino game with expired end time, with bets and users.
+
+    Returns None if the game is already finished, was extended, or is
+    currently locked by another transaction (join/leave in progress).
+    """
+    stmt = (
+        select(CasinoGame)
+        .where(
+            CasinoGame.id == game_id,
+            CasinoGame.state == CasinoGameStateEnum.PENDING,
+            CasinoGame.end_time <= dt,
+        )
+        .options(selectinload(CasinoGame.bets).selectinload(CasinoBet.user))
+        .with_for_update(of=CasinoGame, skip_locked=True)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def get_or_create_processed_thread(

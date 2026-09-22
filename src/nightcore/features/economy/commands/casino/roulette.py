@@ -178,7 +178,7 @@ async def roulette(
                         minutes=1
                     )
                     user_record.coins -= bet
-                    casino_bet.amount = bet * 2
+                    casino_bet.amount = bet
 
                 session.add(casino_game)
                 await session.flush()

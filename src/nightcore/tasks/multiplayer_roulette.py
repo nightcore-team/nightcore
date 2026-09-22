@@ -9,10 +9,10 @@ from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 from discord.http import MultipartParameters
 
-from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.models.casino import CasinoGame
+from src.infra.db.models import GuildEconomyConfig, User
 from src.infra.db.operations import (
-    get_active_casino_games,
+    get_expired_casino_game_for_update,
+    get_expired_casino_game_ids,
     get_specified_field,
 )
 from src.utils._enums import (
@@ -49,13 +49,19 @@ class MultiplayerRouletteTask(Cog):
         if self.end_multiplayer_roulette_game_task.is_running():
             self.end_multiplayer_roulette_game_task.cancel()
 
-    async def _process_single_game(self, game: CasinoGame):
+    async def _process_single_game(self, game_id: int):
         """Process a single casino game in its own transaction."""
         await self.bot.task_manager.sleep(__name__)
 
         try:
             async with self.bot.uow.start() as session:
-                game = await session.merge(game, load=False)
+                game = await get_expired_casino_game_for_update(
+                    session, game_id=game_id, dt=datetime.now(UTC)
+                )
+                if game is None:
+                    return
+
+                guild_id = game.guild_id
 
                 coin_name = await get_specified_field(
                     session,
@@ -74,14 +80,15 @@ class MultiplayerRouletteTask(Cog):
 
                 # Process all bets and update user balances
                 for bet in game.bets:
-                    result = RouletteResult(
-                        num, color, bet.amount // 2, bet.color
-                    )
+                    stake = bet.amount
+                    result = RouletteResult(num, color, stake, bet.color)
                     result_type: CasinoBetResultTypeEnum
 
                     if result.is_win:
                         result_type = CasinoBetResultTypeEnum.WIN
-                        bet.user.coins += result.coins_change * 2
+                        bet.user.coins = User.coins + (
+                            stake + result.coins_change
+                        )
                     else:
                         result_type = CasinoBetResultTypeEnum.LOSE
 
@@ -89,14 +96,14 @@ class MultiplayerRouletteTask(Cog):
 
                     if bet.user.user_id == game.initiator_id:
                         initiator_id = bet.user.user_id
-                        initiator_bet = bet.amount // 2
+                        initiator_bet = stake
                         initiator_selected_color = bet.color
                         initiator_result_coins = result.coins_change
                     else:
                         bets_annot.append(
                             {
                                 "user_id": bet.user.user_id,
-                                "bet": bet.amount // 2,
+                                "bet": stake,
                                 "result_coins": result.coins_change,
                                 "selected_color": bet.color,
                             }
@@ -139,15 +146,14 @@ class MultiplayerRouletteTask(Cog):
 
             logger.info(
                 "[task] - Ended multiplayer roulette game %s in guild %s",
-                game.id,
-                game.guild_id,
+                game_id,
+                guild_id,
             )
 
         except Exception as e:
             logger.exception(
-                "[task] - Error processing game %s in guild %s: %s",
-                game.id,
-                game.guild_id,
+                "[task] - Error processing game %s: %s",
+                game_id,
                 e,
                 exc_info=True,
             )
@@ -159,17 +165,17 @@ class MultiplayerRouletteTask(Cog):
             logger.info("[task] - Running end multiplayer roulette task")
 
             async with self.bot.uow.start() as session:
-                casino_games = await get_active_casino_games(
+                game_ids = await get_expired_casino_game_ids(
                     session, dt=datetime.now(UTC)
                 )
 
-            if not casino_games:
+            if not game_ids:
                 logger.info("[task] - No multiplayer roulette games to end")
                 return
 
             # Process each game in its own transaction
-            for game in casino_games:
-                await self._process_single_game(game)
+            for game_id in game_ids:
+                await self._process_single_game(game_id)
 
         except Exception as e:
             logger.exception(
