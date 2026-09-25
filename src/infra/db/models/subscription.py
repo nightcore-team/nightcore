@@ -8,8 +8,14 @@ from src.infra.db.models.base import Base
 from src.utils._enums import GuildStatusEnum
 
 
-class DiscordGuildORM(IdIntegerMixin, Base):
-    """A discord guild that holds a Nightcore subscription."""
+class DiscordGuild(IdIntegerMixin, Base):
+    """A discord guild that holds a Nightcore subscription.
+
+    The table is owned by the nightcore-telegram service and lives in its
+    dedicated schema.
+    """
+
+    __table_args__ = ({"schema": "nightcore-telegram"},)
 
     guild_id: Mapped[int] = mapped_column(
         BigInteger, unique=True, nullable=False

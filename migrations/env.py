@@ -38,7 +38,7 @@ target_metadata = Base.metadata
 
 db_url = project_config.db.POSTGRES_DATABASE_URI
 
-EXTERNAL_TABLES = {"discordguild"}
+EXTERNAL_SCHEMAS = {"nightcore-telegram"}
 
 
 def include_object(
@@ -50,11 +50,11 @@ def include_object(
 ) -> bool:
     """Skip tables owned by other services during autogenerate."""
     if type_ == "table":
-        return name not in EXTERNAL_TABLES
+        return getattr(obj, "schema", None) not in EXTERNAL_SCHEMAS
 
     table = getattr(obj, "table", None)
     if table is not None:
-        return table.name not in EXTERNAL_TABLES
+        return table.schema not in EXTERNAL_SCHEMAS
 
     return True
 
