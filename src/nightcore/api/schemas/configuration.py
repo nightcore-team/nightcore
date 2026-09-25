@@ -1,6 +1,6 @@
 """Pydantic schemas for guild configuration API."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
 from pydantic import (
     AfterValidator,
@@ -10,6 +10,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     computed_field,
+    model_validator,
 )
 
 from src.nightcore.api.utils.validators import (
@@ -88,6 +89,12 @@ DiscordWebhookURL = Annotated[
     AfterValidator(validate_discord_webhook),
 ]
 
+MAX_RULES_CHAPTERS = 20
+MAX_CHAPTER_RULES = 50  # including subrules
+MAX_LEVEL_ROLES = 250
+MAX_BONUS_ACCESS_ROLES = 250
+MAX_CLAN_SHOP_ITEMS = 25
+
 
 class BaseGuildConfig(BaseModel):
     model_config = ConfigDict(
@@ -131,9 +138,21 @@ class RulesChapterSchema(BaseGuildConfig):
     text: TitleString
     rules: list[GuildRuleSchema]
 
+    @model_validator(mode="after")
+    def _validate_rules_count(self) -> Self:
+        total = len(self.rules) + sum(
+            len(rule.subrules) for rule in self.rules
+        )
+        if total > MAX_CHAPTER_RULES:
+            raise ValueError(
+                f"Глава может содержать не более {MAX_CHAPTER_RULES} "
+                "правил (включая подпункты)."
+            )
+        return self
+
 
 class GuildRulesSchema(BaseGuildConfig):
-    chapters: list[RulesChapterSchema]
+    chapters: list[RulesChapterSchema] = Field(max_length=MAX_RULES_CHAPTERS)
 
 
 class GuildRulesConfigSchema(BaseGuildConfig):
@@ -201,8 +220,12 @@ class GuildBonusRoleSchema(BaseGuildConfig):
 class GuildLevelsConfigSchema(BaseGuildConfig):
     count_messages_channel_id: DiscordTextChannelID | None = None
     level_notify_webhook: DiscordWebhookSchema | None = None
-    bonus_access_roles_ids: list[GuildBonusRoleSchema] | None = None
-    level_roles: list[GuildLevelRoleSchema] | None = None
+    bonus_access_roles_ids: list[GuildBonusRoleSchema] | None = Field(
+        max_length=MAX_BONUS_ACCESS_ROLES, default=None
+    )
+    level_roles: list[GuildLevelRoleSchema] | None = Field(
+        max_length=MAX_LEVEL_ROLES, default=None
+    )
     count_messages_type: MessageCountTypeEnum | None = None
 
 
@@ -221,7 +244,9 @@ class GuildClansConfigSchema(BaseGuildConfig):
     create_clan_channel_category_id: DiscordCategoryID | None = None
     clan_payday_webhook: DiscordWebhookSchema | None = None
     clan_shop_channel_id: DiscordTextChannelID | None = None
-    clan_shop_items: list[GuildClanShopItemSchema] | None = None
+    clan_shop_items: list[GuildClanShopItemSchema] | None = Field(
+        max_length=MAX_CLAN_SHOP_ITEMS, default=None
+    )
     clans_access_roles_ids: DiscordRoleIDList | None = None
     clan_buy_ping_roles_ids: DiscordRoleIDList | None = None
     clan_reputation_per_payday: int = 1
