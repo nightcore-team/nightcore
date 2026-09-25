@@ -102,6 +102,8 @@ async def handle_decline(
 
             if not last_rr:
                 outcome = "request_not_found"
+            elif last_rr.state != RoleRequestStateEnum.PENDING:
+                outcome = "already_checked"
             else:
                 nightcore_notifications_webhook = await get_specified_webhook(
                     session,
@@ -126,6 +128,16 @@ async def handle_decline(
             view=ErrorViewV2(
                 "Ошибка отклонения запроса",
                 "Не удалось найти этот запрос на роль в базе данных.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "already_checked":
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Ошибка отклонения запроса",
+                "Другой модератор рассмотрел этот запрос.",
             ),
             ephemeral=True,
         )
