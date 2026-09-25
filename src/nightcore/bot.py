@@ -71,8 +71,8 @@ class GuildOnlyTree(app_commands.CommandTree):
         guild = cast(discord.Guild, interaction.guild)
 
         cached = interaction.client.subscription_cache.get(guild.id)
-        if cached is not None:
-            return cached > datetime.now(UTC)
+        if cached is not None and cached > datetime.now(UTC):
+            return True
 
         async with interaction.client.uow.start() as session:
             sub = await get_guild_subscription(session, guild_id=guild.id)
