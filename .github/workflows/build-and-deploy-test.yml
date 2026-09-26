@@ -1,0 +1,92 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [test]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+
+      - name: Push Docker image
+        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Image info
+        run: |
+          echo "✅ Pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, linux]
+    environment: test
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Nomad CLI
+        uses: hashicorp/setup-nomad@main
+        with:
+          version: "2.0.4"
+
+      - name: Prepare Vault inputs
+        run: |
+          set -euo pipefail
+          echo "VAULT_CA_B64=$(base64 -w0 /etc/cluster-ca/ca.pem)" >> "$GITHUB_ENV"
+          echo "VAULT_ROLE=${GITHUB_REPOSITORY//\//-}" >> "$GITHUB_ENV"
+
+      - name: Mint Nomad token via Vault (GitHub OIDC)
+        uses: hashicorp/vault-action@v3
+        with:
+          url: https://vault.service.consul:8200
+          caCertificate: ${{ env.VAULT_CA_B64 }}
+          method: jwt
+          path: jwt-github
+          role: ${{ env.VAULT_ROLE }}
+          jwtGithubAudience: https://github.com/nightcore-team
+          secrets: |
+            nomad/creds/deploy-apps secret_id | NOMAD_TOKEN
+
+      - name: Deploy to Nomad
+        env:
+          NOMAD_ADDR: https://nomad.service.consul:4646
+          NOMAD_CACERT: /etc/cluster-ca/ca.pem
+          NOMAD_NAMESPACE: apps
+          NOMAD_VAR_bot_token: ${{ secrets.BOT_TOKEN }}
+          NOMAD_VAR_forum_api_key: ${{ secrets.FORUM_API_KEY }}
+          NOMAD_VAR_postgres_password: ${{ secrets.POSTGRES_PASSWORD }}
+          NOMAD_VAR_jwt_public: ${{ secrets.JWT_PUBLIC }}
+          NOMAD_VAR_disable_forum_task: ${{ vars.DISABLE_FORUM_TASK }}
+          NOMAD_VAR_forum_api_url: ${{ vars.FORUM_API_URL }}
+          NOMAD_VAR_api_port: ${{ vars.API_PORT }}
+          NOMAD_VAR_api_host: ${{ vars.API_HOST }}
+          NOMAD_VAR_api_domain: ${{ vars.API_DOMAIN }}
+          NOMAD_VAR_dashboard_frontend_uri: ${{ vars.DASHBOARD_FRONTEND_URI }}
+          NOMAD_VAR_jwt_algorithm: ${{ vars.JWT_ALGORITHM }}
+        run: |
+          nomad job run \
+            -var "image_tag=${GITHUB_SHA}" \
+            -var "repository=${GITHUB_REPOSITORY}" \
+            nomad.test.hcl
