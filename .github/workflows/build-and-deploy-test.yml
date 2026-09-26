@@ -80,13 +80,17 @@ jobs:
           NOMAD_VAR_jwt_public: ${{ secrets.JWT_PUBLIC }}
           NOMAD_VAR_disable_forum_task: ${{ vars.DISABLE_FORUM_TASK }}
           NOMAD_VAR_forum_api_url: ${{ vars.FORUM_API_URL }}
-          NOMAD_VAR_api_port: ${{ vars.API_PORT }}
           NOMAD_VAR_api_host: ${{ vars.API_HOST }}
           NOMAD_VAR_api_domain: ${{ vars.API_DOMAIN }}
           NOMAD_VAR_dashboard_frontend_uri: ${{ vars.DASHBOARD_FRONTEND_URI }}
           NOMAD_VAR_jwt_algorithm: ${{ vars.JWT_ALGORITHM }}
+          NOMAD_VAR_auth_image_tag: ${{ vars.AUTH_IMAGE_TAG }}
+          NOMAD_VAR_auth_jwt_private: ${{ secrets.AUTH_JWT_PRIVATE }}
+          NOMAD_VAR_auth_discord_client_id: ${{ secrets.AUTH_DISCORD_CLIENT_ID }}
+          NOMAD_VAR_auth_discord_client_secret: ${{ secrets.AUTH_DISCORD_CLIENT_SECRET }}
+          NOMAD_VAR_auth_discord_redirect_uri: ${{ vars.AUTH_DISCORD_REDIRECT_URI }}
         run: |
           nomad job run \
-            -var "image_tag=${GITHUB_SHA}" \
-            -var "repository=${GITHUB_REPOSITORY}" \
+            -var "bot_image_tag=${GITHUB_SHA}" \
+            -var "bot_repository=${GITHUB_REPOSITORY}" \
             nomad.test.hcl

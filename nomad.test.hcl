@@ -1,10 +1,19 @@
-variable "image_tag" {
+variable "bot_image_tag" {
   type    = string
   default = "latest"
 }
 
-variable "repository" {
+variable "bot_repository" {
   type    = string
+}
+
+variable "auth_image_tag" {
+  type    = string
+}
+
+variable "auth_repository" {
+  type    = string
+  default = "nightcore-team/nightcore-auth-service"
 }
 
 variable "bot_token" {
@@ -37,10 +46,6 @@ variable "postgres_db" {
   default = "nightcore"
 }
 
-variable "api_port" {
-  type = string
-}
-
 variable "api_host" {
   type = string
 }
@@ -58,6 +63,22 @@ variable "jwt_public" {
 }
 
 variable "jwt_algorithm" {
+  type = string
+}
+
+variable "auth_jwt_private" {
+  type = string
+}
+
+variable "auth_discord_client_id" {
+  type = string
+}
+
+variable "auth_discord_client_secret" {
+  type = string
+}
+
+variable "auth_discord_redirect_uri" {
   type = string
 }
 
@@ -92,6 +113,7 @@ job "nightcore-bot-test" {
 
     network {
       port "postgres" {}
+      port "redis" {}
     }
 
     service {
@@ -103,7 +125,7 @@ job "nightcore-bot-test" {
           "traefik.http.routers.dashboard-backend-test.priority=10",
           "traefik.http.routers.dashboard-backend-test.entrypoints=tunnel",
           "traefik.http.routers.dashboard-backend-test.service=dashboard-backend-test",
-          "traefik.http.services.dashboard-backend-test.loadbalancer.server.port=5000",
+          "traefik.http.services.dashboard-backend-test.loadbalancer.server.port=5010",
 
           "traefik.http.middlewares.backend-test-ratelimit.ratelimit.average=2",
           "traefik.http.middlewares.backend-test-ratelimit.ratelimit.period=1s",
@@ -121,6 +143,25 @@ job "nightcore-bot-test" {
           "traefik.http.middlewares.patch-test-ratelimit.ratelimit.period=10s",
           "traefik.http.middlewares.patch-test-ratelimit.ratelimit.burst=2",
           "traefik.http.middlewares.patch-test-ratelimit.ratelimit.sourcecriterion.requestheadername=CF-Connecting-IP"
+      ]
+    }
+
+    service {
+      name = "dashboard-auth-service-test"
+
+      tags = [
+          "traefik.enable=true",
+          "traefik.http.routers.dashboard-auth-service-test.rule=Host(`api.nightcore.tech`) && PathPrefix(`/auth`)",
+          "traefik.http.routers.dashboard-auth-service-test.priority=20",
+          "traefik.http.routers.dashboard-auth-service-test.entrypoints=tunnel",
+          "traefik.http.routers.dashboard-auth-service-test.service=dashboard-auth-service-test",
+          "traefik.http.services.dashboard-auth-service-test.loadbalancer.server.port=5011",
+
+          "traefik.http.middlewares.auth-test-ratelimit.ratelimit.average=2",
+          "traefik.http.middlewares.auth-test-ratelimit.ratelimit.period=1s",
+          "traefik.http.middlewares.auth-test-ratelimit.ratelimit.burst=2",
+          "traefik.http.middlewares.auth-test-ratelimit.ratelimit.sourcecriterion.requestheadername=CF-Connecting-IP",
+          "traefik.http.routers.dashboard-auth-service-test.middlewares=auth-test-ratelimit"
       ]
     }
 
@@ -187,6 +228,39 @@ job "nightcore-bot-test" {
       }
     }
 
+    task "redis" {
+      driver = "docker"
+
+      lifecycle {
+        hook    = "prestart"
+        sidecar = true
+      }
+
+      resources {
+        cpu    = 50
+        memory = 50
+      }
+
+      config {
+        image = "redis:7-alpine"
+
+        network_mode = "host"
+
+        args = [
+          "--bind", "127.0.0.1",
+          "--port", "${NOMAD_PORT_redis}",
+          "--dir", "/alloc/data",
+          "--maxmemory", "40mb",
+          "--maxmemory-policy", "volatile-lru",
+        ]
+      }
+
+      logs {
+        max_files     = 3
+        max_file_size = 10
+      }
+    }
+
     task "nightcore-bot" {
       driver = "docker"
 
@@ -213,12 +287,12 @@ EOT
       }
 
       resources {
-        cpu    = 350
-        memory = 350
+        cpu    = 250
+        memory = 250
       }
 
       config {
-        image = "ghcr.io/${var.repository}:${var.image_tag}"
+        image = "ghcr.io/${var.bot_repository}:${var.bot_image_tag}"
 
         network_mode = "host"
 
@@ -238,12 +312,75 @@ EOT
         POSTGRES_HOST          = "127.0.0.1"
         POSTGRES_PORT          = "${NOMAD_PORT_postgres}"
         POSTGRES_DB            = var.postgres_db
-        API_PORT               = var.api_port
+        API_PORT               = "5010"
         API_HOST               = var.api_host
         API_DOMAIN             = var.api_domain
         DASHBOARD_FRONTEND_URI = var.dashboard_frontend_uri
         JWT_PUBLIC             = var.jwt_public
         JWT_ALGORITHM          = var.jwt_algorithm
+      }
+
+      logs {
+        max_files     = 3
+        max_file_size = 10
+      }
+
+    }
+
+    task "nightcore-auth-service" {
+      driver = "docker"
+
+      vault {
+        role = "runner-nightcore"
+      }
+
+      identity {
+        name = "vault_default"
+        aud  = ["vault.io"]
+        ttl  = "1h"
+      }
+
+      template {
+        data = <<EOT
+{{ with secret "secret/data/ci/github-registry" }}
+REGISTRY_USERNAME={{ .Data.data.username }}
+REGISTRY_TOKEN={{ .Data.data.token }}
+{{ end }}
+EOT
+        destination = "secrets/registry.env"
+        env         = true
+        change_mode = "restart"
+      }
+
+      resources {
+        cpu    = 100
+        memory = 100
+      }
+
+      config {
+        image = "ghcr.io/${var.auth_repository}:${var.auth_image_tag}"
+
+        network_mode = "host"
+
+        auth {
+          username       = "${REGISTRY_USERNAME}"
+          password       = "${REGISTRY_TOKEN}"
+        }
+      }
+
+      env {
+        API_PORT                   = "5011"
+        API_HOST                   = var.api_host
+        API_DOMAIN                 = var.api_domain
+        DASHBOARD_FRONTEND_URI     = var.dashboard_frontend_uri
+        JWT_PUBLIC_KEY             = var.jwt_public
+        JWT_PRIVATE_KEY            = var.auth_jwt_private
+        JWT_ALGORITHM              = var.jwt_algorithm
+        DISCORD_AUTH_CLIENT_ID     = var.auth_discord_client_id
+        DISCORD_AUTH_CLIENT_SECRET = var.auth_discord_client_secret
+        DISCORD_AUTH_REDIRECT_URI  = var.auth_discord_redirect_uri
+        REDIS_HOST                 = "127.0.0.1"
+        REDIS_PORT                 = "${NOMAD_PORT_redis}"
       }
 
       logs {
