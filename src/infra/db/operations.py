@@ -93,7 +93,8 @@ from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.rainbow import RainbowRole
 from src.infra.db.models.subscription import DiscordGuild
-from src.infra.db.models.user import UserCase
+from src.infra.db.models.user import UserVipStatus
+from src.infra.db.models.vip import VipStatus
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
@@ -2876,6 +2877,7 @@ async def insert_moderation_message(
 async def get_guild_subscription(
     session: AsyncSession, *, guild_id: int
 ) -> DiscordGuild | None:
+    """Get guild subscription."""
     stmt = select(DiscordGuild).where(DiscordGuild.guild_id == guild_id)
 
     result = await session.execute(stmt)
