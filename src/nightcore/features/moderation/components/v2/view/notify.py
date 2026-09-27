@@ -1,4 +1,5 @@
 import logging  # noqa: D100
+import re
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Self, cast
 
@@ -307,7 +308,7 @@ class NotifyViewV2(LayoutView):
                         )
                     elif "```" in content:
                         self.content = extract_str_by_pattern(
-                            content, r"```(.+)```"
+                            content, r"```(.+?)```\s*$", re.DOTALL
                         )
 
                 if isinstance(item, ActionRowOverride):

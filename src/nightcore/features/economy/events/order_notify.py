@@ -67,7 +67,8 @@ class CoinsShopNotifyEvent(Cog):
             )
 
             try:
-                await member.send(view=view)
+                dm = await member.create_dm()
+                await dm.send(view=view)
                 logger.info(
                     "[%s/log] Successfully sent DM to user %s in guild %s.",
                     dto.event_type,

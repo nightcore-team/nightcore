@@ -76,10 +76,10 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
                     guild.id,
                 )
             else:
-                if last_rr.state == RoleRequestStateEnum.DENIED:
-                    outcome = "role_request_already_declined"
+                if last_rr.state != RoleRequestStateEnum.PENDING:
+                    outcome = "role_request_already_checked"
                     logger.warning(
-                        "Role request for user %s in guild %s is already declined",  # noqa: E501
+                        "Role request for user %s in guild %s is already checked",  # noqa: E501
                         self.user.id,
                         guild.id,
                     )
@@ -99,11 +99,11 @@ class DeclineRoleRequestModal(Modal, title="Отклонить запрос ро
             )
             return
 
-        if outcome == "role_request_already_declined":
+        if outcome == "role_request_already_checked":
             await interaction.followup.send(
                 view=ErrorViewV2(
                     "Ошибка отклонения",
-                    "Запрос на роль уже был отклонен.",
+                    "Запрос на роль уже был рассмотрен.",
                 ),
                 ephemeral=True,
             )

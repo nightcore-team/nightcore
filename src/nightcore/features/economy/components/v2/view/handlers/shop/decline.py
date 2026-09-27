@@ -68,8 +68,7 @@ async def handle_decline_coins_shop_order_button(
         )
         if not economy_access_roles_ids:
             outcome = "economy_access_not_configured"
-
-        if not has_any_role_from_sequence(
+        elif not has_any_role_from_sequence(
             cast(Member, interaction.user),
             economy_access_roles_ids,
         ):
@@ -104,7 +103,7 @@ async def handle_decline_coins_shop_order_button(
         return
 
     if outcome == "missing_permissions":
-        await interaction.response.send_message(
+        await interaction.followup.send(
             view=MissingPermissionsViewV2(),
             ephemeral=True,
         )

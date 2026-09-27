@@ -11,7 +11,6 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.components.view.v2 import (
     EntityNotFoundViewV2,
     ErrorViewV2,
-    MissingPermissionsViewV2,
     NoConfigFoundButCreatedViewV2,
     NoConfigFoundViewV2,
     StrToIntTransformFailedViewV2,
@@ -48,6 +47,7 @@ async def setup(bot: "Nightcore") -> None:
             return
 
         logger.exception("Unhandled text command error", exc_info=error)
+
         await ctx.send(
             "Unexpected error occurred. Please contact the developer.",
         )
@@ -113,32 +113,6 @@ async def setup(bot: "Nightcore") -> None:
                         ephemeral=True,
                     )
                 return
-
-        if isinstance(original, app_commands.MissingPermissions):
-            logger.info(
-                "%s handled guild=%s user=%s",
-                original.__class__.__name__,
-                cast(Guild, interaction.guild).id,
-                interaction.user.id,
-            )
-            missing_perms = ", ".join(original.missing_permissions)
-            if not interaction.response.is_done():
-                await interaction.response.send_message(
-                    view=MissingPermissionsViewV2(
-                        "Вам не хватает следующих прав для "
-                        f"использования этой команды: {missing_perms}."
-                    ),
-                    ephemeral=True,
-                )
-            else:
-                await interaction.followup.send(
-                    view=MissingPermissionsViewV2(
-                        "Вам не хватает следующих прав для "
-                        f"использования этой команды: {missing_perms}."
-                    ),
-                    ephemeral=True,
-                )
-            return
 
         if isinstance(original, app_commands.CommandOnCooldown):
             logger.info(

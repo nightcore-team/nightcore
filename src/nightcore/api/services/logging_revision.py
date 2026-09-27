@@ -10,6 +10,7 @@ from src.infra.db.models import LoggingRevision
 from src.infra.db.operations import (
     CONFIG_MODEL_MAP,
     count_logging_revisions,
+    delete_expired_logging_revisions,
     get_last_logging_revision,
     get_logging_revision_by_id,
     get_logging_revisions,
@@ -76,6 +77,8 @@ class LoggingRevisionService:
         """
 
         revision_id = self.generate_revision_id()
+
+        await delete_expired_logging_revisions(session)
 
         last_revision = await get_last_logging_revision(
             session,

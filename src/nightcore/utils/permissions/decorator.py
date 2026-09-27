@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable, Sequence
 from functools import wraps
 from typing import (
@@ -18,6 +19,7 @@ from discord import Guild, Interaction, Member, app_commands
 
 from src.config.config import config as project_config
 from src.infra.db.operations import GuildT, get_specified_field
+from src.nightcore.components.view.v2 import MissingPermissionsViewV2
 from src.nightcore.exceptions import FieldNotConfiguredError
 from src.nightcore.utils import has_any_role_from_sequence
 
@@ -32,6 +34,8 @@ from .types import PERMISSION_CONFIG_MAP, PermissionsFlagEnum
 P = ParamSpec("P")
 T = TypeVar("T")
 CogT = TypeVar("CogT", bound="Cog")
+
+logger = logging.getLogger(__name__)
 
 
 @overload
@@ -104,9 +108,31 @@ def check_required_permissions(
             )
 
             if not has_permission:
-                raise app_commands.MissingPermissions(
-                    missing_permissions=[permissions_flag.value]
+                logger.info(
+                    "%s handled guild=%s user=%s",
+                    app_commands.MissingPermissions.__class__.__name__,
+                    cast(Guild, interaction.guild).id,
+                    interaction.user.id,
                 )
+                missing_perms = ", ".join([permissions_flag.value])
+
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        view=MissingPermissionsViewV2(
+                            "Вам не хватает следующих прав для "
+                            f"использования данной функции: {missing_perms}."
+                        ),
+                        ephemeral=True,
+                    )
+                else:
+                    await interaction.followup.send(
+                        view=MissingPermissionsViewV2(
+                            "Вам не хватает следующих прав для "
+                            f"использования данной функции: {missing_perms}."
+                        ),
+                        ephemeral=True,
+                    )
+                return
 
             func.__permissions_flag__ = permissions_flag  # type: ignore
 

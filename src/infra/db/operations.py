@@ -92,8 +92,8 @@ from src.infra.db.models.configurations.rules import (
 from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.rainbow import RainbowRole
-from src.infra.db.models.user import UserVipStatus
-from src.infra.db.models.vip import VipStatus
+from src.infra.db.models.subscription import DiscordGuild
+from src.infra.db.models.user import UserCase
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
@@ -1419,6 +1419,21 @@ async def get_private_room_state(
     return res.scalar_one_or_none()
 
 
+async def get_private_room_state_by_channel(
+    session: AsyncSession, *, channel_id: int, for_update: bool = False
+) -> PrivateRoomState | None:
+    """Get the private room state bound to a voice channel."""
+    stmt = (
+        select(PrivateRoomState)
+        .where(PrivateRoomState.channel_id == channel_id)
+        .limit(1)
+    )
+    if for_update:
+        stmt = stmt.with_for_update()
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
 async def create_private_room_state(
     session: AsyncSession,
     *,
@@ -1810,6 +1825,31 @@ async def count_logging_revisions(
     stmt = select(func.count()).select_from(LoggingRevision).where(*conditions)
 
     return await session.scalar(stmt) or 0
+
+
+async def delete_expired_logging_revisions(session: AsyncSession) -> None:
+    """Delete logging revisions older than 60 days.
+
+    Mirrors :func:`insert_moderation_message`: a single batch (at most 100
+    rows, ``FOR UPDATE SKIP LOCKED``) is pruned per call so concurrent
+    config updates never block on the cleanup.
+    """
+
+    expired_ids = (
+        select(LoggingRevision.revision_id)
+        .where(
+            LoggingRevision.created_at
+            <= datetime.now(UTC) - timedelta(days=60)
+        )
+        .order_by(LoggingRevision.created_at)
+        .limit(100)
+        .with_for_update(skip_locked=True)
+    )
+    stmt = delete(LoggingRevision).where(
+        LoggingRevision.revision_id.in_(expired_ids)
+    )
+
+    await session.execute(stmt)
 
 
 async def get_fraction_roles(
@@ -2599,23 +2639,38 @@ async def get_user_casino_bet_by_game_id(
     return result.scalar_one_or_none()
 
 
-async def get_active_casino_games(
+async def get_expired_casino_game_ids(
     session: AsyncSession, *, dt: datetime
-) -> Sequence[CasinoGame]:
-    """Get all active casino games for a guild."""
-    stmt = (
-        select(CasinoGame)
-        .where(
-            CasinoGame.state == CasinoGameStateEnum.PENDING,
-            CasinoGame.end_time <= dt,
-        )
-        .with_for_update(skip_locked=True)
-    )
-    stmt = stmt.options(
-        selectinload(CasinoGame.bets).selectinload(CasinoBet.user)
+) -> Sequence[int]:
+    """Get ids of pending casino games whose end time has passed."""
+    stmt = select(CasinoGame.id).where(
+        CasinoGame.state == CasinoGameStateEnum.PENDING,
+        CasinoGame.end_time <= dt,
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def get_expired_casino_game_for_update(
+    session: AsyncSession, *, game_id: int, dt: datetime
+) -> CasinoGame | None:
+    """Lock a pending casino game with expired end time, with bets and users.
+
+    Returns None if the game is already finished, was extended, or is
+    currently locked by another transaction (join/leave in progress).
+    """
+    stmt = (
+        select(CasinoGame)
+        .where(
+            CasinoGame.id == game_id,
+            CasinoGame.state == CasinoGameStateEnum.PENDING,
+            CasinoGame.end_time <= dt,
+        )
+        .options(selectinload(CasinoGame.bets).selectinload(CasinoBet.user))
+        .with_for_update(of=CasinoGame, skip_locked=True)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def get_or_create_processed_thread(
@@ -2816,3 +2871,13 @@ async def insert_moderation_message(
     session.add(message)
 
     return message
+
+
+async def get_guild_subscription(
+    session: AsyncSession, *, guild_id: int
+) -> DiscordGuild | None:
+    stmt = select(DiscordGuild).where(DiscordGuild.guild_id == guild_id)
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()

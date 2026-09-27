@@ -117,8 +117,8 @@ async def handle_approve(
 
             if not last_rr:
                 outcome = "request_not_found"
-            elif last_rr.state == RoleRequestStateEnum.APPROVED:
-                outcome = "already_approved"
+            elif last_rr.state != RoleRequestStateEnum.PENDING:
+                outcome = "already_checked"
             else:
                 last_rr.state = RoleRequestStateEnum.APPROVED
                 last_rr.moderator_id = interaction.user.id
@@ -152,11 +152,11 @@ async def handle_approve(
         )
         return
 
-    if outcome == "already_approved":
+    if outcome == "already_checked":
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка одобрения запроса",
-                "Другой модератор одобрил этот запрос.",
+                "Другой модератор рассмотрел этот запрос.",
             ),
             ephemeral=True,
         )

@@ -13,6 +13,7 @@ from src.infra.db.models import Base
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.schema import SchemaItem
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -37,6 +38,26 @@ target_metadata = Base.metadata
 
 db_url = project_config.db.POSTGRES_DATABASE_URI
 
+EXTERNAL_SCHEMAS = {"nightcore-telegram"}
+
+
+def include_object(
+    obj: SchemaItem,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to: SchemaItem | None,
+) -> bool:
+    """Skip tables owned by other services during autogenerate."""
+    if type_ == "table":
+        return getattr(obj, "schema", None) not in EXTERNAL_SCHEMAS
+
+    table = getattr(obj, "table", None)
+    if table is not None:
+        return table.schema not in EXTERNAL_SCHEMAS
+
+    return True
+
 
 def run_migrations_offline() -> None:
     """
@@ -57,6 +78,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         # dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -68,6 +90,7 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         compare_type=True,
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()

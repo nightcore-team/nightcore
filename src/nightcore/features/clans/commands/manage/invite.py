@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
     name="invite", description="Пригласить участника в ваш клан."
 )
 @app_commands.describe(user="Пользователь, которого хотите пригласить.")
+@app_commands.checks.cooldown(1, 360.0, key=lambda i: i.user.id)
 @check_required_permissions(PermissionsFlagEnum.NONE)
 async def invite(
     interaction: Interaction["Nightcore"],
