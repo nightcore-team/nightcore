@@ -6,7 +6,10 @@ from discord.interactions import Interaction
 
 from ...battlepass.claim import BattlepassClaimViewV2
 from ...battlepass.info import BattlepassInfoViewV2
-from .claim import handle_battlepass_claim_reward_button
+from .claim import (
+    handle_battlepass_claim_additional_reward_button,
+    handle_battlepass_claim_reward_button,
+)
 from .info import handle_battlepass_info_button
 from .show import handle_battlepass_show_button
 
@@ -23,6 +26,11 @@ async def handle_battlepass_interaction(
     match custom_id:
         case "battlepass:claim_reward":
             await handle_battlepass_claim_reward_button(
+                interaction=interaction,
+                view_to_update=BattlepassClaimViewV2,
+            )
+        case "battlepass:claim_additional_reward":
+            await handle_battlepass_claim_additional_reward_button(
                 interaction=interaction,
                 view_to_update=BattlepassClaimViewV2,
             )

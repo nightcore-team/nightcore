@@ -24,6 +24,9 @@ class CoinsShopOrderViewV2(LayoutView):
         user_balance_after: float | None = None,
         item_name: str | None = None,
         item_price: float | None = None,
+        original_price: float | None = None,
+        discount_amount: float = 0,
+        discount_vip_name: str | None = None,
         disable_buttons: bool = False,
     ) -> None:
         super().__init__(timeout=None)
@@ -38,6 +41,13 @@ class CoinsShopOrderViewV2(LayoutView):
                 )
             )
             container.add_item(Separator[Self]())
+
+        price = f"Цена: **{item_price}**"
+        if discount_amount and original_price and discount_vip_name:
+            price = (
+                f"Цена: **{item_price}** (-**{discount_amount}**, "
+                f"скидка от **{discount_vip_name}**)"
+            )
 
         container.add_item(
             TextDisplay[Self](
@@ -54,7 +64,7 @@ class CoinsShopOrderViewV2(LayoutView):
                 f"> Баланс пользователя (до): **{user_balance_before}**\n"
                 f"> Баланс пользователя (после): **{user_balance_after}**\n"
                 f"> Товар: **{item_name}**\n"
-                f"> Цена: **{item_price}**"
+                f"> {price}"
             )
         )
 

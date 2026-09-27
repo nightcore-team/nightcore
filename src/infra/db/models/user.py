@@ -18,10 +18,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.infra.db.models._mixins import IdIntegerMixin
+from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
 from src.infra.db.models.base import Base
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
+from src.infra.db.models.vip import VipStatus
+
+if TYPE_CHECKING:
+    from src.infra.db.models.bank import BankAccount
 
 user_colors = Table(
     "user_colors",
@@ -66,6 +70,7 @@ class User(IdIntegerMixin, Base):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     coins: Mapped[int] = mapped_column(nullable=False, default=0)
+    rerolls: Mapped[int] = mapped_column(nullable=False, default=0)
     level: Mapped[int] = mapped_column(nullable=False, default=0)
     messages_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
@@ -99,13 +104,19 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=1
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
-    cases: Mapped[list["UserCase"]] = relationship(
+    battle_pass_additional_reward_claimed_level: Mapped[int | None] = (
+        mapped_column(Integer, nullable=True)
+    )
+    vip_statuses: Mapped[list["UserVipStatus"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
         lazy="selectin",
+    )
+    cases: Mapped[list["UserCase"]] = relationship(
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
     colors: Mapped[list[Color]] = relationship(
-        lazy="selectin",
         secondary=user_colors,
         cascade="save-update, merge",
         passive_deletes=True,
@@ -115,6 +126,11 @@ class User(IdIntegerMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="selectin",
+    )
+    bank_account: Mapped["BankAccount | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     def get_case(self, case_id: int) -> Optional["UserCase"]:
@@ -131,7 +147,42 @@ class User(IdIntegerMixin, Base):
                 return color
 
 
-class UserCase(Base):
+class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
+    __table_args__ = (
+        Index(
+            "ix_user_vip_active_guild_user",
+            "guild_id",
+            "user_id",
+            postgresql_where=text("is_active = true"),
+        ),
+        UniqueConstraint(
+            "vip_id", "user_id", "guild_id", name="ux_user_vip_guild"
+        ),
+        UniqueConstraint(
+            "vip_id", "user_id", "is_active", name="ux_user_active_vip_guild"
+        ),
+        ForeignKeyConstraint(
+            ["guild_id", "user_id"],
+            ["user.guild_id", "user.user_id"],
+            ondelete="CASCADE",
+        ),
+    )
+
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    vip_id: Mapped[int] = mapped_column(
+        ForeignKey("vipstatus.id", ondelete="CASCADE"), nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(default=False, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )  # None = permanent VIP status; otherwise auto-removed once passed
+
+    user: Mapped["User"] = relationship(back_populates="vip_statuses")
+    vip: Mapped["VipStatus"] = relationship()
+
+
+class UserCase(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint(
             "case_id", "user_id", "guild_id", name="ux_user_case_guild_user"
@@ -142,9 +193,7 @@ class UserCase(Base):
             ondelete="CASCADE",
         ),
     )
-    id: Mapped[int] = mapped_column(
-        autoincrement=True, nullable=False, primary_key=True
-    )
+
     guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     case_id: Mapped[int] = mapped_column(

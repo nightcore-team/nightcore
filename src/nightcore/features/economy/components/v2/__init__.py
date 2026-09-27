@@ -1,7 +1,9 @@
 from .view import (
     AwardNotificationViewV2,
+    BankAccountViewV2,
     BattlepassClaimViewV2,
     CaseHelpViewV2,
+    CaseOpenRerollViewV2,
     CaseOpenViewV2,
     CasesCollectionViewV2,
     CoinsShopOrderNotifyViewV2,
@@ -14,12 +16,17 @@ from .view import (
     UserProfileActionRow,
     UserProfileViewV2,
     UsersListViewV2,
+    VipStatusActivateViewV2,
+    VipStatusHelpViewV2,
+    build_case_reroll_view,
 )
 
 __all__ = (
     "AwardNotificationViewV2",
+    "BankAccountViewV2",
     "BattlepassClaimViewV2",
     "CaseHelpViewV2",
+    "CaseOpenRerollViewV2",
     "CaseOpenViewV2",
     "CasesCollectionViewV2",
     "CoinsShopOrderNotifyViewV2",
@@ -32,4 +39,7 @@ __all__ = (
     "UserProfileActionRow",
     "UserProfileViewV2",
     "UsersListViewV2",
+    "VipStatusActivateViewV2",
+    "VipStatusHelpViewV2",
+    "build_case_reroll_view",
 )

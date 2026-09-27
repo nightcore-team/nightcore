@@ -2,12 +2,17 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
     Boolean,
     ColumnElement,
+    CursorResult,
+    Integer,
+    Numeric,
     asc,
+    bindparam,
     delete,
     exists,
     extract,
@@ -18,12 +23,17 @@ from sqlalchemy import (
     type_coerce,
     update,
 )
+from sqlalchemy import (
+    cast as sa_cast,
+)
 from sqlalchemy.dialects.postgresql import array, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlalchemy.orm import InstrumentedAttribute, Load, selectinload
 
 from src.config.config import config
 from src.infra.db.models import (
+    CaseOpenReward,
+    CaseOpenSession,
     CasinoBet,
     CasinoGame,
     ChangeStat,
@@ -63,6 +73,7 @@ from src.infra.db.models import (
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
 )
+from src.infra.db.models.bank import BankAccount, Deposit, ExtraWallet
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
@@ -87,6 +98,7 @@ from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
 from src.utils._enums import (
+    CaseOpenSessionStatus,
     CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
@@ -404,10 +416,13 @@ async def get_or_create_user(
     *,
     guild_id: int,
     user_id: int,
-    with_relations: bool = False,
+    options: list[Load] | None = None,
     for_update: bool = False,
 ) -> tuple[User, bool]:
     """Get or create a user in the database.
+
+    When `options` is given, its eager-loading options are applied to the
+    SELECT so only the requested relations (e.g. cases, colors) are loaded.
 
     When `for_update` is True the selected row is locked with
     `SELECT ... FOR UPDATE` to prevent concurrent read-modify-write
@@ -417,11 +432,8 @@ async def get_or_create_user(
         User.guild_id == guild_id, User.user_id == user_id
     )
 
-    if with_relations:
-        get_stmt = get_stmt.options(
-            selectinload(User.cases).selectinload(UserCase.item),
-            selectinload(User.colors),
-        )
+    if options:
+        get_stmt = get_stmt.options(*options)
 
     if for_update:
         get_stmt = get_stmt.with_for_update()
@@ -449,33 +461,647 @@ async def get_or_create_user(
         user = await session.scalar(get_stmt)
         return user, False  # type: ignore[return-value]
 
-    # newly inserted row already has lock via insert
-    if for_update:
-        # re-select to acquire FOR UPDATE for R-M-W
-        locked_stmt = (
-            select(User)
-            .where(User.guild_id == guild_id, User.user_id == user_id)
-            .with_for_update()
+    # newly inserted row — RETURNING doesn't apply eager-load options,
+    # so re-select whenever options were requested, and/or lock if needed.
+    if options or for_update:
+        reselect_stmt = select(User).where(
+            User.guild_id == guild_id, User.user_id == user_id
         )
-        if with_relations:
-            locked_stmt = locked_stmt.options(
-                selectinload(User.cases).selectinload(UserCase.item),
-                selectinload(User.colors),
-            )
-        user = await session.scalar(locked_stmt)
+        if options:
+            reselect_stmt = reselect_stmt.options(*options)
+        if for_update:
+            reselect_stmt = reselect_stmt.with_for_update()
+
+        user = await session.scalar(reselect_stmt)
 
     return user, True  # type: ignore[return-value]
 
 
-async def get_user_for_update(
-    session: AsyncSession, *, guild_id: int, user_id: int
-) -> User | None:
-    """Get user row with FOR UPDATE lock (no creation)."""
+async def get_user_vip_statuses_for_update(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = True,
+) -> Sequence[UserVipStatus]:
+    """Get the user's all VIP statuses row.
+
+    Locking the UserVips row itself (not the parent User row) is what
+    lets this correctly contend with the expiry task, which locks the
+    same UserVip row when clearing expired statuses — preventing a
+    grant/replace and an expiry cleanup from racing on the same user.
+    """
+
+    stmt = select(UserVipStatus).where(
+        UserVipStatus.user_id == user_id, UserVipStatus.guild_id == guild_id
+    )
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def create_case_open_session(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    case_id: int,
+    expires_at: datetime,
+    rewards: Sequence[dict[str, Any]],
+) -> CaseOpenSession:
+    """Create a pending case session and bulk-insert its rewards."""
+
+    case_session = CaseOpenSession(
+        guild_id=guild_id,
+        user_id=user_id,
+        case_id=case_id,
+        expires_at=expires_at,
+    )
+    session.add(case_session)
+    await session.flush()
+
+    await session.execute(
+        insert(CaseOpenReward),
+        [
+            {
+                "session_id": case_session.id,
+                "position": position,
+                "reward": reward,
+                "reroll_count": 0,
+            }
+            for position, reward in enumerate(rewards)
+        ],
+    )
+
+    return case_session
+
+
+async def get_case_open_session_for_update(
+    session: AsyncSession, *, session_id: int, for_update: bool = True
+) -> CaseOpenSession | None:
+    """Get a case session with a row lock."""
+
+    stmt = select(CaseOpenSession).where(CaseOpenSession.id == session_id)
+
+    if for_update:
+        stmt.with_for_update()
+
+    return await session.scalar(stmt)
+
+
+async def get_pending_case_open_session(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> CaseOpenSession | None:
+    """Get the user's pending case session."""
+
+    stmt = select(CaseOpenSession).where(
+        CaseOpenSession.guild_id == guild_id,
+        CaseOpenSession.user_id == user_id,
+        CaseOpenSession.status == CaseOpenSessionStatus.PENDING,
+    )
+    return await session.scalar(stmt)
+
+
+async def get_case_open_rewards_for_update(
+    session: AsyncSession,
+    *,
+    session_id: int,
+    reward_id: int | None = None,
+) -> Sequence[CaseOpenReward]:
+    """Get pending session rewards with row locks."""
+
+    stmt = select(CaseOpenReward).where(
+        CaseOpenReward.session_id == session_id
+    )
+    if reward_id is not None:
+        stmt = stmt.where(CaseOpenReward.id == reward_id)
+    stmt = stmt.order_by(CaseOpenReward.position).with_for_update()
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def get_expired_case_open_sessions_for_update(
+    session: AsyncSession,
+    *,
+    now: datetime,
+    limit: int = 100,
+) -> Sequence[CaseOpenSession]:
+    """Get expired pending case sessions in a bounded locked batch."""
+
     stmt = (
-        select(User)
-        .where(User.guild_id == guild_id, User.user_id == user_id)
+        select(CaseOpenSession)
+        .where(
+            CaseOpenSession.status == CaseOpenSessionStatus.PENDING,
+            CaseOpenSession.expires_at <= now,
+        )
+        .order_by(CaseOpenSession.expires_at)
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def delete_case_open_sessions(
+    session: AsyncSession,
+    *,
+    session_ids: Sequence[int],
+) -> None:
+    """Delete case sessions and their rewards cascade."""
+
+    stmt = delete(CaseOpenSession).where(CaseOpenSession.id.in_(session_ids))
+    await session.execute(stmt)
+
+
+async def get_active_user_vip_statuses(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> Sequence[VipStatus]:
+    """Get the user's active VIP configurations."""
+
+    stmt = (
+        select(VipStatus)
+        .join(
+            UserVipStatus,
+            UserVipStatus.vip_id == VipStatus.id,
+        )
+        .where(
+            UserVipStatus.guild_id == guild_id,
+            UserVipStatus.user_id == user_id,
+            UserVipStatus.is_active.is_(True),
+        )
+    )
+
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+def _get_effective_deposit_config(
+    config: GuildEconomyConfig | None,
+    vip_statuses: Sequence[VipStatus],
+) -> tuple[Decimal, int, int]:
+    """Resolve deposit settings from guild config and active VIP statuses."""
+
+    if config is None:
+        interest_rate = Decimal("0")
+        max_balance = 0
+        interest_cap = 0
+    else:
+        interest_rate = config.deposit_base_interest_rate
+        max_balance = config.deposit_max_balance
+        interest_cap = config.deposit_interest_cap_amount
+
+    for vip_status in vip_statuses:
+        if vip_status.deposit_interest_rate:
+            interest_rate = max(
+                interest_rate, vip_status.deposit_interest_rate
+            )
+        if vip_status.deposit_max_balance:
+            max_balance = max(max_balance, vip_status.deposit_max_balance)
+        if vip_status.deposit_interest_cap_amount:
+            interest_cap = max(
+                interest_cap, vip_status.deposit_interest_cap_amount
+            )
+
+    return interest_rate, max_balance, interest_cap
+
+
+async def accrue_deposit_interest_if_due(
+    session: AsyncSession,
+    *,
+    deposit: Deposit,
+    guild_id: int,
+    user_id: int,
+    config: GuildEconomyConfig | None,
+    locked: bool = True,
+) -> Deposit:
+    """Apply pending interest to a single deposit if at least one hour has passed since the last accrual.
+
+    Interest formula: only the portion of the balance up to
+    `deposit_interest_cap_amount` compounds each hour (the "base"); any
+    amount above that cap ("excess") is parked and doesn't itself grow,
+    but still receives the fixed hourly yield generated by the capped
+    base. `deposit_max_balance`, if set, is an outer ceiling applied to
+    the final result.
+
+        base     = min(coins, cap)
+        excess   = max(coins - cap, 0)
+        new_coins = base * (1 + rate) ** hours + excess
+        final     = min(new_coins, max_balance)   # if max_balance set
+
+    `locked` tells this function whether the caller already holds a
+    row-level lock (FOR UPDATE) on `deposit`:
+
+    - `locked=True` (default; e.g. withdraw/deposit/transfer commands,
+      which always fetch the deposit with FOR UPDATE): safe to compute
+      the new balance in Python from the already-loaded `deposit.coins`
+      and assign it via the ORM. No concurrent transaction can be
+      mutating this row at the same time, so there's no lost-update
+      risk, and a plain ORM assignment means SQLAlchemy emits exactly
+      one UPDATE on flush/commit — no raw SQL, no manual re-sync.
+
+    - `locked=False` (e.g. read-only profile display without FOR
+      UPDATE): the balance must be computed atomically inside a single
+      SQL UPDATE, referencing the `coins` column directly rather than
+      a Python snapshot, so a concurrent withdraw/deposit/transfer
+      can't be silently overwritten (lost update). After the UPDATE,
+      the ORM object is refreshed so callers reading `deposit.coins`
+      right after get the up-to-date value.
+    """  # noqa: E501
+
+    now = datetime.now(UTC)
+    hours_elapsed = int(
+        (now - deposit.last_accrued_at).total_seconds() // 3600
+    )
+
+    if hours_elapsed <= 0:
+        return deposit
+
+    active_vip_statuses = await get_active_user_vip_statuses(
+        session,
+        guild_id=guild_id,
+        user_id=user_id,
+    )
+    rate, max_balance, cap = _get_effective_deposit_config(
+        config, active_vip_statuses
+    )
+
+    if not rate:
+        deposit.last_accrued_at = now
+        return deposit
+
+    if locked:
+        base = min(deposit.coins, cap) if cap > 0 else deposit.coins
+        excess = max(deposit.coins - cap, 0) if cap > 0 else 0
+
+        new_coins = base * (1 + rate) ** hours_elapsed + excess
+
+        if max_balance > 0:
+            new_coins = min(new_coins, max_balance)
+
+        deposit.coins = int(new_coins)  # floor
+        deposit.last_accrued_at = now
+
+        return deposit
+
+    rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
+    hours_param = hours_elapsed
+
+    if cap > 0:
+        cap_param = bindparam("cap_p", value=cap, type_=Integer)
+        base_expr = func.least(Deposit.coins, cap_param)
+        excess_expr = func.greatest(Deposit.coins - cap_param, 0)
+    else:
+        base_expr = Deposit.coins
+        excess_expr = 0
+
+    new_coins_expr = func.floor(
+        base_expr * func.power(1 + rate_param, hours_param) + excess_expr
+    )
+
+    if max_balance > 0:
+        new_coins_expr = func.least(
+            new_coins_expr,
+            bindparam("max_balance_p", value=max_balance, type_=Integer),
+        )
+
+    stmt = (
+        update(Deposit)
+        .where(Deposit.id == deposit.id)
+        .values(coins=sa_cast(new_coins_expr, Integer), last_accrued_at=now)
+    )
+    await session.execute(stmt)
+
+    await session.refresh(
+        deposit, attribute_names=["coins", "last_accrued_at"]
+    )
+
+    return deposit
+
+
+async def close_out_deposits_before_rate_change(
+    session: AsyncSession, *, config: GuildEconomyConfig | None, guild_id: int
+) -> int:
+    """Force-accrue interest on every deposit in the guild, using the CURRENT config, right before it gets overwritten with a new rate.
+
+    Same base/excess/cap formula as `accrue_deposit_interest_if_due`.
+    Each deposit gets its own `hours_elapsed` (time since its own
+    `last_accrued_at`), so this is a bulk UPDATE per cap-group via
+    bindparam/executemany, not a naive `WHERE id IN (...)` (which
+    would incorrectly apply one shared hours_elapsed to every row).
+
+    Returns the number of deposits actually updated.
+    """  # noqa: E501
+
+    now = datetime.now(UTC)
+
+    deposit_rows = await session.execute(
+        select(Deposit, BankAccount.user_id)
+        .join(BankAccount, Deposit.bank_account_id == BankAccount.id)
+        .where(BankAccount.guild_id == guild_id)
         .with_for_update()
     )
+
+    active_vips_result = await session.execute(
+        select(VipStatus, UserVipStatus.user_id)
+        .join(UserVipStatus, UserVipStatus.vip_id == VipStatus.id)
+        .where(
+            UserVipStatus.guild_id == guild_id,
+            UserVipStatus.is_active.is_(True),
+        )
+    )
+    active_vips_by_user: dict[int, list[VipStatus]] = {}
+    for vip_status, user_id in active_vips_result.all():
+        active_vips_by_user.setdefault(user_id, []).append(vip_status)
+
+    params_with_cap: dict[tuple[Decimal, int, int], list[dict[str, int]]] = {}
+    params_without_cap: dict[
+        tuple[Decimal, int, int], list[dict[str, int]]
+    ] = {}
+
+    for deposit, user_id in deposit_rows.all():
+        hours_elapsed = int(
+            (now - deposit.last_accrued_at).total_seconds() // 3600
+        )
+        if hours_elapsed <= 0:
+            continue
+
+        rate, max_balance, cap = _get_effective_deposit_config(
+            config, active_vips_by_user.get(user_id, [])
+        )
+        if not rate:
+            continue
+
+        key = (rate, max_balance, cap)
+        row = {"deposit_id": deposit.id, "hours_p": hours_elapsed}
+
+        if max_balance:
+            params_with_cap.setdefault(key, []).append(row)
+        else:
+            params_without_cap.setdefault(key, []).append(row)
+
+    total_updated = 0
+
+    for (rate, _max_balance, cap), rows in params_without_cap.items():
+        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
+        cap_param = bindparam("cap_p", value=cap, type_=Integer)
+        if cap > 0:
+            base_expr = func.least(Deposit.coins, cap_param)
+            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
+        else:
+            base_expr = Deposit.coins
+            excess_expr = 0
+        stmt = (
+            update(Deposit)
+            .where(Deposit.id == bindparam("deposit_id"))
+            .values(
+                coins=sa_cast(
+                    func.floor(
+                        base_expr
+                        * func.power(
+                            1 + rate_param, bindparam("hours_p", type_=Integer)
+                        )
+                        + excess_expr
+                    ),
+                    Integer,
+                ),
+                last_accrued_at=now,
+            )
+        )
+        result = await session.execute(stmt, rows)
+        total_updated += cast(CursorResult[Any], result).rowcount
+
+    for (rate, max_balance, cap), rows in params_with_cap.items():
+        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
+        cap_param = bindparam("cap_p", value=cap, type_=Integer)
+        if cap > 0:
+            base_expr = func.least(Deposit.coins, cap_param)
+            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
+        else:
+            base_expr = Deposit.coins
+            excess_expr = 0
+
+        stmt = (
+            update(Deposit)
+            .where(Deposit.id == bindparam("deposit_id"))
+            .values(
+                coins=sa_cast(
+                    func.least(
+                        func.floor(
+                            base_expr
+                            * func.power(
+                                1 + rate_param,
+                                bindparam("hours_p", type_=Integer),
+                            )
+                            + excess_expr
+                        ),
+                        bindparam(
+                            "max_balance_p",
+                            value=max_balance,
+                            type_=Integer,
+                        ),
+                    ),
+                    Integer,
+                ),
+                last_accrued_at=now,
+            )
+        )
+        result = await session.execute(stmt, rows)
+        total_updated += cast(CursorResult[Any], result).rowcount
+
+    return total_updated
+
+
+async def get_or_create_bank_account(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = False,
+) -> tuple[BankAccount, bool]:
+    """Get or create a bank account with its deposit.
+
+    The BankAccount and Deposit are created atomically within
+    the caller's transaction.
+
+    Returns:
+        tuple[BankAccount, bool]:
+            The bank account and whether it was newly created.
+    """
+
+    get_stmt = (
+        select(BankAccount)
+        .where(
+            BankAccount.guild_id == guild_id,
+            BankAccount.user_id == user_id,
+        )
+        .options(
+            selectinload(BankAccount.deposit),
+        )
+    )
+
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
+
+    bank_account = await session.scalar(get_stmt)
+
+    if bank_account is not None:
+        return bank_account, False
+
+    # Try to create the BankAccount.
+    insert_account_stmt = (
+        insert(BankAccount)
+        .values(
+            guild_id=guild_id,
+            user_id=user_id,
+        )
+        .on_conflict_do_nothing(
+            constraint="ux_user_guild_bank_account",
+        )
+        .returning(BankAccount)
+    )
+
+    result = await session.execute(insert_account_stmt)
+    bank_account = result.scalar_one_or_none()
+
+    if bank_account is None:
+        # Another transaction created the account.
+        #
+        # Re-select it. If for_update=True, wait for and lock
+        # the committed account before using it.
+        if for_update:
+            get_stmt = get_stmt.with_for_update()
+
+        bank_account = await session.scalar(get_stmt)
+
+        return bank_account, False  # type: ignore[return-value]
+
+    # We created the account, so create its deposit
+    # in the same transaction.
+    await session.execute(
+        insert(Deposit).values(
+            bank_account_id=bank_account.id,
+            coins=0,
+        )
+    )
+
+    # Load the relationship before returning.
+    bank_account.deposit = await session.scalar(
+        select(Deposit).where(
+            Deposit.bank_account_id == bank_account.id,
+        )
+    )
+
+    return bank_account, True
+
+
+async def create_extra_wallet(
+    session: AsyncSession, bank_account_id: int, coins: int = 0
+) -> ExtraWallet:
+    """Create new extra wallet."""
+
+    stmt_count = await session.scalar(
+        select(func.count())
+        .select_from(ExtraWallet)
+        .where(ExtraWallet.bank_account_id == bank_account_id)
+        .with_for_update()
+    )
+
+    wallet = ExtraWallet(
+        bank_account_id=bank_account_id,
+        coins=coins,
+        slot=stmt_count + 1 if stmt_count else 1,
+    )
+    session.add(wallet)
+
+    return wallet
+
+
+async def get_user_deposit_for_update(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    guild_id: int,
+    user_id: int,
+    config: GuildEconomyConfig | None = None,
+    for_update: bool = True,
+) -> Deposit | None:
+    """Get the deposit belonging to the given bank account, applying any pending interest accrual first."""  # noqa: E501
+
+    stmt = select(Deposit).where(Deposit.bank_account_id == bank_account_id)
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    deposit = await session.scalar(stmt)
+    if deposit is None:
+        return None
+
+    if config is None:
+        config = await session.scalar(
+            select(GuildEconomyConfig).where(
+                GuildEconomyConfig.guild_id == guild_id
+            )
+        )
+
+    return await accrue_deposit_interest_if_due(
+        session,
+        deposit=deposit,
+        guild_id=guild_id,
+        user_id=user_id,
+        config=config,
+        locked=for_update,
+    )
+
+
+async def get_user_extra_wallet_for_update(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    wallet_id: int,
+    for_update: bool = True,
+) -> ExtraWallet | None:
+    """Get a specific extra wallet, scoped to its owning bank account.
+
+    Ownership is enforced via the WHERE clause (bank_account_id),
+    not just wallet_id — this prevents locking/using a wallet that
+    was passed in but belongs to a different account.
+    """
+
+    stmt = select(ExtraWallet).where(
+        ExtraWallet.id == wallet_id,
+        ExtraWallet.bank_account_id == bank_account_id,
+    )
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    return await session.scalar(stmt)
+
+
+async def get_user_for_update(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = True,
+) -> User | None:
+    """Get user row with FOR UPDATE lock (no creation)."""
+    stmt = select(User).where(
+        User.guild_id == guild_id, User.user_id == user_id
+    )
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
     return await session.scalar(stmt)
 
 
@@ -1883,6 +2509,16 @@ async def get_guild_cases(
     return result.scalars().all()
 
 
+async def get_guild_vip_statuses(
+    session: AsyncSession, *, guild_id: int
+) -> Sequence[VipStatus]:
+    """Get VIP-statuses by guild id."""
+    stmt = select(VipStatus).where(VipStatus.guild_id == guild_id)
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
 async def get_cases_by_input(
     session: AsyncSession, *, guild_id: int, user_input: str
 ) -> Sequence[Case]:
@@ -1901,6 +2537,47 @@ async def get_cases_by_input(
     result = await session.scalars(stmt)
 
     return result.all()
+
+
+async def get_vip_statuses_by_input(
+    session: AsyncSession, *, guild_id: int, user_input: str
+) -> Sequence[VipStatus]:
+    """Get the list of VIP-statuses for a guild by user input."""
+
+    a = 0.7
+    similarity = (len(user_input) / 100) ** a
+
+    stmt = (
+        select(VipStatus)
+        .where(
+            VipStatus.guild_id == guild_id,
+            func.similarity(VipStatus.name, user_input) >= similarity,
+        )
+        .limit(25)
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
+async def get_vip_status_by_id(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    vip_id: int,
+    for_update: bool = False,
+) -> VipStatus | None:
+    """Get a VIP-status by id for a guild."""
+
+    stmt = select(VipStatus).where(
+        VipStatus.guild_id == guild_id, VipStatus.id == vip_id
+    )
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
 
 
 async def get_case_by_id(

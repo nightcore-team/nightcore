@@ -1,0 +1,233 @@
+"""Command to deposit money into user's bank wallet (deposit/extra)."""
+
+import logging
+from typing import TYPE_CHECKING, cast
+
+from discord import Guild, app_commands
+from discord.interactions import Interaction
+
+from src.infra.db.loads import user_load_bank_account_only
+from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models.bank import Deposit, ExtraWallet
+from src.infra.db.operations import (
+    accrue_deposit_interest_if_due,
+    get_or_create_user,
+    get_user_deposit_for_update,
+    get_user_extra_wallet_for_update,
+)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
+from src.nightcore.features.economy.utils.autocomplete import (
+    deposit_extra_wallets_autocomplete,
+)
+from src.nightcore.features.economy.utils.content import safe_split_wallet_id
+from src.nightcore.services.config import specified_guild_config
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
+from src.nightcore.features.economy._groups import bank as bank_group
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@bank_group.command(  # type: ignore
+    name="top_up",
+    description="Пополнить депозитный/дополнительный счёт.",
+)
+@app_commands.guild_only()
+@app_commands.describe(
+    account="Счёт, который нужно пополнить.",
+    amount="Сумма для пополнения.",
+)
+@app_commands.autocomplete(account=deposit_extra_wallets_autocomplete)
+@check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+async def top_up(
+    interaction: Interaction["Nightcore"],
+    account: str,
+    amount: app_commands.Range[int, 1],
+):
+    """Top up money from user's main balance into a deposit/extra wallet."""
+
+    guild = cast(Guild, interaction.guild)
+    choice = account
+
+    await interaction.response.defer(thinking=True, ephemeral=True)
+
+    outcome = ""
+    new_user_balance: int | None = None
+    new_target_balance: int | None = None
+
+    try:
+        async with specified_guild_config(
+            interaction.client,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+        ) as (guild_config, session):
+            user, _ = await get_or_create_user(
+                session,
+                guild_id=guild.id,
+                user_id=interaction.user.id,
+                options=[user_load_bank_account_only],
+            )
+
+            if user.bank_account is None:
+                outcome = "bank_account_not_found"
+            else:
+                assert user.bank_account.deposit is not None
+
+                await accrue_deposit_interest_if_due(
+                    session,
+                    deposit=user.bank_account.deposit,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    config=guild_config,
+                    locked=False,
+                )
+
+                target: Deposit | ExtraWallet | None = None
+
+                if choice == "deposit":
+                    target = await get_user_deposit_for_update(
+                        session,
+                        bank_account_id=user.bank_account.id,
+                        config=guild_config,
+                        guild_id=guild.id,
+                        user_id=user.id,
+                    )
+
+                    if target is None:
+                        outcome = "deposit_not_found"
+
+                elif choice.startswith("extra:"):
+                    wallet_id = safe_split_wallet_id(choice)
+
+                    if wallet_id is None:
+                        outcome = "extra_wallet_not_found"
+                    else:
+                        target = await get_user_extra_wallet_for_update(
+                            session,
+                            bank_account_id=user.bank_account.id,
+                            wallet_id=wallet_id,
+                            for_update=True,
+                        )
+
+                    if target is None:
+                        outcome = "extra_wallet_not_found"
+
+                else:
+                    outcome = "specified_not_found"
+
+                if not outcome and target is not None:
+                    locked_user, _ = await get_or_create_user(
+                        session,
+                        guild_id=guild.id,
+                        user_id=interaction.user.id,
+                        for_update=True,
+                    )
+
+                    if choice == "deposit":
+                        deposit_max_balance = guild_config.deposit_max_balance
+
+                        if (target.coins + amount) > deposit_max_balance:
+                            outcome = "deposit_max_balance_reached"
+
+                    if not outcome:
+                        if locked_user.coins < amount:
+                            outcome = "not_enough_coins"
+                        else:
+                            locked_user.coins -= amount
+                            target.coins += amount
+
+                            new_user_balance = locked_user.coins
+                            new_target_balance = target.coins
+
+                            outcome = "success"
+
+    except Exception as e:
+        logger.error(
+            "Failed to deposit for user=%s guild=%s",
+            interaction.user.id,
+            guild.id,
+            exc_info=e,
+        )
+        outcome = "unexpected_error"
+
+    if outcome == "deposit_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "bank_account_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "extra_wallet_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Extra счёт не был найден.\n> Создать его вы можете введя команду /bank extra create",  # noqa: E501
+            )
+        )
+
+    elif outcome == "specified_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Указанный счёт не был найден.\n> Убедитесь, что депозитный/extra счёт существует.",  # noqa: E501
+            )
+        )
+
+    elif outcome == "deposit_max_balance_reached":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта.",
+                "Достигнут лимит количества средств на депозитном счёте.",
+            )
+        )
+
+    elif outcome == "not_enough_coins":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Недостаточно средств на основном балансе.",
+            )
+        )
+
+    elif outcome == "success":
+        account_desc = "депозитный" if choice == "deposit" else "extra"
+
+        await interaction.followup.send(
+            view=SuccessViewV2(
+                "Пополнение счёта",
+                f"Вы успешно пополнили {account_desc} счёт"
+                " на сумму {amount} <:nightcoreBanknoteUp:1540436249809133683>\n"  # noqa: E501
+                f"> Ваш текущий баланс: {new_user_balance}, баланс счёта: {new_target_balance} <:nightcoreBanknote:1540403146072002624>",  # noqa: E501
+            )
+        )
+
+    elif outcome == "unexpected_error":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Произошла ошибка при пополнении указанного счёта.",
+            )
+        )
+
+    logger.info(
+        "[command deposit] invoked user=%s guild=%s amount=%s account=%s",
+        interaction.user.id,
+        guild.id,
+        amount,
+        choice,
+    )

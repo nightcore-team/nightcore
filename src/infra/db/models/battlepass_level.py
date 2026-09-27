@@ -28,3 +28,9 @@ class BattlepassLevel(IdIntegerMixin, Base):
         default=dict,
         server_default=text("'[]'::json"),
     )
+    additional_reward: Mapped[BattlepassRewardAnnot] = mapped_column(
+        JSON,
+        nullable=True,
+        default=dict,
+        server_default=text("'[]'::json"),
+    )

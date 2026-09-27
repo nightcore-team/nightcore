@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypedDict
+from datetime import datetime
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from src.infra.db.models import (
@@ -44,6 +45,7 @@ class CaseDropAnnot(TypedDict):
     amount: int
     chance: int
     is_color_compensation: bool | None
+    duration: NotRequired[int | None]
 
 
 class FAQPageAnnot(TypedDict):
@@ -61,6 +63,8 @@ class BattlepassRewardAnnot(TypedDict):
     name: str
     amount: int
     is_color_compensation: bool | None
+    duration: NotRequired[int | None]
+    vip_id_access: NotRequired[int | None]
 
 
 class BattlepassLevelAnnot(TypedDict):
@@ -69,6 +73,15 @@ class BattlepassLevelAnnot(TypedDict):
     level: int
     exp_required: int
     reward: BattlepassRewardAnnot
+
+
+class UserVipStatusAnnot(TypedDict):
+    """User's VIP status with its config, used by the activate view."""
+
+    vip_id: int
+    name: str
+    emoji_str: str | None
+    is_active: bool
 
 
 class CasinoBetAnnot(TypedDict):
@@ -90,4 +103,14 @@ class ClanShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot):
     clan_name: str
 
 
-class CoinsShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot): ...
+class CoinsShopOrderPayloadAnnot(BaseShopOrderPayloadAnnot):
+    original_cost: float
+    discount_amount: float
+    discount_percent: float
+    discount_vip_name: str | None
+
+
+class ExtraWalletAnnot(TypedDict):
+    coins: int
+    slot: int
+    updated_at: datetime

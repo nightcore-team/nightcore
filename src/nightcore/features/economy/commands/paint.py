@@ -9,6 +9,7 @@ from discord import Guild, Member, Role, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_colors
 from src.infra.db.models.color import Color
 from src.infra.db.models.user import User
 from src.infra.db.operations import get_guild_colors, get_or_create_user
@@ -68,7 +69,7 @@ class Paint(Cog):
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
-                with_relations=True,
+                options=[user_load_colors],
                 for_update=True,
             )
 

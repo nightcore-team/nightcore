@@ -59,6 +59,7 @@ class GuildRoleRequestConfig(IdIntegerMixin, Base):
         GuildOrganizationalRole,
         lazy="selectin",
         cascade="all, delete-orphan",
+        overlaps="illegal_roles",
         primaryjoin=lambda: and_(
             GuildRoleRequestConfig.guild_id
             == GuildOrganizationalRole.guild_id,
