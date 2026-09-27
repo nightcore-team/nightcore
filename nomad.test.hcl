@@ -322,6 +322,7 @@ EOT
         DASHBOARD_FRONTEND_URI = var.dashboard_frontend_uri
         JWT_PUBLIC             = var.jwt_public
         JWT_ALGORITHM          = var.jwt_algorithm
+        ENVIRONMENT = var.environment
       }
 
       logs {
