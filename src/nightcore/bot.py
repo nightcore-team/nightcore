@@ -57,16 +57,14 @@ class GuildOnlyTree(app_commands.CommandTree):
 
         bot = interaction.client
 
-        if (
-            bot.config.env.ENVIRONMENT == "production"
-            and not await self.subscription_check(interaction)
-        ):
-            with contextlib.suppress(discord.InteractionResponded):
-                await interaction.response.send_message(
-                    "Команды недоступны до оплаты бота.\nОплата производится в [телеграм](https://t.me/nightcoretgbot) ",  # noqa: E501
-                    ephemeral=True,
-                )
-            return False
+        if bot.config.env.ENVIRONMENT == "production":  # noqa: SIM102
+            if not await self.subscription_check(interaction):
+                with contextlib.suppress(discord.InteractionResponded):
+                    await interaction.response.send_message(
+                        "Команды недоступны до оплаты бота.\nОплата производится в [телеграм](https://t.me/nightcoretgbot) ",  # noqa: E501
+                        ephemeral=True,
+                    )
+                return False
 
         return True
 
