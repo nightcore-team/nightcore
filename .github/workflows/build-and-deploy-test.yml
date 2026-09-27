@@ -89,6 +89,7 @@ jobs:
           NOMAD_VAR_auth_discord_client_id: ${{ secrets.AUTH_DISCORD_CLIENT_ID }}
           NOMAD_VAR_auth_discord_client_secret: ${{ secrets.AUTH_DISCORD_CLIENT_SECRET }}
           NOMAD_VAR_auth_discord_redirect_uri: ${{ vars.AUTH_DISCORD_REDIRECT_URI }}
+          NOMAD_VAR_environment: ${{ vars.ENVIRONMENT }}
         run: |
           nomad job run \
             -var "bot_image_tag=${GITHUB_SHA}" \
