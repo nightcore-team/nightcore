@@ -102,7 +102,7 @@ job "nightcore-bot-test" {
     auto_revert      = false
   }
 
-  group "nightcore-bot" {
+  group "nightcore-bot-test" {
     count = 1
 
     disconnect {
@@ -169,7 +169,7 @@ job "nightcore-bot-test" {
       ]
     }
 
-    task "postgres" {
+    task "postgres-test" {
       driver = "docker"
 
       lifecycle {
@@ -206,7 +206,7 @@ job "nightcore-bot-test" {
       }
     }
 
-    task "wait-for-postgres" {
+    task "wait-for-postgres-test" {
       driver = "docker"
 
       lifecycle {
@@ -232,7 +232,7 @@ job "nightcore-bot-test" {
       }
     }
 
-    task "redis" {
+    task "redis-test" {
       driver = "docker"
 
       lifecycle {
@@ -265,7 +265,7 @@ job "nightcore-bot-test" {
       }
     }
 
-    task "nightcore-bot" {
+    task "nightcore-bot-test" {
       driver = "docker"
 
       vault {
@@ -331,7 +331,7 @@ EOT
 
     }
 
-    task "nightcore-auth-service" {
+    task "nightcore-auth-service-test" {
       driver = "docker"
 
       vault {
