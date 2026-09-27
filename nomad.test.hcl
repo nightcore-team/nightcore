@@ -11,6 +11,10 @@ variable "auth_image_tag" {
   type    = string
 }
 
+variable "environment" {
+  type = string
+}
+
 variable "auth_repository" {
   type    = string
   default = "nightcore-team/nightcore-auth-service"
@@ -89,7 +93,7 @@ job "nightcore-bot-test" {
   constraint {
     attribute = "${meta.roles}"
     operator = "set_contains"
-    value = "grafana"
+    value = "apps"
   }
 
   update {
@@ -318,6 +322,7 @@ EOT
         DASHBOARD_FRONTEND_URI = var.dashboard_frontend_uri
         JWT_PUBLIC             = var.jwt_public
         JWT_ALGORITHM          = var.jwt_algorithm
+        ENVIRONMENT            = var.environment
       }
 
       logs {
