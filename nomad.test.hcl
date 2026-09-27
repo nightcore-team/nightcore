@@ -322,7 +322,6 @@ EOT
         DASHBOARD_FRONTEND_URI = var.dashboard_frontend_uri
         JWT_PUBLIC             = var.jwt_public
         JWT_ALGORITHM          = var.jwt_algorithm
-        ENVIRONMENT            = var.environment
       }
 
       logs {
@@ -386,6 +385,7 @@ EOT
         DISCORD_AUTH_REDIRECT_URI  = var.auth_discord_redirect_uri
         REDIS_HOST                 = "127.0.0.1"
         REDIS_PORT                 = "${NOMAD_PORT_redis}"
+        ENVIRONMENT            = var.environment
       }
 
       logs {
