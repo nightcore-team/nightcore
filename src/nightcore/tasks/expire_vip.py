@@ -26,10 +26,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+BATCH_SIZE = 500
+MAX_CONCURRENT_REVOKES = 5
+
 
 class ExpireVipTask(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
+        self._revoke_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REVOKES)
 
         self.expire_vip_task.start()
 
@@ -43,44 +47,79 @@ class ExpireVipTask(Cog):
         """Delete VIP statuses that passed their expiry date."""
         await self.bot.task_manager.sleep(__name__)
 
-        try:
-            now = datetime.now(UTC)
+        now = datetime.now(UTC)
+        total_deleted = 0
+        total_revoked = 0
 
+        while True:
             async with self.bot.uow.start() as session:
                 expired = await get_expired_user_vip_statuses_for_update(
-                    session, now=now, options=[user_load_vip_status_vip]
+                    session,
+                    now=now,
+                    options=[user_load_vip_status_vip],
+                    limit=BATCH_SIZE,
                 )
 
                 if not expired:
-                    return
+                    break
 
                 status_ids = [status.id for status in expired]
-                # the rows are locked with skip_locked, so a grant that is
-                # extending one of them right now is never touched
-                await delete_user_vip_statuses(
-                    session,
-                    status_ids=status_ids,
-                )
+                await delete_user_vip_statuses(session, status_ids=status_ids)
+
+                total_deleted += len(expired)
 
                 logger.info(
-                    "[task] - Deleted %s expired VIP statuses",
+                    "[task] - Deleted %s expired VIP statuses (batch)",
                     len(expired),
                 )
 
-        except Exception:
-            logger.exception("[task] - Failed to delete expired VIP statuses")
-            return
+            revoked = await self._revoke_roles(expired)
+            total_revoked += revoked
 
-        for status in expired:
+        if total_deleted > 0:
+            logger.info(
+                "[task] - Completed expiry cycle: "
+                "deleted=%s, roles_revoked=%s",
+                total_deleted,
+                total_revoked,
+            )
+
+    async def _revoke_roles(self, expired_statuses: list) -> int:
+        """Revoke roles for expired statuses with rate limiting."""
+        tasks = []
+        for status in expired_statuses:
             if status.vip.role_id is not None:
-                await asyncio.sleep(0.1)
-                asyncio.create_task(
-                    self._revoke_role(
+                tasks.append(
+                    self._revoke_role_with_limit(
                         status.guild_id,
                         status.user.user_id,
                         status.vip.role_id,
                     )
                 )
+
+        if not tasks:
+            return 0
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        revoked = 0
+        for result in results:
+            if result is True:
+                revoked += 1
+            elif isinstance(result, Exception):
+                logger.exception("[task] - Unexpected error revoking role")
+
+        return revoked
+
+    async def _revoke_role_with_limit(
+        self, guild_id: int, user_id: int, role_id: int
+    ) -> bool:
+        """Revoke a single role with semaphore limiting."""
+        async with self._revoke_semaphore:
+            try:
+                await self._revoke_role(guild_id, user_id, role_id)
+                return True
+            except Exception:
+                return False
 
     async def _revoke_role(
         self, guild_id: int, user_id: int, role_id: int
