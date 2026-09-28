@@ -48,7 +48,7 @@ class BankAccountViewV2(LayoutView):
             TextDisplay[Self](
                 "### <:nightcoreInfo:1540439225877528626> Состояние депозита\n"
                 f"> <:nightcoreLevelUp:1540402294275969024> Баланс: {deposit_balance} {coin_name}\n"  # noqa: E501
-                f"> <:nightcorePercent:1545112163742519349> Процентная ставка: {deposit_current_rate}, лимит для начисления процентов: {deposit_interest_cap_amount}\n"  # noqa: E501
+                f"> <:nightcorePercent:1545112163742519349> Процентная ставка: {deposit_current_rate}% в час, лимит для начисления процентов: {deposit_interest_cap_amount}\n"  # noqa: E501
                 f"> Последнее начисление: {discord_ts(deposit_last_updated_at)}"  # noqa: E501
             )
         )
@@ -62,6 +62,7 @@ class BankAccountViewV2(LayoutView):
                 container.add_item(
                     TextDisplay[Self](
                         f"### <:nightcoreAccept:1540450035907436625> Extra-счёт <:nightcoreHash:1545371151885271040>{EMOJIS.get(wallet['slot'], idx)}\n"  # noqa: E501
+                        f"> Баланс: {wallet['coins']} {coin_name}\n"
                         f"> Последнее пополнение/снятие: {discord_ts(wallet['updated_at'])}"  # noqa: E501
                     )
                 )

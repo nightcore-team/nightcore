@@ -214,7 +214,7 @@ async def top_up(
             view=SuccessViewV2(
                 "Пополнение счёта",
                 f"Вы успешно пополнили {account_desc} счёт"
-                " на сумму {amount} <:nightcoreBanknoteUp:1540436249809133683>\n"  # noqa: E501
+                f" на сумму {amount} <:nightcoreBanknoteUp:1540436249809133683>\n"  # noqa: E501
                 f"> Ваш текущий баланс: {new_user_balance}, баланс счёта: {new_target_balance} <:nightcoreBanknote:1540403146072002624>",  # noqa: E501
             )
         )

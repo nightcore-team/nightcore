@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
+from sqlalchemy import select
 
 from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models.bank import ExtraWallet
 from src.infra.db.operations import (
     accrue_deposit_interest_if_due,
     get_or_create_bank_account,
@@ -18,6 +20,7 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_member_exists
 
 if TYPE_CHECKING:
+    from src.infra.db.models._annot import ExtraWalletAnnot
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.features.economy._groups import bank as bank_group
@@ -92,6 +95,24 @@ async def account(
             config=guild_config,
         )
 
+        # extra_wallets is a lazy relationship and the account helper only
+        # eager-loads the deposit, so the wallets have to be read here,
+        # while the session is still open.
+        extra_wallets: list[ExtraWalletAnnot] = [
+            {
+                "coins": wallet.coins,
+                "slot": wallet.slot,
+                "updated_at": wallet.updated_at,
+            }
+            for wallet in (
+                await session.scalars(
+                    select(ExtraWallet)
+                    .where(ExtraWallet.bank_account_id == bank_account.id)
+                    .order_by(ExtraWallet.slot)
+                )
+            ).all()
+        ]
+
     assert bank_account.deposit is not None
 
     deposit_float_rate = float(guild_config.deposit_base_interest_rate) * 100
@@ -103,7 +124,7 @@ async def account(
         deposit_interest_cap_amount=guild_config.deposit_interest_cap_amount,
         deposit_current_rate=deposit_float_rate,
         deposit_last_updated_at=bank_account.deposit.last_accrued_at,
-        extra_wallets=[],
+        extra_wallets=extra_wallets,
     )
 
     await interaction.followup.send(view=view)

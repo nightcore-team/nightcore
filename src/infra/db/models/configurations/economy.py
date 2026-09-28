@@ -101,10 +101,12 @@ class GuildEconomyConfig(IdIntegerMixin, Base):  #
         nullable=False,
         default=0.0000,
         server_default=text("0.0000"),
-    )  # Base annual interest rate for deposits (e.g. 0.0100 = 1%)
+    )  # Hourly interest rate (e.g. 0.0001 = 0.01% per hour)
+    # Deposit amount that earns interest; the part above it accrues
+    # nothing (0 = no limit).
     deposit_interest_cap_amount: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default=text("0")
-    )  # Max interest a user can earn per payout cycle
+    )
 
     @staticmethod
     def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:  # noqa: D102
