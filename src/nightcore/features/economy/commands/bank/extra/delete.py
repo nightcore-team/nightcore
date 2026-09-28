@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 @app_commands.describe(
     wallet="Дополнительный счёт, который нужно удалить.",
 )
-@app_commands.autocomplete(account=user_extra_wallets_autocomplete)
+@app_commands.autocomplete(wallet=user_extra_wallets_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
 async def extra_delete(interaction: Interaction["Nightcore"], wallet: str):
     """Delete extra wallet, moving its balance to the main one."""
