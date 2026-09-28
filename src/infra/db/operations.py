@@ -673,9 +673,11 @@ async def get_active_user_vip_statuses(
 ) -> Sequence[VipStatus]:
     """Get the user's currently granted VIP configurations.
 
-    `is_active` alone is not enough: nothing in the codebase flips it back
-    to False, so an expired VIP would keep granting its deposit bonus
-    forever. The `expires_at` check is what actually ends the bonus.
+    `is_active` says which of the user's VIPs is the one in use - the
+    activation handler moves the flag over when another is activated, and
+    the unique index on (guild_id, user_id) where is_active keeps it to a
+    single row - but it says nothing about the VIP still being valid. The
+    `expires_at` check is what actually ends the bonus.
     """
 
     stmt = (
