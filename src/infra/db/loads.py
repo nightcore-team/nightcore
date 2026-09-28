@@ -1,6 +1,6 @@
 """Predefined eager-loading options for SQLAlchemy relationships."""
 
-from sqlalchemy.orm import Load
+from sqlalchemy.orm import Load, selectinload
 
 from src.infra.db.models.bank import BankAccount
 from src.infra.db.models.user import User, UserCase, UserVipStatus
@@ -13,10 +13,9 @@ user_load_colors: Load = Load(User).selectinload(User.colors)
 
 user_load_vip_statuses: Load = Load(User).selectinload(User.vip_statuses)
 
-user_load_vip_status_vip: Load = (
-    Load(UserVipStatus)
-    .selectinload(UserVipStatus.vip)
-    .selectinload(UserVipStatus.user)
+user_load_vip_status_vip: Load = Load(UserVipStatus).options(
+    selectinload(UserVipStatus.vip),
+    selectinload(UserVipStatus.user),
 )
 
 user_load_bank_account_all: list[Load] = [
