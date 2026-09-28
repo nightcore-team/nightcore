@@ -218,6 +218,7 @@ async def get_specified_entity(
 ):
     """Get a specific entity by ID."""
     model = ENTITY_MODEL_MAP.get(entity_type)
+
     if model is None:
         raise ValueError(f"Unknown entity type: {entity_type}")
 
@@ -227,7 +228,36 @@ async def get_specified_entity(
     )
     if for_update:
         get_stmt = get_stmt.with_for_update()
+
     return await session.scalar(get_stmt)
+
+
+async def get_specified_entities(
+    session: AsyncSession,
+    *,
+    entity_type: EntityTypeEnum,
+    guild_id: int,
+    entity_ids: list[int],
+    for_update: bool = False,
+) -> Sequence[Any]:
+    """Get multiple entities by IDs in a single query."""
+    model = ENTITY_MODEL_MAP.get(entity_type)
+
+    if model is None:
+        raise ValueError(f"Unknown entity type: {entity_type}")
+
+    if not entity_ids:
+        return []
+
+    get_stmt = select(model).where(
+        model.guild_id == guild_id,
+        model.id.in_(entity_ids),
+    )
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
+
+    result = await session.execute(get_stmt)
+    return result.scalars().all()
 
 
 async def get_specified_guild_config(  # noqa: UP047
@@ -241,6 +271,7 @@ async def get_specified_guild_config(  # noqa: UP047
     get_stmt = select(config_type).where(config_type.guild_id == guild_id)
     if for_update:
         get_stmt = get_stmt.with_for_update()
+
     config = await session.scalar(get_stmt)
 
     if config is not None:

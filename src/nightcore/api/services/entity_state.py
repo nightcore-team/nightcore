@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import discord
 from sqlalchemy.orm import DeclarativeBase
 
-from src.infra.db.operations import ENTITY_MODEL_MAP, get_specified_entity
+from src.infra.db.operations import ENTITY_MODEL_MAP, get_specified_entities
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.api.schemas.entities import (
     ENTITY_SCHEMA_MODEL_MAP,
@@ -19,7 +19,10 @@ from src.nightcore.api.schemas.entities import (
 from src.nightcore.api.utils.validators import (
     ValidationContext,
 )
-from src.nightcore.bot import Nightcore
+
+if TYPE_CHECKING:
+    from src.nightcore.bot import Nightcore
+
 from src.utils._enums import EntityTypeEnum
 
 
@@ -88,19 +91,19 @@ class EntityStateService:
 
         # 2. Single transaction
         async with self._uow.start() as session:
-            # Load existing entities for update (FOR UPDATE) using operation
+            # Load existing entities for update (FOR UPDATE)
+            # using batch operation
             existing: dict[int, Any] = {}
             if update_ids:
-                for entity_id in update_ids:
-                    entity = await get_specified_entity(
-                        session,
-                        entity_type=entity_type,
-                        guild_id=member.guild.id,
-                        entity_id=entity_id,
-                        for_update=True,
-                    )
-                    if entity:
-                        existing[entity.id] = entity
+                entities = await get_specified_entities(
+                    session,
+                    entity_type=entity_type,
+                    guild_id=member.guild.id,
+                    entity_ids=update_ids,
+                    for_update=True,
+                )
+                for entity in entities:
+                    existing[entity.id] = entity
 
             # Check missing update_ids
             for idx, item, _ in update_items:
