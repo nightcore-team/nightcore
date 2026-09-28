@@ -1,5 +1,7 @@
 """BattlepassLevel model for the Nightcore bot database."""
 
+from typing import Any
+
 from sqlalchemy import JSON, BigInteger, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,3 +36,23 @@ class BattlepassLevel(IdIntegerMixin, Base):
         default=dict,
         server_default=text("'[]'::json"),
     )
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize the raw config payload."""
+        # Ensure numeric fields are int
+        for field in ("level", "exp_required"):
+            if field in config and config[field] is not None:
+                config[field] = int(config[field])
+
+        # reward and additional_reward are dicts
+        for field in ("reward", "additional_reward"):
+            if field in config and config[field] is not None:
+                reward = config[field]
+                if isinstance(reward, dict):
+                    for rf in ("drop_id", "amount", "type"):
+                        if rf in reward and reward[rf] is not None:
+                            reward[rf] = int(reward[rf])
+        return config
+
+    __version__ = 1

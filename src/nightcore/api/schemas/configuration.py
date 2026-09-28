@@ -1,5 +1,6 @@
 """Pydantic schemas for guild configuration API."""
 
+from decimal import Decimal
 from typing import Annotated, Any, Self
 
 from pydantic import (
@@ -94,6 +95,7 @@ MAX_CHAPTER_RULES = 50  # including subrules
 MAX_LEVEL_ROLES = 250
 MAX_BONUS_ACCESS_ROLES = 250
 MAX_CLAN_SHOP_ITEMS = 25
+MAX_VIP_STATUSES = 100
 
 
 class BaseGuildConfig(BaseModel):
@@ -203,11 +205,39 @@ class GuildEconomyConfigSchema(BaseGuildConfig):
     )
     casino_multiplayer_channel_id: DiscordTextChannelID | None = None
     color_drop_compensation: int = 0
+    deposit_max_balance: int = 0
+    deposit_base_interest_rate: Decimal = Decimal("0.0000")
+    deposit_interest_cap_amount: int = 0
 
 
 class GuildLevelRoleSchema(BaseGuildConfig):
     level: int
     role_id: DiscordRoleNoAdmID
+
+
+class GuildVipStatusSchema(BaseGuildConfig):
+    name: str
+    emoji_str: str
+    deposit_max_balance: int = 0
+    deposit_interest_rate: Decimal = Decimal("0.0000")
+    deposit_interest_cap_amount: int = 0
+    shop_discount: Decimal = Decimal("0.0000")
+
+
+class GuildCaseSchema(BaseGuildConfig):
+    name: str
+    drop: list[dict[str, Any]] = Field(default_factory=list[dict[str, Any]])
+
+
+class GuildColorSchema(BaseGuildConfig):
+    role_id: DiscordRoleNoAdmID
+
+
+class GuildBattlepassLevelSchema(BaseGuildConfig):
+    level: int
+    exp_required: int
+    reward: dict[str, Any]
+    additional_reward: dict[str, Any] | None = None
 
 
 class GuildBonusRoleSchema(BaseGuildConfig):

@@ -1,6 +1,7 @@
 """Vip model for the Nightcore bot database."""
 
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import BigInteger, Numeric, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -39,3 +40,13 @@ class VipStatus(IdIntegerMixin, Base):
         default=0.0000,
         server_default=text("0.0000"),
     )  # Economy shop discount
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize the raw config payload."""
+        # role_id comes as string from JSON, ensure it's int
+        if "role_id" in config and config["role_id"] is not None:
+            config["role_id"] = int(config["role_id"])
+        return config
+
+    __version__ = 1

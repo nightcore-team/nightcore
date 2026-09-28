@@ -234,3 +234,12 @@ class GuildStatusEnum(StrEnum):
     EXPIRED = "expired"
     NOT_FOUND = "not_found"
     NOT_PAID = "not_paid"
+
+
+class EntityTypeEnum(StrEnum):
+    """Entity types for guild-scoped configurable entities."""
+
+    VIP_STATUS = "vip_status"
+    CASE = "case"
+    COLOR = "color"
+    BATTLEPASS_LEVEL = "battlepass_level"

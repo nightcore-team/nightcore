@@ -2,6 +2,7 @@
 
 import random
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -53,6 +54,25 @@ class Case(IdIntegerMixin, Base):
             drop["is_color_compensation"] = None
 
         return drops  # type: ignore
+
+    @staticmethod
+    def normalize_from_json(config: dict[str, Any]) -> dict[str, Any]:
+        """Normalize the raw config payload."""
+        # drop items come as list of dicts from JSON
+        if "drop" in config and config["drop"] is not None:
+            # Ensure chance is int
+            for item in config["drop"]:
+                if "chance" in item:
+                    item["chance"] = int(item["chance"])
+                if "amount" in item:
+                    item["amount"] = int(item["amount"])
+                if "drop_id" in item:
+                    item["drop_id"] = int(item["drop_id"])
+                if "type" in item:
+                    item["type"] = int(item["type"])
+        return config
+
+    __version__ = 1
 
 
 class CaseOpenSession(IdIntegerMixin, Base):
