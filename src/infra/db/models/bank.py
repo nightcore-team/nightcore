@@ -7,6 +7,7 @@ from sqlalchemy import (
     BigInteger,
     DateTime,
     ForeignKey,
+    Index,
     UniqueConstraint,
     func,
     text,
@@ -87,6 +88,11 @@ class Deposit(IdIntegerMixin, CreatedAtMixin, UpdatedAtMixin, Base):
 
 
 class ExtraWallet(IdIntegerMixin, CreatedAtMixin, UpdatedAtMixin, Base):
+    __table_args__ = (
+        # extra wallets are always read by their owning bank account
+        Index("ix_extrawallet_bank_account_id", "bank_account_id"),
+    )
+
     bank_account_id: Mapped[int] = mapped_column(
         ForeignKey("bankaccount.id", ondelete="CASCADE"),
         nullable=False,
