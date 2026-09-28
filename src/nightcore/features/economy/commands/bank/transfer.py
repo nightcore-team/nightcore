@@ -22,6 +22,7 @@ from src.nightcore.features.economy.utils.content import safe_split_wallet_id
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
+    from src.infra.db.models import User
     from src.infra.db.models.bank import Deposit, ExtraWallet
     from src.nightcore.bot import Nightcore
 
@@ -115,16 +116,24 @@ async def transfer(
             else:
                 assert user.bank_account.deposit is not None
 
+                locked_user: User | None = None
+                if needs_main:
+                    locked_user, _ = await get_or_create_user(
+                        session,
+                        guild_id=guild.id,
+                        user_id=interaction.user.id,
+                        for_update=True,
+                    )
+
                 await accrue_deposit_interest_if_due(
                     session,
                     deposit=user.bank_account.deposit,
                     guild_id=guild.id,
                     user_id=user.id,
                     config=guild_config,
-                    locked=False,
                 )
 
-                # lock wallets before user to avoid deadlocks
+                # lock wallets after the user, deposit first then extras
                 for choice in sorted(wallet_choices, key=_sort_key):
                     if choice == "deposit":
                         account = await get_user_deposit_for_update(
@@ -162,15 +171,6 @@ async def transfer(
                     )
 
                 if not outcome:
-                    # lock user after locking all needed wallets
-                    locked_user = None
-                    if needs_main:
-                        locked_user, _ = await get_or_create_user(
-                            session,
-                            guild_id=guild.id,
-                            user_id=interaction.user.id,
-                            for_update=True,
-                        )
 
                     def _balance_holder(
                         choice: str,

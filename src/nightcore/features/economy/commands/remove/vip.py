@@ -90,6 +90,27 @@ async def remove_vip(
         if vip_status is None:
             outcome = "unknown_vip_status"
         else:
+            # lock order: bankaccount -> deposit -> vip status rows.
+            # The deposit is accrued before the VIP rows are locked so this
+            # path doesn't invert the order used by every other one, and the
+            # accrual still sees the VIP that is about to be removed.
+            bank_account, _ = await get_or_create_bank_account(
+                session,
+                guild_id=guild.id,
+                user_id=user.id,
+                for_update=True,
+            )
+
+            assert bank_account.deposit is not None
+
+            await accrue_deposit_interest_if_due(
+                session,
+                deposit=bank_account.deposit,
+                guild_id=guild.id,
+                user_id=user.id,
+                config=guild_config,
+            )
+
             user_vip_statuses = await get_user_vip_statuses_for_update(
                 session,
                 guild_id=guild.id,
@@ -110,24 +131,6 @@ async def remove_vip(
             else:
                 vip_name = vip_status.name
                 role_id = vip_status.role_id
-
-                bank_account, _ = await get_or_create_bank_account(
-                    session,
-                    guild_id=guild.id,
-                    user_id=user.id,
-                    for_update=True,
-                )
-
-                assert bank_account.deposit is not None
-
-                await accrue_deposit_interest_if_due(
-                    session,
-                    deposit=bank_account.deposit,
-                    guild_id=guild.id,
-                    user_id=user.id,
-                    config=guild_config,
-                    locked=False,
-                )
 
                 await session.delete(target)
 

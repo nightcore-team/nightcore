@@ -62,6 +62,13 @@ async def extra_delete(interaction: Interaction["Nightcore"], wallet: str):
             if user.bank_account is None:
                 outcome = "bank_account_not_found"
             else:
+                locked_user, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=interaction.user.id,
+                    for_update=True,
+                )
+
                 w = None
                 wallet_id = safe_split_wallet_id(wallet)
 
@@ -79,14 +86,6 @@ async def extra_delete(interaction: Interaction["Nightcore"], wallet: str):
                         outcome = "extra_wallet_not_found"
 
                 if not outcome and w is not None:
-                    # wallet is already locked, lock the user after it
-                    locked_user, _ = await get_or_create_user(
-                        session,
-                        guild_id=guild.id,
-                        user_id=interaction.user.id,
-                        for_update=True,
-                    )
-
                     transferred_coins = w.coins
                     locked_user.coins += transferred_coins
 

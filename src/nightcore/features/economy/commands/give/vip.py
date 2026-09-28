@@ -125,6 +125,29 @@ async def give_vip(
             if vip_status_to_give is None:
                 outcome = "unknown_vip_status"
             else:
+                # lock order: bankaccount -> deposit -> vip status rows.
+                # The deposit is accrued before the VIP rows are locked so
+                # the accrual still uses the pre-change VIP set, and so this
+                # path doesn't invert the order used by every other one
+                # (case opening locks the bank account and then inserts the
+                # VIP status row).
+                bank_account, _ = await get_or_create_bank_account(
+                    session,
+                    guild_id=guild.id,
+                    user_id=user_record.id,
+                    for_update=True,
+                )
+
+                assert bank_account.deposit is not None
+
+                await accrue_deposit_interest_if_due(
+                    session,
+                    deposit=bank_account.deposit,
+                    guild_id=guild.id,
+                    user_id=user_record.id,
+                    config=guild_config,
+                )
+
                 user_vip_statuses = await get_user_vip_statuses_for_update(
                     session,
                     guild_id=guild.id,
@@ -156,28 +179,6 @@ async def give_vip(
                                 break
 
                         outcome = "success_with_new_unique"
-
-                if (
-                    outcome == "success_with_extend"
-                    or outcome == "success_with_new_unique"
-                ):
-                    bank_account, _ = await get_or_create_bank_account(
-                        session,
-                        guild_id=guild.id,
-                        user_id=user_record.id,
-                        for_update=True,
-                    )
-
-                    assert bank_account.deposit is not None
-
-                    await accrue_deposit_interest_if_due(
-                        session,
-                        deposit=bank_account.deposit,
-                        guild_id=guild.id,
-                        user_id=user_record.id,
-                        config=guild_config,
-                        locked=False,
-                    )
 
                 if outcome == "success_with_extend":
                     needed_vip_status = user_vip_statuses[needed_vip_id]

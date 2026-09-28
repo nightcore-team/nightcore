@@ -170,7 +170,6 @@ async def give_reward_by_type(
                     guild_id=user.guild_id,
                     user_id=user.user_id,
                     config=guild_config,
-                    locked=False,
                 )
 
                 user_vip_status = next(

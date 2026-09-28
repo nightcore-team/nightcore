@@ -81,13 +81,19 @@ async def withdraw(
             else:
                 assert user.bank_account.deposit is not None
 
+                locked_user, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=interaction.user.id,
+                    for_update=True,
+                )
+
                 await accrue_deposit_interest_if_due(
                     session,
                     deposit=user.bank_account.deposit,
                     guild_id=guild.id,
                     user_id=user.id,
                     config=guild_config,
-                    locked=False,
                 )
 
                 source: Deposit | ExtraWallet | None = None
@@ -126,13 +132,6 @@ async def withdraw(
                     if source.coins < amount:
                         outcome = "not_enough_coins"
                     else:
-                        locked_user, _ = await get_or_create_user(
-                            session,
-                            guild_id=guild.id,
-                            user_id=interaction.user.id,
-                            for_update=True,
-                        )
-
                         source.coins -= amount
                         locked_user.coins += amount
 

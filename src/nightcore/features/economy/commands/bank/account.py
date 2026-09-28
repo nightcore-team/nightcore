@@ -90,7 +90,6 @@ async def account(
             guild_id=guild.id,
             user_id=dbuser.id,
             config=guild_config,
-            locked=False,
         )
 
     assert bank_account.deposit is not None

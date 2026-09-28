@@ -79,13 +79,23 @@ async def top_up(
             else:
                 assert user.bank_account.deposit is not None
 
+                # lock order: user -> bankaccount -> deposit/extra wallet.
+                # The user row goes first because other money-moving paths
+                # (case opening) already hold it when they touch the
+                # deposit, and taking the wallet first would deadlock.
+                locked_user, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=interaction.user.id,
+                    for_update=True,
+                )
+
                 await accrue_deposit_interest_if_due(
                     session,
                     deposit=user.bank_account.deposit,
                     guild_id=guild.id,
                     user_id=user.id,
                     config=guild_config,
-                    locked=False,
                 )
 
                 target: Deposit | ExtraWallet | None = None
@@ -122,13 +132,6 @@ async def top_up(
                     outcome = "specified_not_found"
 
                 if not outcome and target is not None:
-                    locked_user, _ = await get_or_create_user(
-                        session,
-                        guild_id=guild.id,
-                        user_id=interaction.user.id,
-                        for_update=True,
-                    )
-
                     if choice == "deposit":
                         deposit_max_balance = guild_config.deposit_max_balance
 

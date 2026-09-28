@@ -627,7 +627,12 @@ async def get_active_user_vip_statuses(
     guild_id: int,
     user_id: int,
 ) -> Sequence[VipStatus]:
-    """Get the user's active VIP configurations."""
+    """Get the user's currently granted VIP configurations.
+
+    `is_active` alone is not enough: nothing in the codebase flips it back
+    to False, so an expired VIP would keep granting its deposit bonus
+    forever. The `expires_at` check is what actually ends the bonus.
+    """
 
     stmt = (
         select(VipStatus)
@@ -639,6 +644,10 @@ async def get_active_user_vip_statuses(
             UserVipStatus.guild_id == guild_id,
             UserVipStatus.user_id == user_id,
             UserVipStatus.is_active.is_(True),
+            or_(
+                UserVipStatus.expires_at.is_(None),
+                UserVipStatus.expires_at > func.now(),
+            ),
         )
     )
 
@@ -676,6 +685,23 @@ def _get_effective_deposit_config(
     return interest_rate, max_balance, interest_cap
 
 
+def _apply_deposit_max_balance(
+    grown: Decimal, coins: int, max_balance: int
+) -> int:
+    """Cap a grown deposit at `max_balance` without ever destroying principal.
+
+    A deposit can legitimately end up above `max_balance`: the VIP that
+    raised the cap expired, or an admin lowered the guild cap. Clamping
+    unconditionally would silently delete the difference, so the balance
+    is only ever allowed to grow - over the cap it simply stops accruing.
+    """
+
+    if max_balance > 0 and grown > max_balance:
+        return max(coins, max_balance)
+
+    return int(grown)
+
+
 async def accrue_deposit_interest_if_due(
     session: AsyncSession,
     *,
@@ -683,7 +709,6 @@ async def accrue_deposit_interest_if_due(
     guild_id: int,
     user_id: int,
     config: GuildEconomyConfig | None,
-    locked: bool = True,
 ) -> Deposit:
     """Apply pending interest to a single deposit if at least one hour has passed since the last accrual.
 
@@ -699,30 +724,29 @@ async def accrue_deposit_interest_if_due(
         new_coins = base * (1 + rate) ** hours + excess
         final     = min(new_coins, max_balance)   # if max_balance set
 
-    `locked` tells this function whether the caller already holds a
-    row-level lock (FOR UPDATE) on `deposit`:
-
-    - `locked=True` (default; e.g. withdraw/deposit/transfer commands,
-      which always fetch the deposit with FOR UPDATE): safe to compute
-      the new balance in Python from the already-loaded `deposit.coins`
-      and assign it via the ORM. No concurrent transaction can be
-      mutating this row at the same time, so there's no lost-update
-      risk, and a plain ORM assignment means SQLAlchemy emits exactly
-      one UPDATE on flush/commit — no raw SQL, no manual re-sync.
-
-    - `locked=False` (e.g. read-only profile display without FOR
-      UPDATE): the balance must be computed atomically inside a single
-      SQL UPDATE, referencing the `coins` column directly rather than
-      a Python snapshot, so a concurrent withdraw/deposit/transfer
-      can't be silently overwritten (lost update). After the UPDATE,
-      the ORM object is refreshed so callers reading `deposit.coins`
-      right after get the up-to-date value.
+    The balance and `last_accrued_at` are read from the row *after*
+    locking it, so `hours_elapsed` and `coins` always come from the same
+    locked snapshot. Deriving `hours_elapsed` from a value loaded before
+    the lock is what used to let two transactions accrue the same hour
+    twice: the transaction that lost the row-lock race re-ran the formula
+    on the already-grown balance with its own stale `hours_elapsed`.
     """  # noqa: E501
 
+    locked_row = (
+        await session.execute(
+            select(Deposit.coins, Deposit.last_accrued_at)
+            .where(Deposit.id == deposit.id)
+            .with_for_update()
+        )
+    ).one_or_none()
+
+    if locked_row is None:
+        return deposit
+
+    coins, last_accrued_at = locked_row
+
     now = datetime.now(UTC)
-    hours_elapsed = int(
-        (now - deposit.last_accrued_at).total_seconds() // 3600
-    )
+    hours_elapsed = int((now - last_accrued_at).total_seconds() // 3600)
 
     if hours_elapsed <= 0:
         return deposit
@@ -740,51 +764,13 @@ async def accrue_deposit_interest_if_due(
         deposit.last_accrued_at = now
         return deposit
 
-    if locked:
-        base = min(deposit.coins, cap) if cap > 0 else deposit.coins
-        excess = max(deposit.coins - cap, 0) if cap > 0 else 0
+    base = min(coins, cap) if cap > 0 else coins
+    excess = max(coins - cap, 0) if cap > 0 else 0
 
-        new_coins = base * (1 + rate) ** hours_elapsed + excess
+    new_coins = base * (1 + rate) ** hours_elapsed + excess
 
-        if max_balance > 0:
-            new_coins = min(new_coins, max_balance)
-
-        deposit.coins = int(new_coins)  # floor
-        deposit.last_accrued_at = now
-
-        return deposit
-
-    rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
-    hours_param = hours_elapsed
-
-    if cap > 0:
-        cap_param = bindparam("cap_p", value=cap, type_=Integer)
-        base_expr = func.least(Deposit.coins, cap_param)
-        excess_expr = func.greatest(Deposit.coins - cap_param, 0)
-    else:
-        base_expr = Deposit.coins
-        excess_expr = 0
-
-    new_coins_expr = func.floor(
-        base_expr * func.power(1 + rate_param, hours_param) + excess_expr
-    )
-
-    if max_balance > 0:
-        new_coins_expr = func.least(
-            new_coins_expr,
-            bindparam("max_balance_p", value=max_balance, type_=Integer),
-        )
-
-    stmt = (
-        update(Deposit)
-        .where(Deposit.id == deposit.id)
-        .values(coins=sa_cast(new_coins_expr, Integer), last_accrued_at=now)
-    )
-    await session.execute(stmt)
-
-    await session.refresh(
-        deposit, attribute_names=["coins", "last_accrued_at"]
-    )
+    deposit.coins = _apply_deposit_max_balance(new_coins, coins, max_balance)
+    deposit.last_accrued_at = now
 
     return deposit
 
@@ -818,6 +804,11 @@ async def close_out_deposits_before_rate_change(
         .where(
             UserVipStatus.guild_id == guild_id,
             UserVipStatus.is_active.is_(True),
+            # same expiry rule as get_active_user_vip_statuses
+            or_(
+                UserVipStatus.expires_at.is_(None),
+                UserVipStatus.expires_at > now,
+            ),
         )
     )
     active_vips_by_user: dict[int, list[VipStatus]] = {}
@@ -866,12 +857,18 @@ async def close_out_deposits_before_rate_change(
             .where(Deposit.id == bindparam("deposit_id"))
             .values(
                 coins=sa_cast(
-                    func.floor(
-                        base_expr
-                        * func.power(
-                            1 + rate_param, bindparam("hours_p", type_=Integer)
-                        )
-                        + excess_expr
+                    # greatest(...): never let the result fall below the
+                    # current balance (see _apply_deposit_max_balance)
+                    func.greatest(
+                        func.floor(
+                            base_expr
+                            * func.power(
+                                1 + rate_param,
+                                bindparam("hours_p", type_=Integer),
+                            )
+                            + excess_expr
+                        ),
+                        Deposit.coins,
                     ),
                     Integer,
                 ),
@@ -896,20 +893,23 @@ async def close_out_deposits_before_rate_change(
             .where(Deposit.id == bindparam("deposit_id"))
             .values(
                 coins=sa_cast(
-                    func.least(
-                        func.floor(
-                            base_expr
-                            * func.power(
-                                1 + rate_param,
-                                bindparam("hours_p", type_=Integer),
-                            )
-                            + excess_expr
+                    func.greatest(
+                        func.least(
+                            func.floor(
+                                base_expr
+                                * func.power(
+                                    1 + rate_param,
+                                    bindparam("hours_p", type_=Integer),
+                                )
+                                + excess_expr
+                            ),
+                            bindparam(
+                                "max_balance_p",
+                                value=max_balance,
+                                type_=Integer,
+                            ),
                         ),
-                        bindparam(
-                            "max_balance_p",
-                            value=max_balance,
-                            type_=Integer,
-                        ),
+                        Deposit.coins,
                     ),
                     Integer,
                 ),
@@ -1039,13 +1039,18 @@ async def get_user_deposit_for_update(
     guild_id: int,
     user_id: int,
     config: GuildEconomyConfig | None = None,
-    for_update: bool = True,
 ) -> Deposit | None:
-    """Get the deposit belonging to the given bank account, applying any pending interest accrual first."""  # noqa: E501
+    """Get the deposit belonging to the given bank account, applying any pending interest accrual first.
 
-    stmt = select(Deposit).where(Deposit.bank_account_id == bank_account_id)
-    if for_update:
-        stmt = stmt.with_for_update()
+    Always locked: `accrue_deposit_interest_if_due` needs the row lock
+    regardless of whether the caller intends to mutate the balance.
+    """  # noqa: E501
+
+    stmt = (
+        select(Deposit)
+        .where(Deposit.bank_account_id == bank_account_id)
+        .with_for_update()
+    )
 
     deposit = await session.scalar(stmt)
     if deposit is None:
@@ -1064,7 +1069,6 @@ async def get_user_deposit_for_update(
         guild_id=guild_id,
         user_id=user_id,
         config=config,
-        locked=for_update,
     )
 
 
