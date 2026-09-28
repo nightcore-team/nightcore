@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_bank_account_only
 from src.infra.db.operations import (
     delete_extra_wallet,
     get_or_create_user,
@@ -57,6 +58,7 @@ async def extra_delete(interaction: Interaction["Nightcore"], wallet: str):
                 session,
                 guild_id=guild.id,
                 user_id=interaction.user.id,
+                options=[user_load_bank_account_only],
             )
 
             if user.bank_account is None:

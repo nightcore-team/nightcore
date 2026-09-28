@@ -820,6 +820,8 @@ async def close_out_deposits_before_rate_change(
         tuple[Decimal, int, int], list[dict[str, int]]
     ] = {}
 
+    no_rate_updated = 0
+
     for deposit, user_id in deposit_rows.all():
         hours_elapsed = int(
             (now - deposit.last_accrued_at).total_seconds() // 3600
@@ -831,6 +833,13 @@ async def close_out_deposits_before_rate_change(
             config, active_vips_by_user.get(user_id, [])
         )
         if not rate:
+            # No rate configured means no interest at all, so the elapsed
+            # hours must not pile up: accrue_deposit_interest_if_due drops
+            # them the same way, and leaving them here would hand the user
+            # every hour of the unconfigured period as soon as a rate is
+            # set again.
+            deposit.last_accrued_at = now
+            no_rate_updated += 1
             continue
 
         key = (rate, max_balance, cap)
@@ -919,7 +928,7 @@ async def close_out_deposits_before_rate_change(
         result = await session.execute(stmt, rows)
         total_updated += cast(CursorResult[Any], result).rowcount
 
-    return total_updated
+    return total_updated + no_rate_updated
 
 
 async def get_or_create_bank_account(
@@ -1006,9 +1015,18 @@ async def get_or_create_bank_account(
 
 
 async def create_extra_wallet(
-    session: AsyncSession, bank_account_id: int, coins: int = 0
-) -> ExtraWallet:
-    """Create new extra wallet."""
+    session: AsyncSession,
+    bank_account_id: int,
+    coins: int = 0,
+    max_wallets: int | None = None,
+) -> ExtraWallet | None:
+    """Create a new extra wallet, or return None if `max_wallets` is reached.
+
+    The limit is checked here, under the bank account row lock, because
+    a caller cannot check it reliably on its own: the count it would read
+    comes from a relationship loaded before this lock, so two concurrent
+    requests would both pass the check and both create a wallet.
+    """
 
     await session.execute(
         select(BankAccount.id)
@@ -1016,11 +1034,17 @@ async def create_extra_wallet(
         .with_for_update()
     )
 
-    max_slot = await session.scalar(
-        select(func.max(ExtraWallet.slot)).where(
-            ExtraWallet.bank_account_id == bank_account_id
+    wallets_count, max_slot = (
+        await session.execute(
+            select(
+                func.count(ExtraWallet.id),
+                func.max(ExtraWallet.slot),
+            ).where(ExtraWallet.bank_account_id == bank_account_id)
         )
-    )
+    ).one()
+
+    if max_wallets is not None and wallets_count >= max_wallets:
+        return None
 
     wallet = ExtraWallet(
         bank_account_id=bank_account_id,

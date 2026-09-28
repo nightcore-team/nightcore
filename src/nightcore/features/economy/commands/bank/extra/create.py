@@ -7,7 +7,7 @@ from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.config.config import config
-from src.infra.db.loads import user_load_bank_account_wallets
+from src.infra.db.loads import user_load_bank_account_only
 from src.infra.db.operations import create_extra_wallet, get_or_create_user
 
 if TYPE_CHECKING:
@@ -44,22 +44,25 @@ async def extra_create(interaction: Interaction["Nightcore"]):
                 session,
                 guild_id=guild.id,
                 user_id=interaction.user.id,
-                options=[user_load_bank_account_wallets],
+                options=[user_load_bank_account_only],
             )
 
             if user.bank_account is None:
                 outcome = "bank_account_not_found"
             else:
-                wallets_count = len(user.bank_account.extra_wallets)
+                new_extra_wallet = await create_extra_wallet(
+                    session,
+                    bank_account_id=user.bank_account.id,
+                    max_wallets=config.bot.MAX_EXTRA_WALLETS,
+                )
 
-                if wallets_count >= config.bot.MAX_EXTRA_WALLETS:
-                    outcome = "max_wallets_limit_exceeded"
-
-                if not outcome:
-                    new_extra_wallet = await create_extra_wallet(
-                        session, bank_account_id=user.bank_account.id
-                    )
-                    outcome = "success"
+                # the limit is checked under the bank account lock, so
+                # concurrent creates cannot both pass it
+                outcome = (
+                    "success"
+                    if new_extra_wallet
+                    else "max_wallets_limit_exceeded"
+                )
 
     except Exception as e:
         logger.error(
