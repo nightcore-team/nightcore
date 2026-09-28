@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import discord
 from sqlalchemy.orm import DeclarativeBase
 
-from src.infra.db.operations import ENTITY_MODEL_MAP
+from src.infra.db.operations import ENTITY_MODEL_MAP, get_specified_entity
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.api.schemas.entities import (
     ENTITY_SCHEMA_MODEL_MAP,
@@ -20,10 +20,7 @@ from src.nightcore.api.utils.validators import (
     ValidationContext,
 )
 from src.nightcore.bot import Nightcore
-from src.utils._enums import ConfigTypeEnum, EntityTypeEnum
-
-if TYPE_CHECKING:
-    from src.nightcore.api.dependencies import LoggingRevisionService
+from src.utils._enums import EntityTypeEnum
 
 
 class EntityStateService:
@@ -31,11 +28,9 @@ class EntityStateService:
         self,
         uow: UnitOfWork,
         bot: Nightcore,
-        logging_revision_service: LoggingRevisionService,
     ) -> None:
         self._bot = bot
         self._uow = uow
-        self._logging_revision_service = logging_revision_service
 
     async def _build_validation_context(
         self, member: discord.Member
@@ -93,21 +88,19 @@ class EntityStateService:
 
         # 2. Single transaction
         async with self._uow.start() as session:
-            # Load existing entities for update (FOR UPDATE)
+            # Load existing entities for update (FOR UPDATE) using operation
             existing: dict[int, Any] = {}
             if update_ids:
-                stmt = (
-                    model.__table__.select()
-                    .where(
-                        model.guild_id == member.guild.id,
-                        model.id.in_(update_ids),
+                for entity_id in update_ids:
+                    entity = await get_specified_entity(
+                        session,
+                        entity_type=entity_type,
+                        guild_id=member.guild.id,
+                        entity_id=entity_id,
+                        for_update=True,
                     )
-                    .with_for_update()
-                )
-                result = await session.execute(stmt)
-
-                for entity in result.scalars():
-                    existing[entity.id] = entity
+                    if entity:
+                        existing[entity.id] = entity
 
             # Check missing update_ids
             for idx, item, _ in update_items:
@@ -134,12 +127,10 @@ class EntityStateService:
                 if item.entity_id:
                     # UPDATE
                     entity = existing[item.entity_id]
-                    old_data = self._serialize_entity(schema, entity)
                 else:
                     # CREATE
                     entity = model(guild_id=member.guild.id, **dump)
                     session.add(entity)
-                    old_data = {}
 
                 # Apply normalized fields
                 for k, v in dump.items():
@@ -148,17 +139,6 @@ class EntityStateService:
                 await session.flush()
 
                 new_data = self._serialize_entity(schema, entity)
-
-                # Audit (one revision per entity)
-                await self._logging_revision_service.create_revision(
-                    session,
-                    guild_id=member.guild.id,
-                    user_id=member.id,
-                    config_type=ConfigTypeEnum.ECONOMY,
-                    old_data=old_data,
-                    data=new_data,
-                    version=1,
-                )
 
                 updated_entities.append(new_data)
 

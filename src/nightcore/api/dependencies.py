@@ -111,16 +111,12 @@ def get_logging_revision_service(
 def get_entity_state_service(
     uow: Annotated[UnitOfWork, Depends(get_uow)],
     bot: Annotated[Nightcore, Depends(get_bot)],
-    logging_revision_service: Annotated[
-        LoggingRevisionService, Depends(get_logging_revision_service)
-    ],
 ) -> EntityStateService:
     """Dependency to inject the EntityStateService to the endpoint."""
 
     return EntityStateService(
         uow=uow,
         bot=bot,
-        logging_revision_service=logging_revision_service,
     )
 
 

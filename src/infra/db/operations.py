@@ -208,6 +208,28 @@ ENTITY_ACCESS_COLUMNS: Final[
 }
 
 
+async def get_specified_entity(
+    session: AsyncSession,
+    *,
+    entity_type: EntityTypeEnum,
+    guild_id: int,
+    entity_id: int,
+    for_update: bool = False,
+):
+    """Get a specific entity by ID."""
+    model = ENTITY_MODEL_MAP.get(entity_type)
+    if model is None:
+        raise ValueError(f"Unknown entity type: {entity_type}")
+
+    get_stmt = select(model).where(
+        model.guild_id == guild_id,
+        model.id == entity_id,
+    )
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
+    return await session.scalar(get_stmt)
+
+
 async def get_specified_guild_config(  # noqa: UP047
     session: AsyncSession,
     *,
