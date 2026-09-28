@@ -7,6 +7,7 @@ from ._groups import bank as bank_group
 from ._groups import case as case_group
 from ._groups import casino as casino_group
 from ._groups import color as color_group
+from ._groups import extra as bank_extra_group
 from ._groups import give as give_group
 from ._groups import rainbow as rainbow_group
 from ._groups import remove as remove_group
@@ -15,6 +16,8 @@ from ._groups import vip as vip_group
 
 # SIDE-EFFECT IMPORTS
 from .commands.bank import account, top_up, transfer, withdraw
+from .commands.bank.extra import create
+from .commands.bank.extra import delete as extra_delete
 from .commands.case import (
     add_reward,
     delete_reward,
@@ -66,8 +69,10 @@ __all__ = (
     "color_change",
     "color_create",
     "color_delete",
+    "create",
     "delete_reward",
     "exp",
+    "extra_delete",
     "help",
     "item",
     "multiplier",
@@ -98,4 +103,5 @@ async def setup(bot: "Nightcore"):
     bot.tree.add_command(remove_group)
     bot.tree.add_command(rainbow_group)
     bot.tree.add_command(bank_group)
+    bot.tree.add_command(bank_extra_group)
     bot.tree.add_command(vip_group)

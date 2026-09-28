@@ -13,6 +13,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.loads import (
     user_load_bank_account_all,
+    user_load_bank_account_wallets,
     user_load_cases,
     user_load_colors,
 )
@@ -267,6 +268,43 @@ async def deposit_extra_wallets_autocomplete(
     end_autocomplete = time.perf_counter()
     logger.info(
         "[bank/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
+async def user_extra_wallets_autocomplete(
+    interaction: Interaction["Nightcore"], current: str
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get user's extra wallets."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        user, _ = await get_or_create_user(
+            session,
+            guild_id=guild.id,
+            user_id=interaction.user.id,
+            options=[user_load_bank_account_wallets],
+        )
+
+    if user.bank_account:
+        for wallet in user.bank_account.extra_wallets:
+            result.append(
+                app_commands.Choice(
+                    name=f"Extra-счёт #{wallet.slot} ({wallet.coins})",
+                    value=f"extra:{wallet.id}",
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[bank/extra_wallets/autocomplete] Autocomplete for guild %s took %.4f seconds",  # noqa: E501
         guild.id,
         end_autocomplete - start_autocomplete,
     )

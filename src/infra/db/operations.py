@@ -1088,6 +1088,25 @@ async def get_user_extra_wallet_for_update(
     return await session.scalar(stmt)
 
 
+async def delete_extra_wallet(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    wallet_id: int,
+) -> None:
+    """Delete an extra wallet scoped to its owning bank account.
+
+    Ownership is enforced via the WHERE clause, the same way
+    `get_user_extra_wallet_for_update` does it.
+    """
+
+    stmt = delete(ExtraWallet).where(
+        ExtraWallet.id == wallet_id,
+        ExtraWallet.bank_account_id == bank_account_id,
+    )
+    await session.execute(stmt)
+
+
 async def get_user_for_update(
     session: AsyncSession,
     *,
