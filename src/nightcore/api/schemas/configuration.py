@@ -4,23 +4,22 @@ from decimal import Decimal
 from typing import Annotated, Any, Self
 
 from pydantic import (
-    AfterValidator,
     BaseModel,
-    BeforeValidator,
     ConfigDict,
     Field,
-    PlainSerializer,
     computed_field,
     model_validator,
 )
 
-from src.nightcore.api.utils.validators import (
-    validate_category_id,
-    validate_discord_webhook,
-    validate_role_id,
-    validate_role_no_adm_id,
-    validate_text_channel_id,
-    validate_voice_channel_id,
+from src.nightcore.api.schemas._discord import (
+    DiscordCategoryID,
+    DiscordChannelIDList,
+    DiscordRoleID,
+    DiscordRoleIDList,
+    DiscordRoleNoAdmID,
+    DiscordTextChannelID,
+    DiscordVoiceChannelID,
+    DiscordWebhookURL,
 )
 from src.utils._enums import (
     ConfigMuteTypeEnum,
@@ -28,67 +27,11 @@ from src.utils._enums import (
     MessageCountTypeEnum,
 )
 
-
-def _parse_snowflake(v: Any) -> int:
-    return int(v)
-
-
-def _serialize_snowflake(v: int) -> str:
-    return str(v)
-
-
-SnowflakeValidator = BeforeValidator(_parse_snowflake)
-SnowflakeSerializer = PlainSerializer(
-    _serialize_snowflake, return_type=str, when_used="json"
-)
-
-DiscordRoleID = Annotated[
-    int,
-    SnowflakeValidator,
-    SnowflakeSerializer,
-    AfterValidator(validate_role_id),
-]
-DiscordRoleNoAdmID = Annotated[
-    int,
-    SnowflakeValidator,
-    SnowflakeSerializer,
-    AfterValidator(validate_role_no_adm_id),
-]
-DiscordTextChannelID = Annotated[
-    int,
-    SnowflakeValidator,
-    SnowflakeSerializer,
-    AfterValidator(validate_text_channel_id),
-]
-DiscordCategoryID = Annotated[
-    int,
-    SnowflakeValidator,
-    SnowflakeSerializer,
-    AfterValidator(validate_category_id),
-]
-DiscordVoiceChannelID = Annotated[
-    int,
-    SnowflakeValidator,
-    SnowflakeSerializer,
-    AfterValidator(validate_voice_channel_id),
-]
-
-DiscordRoleIDList = Annotated[list[DiscordRoleID], Field(max_length=250)]
-DiscordChannelIDList = Annotated[
-    list[DiscordTextChannelID], Field(max_length=500)
-]
-DiscordCategoryIDList = Annotated[
-    list[DiscordCategoryID], Field(max_length=50)
-]
 AutocompleteableString = Annotated[str, Field(max_length=100)]
 SelectMenuLabelString = Annotated[str, Field(max_length=100)]
 NickNameTagString = Annotated[str, Field(max_length=7)]
 TitleString = Annotated[str, Field(max_length=256)]
 EmbedDescriptionString = Annotated[str, Field(max_length=4096)]
-DiscordWebhookURL = Annotated[
-    str,
-    AfterValidator(validate_discord_webhook),
-]
 
 MAX_RULES_CHAPTERS = 20
 MAX_CHAPTER_RULES = 50  # including subrules
@@ -213,31 +156,6 @@ class GuildEconomyConfigSchema(BaseGuildConfig):
 class GuildLevelRoleSchema(BaseGuildConfig):
     level: int
     role_id: DiscordRoleNoAdmID
-
-
-class GuildVipStatusSchema(BaseGuildConfig):
-    name: str
-    emoji_str: str
-    deposit_max_balance: int = 0
-    deposit_interest_rate: Decimal = Decimal("0.0000")
-    deposit_interest_cap_amount: int = 0
-    shop_discount: Decimal = Decimal("0.0000")
-
-
-class GuildCaseSchema(BaseGuildConfig):
-    name: str
-    drop: list[dict[str, Any]] = Field(default_factory=list[dict[str, Any]])
-
-
-class GuildColorSchema(BaseGuildConfig):
-    role_id: DiscordRoleNoAdmID
-
-
-class GuildBattlepassLevelSchema(BaseGuildConfig):
-    level: int
-    exp_required: int
-    reward: dict[str, Any]
-    additional_reward: dict[str, Any] | None = None
 
 
 class GuildBonusRoleSchema(BaseGuildConfig):

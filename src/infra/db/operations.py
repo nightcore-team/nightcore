@@ -104,6 +104,7 @@ from src.utils._enums import (
     ChannelType,
     ClanMemberRoleEnum,
     ConfigTypeEnum,
+    EntityTypeEnum,
     MultiplierTypeEnum,
     NotifyStateEnum,
     RoleRequestStateEnum,
@@ -183,6 +184,27 @@ _ACCESS_COLUMNS: Final[
     ConfigTypeEnum.MULTIPLERS: GuildAccessConfig.multiplers_config_access_roles_ids,  # noqa: E501
     ConfigTypeEnum.ROLE_REQUEST: GuildAccessConfig.org_roles_config_access_roles_ids,  # noqa: E501
     ConfigTypeEnum.TICKETS: GuildAccessConfig.tickets_config_access_roles_ids,
+}
+
+
+ENTITY_MODEL_MAP: dict[EntityTypeEnum, type[Any]] = {
+    EntityTypeEnum.VIP_STATUS: UserVipStatus,
+    EntityTypeEnum.CASE: Case,
+    EntityTypeEnum.COLOR: Color,
+    EntityTypeEnum.BATTLEPASS_LEVEL: BattlepassLevel,
+}
+
+ENTITY_ACCESS_COLUMNS: Final[
+    dict[EntityTypeEnum, InstrumentedAttribute[list[int] | None]]
+] = {
+    EntityTypeEnum.VIP_STATUS: (
+        GuildAccessConfig.economy_config_access_roles_ids
+    ),
+    EntityTypeEnum.CASE: (GuildAccessConfig.economy_config_access_roles_ids),
+    EntityTypeEnum.COLOR: (GuildAccessConfig.economy_config_access_roles_ids),
+    EntityTypeEnum.BATTLEPASS_LEVEL: (
+        GuildAccessConfig.economy_config_access_roles_ids
+    ),
 }
 
 

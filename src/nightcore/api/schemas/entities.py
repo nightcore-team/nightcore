@@ -3,48 +3,13 @@
 Entities: VIP statuses, Cases, Colors, Battlepass Levels.
 """
 
-from typing import Annotated, Any
+from decimal import Decimal
+from typing import Any
 
-from pydantic import (
-    BaseModel,
-    BeforeValidator,
-    ConfigDict,
-    Field,
-    PlainSerializer,
-)
+from pydantic import BaseModel, ConfigDict, Field
 
-from src.nightcore.api.utils.validators import (
-    validate_role_id,
-    validate_role_no_adm_id,
-)
+from src.nightcore.api.schemas._discord import DiscordRoleNoAdmID
 from src.utils._enums import EntityTypeEnum
-
-
-def _parse_snowflake(v: Any) -> int:
-    return int(v)
-
-
-def _serialize_snowflake(v: int) -> str:
-    return str(v)
-
-
-SnowflakeValidator = BeforeValidator(_parse_snowflake)
-SnowflakeSerializer = PlainSerializer(
-    _serialize_snowflake, return_type=str, when_used="json"
-)
-
-DiscordRoleID = Annotated[
-    int,
-    SnowflakeValidator,
-    SnowflakeSerializer,
-    validate_role_id,
-]
-DiscordRoleNoAdmID = Annotated[
-    int,
-    SnowflakeValidator,
-    SnowflakeSerializer,
-    validate_role_no_adm_id,
-]
 
 
 class EntityBaseSchema(BaseModel):
@@ -62,6 +27,15 @@ class GuildCaseSchema(EntityBaseSchema):
 
 class GuildColorSchema(EntityBaseSchema):
     role_id: DiscordRoleNoAdmID
+
+
+class GuildVipStatusSchema(EntityBaseSchema):
+    name: str
+    emoji_str: str
+    deposit_max_balance: int = 0
+    deposit_interest_rate: Decimal = Decimal("0.0000")
+    deposit_interest_cap_amount: int = 0
+    shop_discount: Decimal = Decimal("0.0000")
 
 
 class GuildBattlepassLevelSchema(EntityBaseSchema):
@@ -92,3 +66,11 @@ class EntityBatchResult(BaseModel):
     errors: list[EntityBatchError] = Field(
         default_factory=list[EntityBatchError]
     )
+
+
+ENTITY_SCHEMA_MODEL_MAP: dict[EntityTypeEnum, type[EntityBaseSchema]] = {
+    EntityTypeEnum.VIP_STATUS: GuildVipStatusSchema,
+    EntityTypeEnum.CASE: GuildCaseSchema,
+    EntityTypeEnum.COLOR: GuildColorSchema,
+    EntityTypeEnum.BATTLEPASS_LEVEL: GuildBattlepassLevelSchema,
+}
