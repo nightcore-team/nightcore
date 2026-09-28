@@ -627,6 +627,7 @@ async def get_expired_user_vip_statuses_for_update(
     session: AsyncSession,
     *,
     now: datetime,
+    options: list[Load] | None = None,
     limit: int = 100,
 ) -> Sequence[UserVipStatus]:
     """Get expired VIP statuses in a bounded locked batch.
@@ -647,6 +648,10 @@ async def get_expired_user_vip_statuses_for_update(
         .limit(limit)
         .with_for_update(skip_locked=True)
     )
+
+    if options:
+        stmt = stmt.options(*options)
+
     result = await session.execute(stmt)
     return result.scalars().all()
 

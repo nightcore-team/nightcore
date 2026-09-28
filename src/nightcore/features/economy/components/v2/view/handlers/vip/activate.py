@@ -4,7 +4,7 @@ import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
-from discord import Forbidden, Guild, HTTPException, Member
+from discord import Forbidden, Guild, HTTPException, Member, Role
 from discord.interactions import Interaction
 
 from src.infra.db.operations import (
@@ -43,8 +43,8 @@ async def handle_vip_activate_button(
 
     outcome = ""
     vip_name = ""
-    role_id: int | None = None
-    old_role_ids: list[int] = []
+    role_id_to_give: int | None = None
+    old_role_ids_to_remove: list[int] = []
 
     now = datetime.now(UTC)
 
@@ -82,73 +82,67 @@ async def handle_vip_activate_button(
                 outcome = "vip_not_found"
             else:
                 vip_name = vip_status.name
-                role_id = vip_status.role_id
+                role_id_to_give = vip_status.role_id
 
-                # only one VIP is active at a time, so activating a new one
-                # has to release the previously active one
                 deactivated = [
                     row for row in user_vip_statuses if row.is_active
                 ]
 
-                for row in deactivated:
-                    row.is_active = False
-
                 if deactivated:
-                    guild_vip_statuses = await get_guild_vip_statuses(
-                        session, guild_id=guild.id
-                    )
-                    released = {
-                        status.id: status for status in guild_vip_statuses
-                    }
+                    for row in deactivated:
+                        row.is_active = False
 
-                    old_role_ids = [
-                        released[row.vip_id].role_id
-                        for row in deactivated
-                        if row.vip_id in released
-                        and released[row.vip_id].role_id is not None
-                    ]
+                        if row.vip.role_id is not None:
+                            old_role_ids_to_remove.append(row.vip.role_id)
 
                 target.is_active = True
                 outcome = "activated"
 
+    additional_outcome = ""
     if outcome == "activated":
-        for old_role_id in old_role_ids:
-            if old_role_id == role_id:
+        if role_id_to_give is not None:
+            role = await ensure_role_exists(guild, role_id_to_give)
+
+            if role is None:
+                outcome = "role_not_assigned"
+            else:
+                try:
+                    await member.add_roles(
+                        role, reason="Активация VIP-статуса"
+                    )
+                except (Forbidden, HTTPException) as e:
+                    logger.error(
+                        "[vip/activate] Failed to add role %s to user %s: %s",
+                        role_id_to_give,
+                        member.id,
+                        e,
+                    )
+                    outcome = "role_not_assigned"
+
+        old_roles_to_remove: list[Role] = []
+
+        for old_role_id in old_role_ids_to_remove:
+            if old_role_id == role_id_to_give:
                 continue
 
             old_role = await ensure_role_exists(guild, old_role_id)
 
-            if old_role is None:
+            if old_role is None or old_role not in member.roles:
                 continue
 
-            try:
-                await member.remove_roles(
-                    old_role, reason="Смена активного VIP-статуса"
-                )
-            except (Forbidden, HTTPException) as e:
-                logger.error(
-                    "[vip/activate] Failed to remove role %s from user %s: %s",
-                    old_role_id,
-                    member.id,
-                    e,
-                )
+            old_roles_to_remove.append(old_role)
 
-    if outcome == "activated" and role_id is not None:
-        role = await ensure_role_exists(guild, role_id)
-
-        if role is None:
-            outcome = "role_not_assigned"
-        else:
-            try:
-                await member.add_roles(role, reason="Активация VIP-статуса")
-            except (Forbidden, HTTPException) as e:
-                logger.error(
-                    "[vip/activate] Failed to add role %s to user %s: %s",
-                    role_id,
-                    member.id,
-                    e,
-                )
-                outcome = "role_not_assigned"
+        try:
+            await member.remove_roles(
+                *old_roles_to_remove, reason="Активация другого VIP-статуса."
+            )
+        except (Forbidden, HTTPException) as e:
+            logger.error(
+                "[vip/activate] Failed to remove old roles from user %s: %s",
+                member.id,
+                e,
+            )
+            additional_outcome = "role_not_removed"
 
     if outcome == "vip_not_found":
         await interaction.followup.send(
@@ -183,7 +177,10 @@ async def handle_vip_activate_button(
     if outcome == "role_not_assigned":
         role_error = SuccessViewV2(
             "Активация VIP-статуса.",
-            "VIP-статус активирован, но не удалось выдать роль.",
+            "VIP-статус активирован, но не удалось выдать роль."
+            "\n> Не удалось снять роли предыдущих VIP-статусов."
+            if additional_outcome
+            else "",
         )
     else:
         role_error = None

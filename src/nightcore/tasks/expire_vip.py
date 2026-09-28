@@ -1,15 +1,23 @@
 """Task cog for deleting expired VIP statuses."""
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from discord import Forbidden, HTTPException
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
+from src.infra.db.loads import user_load_vip_status_vip
 from src.infra.db.operations import (
     delete_user_vip_statuses,
     get_expired_user_vip_statuses_for_update,
+)
+from src.nightcore.utils import (
+    ensure_guild_exists,
+    ensure_member_exists,
+    ensure_role_exists,
 )
 
 if TYPE_CHECKING:
@@ -30,26 +38,28 @@ class ExpireVipTask(Cog):
         if self.expire_vip_task.is_running():
             self.expire_vip_task.cancel()
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=10)
     async def expire_vip_task(self) -> None:
         """Delete VIP statuses that passed their expiry date."""
         await self.bot.task_manager.sleep(__name__)
 
         try:
+            now = datetime.now(UTC)
+
             async with self.bot.uow.start() as session:
                 expired = await get_expired_user_vip_statuses_for_update(
-                    session,
-                    now=datetime.now(UTC),
+                    session, now=now, options=[user_load_vip_status_vip]
                 )
 
                 if not expired:
                     return
 
+                status_ids = [status.id for status in expired]
                 # the rows are locked with skip_locked, so a grant that is
                 # extending one of them right now is never touched
                 await delete_user_vip_statuses(
                     session,
-                    status_ids=[status.id for status in expired],
+                    status_ids=status_ids,
                 )
 
                 logger.info(
@@ -59,6 +69,68 @@ class ExpireVipTask(Cog):
 
         except Exception:
             logger.exception("[task] - Failed to delete expired VIP statuses")
+            return
+
+        for status in expired:
+            if status.vip.role_id is not None:
+                await asyncio.sleep(0.1)
+                asyncio.create_task(
+                    self._revoke_role(
+                        status.guild_id,
+                        status.user.user_id,
+                        status.vip.role_id,
+                    )
+                )
+
+    async def _revoke_role(
+        self, guild_id: int, user_id: int, role_id: int
+    ) -> None:
+        """Take the expired VIP's role away, logging and moving on on failure."""  # noqa: E501
+
+        guild = await ensure_guild_exists(self.bot, guild_id)
+        if guild is None:
+            logger.warning(
+                "[task] - Guild %s not found, skipped revoking role %s from %s",  # noqa: E501
+                guild_id,
+                role_id,
+                user_id,
+            )
+            return
+
+        role = await ensure_role_exists(guild, role_id)
+        member = await ensure_member_exists(guild, user_id)
+
+        if role is None or member is None:
+            logger.warning(
+                "[task] - Role %s or member %s not found in guild %s, skipped",
+                role_id,
+                user_id,
+                guild_id,
+            )
+            return
+
+        if role not in member.roles:
+            return
+
+        try:
+            await member.remove_roles(
+                role,
+                reason="Срок действия VIP-статуса истёк.",
+            )
+        except (Forbidden, HTTPException) as error:
+            logger.warning(
+                "[task] - Failed to remove role %s from user %s: %s",
+                role_id,
+                user_id,
+                error,
+            )
+            return
+
+        logger.info(
+            "[task] - Revoked role %s from user %s after VIP expiry",
+            role_id,
+            user_id,
+        )
 
     @expire_vip_task.before_loop
     async def before_expire_vip_task(self) -> None:
