@@ -182,4 +182,5 @@ class EntityStateService:
                 entity_type=entity_type,
                 guild_id=member.guild.id,
             )
-            return [self._serialize_entity(schema, e) for e in entities]
+
+        return [self._serialize_entity(schema, e) for e in entities]
