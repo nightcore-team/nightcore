@@ -7,7 +7,6 @@ from ._groups import bank as bank_group
 from ._groups import case as case_group
 from ._groups import casino as casino_group
 from ._groups import color as color_group
-from ._groups import extra as bank_extra_group
 from ._groups import give as give_group
 from ._groups import rainbow as rainbow_group
 from ._groups import remove as remove_group
@@ -103,5 +102,4 @@ async def setup(bot: "Nightcore"):
     bot.tree.add_command(remove_group)
     bot.tree.add_command(rainbow_group)
     bot.tree.add_command(bank_group)
-    bot.tree.add_command(bank_extra_group)
     bot.tree.add_command(vip_group)
