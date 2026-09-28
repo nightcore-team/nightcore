@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
@@ -21,6 +22,7 @@ from src.nightcore.utils import (
 )
 
 if TYPE_CHECKING:
+    from src.infra.db.models.user import UserVipStatus
     from src.nightcore.bot import Nightcore
 
 
@@ -64,6 +66,7 @@ class ExpireVipTask(Cog):
                     break
 
                 status_ids = [status.id for status in expired]
+
                 await delete_user_vip_statuses(session, status_ids=status_ids)
 
                 total_deleted += len(expired)
@@ -84,9 +87,12 @@ class ExpireVipTask(Cog):
                 total_revoked,
             )
 
-    async def _revoke_roles(self, expired_statuses: list) -> int:
+    async def _revoke_roles(
+        self, expired_statuses: Sequence["UserVipStatus"]
+    ) -> int:
         """Revoke roles for expired statuses with rate limiting."""
-        tasks = []
+        tasks: list[Awaitable[bool]] = []
+
         for status in expired_statuses:
             if status.vip.role_id is not None:
                 tasks.append(

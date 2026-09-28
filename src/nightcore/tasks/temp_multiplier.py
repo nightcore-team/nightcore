@@ -9,6 +9,7 @@ from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildMultipliersConfig
 from src.infra.db.operations import (
+    delete_temp_multipliers,
     get_all_expired_temp_multipliers,
     get_specified_guild_config,
 )
@@ -48,46 +49,60 @@ class ResetTempMultiplierTask(Cog):
                 logger.info("[task] - No expired temp multipliers found")
                 return
 
-            for temp_multiplier in temp_multipliers:
-                guild_id = temp_multiplier.guild_id
-                multiplier_type = temp_multiplier.multiplier_type
+            guild_ids = {tm.guild_id for tm in temp_multipliers}
+            configs: dict[int, GuildMultipliersConfig] = {}
 
-                async with self.bot.uow.start() as session:
-                    guild_config = await get_specified_guild_config(
+            async with self.bot.uow.start() as session:
+                for guild_id in guild_ids:
+                    config = await get_specified_guild_config(
                         session,
                         guild_id=guild_id,
                         config_type=GuildMultipliersConfig,
                     )
+                    if config:
+                        configs[guild_id] = config
 
-                    match multiplier_type:
-                        case MultiplierTypeEnum.EXP:
-                            guild_config.temp_exp_multiplier = None
-                            logger.info(
-                                "[task] - Reset EXP multiplier for guild %s",
-                                guild_id,
-                            )
-                        case MultiplierTypeEnum.COINS:
-                            guild_config.temp_coins_multiplier = None
-                            logger.info(
-                                "[task] - Reset COINS multiplier for guild %s",
-                                guild_id,
-                            )
-                        case MultiplierTypeEnum.BATTLEPASS:
-                            guild_config.temp_battlepass_multiplier = None
-                            logger.info(
-                                "[task] - Reset BATTLEPASS multiplier for guild %s",  # noqa: E501
-                                guild_id,
-                            )
+            for temp_multiplier in temp_multipliers:
+                guild_id = temp_multiplier.guild_id
+                multiplier_type = temp_multiplier.multiplier_type
 
-                    _temp_multiplier = await session.merge(temp_multiplier)
-                    await session.delete(_temp_multiplier)
+                config = configs.get(guild_id)
+                if config is None:
+                    continue
 
-                logger.info(
-                    "[task] - Removed expired %s multiplier (x%s) for guild %s",  # noqa: E501
-                    multiplier_type.value,
-                    temp_multiplier.multiplier,
-                    guild_id,
-                )
+                match multiplier_type:
+                    case MultiplierTypeEnum.EXP:
+                        config.temp_exp_multiplier = None
+                        logger.info(
+                            "[task] - Reset EXP multiplier for guild %s",
+                            guild_id,
+                        )
+                    case MultiplierTypeEnum.COINS:
+                        config.temp_coins_multiplier = None
+                        logger.info(
+                            "[task] - Reset COINS multiplier for guild %s",
+                            guild_id,
+                        )
+                    case MultiplierTypeEnum.BATTLEPASS:
+                        config.temp_battlepass_multiplier = None
+                        logger.info(
+                            "[task] - Reset BATTLEPASS multiplier "
+                            "for guild %s",
+                            guild_id,
+                        )
+
+            async with self.bot.uow.start() as session:
+                status_ids = [tm.id for tm in temp_multipliers]
+                await delete_temp_multipliers(session, status_ids=status_ids)
+
+                for temp_multiplier in temp_multipliers:
+                    logger.info(
+                        "[task] - Removed expired %s multiplier "
+                        "(x%s) for guild %s",
+                        temp_multiplier.multiplier_type.value,
+                        temp_multiplier.multiplier,
+                        temp_multiplier.guild_id,
+                    )
 
         except Exception as e:
             logger.exception(

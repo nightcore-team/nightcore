@@ -2292,6 +2292,20 @@ async def get_role_requests_to_delete(
     return result.all()
 
 
+async def delete_role_requests(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given role requests by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(RoleRequestState).where(RoleRequestState.id.in_(status_ids))
+    await session.execute(stmt)
+
+
 async def get_tickets_to_delete(
     session: AsyncSession,
 ) -> Sequence[TicketState]:
@@ -2313,6 +2327,20 @@ async def get_tickets_to_delete(
     return result.all()
 
 
+async def delete_tickets(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given tickets by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(TicketState).where(TicketState.id.in_(status_ids))
+    await session.execute(stmt)
+
+
 async def get_all_expired_temp_roles(
     session: AsyncSession,
 ) -> Sequence[TempRole]:
@@ -2325,6 +2353,20 @@ async def get_all_expired_temp_roles(
     result = await session.scalars(stmt)
 
     return result.all()
+
+
+async def delete_temp_roles(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given temporary roles by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(TempRole).where(TempRole.id.in_(status_ids))
+    await session.execute(stmt)
 
 
 async def get_total_users_count(session: AsyncSession) -> int:
@@ -2435,6 +2477,22 @@ async def get_all_expired_temp_multipliers(
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def delete_temp_multipliers(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given temporary multipliers by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(TempEconomyMultiplier).where(
+        TempEconomyMultiplier.id.in_(status_ids)
+    )
+    await session.execute(stmt)
 
 
 async def get_custom_components(
