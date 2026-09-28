@@ -52,7 +52,7 @@ class BattlepassLevel(IdIntegerMixin, Base):
                 if isinstance(reward, dict):
                     for rf in ("drop_id", "amount", "type"):
                         if rf in reward and reward[rf] is not None:
-                            reward[rf] = int(reward[rf])
+                            reward[rf] = int(reward[rf])  # type: ignore
         return config
 
     __version__ = 1

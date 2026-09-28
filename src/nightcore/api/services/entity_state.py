@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING, Any
 import discord
 from sqlalchemy.orm import DeclarativeBase
 
-from src.infra.db.operations import ENTITY_MODEL_MAP, get_specified_entities
+from src.infra.db.operations import (
+    ENTITY_MODEL_MAP,
+    get_entities_by_type,
+    get_specified_entities,
+)
 from src.infra.db.uow import UnitOfWork
 from src.nightcore.api.schemas.entities import (
     ENTITY_SCHEMA_MODEL_MAP,
@@ -126,17 +130,18 @@ class EntityStateService:
                 dump = validated.model_dump(
                     exclude_unset=True, exclude_computed_fields=True
                 )
+                normalized = model.normalize_from_json(dump)
 
                 if item.entity_id:
                     # UPDATE
                     entity = existing[item.entity_id]
                 else:
                     # CREATE
-                    entity = model(guild_id=member.guild.id, **dump)
+                    entity = model(guild_id=member.guild.id, **normalized)
                     session.add(entity)
 
                 # Apply normalized fields
-                for k, v in dump.items():
+                for k, v in normalized.items():
                     setattr(entity, k, v)
 
                 await session.flush()
@@ -153,3 +158,28 @@ class EntityStateService:
         """Serialize entity using its Pydantic schema."""
 
         return schema.model_construct(**vars(entity)).model_dump(mode="json")
+
+    async def get_entities(
+        self,
+        member: discord.Member,
+        entity_type: EntityTypeEnum,
+    ) -> list[dict[str, Any]]:
+        """Get all entities of a specific type for a guild."""
+
+        model = ENTITY_MODEL_MAP.get(entity_type)
+        if model is None:
+            raise ValueError(f"Unknown entity type: {entity_type}")
+
+        schema = ENTITY_SCHEMA_MODEL_MAP.get(entity_type)
+        if schema is None:
+            raise ValueError(
+                f"Schema not found for entity type: {entity_type}"
+            )
+
+        async with self._uow.start() as session:
+            entities = await get_entities_by_type(
+                session,
+                entity_type=entity_type,
+                guild_id=member.guild.id,
+            )
+            return [self._serialize_entity(schema, e) for e in entities]

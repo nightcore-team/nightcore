@@ -260,6 +260,23 @@ async def get_specified_entities(
     return result.scalars().all()
 
 
+async def get_entities_by_type(
+    session: AsyncSession,
+    *,
+    entity_type: EntityTypeEnum,
+    guild_id: int,
+) -> Sequence[Any]:
+    """Get all entities of a specific type for a guild."""
+    model = ENTITY_MODEL_MAP.get(entity_type)
+
+    if model is None:
+        raise ValueError(f"Unknown entity type: {entity_type}")
+
+    get_stmt = select(model).where(model.guild_id == guild_id)
+    result = await session.execute(get_stmt)
+    return result.scalars().all()
+
+
 async def get_specified_guild_config(  # noqa: UP047
     session: AsyncSession,
     *,

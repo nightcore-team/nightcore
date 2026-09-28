@@ -1,5 +1,7 @@
 """Entity endpoints for guild-scoped entities."""
 
+from typing import Any
+
 from fastapi import HTTPException, status
 from fastapi.routing import APIRouter
 
@@ -15,9 +17,55 @@ from src.nightcore.api.schemas.entities import (
     EntityBatchUpdateBody,
 )
 from src.nightcore.utils import ensure_member_exists
-from src.utils._enums import ConfigTypeEnum
+from src.utils._enums import ConfigTypeEnum, EntityTypeEnum
 
 router = APIRouter(prefix="/guilds", tags=["Guild Entities"])
+
+
+@router.get(
+    "/{guild_id}/entities",
+    status_code=status.HTTP_200_OK,
+    response_model=list[dict[str, Any]],
+)
+async def get_entities(
+    guild_id: int,
+    entity_type: EntityTypeEnum,
+    user_id: UserIdDependency,
+    bot: BotDependency,
+    access_service: AccessServiceDependency,
+    entity_state_service: EntityStateServiceDependency,
+) -> list[dict[str, Any]]:
+    """Get all entities of a specific type for a guild."""
+
+    guild = bot.get_guild(guild_id)
+
+    if guild is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
+        )
+
+    member = await ensure_member_exists(guild, user_id)
+
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this guild",
+        )
+
+    has_access = await access_service.has_config_access(
+        member=member, config_type=ConfigTypeEnum.ECONOMY
+    )
+
+    if not has_access:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to manage entities",
+        )
+
+    return await entity_state_service.get_entities(
+        member=member,
+        entity_type=entity_type,
+    )
 
 
 @router.patch(
