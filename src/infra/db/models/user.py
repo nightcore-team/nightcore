@@ -149,17 +149,17 @@ class User(IdIntegerMixin, Base):
 
 class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
     __table_args__ = (
+        # a user may hold several VIPs, but only one of them is active at a
+        # time, so the active one is unique per user and per guild
         Index(
-            "ix_user_vip_active_guild_user",
+            "ux_user_vip_active_guild_user",
             "guild_id",
             "user_id",
+            unique=True,
             postgresql_where=text("is_active = true"),
         ),
         UniqueConstraint(
             "vip_id", "user_id", "guild_id", name="ux_user_vip_guild"
-        ),
-        UniqueConstraint(
-            "vip_id", "user_id", "is_active", name="ux_user_active_vip_guild"
         ),
         ForeignKeyConstraint(
             ["guild_id", "user_id"],
