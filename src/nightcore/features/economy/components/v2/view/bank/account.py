@@ -46,7 +46,7 @@ class BankAccountViewV2(LayoutView):
         container.add_item(Separator())
         container.add_item(
             TextDisplay[Self](
-                "### <:nightcoreInfo:1540439225877528626>Состояние депозита\n"
+                "### <:nightcoreInfo:1540439225877528626> Состояние депозита\n"
                 f"> <:nightcoreLevelUp:1540402294275969024> Баланс: {deposit_balance} {coin_name}\n"  # noqa: E501
                 f"> <:nightcorePercent:1545112163742519349> Процентная ставка: {deposit_current_rate}, лимит для начисления процентов: {deposit_interest_cap_amount}\n"  # noqa: E501
                 f"> Последнее начисление: {discord_ts(deposit_last_updated_at)}"  # noqa: E501

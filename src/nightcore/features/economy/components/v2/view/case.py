@@ -374,13 +374,13 @@ class CaseHelpViewV2(LayoutView):
             for item in self.pages[0]:
                 container.add_item(item)
 
-        container.add_item(Separator())
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}"
+        if len(self.pages) > 1:
+            container.add_item(Separator())
+            container.add_item(
+                TextDisplay[Self](
+                    f"-# Page {self.current_page + 1} of {len(self.pages)}"
+                )
             )
-        )
 
         self._update_buttons()
 

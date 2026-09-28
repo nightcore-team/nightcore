@@ -95,6 +95,14 @@ class VipStatusHelpViewV2(LayoutView):
                 "## <:nightcoreGem:1540406663377453097> Информация о VIP-статусах"  # noqa: E501
             )
         )
+        container.add_item(Separator())
+        container.add_item(
+            TextDisplay(
+                "**Доступные виды VIP-статусов.**\n"
+                "> Чтобы посмотреть и активировать VIP-статус, используйте команду **`/vip activate`**"  # noqa: E501
+            )
+        )
+        container.add_item(Separator())
 
         if len(self.pages) > 1:
             for item in self.pages[self.current_page]:
@@ -107,13 +115,13 @@ class VipStatusHelpViewV2(LayoutView):
         else:
             container.add_item(self.pages[0][0])
 
-        container.add_item(Separator())
-
-        container.add_item(
-            TextDisplay[Self](
-                f"-# Page {self.current_page + 1} of {len(self.pages)}"
+        if len(self.pages) > 1:
+            container.add_item(Separator())
+            container.add_item(
+                TextDisplay[Self](
+                    f"-# Page {self.current_page + 1} of {len(self.pages)}"
+                )
             )
-        )
 
         self._update_buttons()
 
