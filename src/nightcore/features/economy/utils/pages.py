@@ -1,6 +1,7 @@
 """Build transfers history pages."""
 
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from discord.ui import TextDisplay
@@ -224,7 +225,16 @@ def build_user_vip_statuses_content(
     owned_configs: list[VipStatus] = []
     statuses: list[UserVipStatusAnnot] = []
 
+    # only a live VIP can be activated - the user is the one who activates,
+    # never the grant - and a row that ran out is about to be dropped by the
+    # expire_vip task anyway, so listing it would offer a button that can
+    # only fail
+    now = datetime.now(UTC)
+
     for user_vip in user_vip_statuses:
+        if user_vip.expires_at is not None and user_vip.expires_at <= now:
+            continue
+
         config = config_by_id.get(user_vip.vip_id)
         if config is None:
             continue
