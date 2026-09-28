@@ -1,5 +1,6 @@
-from .battlepass_level import Base, BattlepassLevel
-from .case import CaseOpenReward, CaseOpenSession
+from .bank import BankAccount, Base, Deposit, ExtraWallet
+from .battlepass_level import Base, BattlepassLevel  # noqa: F811
+from .case import Base, CaseOpenReward, CaseOpenSession  # noqa: F811
 from .casino import Base, CasinoBet, CasinoGame  # noqa: F811
 from .changestat import Base, ChangeStat  # noqa: F811
 from .clan import Base, Clan, ClanMember  # noqa: F811
@@ -40,6 +41,7 @@ from .transfer_history import Base, TransferHistory  # noqa: F811
 from .user import Base, User  # noqa: F811
 
 __all__ = (
+    "BankAccount",
     "Base",
     "BattlepassLevel",
     "CaseOpenReward",
@@ -50,6 +52,8 @@ __all__ = (
     "Clan",
     "ClanMember",
     "CustomComponent",
+    "Deposit",
+    "ExtraWallet",
     "GuildAccessConfig",
     "GuildClansConfig",
     "GuildEconomyConfig",
