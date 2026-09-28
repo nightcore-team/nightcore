@@ -174,9 +174,12 @@ class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
         ForeignKey("vipstatus.id", ondelete="CASCADE"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(default=False, nullable=False)
+    # None = permanent VIP status; otherwise the expire_vip task deletes the
+    # row once the date passes, so a passed date never grants anything on
+    # its own - the read paths filter on expires_at as well
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
-    )  # None = permanent VIP status; otherwise auto-removed once passed
+    )
 
     user: Mapped["User"] = relationship(back_populates="vip_statuses")
     vip: Mapped["VipStatus"] = relationship()

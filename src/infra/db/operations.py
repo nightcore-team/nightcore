@@ -487,10 +487,12 @@ async def get_user_vip_statuses_for_update(
 ) -> Sequence[UserVipStatus]:
     """Get the user's all VIP statuses row.
 
-    Locking the UserVips row itself (not the parent User row) is what
-    lets this correctly contend with the expiry task, which locks the
-    same UserVip row when clearing expired statuses — preventing a
-    grant/replace and an expiry cleanup from racing on the same user.
+    Locking the UserVipStatus row itself (not the parent User row) is what
+    lets this contend with the expiry task, which locks the same rows in
+    get_expired_user_vip_statuses_for_update when clearing expired
+    statuses — preventing a grant and an expiry cleanup from racing on the
+    same user. The caller must therefore filter the expired rows out when
+    it needs the ones the user actually holds.
     """
 
     stmt = select(UserVipStatus).where(
@@ -618,6 +620,48 @@ async def delete_case_open_sessions(
     """Delete case sessions and their rewards cascade."""
 
     stmt = delete(CaseOpenSession).where(CaseOpenSession.id.in_(session_ids))
+    await session.execute(stmt)
+
+
+async def get_expired_user_vip_statuses_for_update(
+    session: AsyncSession,
+    *,
+    now: datetime,
+    limit: int = 100,
+) -> Sequence[UserVipStatus]:
+    """Get expired VIP statuses in a bounded locked batch.
+
+    Locks the very rows get_user_vip_statuses_for_update locks on the grant
+    path, so a grant that is extending an expired VIP either wins and the
+    cleanup skips the row, or the cleanup deletes it and the grant inserts a
+    fresh one.
+    """
+
+    stmt = (
+        select(UserVipStatus)
+        .where(
+            UserVipStatus.expires_at.is_not(None),
+            UserVipStatus.expires_at <= now,
+        )
+        .order_by(UserVipStatus.expires_at)
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def delete_user_vip_statuses(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given VIP statuses by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(UserVipStatus).where(UserVipStatus.id.in_(status_ids))
     await session.execute(stmt)
 
 

@@ -18,6 +18,10 @@ from src.infra.db.operations import (
     get_specified_guild_config,
     get_vip_status_by_id,
 )
+from src.nightcore.features.economy.utils.vip import (
+    count_live_vip_statuses,
+    next_vip_expires_at,
+)
 from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
@@ -183,8 +187,15 @@ async def give_reward_by_type(
 
                 if user_vip_status is not None:
                     if user_vip_status.expires_at is not None:
-                        user_vip_status.expires_at = expires_at
-                elif len(user.vip_statuses) < config.bot.MAX_USER_VIPS:
+                        # extend the current VIP instead of overwriting it,
+                        # otherwise a short grant would shorten a longer one
+                        user_vip_status.expires_at = next_vip_expires_at(
+                            current=user_vip_status.expires_at,
+                            duration=duration,
+                        )
+                elif count_live_vip_statuses(user.vip_statuses) < (
+                    config.bot.MAX_USER_VIPS
+                ):
                     user.vip_statuses.append(
                         UserVipStatus(
                             guild_id=user.guild_id,

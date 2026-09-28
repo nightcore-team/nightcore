@@ -1,6 +1,7 @@
 """Handle VIP-status activation button."""
 
 import logging
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 from discord import Forbidden, Guild, HTTPException, Member
@@ -42,6 +43,9 @@ async def handle_vip_activate_button(
     outcome = ""
     vip_name = ""
     role_id: int | None = None
+    old_role_ids: list[int] = []
+
+    now = datetime.now(UTC)
 
     async with bot.uow.start() as session:
         user_vip_statuses = await get_user_vip_statuses_for_update(
@@ -58,6 +62,8 @@ async def handle_vip_activate_button(
 
         if target is None:
             outcome = "vip_not_found"
+        elif target.expires_at is not None and target.expires_at <= now:
+            outcome = "vip_expired"
         elif target.is_active:
             outcome = "already_active"
         else:
@@ -70,8 +76,55 @@ async def handle_vip_activate_button(
             else:
                 vip_name = vip_status.name
                 role_id = vip_status.role_id
+
+                # only one VIP is active at a time, so activating a new one
+                # has to release the previously active one
+                deactivated = [
+                    row for row in user_vip_statuses if row.is_active
+                ]
+
+                for row in deactivated:
+                    row.is_active = False
+
+                if deactivated:
+                    guild_vip_statuses = await get_guild_vip_statuses(
+                        session, guild_id=guild.id
+                    )
+                    released = {
+                        status.id: status for status in guild_vip_statuses
+                    }
+
+                    old_role_ids = [
+                        released[row.vip_id].role_id
+                        for row in deactivated
+                        if row.vip_id in released
+                        and released[row.vip_id].role_id is not None
+                    ]
+
                 target.is_active = True
                 outcome = "activated"
+
+    if outcome == "activated":
+        for old_role_id in old_role_ids:
+            if old_role_id == role_id:
+                continue
+
+            old_role = await ensure_role_exists(guild, old_role_id)
+
+            if old_role is None:
+                continue
+
+            try:
+                await member.remove_roles(
+                    old_role, reason="Смена активного VIP-статуса"
+                )
+            except (Forbidden, HTTPException) as e:
+                logger.error(
+                    "[vip/activate] Failed to remove role %s from user %s: %s",
+                    old_role_id,
+                    member.id,
+                    e,
+                )
 
     if outcome == "activated" and role_id is not None:
         role = await ensure_role_exists(guild, role_id)
@@ -95,6 +148,16 @@ async def handle_vip_activate_button(
             view=ErrorViewV2(
                 "Ошибка активации VIP-статуса",
                 "VIP-статус не найден у вас.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "vip_expired":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка активации VIP-статуса",
+                "Срок действия данного VIP-статуса истёк.",
             ),
             ephemeral=True,
         )

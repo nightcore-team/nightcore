@@ -29,6 +29,10 @@ from src.nightcore.features.economy.events.dto import (
 from src.nightcore.features.economy.utils.autocomplete import (
     guild_vip_statuses_autocomplete,
 )
+from src.nightcore.features.economy.utils.vip import (
+    count_live_vip_statuses,
+    next_vip_expires_at,
+)
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
@@ -48,7 +52,7 @@ logger = logging.getLogger(__name__)
 @give_group.command(name="vip", description="Выдать VIP-status пользователю")  # type: ignore
 @app_commands.describe(
     user="Пользователь, которому выдается VIP-status.",
-    case_id="VIP-status для выдачи.",
+    vip_id="VIP-status для выдачи.",
     duration="Срок действия VIP-status'a. Формат: s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
     reason="Причина выдачи VIP-status'а.",
 )
@@ -125,12 +129,6 @@ async def give_vip(
             if vip_status_to_give is None:
                 outcome = "unknown_vip_status"
             else:
-                # lock order: bankaccount -> deposit -> vip status rows.
-                # The deposit is accrued before the VIP rows are locked so
-                # the accrual still uses the pre-change VIP set, and so this
-                # path doesn't invert the order used by every other one
-                # (case opening locks the bank account and then inserts the
-                # VIP status row).
                 bank_account, _ = await get_or_create_bank_account(
                     session,
                     guild_id=guild.id,
@@ -144,54 +142,72 @@ async def give_vip(
                     session,
                     deposit=bank_account.deposit,
                     guild_id=guild.id,
-                    user_id=user_record.id,
+                    user_id=user_record.user_id,
                     config=guild_config,
                 )
 
+                # UserVipStatus.user_id is a FK to user.user_id (the
+                # snowflake), not to user.id like BankAccount.user_id is,
+                # so the VIP rows need the other id.
                 user_vip_statuses = await get_user_vip_statuses_for_update(
                     session,
                     guild_id=guild.id,
-                    user_id=user_record.id,
+                    user_id=user_record.user_id,
                     for_update=True,
                 )
 
-                if not user_vip_statuses:
-                    outcome = "success_with_new_unique"
+                now = datetime.now(UTC)
 
-                elif (
-                    len(user_vip_statuses) + 1
-                    > interaction.client.config.bot.MAX_USER_VIPS
-                ):
-                    outcome = "max_user_vips_limit_exceeded"
+                existing = next(
+                    (
+                        status
+                        for status in user_vip_statuses
+                        if status.vip_id == vip_id
+                    ),
+                    None,
+                )
 
-                needed_vip_id = 0
-                if not outcome:
-                    for idx, vip in enumerate(user_vip_statuses):
-                        # check if user already has this vip status
-                        if vip.id == vip_id:
-                            # check if user has unlimited vip status
-                            if vip.expires_at is None:
-                                outcome = "already_has_unlimited"
-                                break
-                            else:
-                                outcome = "success_with_extend"
-                                needed_vip_id = idx
-                                break
-
-                        outcome = "success_with_new_unique"
-
-                if outcome == "success_with_extend":
-                    needed_vip_status = user_vip_statuses[needed_vip_id]
-                    needed_vip_status.expires_at = expires_at
-
-                elif outcome == "success_with_new_unique":
-                    session.add(
-                        UserVipStatus(
-                            user_id=user_record.id,
-                            vip_id=vip_id,
-                            expires_at=expires_at,
+                if existing is not None:
+                    if existing.expires_at is None:
+                        # the user has this VIP forever already
+                        outcome = "already_has_unlimited"
+                    else:
+                        expires_at = next_vip_expires_at(
+                            current=existing.expires_at,
+                            duration=parsed_duration,
+                            now=now,
                         )
+                        existing.expires_at = expires_at
+                        outcome = "success_with_extend"
+
+                else:
+                    # only live VIPs count against the quota, otherwise a
+                    # user keeps them forever since expired rows are only
+                    # cleared by the expiry task
+                    live_count = count_live_vip_statuses(
+                        user_vip_statuses, now=now
                     )
+
+                    if live_count + 1 > (
+                        interaction.client.config.bot.MAX_USER_VIPS
+                    ):
+                        outcome = "max_user_vips_limit_exceeded"
+                    else:
+                        expires_at = next_vip_expires_at(
+                            current=None,
+                            duration=parsed_duration,
+                            now=now,
+                        )
+
+                        session.add(
+                            UserVipStatus(
+                                guild_id=user_record.guild_id,
+                                user_id=user_record.user_id,
+                                vip_id=vip_id,
+                                expires_at=expires_at,
+                            )
+                        )
+                        outcome = "success_with_new_unique"
 
     except Exception as e:
         logger.exception(
