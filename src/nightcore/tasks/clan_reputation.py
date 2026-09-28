@@ -16,6 +16,8 @@ from src.nightcore.features.clans.components.v2 import ClansPaydayViewV2
 from src.nightcore.utils.webhook import send_to_webhook
 
 if TYPE_CHECKING:
+    from discord import Guild
+
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
@@ -47,8 +49,11 @@ class ClansPayDayTask(Cog):
             guilds = self.bot.guilds
 
             # Process guilds concurrently with semaphore
-            tasks = [
-                self._process_guild_with_limit(guild, view) for guild in guilds
+            tasks: list[asyncio.Task[None]] = [
+                asyncio.create_task(
+                    self._process_guild_with_limit(guild, view)
+                )
+                for guild in guilds
             ]
 
             if tasks:
@@ -61,7 +66,9 @@ class ClansPayDayTask(Cog):
                 exc_info=True,
             )
 
-    async def _process_guild_with_limit(self, guild, view) -> None:
+    async def _process_guild_with_limit(
+        self, guild: "Guild", view: ClansPaydayViewV2
+    ) -> None:
         """Process a single guild with semaphore limiting."""
         async with self._guild_semaphore:
             try:
@@ -71,7 +78,9 @@ class ClansPayDayTask(Cog):
                     "[task] - Error processing guild %s", guild.id
                 )
 
-    async def _process_guild(self, guild, view) -> None:
+    async def _process_guild(
+        self, guild: "Guild", view: ClansPaydayViewV2
+    ) -> None:
         """Process all clans in a single guild."""
 
         async with self.bot.uow.start() as session:

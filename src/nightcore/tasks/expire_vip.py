@@ -1,8 +1,9 @@
 """Task cog for deleting expired VIP statuses."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from collections.abc import Awaitable, Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,8 @@ from src.nightcore.utils import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Sequence
+
     from src.infra.db.models.user import UserVipStatus
     from src.nightcore.bot import Nightcore
 
@@ -33,7 +36,7 @@ MAX_CONCURRENT_REVOKES = 5
 
 
 class ExpireVipTask(Cog):
-    def __init__(self, bot: "Nightcore") -> None:
+    def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
         self._revoke_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REVOKES)
 
@@ -88,7 +91,7 @@ class ExpireVipTask(Cog):
             )
 
     async def _revoke_roles(
-        self, expired_statuses: Sequence["UserVipStatus"]
+        self, expired_statuses: Sequence[UserVipStatus]
     ) -> int:
         """Revoke roles for expired statuses with rate limiting."""
         tasks: list[Awaitable[bool]] = []
@@ -183,6 +186,6 @@ class ExpireVipTask(Cog):
         await self.bot.wait_until_ready()
 
 
-async def setup(bot: "Nightcore") -> None:
+async def setup(bot: Nightcore) -> None:
     """Setup the expired VIP statuses task."""
     await bot.add_cog(ExpireVipTask(bot))

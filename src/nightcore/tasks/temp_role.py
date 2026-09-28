@@ -1,5 +1,7 @@
 """Task cog for deleting temp. roles from user."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING
@@ -8,7 +10,6 @@ from discord import Forbidden, HTTPException
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import TempRole
 from src.infra.db.operations import (
     delete_temp_roles,
     get_all_expired_temp_roles,
@@ -20,6 +21,9 @@ from src.nightcore.utils import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from src.infra.db.models import TempRole
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
@@ -28,7 +32,7 @@ MAX_CONCURRENT_REMOVES = 5
 
 
 class DeleteTempRoleTask(Cog):
-    def __init__(self, bot: "Nightcore") -> None:
+    def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
         self._remove_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REMOVES)
 
@@ -72,22 +76,26 @@ class DeleteTempRoleTask(Cog):
                 exc_info=True,
             )
 
-    async def _remove_roles(self, temp_roles: list[TempRole]) -> int:
+    async def _remove_roles(self, temp_roles: Sequence[TempRole]) -> int:
         """Remove roles with rate limiting."""
-        tasks = []
+        tasks: list[asyncio.Task[bool]] = []
         for tr in temp_roles:
             tasks.append(
-                self._remove_role_with_limit(
-                    tr.guild_id,
-                    tr.user_id,
-                    tr.role_id,
+                asyncio.create_task(
+                    self._remove_role_with_limit(
+                        tr.guild_id,
+                        tr.user_id,
+                        tr.role_id,
+                    )
                 )
             )
 
         if not tasks:
             return 0
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results: list[bool | BaseException] = await asyncio.gather(
+            *tasks, return_exceptions=True
+        )
         removed = 0
         for result in results:
             if result is True:
@@ -181,6 +189,6 @@ class DeleteTempRoleTask(Cog):
             self.delete_temp_role_task.restart()
 
 
-async def setup(bot: "Nightcore"):
+async def setup(bot: Nightcore):
     """Setup the DeleteTempRoleTask cog."""
     await bot.add_cog(DeleteTempRoleTask(bot))

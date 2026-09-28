@@ -1,5 +1,7 @@
 """Task cog for deleting expired tickets."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING
@@ -7,7 +9,7 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildLoggingConfig, TicketState
+from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     get_specified_webhook,
     get_tickets_to_delete,
@@ -15,6 +17,9 @@ from src.infra.db.operations import (
 from src.utils._enums import ChannelType, TicketStateEnum
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from src.infra.db.models import TicketState
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.features.tickets.events.dto import (
@@ -28,7 +33,7 @@ MAX_CONCURRENT_PROCESSING = 5
 
 
 class DeleteTicketTask(Cog):
-    def __init__(self, bot: "Nightcore") -> None:
+    def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
         self._processing_semaphore = asyncio.Semaphore(
             MAX_CONCURRENT_PROCESSING
@@ -67,16 +72,20 @@ class DeleteTicketTask(Cog):
                 exc_info=True,
             )
 
-    async def _process_tickets(self, tickets: list[TicketState]) -> int:
+    async def _process_tickets(self, tickets: Sequence[TicketState]) -> int:
         """Process tickets with rate limiting."""
-        tasks = []
+        tasks: list[asyncio.Task[bool]] = []
         for ticket in tickets:
-            tasks.append(self._process_single_with_limit(ticket))
+            tasks.append(
+                asyncio.create_task(self._process_single_with_limit(ticket))
+            )
 
         if not tasks:
             return 0
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results: list[bool | BaseException] = await asyncio.gather(
+            *tasks, return_exceptions=True
+        )
         processed = 0
         for result in results:
             if result is True:
@@ -173,6 +182,6 @@ class DeleteTicketTask(Cog):
             self.delete_ticket_task.restart()
 
 
-async def setup(bot: "Nightcore"):
+async def setup(bot: Nightcore):
     """Setup the DeleteTicketTask cog."""
     await bot.add_cog(DeleteTicketTask(bot))

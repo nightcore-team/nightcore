@@ -173,8 +173,9 @@ class MultiplayerRouletteTask(Cog):
                 return
 
             # Process each game with concurrency limit
-            tasks = [
-                self._process_game_with_limit(game_id) for game_id in game_ids
+            tasks: list[asyncio.Task[None]] = [
+                asyncio.create_task(self._process_game_with_limit(game_id))
+                for game_id in game_ids
             ]
 
             if tasks:

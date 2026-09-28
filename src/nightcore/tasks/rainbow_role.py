@@ -21,6 +21,7 @@ from src.nightcore.utils import (
 from src.utils._enums import RainbowColorChangeTypeEnum
 
 if TYPE_CHECKING:
+    from src.infra.db.models import RainbowRole
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,7 @@ class RainbowRoleTask(Cog):
             return False
 
     async def _update_single_role(
-        self, rainbow
+        self, rainbow: "RainbowRole"
     ) -> tuple[int, datetime, int | None] | None:
         """Update a single rainbow role and return update data."""
         guild = await ensure_guild_exists(self.bot, rainbow.guild_id)
@@ -203,7 +204,7 @@ class RainbowRoleTask(Cog):
                 exc_info=True,
             )
 
-    async def _update_role_with_limit(self, rainbow):
+    async def _update_role_with_limit(self, rainbow: "RainbowRole"):
         """Update a single role with semaphore limiting."""
         async with self._update_semaphore:
             return await self._update_single_role(rainbow)

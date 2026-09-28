@@ -1,5 +1,7 @@
 """Task cog for handling expired notifications."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from datetime import UTC, datetime
@@ -8,7 +10,7 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.models import GuildNotificationsConfig, NotifyState
+from src.infra.db.models import GuildNotificationsConfig
 from src.infra.db.operations import (
     get_all_pending_notifications,
     get_specified_channel,
@@ -17,6 +19,9 @@ from src.infra.db.operations import (
 from src.utils._enums import ChannelType, NotifyStateEnum
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from src.infra.db.models import NotifyState
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.features.moderation.components.v2.view import (
@@ -36,7 +41,7 @@ MAX_CONCURRENT_PROCESSING = 5
 
 
 class ExpiredNotifyTask(Cog):
-    def __init__(self, bot: "Nightcore") -> None:
+    def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
         self._processing_semaphore = asyncio.Semaphore(
             MAX_CONCURRENT_PROCESSING
@@ -82,17 +87,21 @@ class ExpiredNotifyTask(Cog):
             )
 
     async def _process_notifications(
-        self, notifications: list[NotifyState]
+        self, notifications: Sequence[NotifyState]
     ) -> int:
         """Process notifications with rate limiting."""
-        tasks = []
+        tasks: list[asyncio.Task[bool]] = []
         for notify in notifications:
-            tasks.append(self._process_single_with_limit(notify))
+            tasks.append(
+                asyncio.create_task(self._process_single_with_limit(notify))
+            )
 
         if not tasks:
             return 0
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results: list[bool | BaseException] = await asyncio.gather(
+            *tasks, return_exceptions=True
+        )
         processed = 0
         for result in results:
             if result is True:
@@ -260,6 +269,6 @@ class ExpiredNotifyTask(Cog):
             self.expired_notify_task.restart()
 
 
-async def setup(bot: "Nightcore"):
+async def setup(bot: Nightcore):
     """Setup the ExpiredNotifyTask cog."""
     await bot.add_cog(ExpiredNotifyTask(bot))
