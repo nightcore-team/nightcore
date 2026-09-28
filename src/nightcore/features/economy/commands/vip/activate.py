@@ -8,6 +8,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.operations import (
     get_guild_vip_statuses,
+    get_or_create_user,
     get_user_vip_statuses_for_update,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2
@@ -41,10 +42,16 @@ async def activate_vip(interaction: Interaction["Nightcore"]):
     guild = cast(Guild, interaction.guild)
 
     async with bot.uow.start() as session:
-        user_vip_statuses = await get_user_vip_statuses_for_update(
+        user_record, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
+        )
+
+        user_vip_statuses = await get_user_vip_statuses_for_update(
+            session,
+            guild_id=guild.id,
+            user_id=user_record.id,
             for_update=False,
         )
         guild_vip_statuses = await get_guild_vip_statuses(

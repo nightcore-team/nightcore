@@ -9,6 +9,7 @@ from discord.interactions import Interaction
 
 from src.infra.db.operations import (
     get_guild_vip_statuses,
+    get_or_create_user,
     get_user_vip_statuses_for_update,
     get_vip_status_by_id,
 )
@@ -48,10 +49,16 @@ async def handle_vip_activate_button(
     now = datetime.now(UTC)
 
     async with bot.uow.start() as session:
-        user_vip_statuses = await get_user_vip_statuses_for_update(
+        user_record, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
             user_id=member.id,
+        )
+
+        user_vip_statuses = await get_user_vip_statuses_for_update(
+            session,
+            guild_id=guild.id,
+            user_id=user_record.id,
             for_update=True,
         )
 
@@ -185,7 +192,7 @@ async def handle_vip_activate_button(
         user_vip_rows = await get_user_vip_statuses_for_update(
             session,
             guild_id=guild.id,
-            user_id=member.id,
+            user_id=user_record.id,
             for_update=False,
         )
         guild_vip_statuses = await get_guild_vip_statuses(

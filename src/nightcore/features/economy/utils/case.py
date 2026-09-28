@@ -172,7 +172,8 @@ async def give_reward_by_type(
                     session,
                     deposit=bank_account.deposit,
                     guild_id=user.guild_id,
-                    user_id=user.user_id,
+                    # the VIP lookup and the bank both key on user.id
+                    user_id=user.id,
                     config=guild_config,
                 )
 
@@ -199,7 +200,9 @@ async def give_reward_by_type(
                     user.vip_statuses.append(
                         UserVipStatus(
                             guild_id=user.guild_id,
-                            user_id=user.user_id,
+                            # uservipstatus points at user.id; usercase and
+                            # user_colors still hold the discord snowflake
+                            user_id=user.id,
                             vip_id=vip_status.id,
                             expires_at=expires_at,
                         )

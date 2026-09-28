@@ -117,7 +117,7 @@ class SelectItemActionRow(ActionRow["CoinsShopViewV2"]):
             active_vip_statuses = await get_active_user_vip_statuses(
                 session,
                 guild_id=guild.id,
-                user_id=interaction.user.id,
+                user_id=buyer.id,
             )
             discount_vip = max(
                 active_vip_statuses,

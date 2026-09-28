@@ -48,6 +48,10 @@ if TYPE_CHECKING:
 class User(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint("guild_id", "user_id", name="ux_user_guild_user"),
+        # the child tables point at (id, guild_id) rather than
+        # (guild_id, user_id), so the guild a row belongs to can never drift
+        # away from the guild of the user it references
+        UniqueConstraint("id", "guild_id", name="ux_user_id_guild"),
         # Performance indexes for leaderboard queries
         Index("ix_user_guild_coins", "guild_id", text("coins DESC")),
         Index(
@@ -162,8 +166,8 @@ class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
             "vip_id", "user_id", "guild_id", name="ux_user_vip_guild"
         ),
         ForeignKeyConstraint(
-            ["guild_id", "user_id"],
-            ["user.guild_id", "user.user_id"],
+            ["user_id", "guild_id"],
+            ["user.id", "user.guild_id"],
             ondelete="CASCADE",
         ),
     )

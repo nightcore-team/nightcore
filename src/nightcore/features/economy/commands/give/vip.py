@@ -142,17 +142,14 @@ async def give_vip(
                     session,
                     deposit=bank_account.deposit,
                     guild_id=guild.id,
-                    user_id=user_record.user_id,
+                    user_id=user_record.id,
                     config=guild_config,
                 )
 
-                # UserVipStatus.user_id is a FK to user.user_id (the
-                # snowflake), not to user.id like BankAccount.user_id is,
-                # so the VIP rows need the other id.
                 user_vip_statuses = await get_user_vip_statuses_for_update(
                     session,
                     guild_id=guild.id,
-                    user_id=user_record.user_id,
+                    user_id=user_record.id,
                     for_update=True,
                 )
 
@@ -202,7 +199,7 @@ async def give_vip(
                         session.add(
                             UserVipStatus(
                                 guild_id=user_record.guild_id,
-                                user_id=user_record.user_id,
+                                user_id=user_record.id,
                                 vip_id=vip_id,
                                 expires_at=expires_at,
                             )

@@ -10,6 +10,7 @@ from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     accrue_deposit_interest_if_due,
     get_or_create_bank_account,
+    get_or_create_user,
     get_specified_webhook,
     get_user_vip_statuses_for_update,
     get_vip_status_by_id,
@@ -90,14 +91,20 @@ async def remove_vip(
         if vip_status is None:
             outcome = "unknown_vip_status"
         else:
+            user_record, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=user.id
+            )
+
             # lock order: bankaccount -> deposit -> vip status rows.
             # The deposit is accrued before the VIP rows are locked so this
             # path doesn't invert the order used by every other one, and the
             # accrual still sees the VIP that is about to be removed.
+            # user is a discord.User here, so the row id has to be resolved
+            # before it can be used against bankaccount and uservipstatus.
             bank_account, _ = await get_or_create_bank_account(
                 session,
                 guild_id=guild.id,
-                user_id=user.id,
+                user_id=user_record.id,
                 for_update=True,
             )
 
@@ -107,14 +114,14 @@ async def remove_vip(
                 session,
                 deposit=bank_account.deposit,
                 guild_id=guild.id,
-                user_id=user.id,
+                user_id=user_record.id,
                 config=guild_config,
             )
 
             user_vip_statuses = await get_user_vip_statuses_for_update(
                 session,
                 guild_id=guild.id,
-                user_id=user.id,
+                user_id=user_record.id,
                 for_update=True,
             )
             target = next(
