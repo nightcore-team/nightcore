@@ -1010,17 +1010,22 @@ async def create_extra_wallet(
 ) -> ExtraWallet:
     """Create new extra wallet."""
 
-    stmt_count = await session.scalar(
-        select(func.count())
-        .select_from(ExtraWallet)
-        .where(ExtraWallet.bank_account_id == bank_account_id)
+    await session.execute(
+        select(BankAccount.id)
+        .where(BankAccount.id == bank_account_id)
         .with_for_update()
+    )
+
+    max_slot = await session.scalar(
+        select(func.max(ExtraWallet.slot)).where(
+            ExtraWallet.bank_account_id == bank_account_id
+        )
     )
 
     wallet = ExtraWallet(
         bank_account_id=bank_account_id,
         coins=coins,
-        slot=stmt_count + 1 if stmt_count else 1,
+        slot=max_slot + 1 if max_slot else 1,
     )
     session.add(wallet)
 
