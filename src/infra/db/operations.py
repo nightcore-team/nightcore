@@ -188,7 +188,7 @@ _ACCESS_COLUMNS: Final[
 
 
 ENTITY_MODEL_MAP: dict[EntityTypeEnum, type[Any]] = {
-    EntityTypeEnum.VIP_STATUS: UserVipStatus,
+    EntityTypeEnum.VIP_STATUS: VipStatus,
     EntityTypeEnum.CASE: Case,
     EntityTypeEnum.COLOR: Color,
     EntityTypeEnum.BATTLEPASS_LEVEL: BattlepassLevel,
