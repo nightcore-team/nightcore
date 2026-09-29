@@ -43,6 +43,8 @@ from .commands.give import (
     color,
     exp,
     item,
+    reroll,
+    vip,
 )
 from .commands.rainbow import change as rainbow_change
 from .commands.rainbow import create as rainbow_create
@@ -81,10 +83,12 @@ __all__ = (
     "rainbow_delete",
     "remove_color",
     "remove_vip",
+    "reroll",
     "role",
     "roulette",
     "top_up",
     "transfer",
+    "vip",
     "vip_activate",
     "vip_help",
     "withdraw",
