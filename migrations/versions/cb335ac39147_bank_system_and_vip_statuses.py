@@ -78,7 +78,7 @@ def upgrade() -> None:
     op.add_column('guildeconomyconfig', sa.Column('deposit_max_balance', sa.Integer(), server_default=sa.text('0'), nullable=False))
     op.add_column('guildeconomyconfig', sa.Column('deposit_base_interest_rate', sa.Numeric(precision=5, scale=4), server_default=sa.text('0.0000'), nullable=False))
     op.add_column('guildeconomyconfig', sa.Column('deposit_interest_cap_amount', sa.Integer(), server_default=sa.text('0'), nullable=False))
-    op.add_column('user', sa.Column('rerolls', sa.Integer(), nullable=False))
+    op.add_column('user', sa.Column('rerolls', sa.Integer(), server_default=sa.text('0'), nullable=False))
     op.add_column('user', sa.Column('battle_pass_additional_reward_claimed_level', sa.Integer(), nullable=True))
     # ### end Alembic commands ###
 
