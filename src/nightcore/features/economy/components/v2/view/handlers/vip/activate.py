@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Forbidden, Guild, HTTPException, Member, Role
 from discord.interactions import Interaction
 
+from src.infra.db.loads import vip_status_load_vip
 from src.infra.db.operations import (
     get_guild_vip_statuses,
     get_or_create_user,
@@ -55,10 +56,13 @@ async def handle_vip_activate_button(
             user_id=member.id,
         )
 
+        # the previously active row's VIP is read below for its role, and
+        # a lazy load of it on the async session raises MissingGreenlet
         user_vip_statuses = await get_user_vip_statuses_for_update(
             session,
             guild_id=guild.id,
             user_id=user_record.id,
+            options=[vip_status_load_vip],
             for_update=True,
         )
 
@@ -94,6 +98,12 @@ async def handle_vip_activate_button(
 
                         if row.vip.role_id is not None:
                             old_role_ids_to_remove.append(row.vip.role_id)
+
+                    # the unique index on the active row can't be deferred,
+                    # and the flush orders the UPDATEs by primary key, so an
+                    # older VIP would be set active while the current one
+                    # still is - the old one has to be written off first
+                    await session.flush()
 
                 target.is_active = True
                 outcome = "activated"

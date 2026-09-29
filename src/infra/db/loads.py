@@ -13,6 +13,8 @@ user_load_colors: Load = Load(User).selectinload(User.colors)
 
 user_load_vip_statuses: Load = Load(User).selectinload(User.vip_statuses)
 
+vip_status_load_vip: Load = Load(UserVipStatus).selectinload(UserVipStatus.vip)
+
 user_load_vip_status_vip: Load = Load(UserVipStatus).options(
     selectinload(UserVipStatus.vip),
     selectinload(UserVipStatus.user),

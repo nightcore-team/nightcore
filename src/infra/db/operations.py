@@ -574,9 +574,14 @@ async def get_user_vip_statuses_for_update(
     *,
     guild_id: int,
     user_id: int,
+    options: list[Load] | None = None,
     for_update: bool = True,
 ) -> Sequence[UserVipStatus]:
     """Get the user's all VIP statuses row.
+
+    `UserVipStatus.vip` is lazy, so a caller that reads it has to ask for
+    it through `options` - a lazy load on an AsyncSession raises
+    MissingGreenlet.
 
     Locking the UserVipStatus row itself (not the parent User row) is what
     lets this contend with the expiry task, which locks the same rows in
@@ -589,6 +594,9 @@ async def get_user_vip_statuses_for_update(
     stmt = select(UserVipStatus).where(
         UserVipStatus.user_id == user_id, UserVipStatus.guild_id == guild_id
     )
+
+    if options:
+        stmt = stmt.options(*options)
 
     if for_update:
         stmt = stmt.with_for_update()
