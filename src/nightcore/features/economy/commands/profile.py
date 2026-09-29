@@ -8,7 +8,11 @@ from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
 from src.infra.db.models import GuildEconomyConfig
-from src.infra.db.operations import get_clan_member, get_or_create_user
+from src.infra.db.operations import (
+    get_active_user_vip_statuses,
+    get_clan_member,
+    get_or_create_user,
+)
 from src.nightcore.features.economy.components.v2 import UserProfileViewV2
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import format_voice_time
@@ -69,6 +73,15 @@ class Profile(Cog):
                 with_relations=True,
             )
 
+            # the unique index on (guild_id, user_id) where is_active keeps
+            # this to a single row, so the first one is the active status
+            active_vip_statuses = await get_active_user_vip_statuses(
+                session,
+                guild_id=guild.id,
+                user_id=user_record.id,
+            )
+            active_vip = next(iter(active_vip_statuses), None)
+
         view = UserProfileViewV2(
             bot=self.bot,
             guild_id=guild.id,
@@ -83,6 +96,7 @@ class Profile(Cog):
             messages_count=user_record.messages_count,
             avatar_url=member.display_avatar.url,
             clan=user_clan_member.clan if user_clan_member else None,
+            vip_emoji=active_vip.emoji_str if active_vip else None,
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)

@@ -40,6 +40,7 @@ class UserProfileViewV2(LayoutView):
         messages_count: int,
         avatar_url: str,
         clan: "Clan | None" = None,
+        vip_emoji: str | None = None,
     ):
         super().__init__(timeout=None)
 
@@ -51,9 +52,10 @@ class UserProfileViewV2(LayoutView):
             accent_color=discord.Color.from_str("#5EC9B3")
         )
 
+        header_emoji = vip_emoji or "<:nightcorePyramid:1540402041703239843>"
         container.add_item(
             TextDisplay[Self](
-                f"### <:nightcorePyramid:1540402041703239843> Профиль пользователя <@{user_id}>",  # noqa: E501
+                f"### {header_emoji} Профиль пользователя <@{user_id}>",
             )
         )
         container.add_item(Separator[Self]())
