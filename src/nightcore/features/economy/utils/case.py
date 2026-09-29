@@ -42,6 +42,7 @@ class RewardOutcomeEnum(Enum):
     UNKNOWN_REWARD = 1
     REWARD_NOT_FOUND = 2
     COLOR_WITH_COMPENSATION = 3
+    VIP_LIMIT_REACHED = 4
 
 
 async def give_reward_by_type(
@@ -53,6 +54,11 @@ async def give_reward_by_type(
     list[CaseDropAnnot | BattlepassRewardAnnot], list[RewardOutcomeEnum]
 ]:
     """Apply reward to user and return outcome.
+
+    SUCCESS is only reported when every reward was applied, so a caller
+    that must not consume anything on a failed grant (the battlepass) can
+    rely on it; a reward that could not be given leaves its own state
+    (REWARD_NOT_FOUND, VIP_LIMIT_REACHED) instead.
 
     Caller must hold user row lock via FOR UPDATE.
     """
@@ -87,6 +93,7 @@ async def give_reward_by_type(
                 color = color_cache[drop_id]
 
                 if color is None:
+                    states.append(RewardOutcomeEnum.REWARD_NOT_FOUND)
                     continue
 
                 if user.get_color(color.id) is None:
@@ -121,6 +128,7 @@ async def give_reward_by_type(
                 case = case_cache[drop_id]
 
                 if case is None:
+                    states.append(RewardOutcomeEnum.REWARD_NOT_FOUND)
                     continue
 
                 if (user_case := user.get_case(case.id)) is not None:
@@ -209,7 +217,7 @@ async def give_reward_by_type(
                         )
                     )
                 else:
-                    states.append(RewardOutcomeEnum.REWARD_NOT_FOUND)
+                    states.append(RewardOutcomeEnum.VIP_LIMIT_REACHED)
                     continue
 
                 reward["name"] = vip_status.name
@@ -219,7 +227,15 @@ async def give_reward_by_type(
             case _:
                 continue
 
-    states.append(RewardOutcomeEnum.SUCCESS)
+    if not any(
+        state
+        in (
+            RewardOutcomeEnum.REWARD_NOT_FOUND,
+            RewardOutcomeEnum.VIP_LIMIT_REACHED,
+        )
+        for state in states
+    ):
+        states.append(RewardOutcomeEnum.SUCCESS)
 
     return rewards, states
 
