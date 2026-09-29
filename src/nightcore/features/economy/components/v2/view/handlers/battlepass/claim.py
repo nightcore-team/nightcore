@@ -25,6 +25,7 @@ from src.nightcore.features.economy.utils.case import (
     format_single_battlepass_level_reward,
     give_reward_by_type,
 )
+from src.nightcore.features.economy.utils.vip import get_user_active_vip_ids
 from src.nightcore.services.config import specified_guild_config
 from src.utils._enums import ChannelType
 
@@ -35,6 +36,17 @@ if TYPE_CHECKING:
     from ...battlepass.claim import BattlepassClaimViewV2
 
 logger = logging.getLogger(__name__)
+
+
+def _vip_limit_error_view() -> ErrorViewV2:
+    """Error shown when a VIP reward can't be given over MAX_USER_VIPS."""
+
+    return ErrorViewV2(
+        "Ошибка получения награды",
+        "Достигнуто максимальное количество VIP-статусов, награда не "
+        "может быть выдана.\n> Дождитесь окончания одного из VIP-статусов "
+        "и попробуйте снова.",
+    )
 
 
 def build_additional_reward_view_data(
@@ -94,9 +106,9 @@ async def handle_battlepass_claim_reward_button(
             for_update=True,
         )
 
-        user_vip_ids = [
-            vip_status.vip_id for vip_status in user_record.vip_statuses
-        ]
+        user_vip_ids = await get_user_active_vip_ids(
+            session, guild_id=guild.id, user_id=user_record.id
+        )
         claimed_additional_level = (
             user_record.battle_pass_additional_reward_claimed_level
         )
@@ -134,7 +146,9 @@ async def handle_battlepass_claim_reward_button(
                         session, rewards=[reward], user=user_record
                     )
 
-                    if (
+                    if RewardOutcomeEnum.VIP_LIMIT_REACHED in result:
+                        outcome = "vip_limit_reached"
+                    elif (
                         RewardOutcomeEnum.COLOR_WITH_COMPENSATION not in result
                         and RewardOutcomeEnum.SUCCESS not in result
                     ):
@@ -209,6 +223,12 @@ async def handle_battlepass_claim_reward_button(
                 "У вас недостаточно опыта для получения награды за этот уровень.",  # noqa: E501
             ),
             ephemeral=True,
+        )
+        return
+
+    if outcome == "vip_limit_reached":
+        await interaction.followup.send(
+            view=_vip_limit_error_view(), ephemeral=True
         )
         return
 
@@ -317,9 +337,9 @@ async def handle_battlepass_claim_additional_reward_button(
             for_update=True,
         )
 
-        user_vip_ids = [
-            vip_status.vip_id for vip_status in user_record.vip_statuses
-        ]
+        user_vip_ids = await get_user_active_vip_ids(
+            session, guild_id=guild.id, user_id=user_record.id
+        )
 
         battlepass_levels = await get_guild_battlepass_levels(
             session, guild_id=guild.id
@@ -353,9 +373,25 @@ async def handle_battlepass_claim_additional_reward_button(
                     outcome = "already_claimed"
                 else:
                     reward = current_level_data.additional_reward
+                    access_vip_id = (
+                        reward.get("vip_id_access") if reward else None
+                    )
 
+                    # the view only hides the button, and it is built from
+                    # the state at render time, so the access and the points
+                    # are checked here again against the locked user row
                     if not reward:
                         outcome = "no_additional_reward"
+                    elif (
+                        access_vip_id is None
+                        or access_vip_id not in user_vip_ids
+                    ):
+                        outcome = "no_vip_access"
+                    elif (
+                        user_record.battle_pass_points
+                        < current_level_data.exp_required
+                    ):
+                        outcome = "not_enough_points"
                     else:
                         reward["is_color_compensation"] = None
 
@@ -363,7 +399,9 @@ async def handle_battlepass_claim_additional_reward_button(
                             session, rewards=[reward], user=user_record
                         )
 
-                        if (
+                        if RewardOutcomeEnum.VIP_LIMIT_REACHED in result:
+                            outcome = "vip_limit_reached"
+                        elif (
                             RewardOutcomeEnum.COLOR_WITH_COMPENSATION
                             not in result
                             and RewardOutcomeEnum.SUCCESS not in result
@@ -433,6 +471,33 @@ async def handle_battlepass_claim_additional_reward_button(
                 "Дополнительная награда не настроена для этого уровня.",
             ),
             ephemeral=True,
+        )
+        return
+
+    if outcome == "no_vip_access":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка получения награды",
+                "Дополнительная награда доступна только с активным "
+                "VIP-статусом, который для неё требуется.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "not_enough_points":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Недостаточно опыта",
+                "У вас недостаточно опыта для получения награды за этот уровень.",  # noqa: E501
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "vip_limit_reached":
+        await interaction.followup.send(
+            view=_vip_limit_error_view(), ephemeral=True
         )
         return
 

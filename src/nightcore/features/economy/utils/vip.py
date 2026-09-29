@@ -5,10 +5,32 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
+from src.infra.db.operations import get_active_user_vip_statuses
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from sqlalchemy.ext.asyncio import AsyncSession
+
     from src.infra.db.models.user import UserVipStatus
+
+
+async def get_user_active_vip_ids(
+    session: AsyncSession, *, guild_id: int, user_id: int
+) -> list[int]:
+    """Get ids of the VIPs that currently count for the user.
+
+    Only the active, not expired VIP counts - the same rule the deposit and
+    the shop discount follow - so a held but inactive VIP, or an expired
+    one the expiry task hasn't cleared yet, grants nothing.
+    """
+
+    return [
+        vip_status.id
+        for vip_status in await get_active_user_vip_statuses(
+            session, guild_id=guild_id, user_id=user_id
+        )
+    ]
 
 
 def next_vip_expires_at(

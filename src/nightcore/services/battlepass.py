@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, cast
 
 from discord import Guild
 
-from src.infra.db.loads import user_load_vip_statuses
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     get_guild_battlepass_levels,
@@ -19,6 +18,7 @@ from src.nightcore.features.economy.components.v2 import (
 from src.nightcore.features.economy.utils.case import (
     format_single_battlepass_level_reward,
 )
+from src.nightcore.features.economy.utils.vip import get_user_active_vip_ids
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -45,7 +45,6 @@ async def send_battlepass_claim_view(
             session,
             guild_id=guild.id,
             user_id=target_user_id,
-            options=[user_load_vip_statuses],
             for_update=True,
         )
 
@@ -66,9 +65,9 @@ async def send_battlepass_claim_view(
             )
             return
 
-        user_vip_ids = [
-            vip_status.vip_id for vip_status in user_record.vip_statuses
-        ]
+        user_vip_ids = await get_user_active_vip_ids(
+            session, guild_id=guild.id, user_id=user_record.id
+        )
         claimed_level = user_record.battle_pass_additional_reward_claimed_level
 
     level_index = user_level - 1
