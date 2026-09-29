@@ -163,7 +163,7 @@ async def give_reward_by_type(
                 bank_account, _ = await get_or_create_bank_account(
                     session,
                     guild_id=user.guild_id,
-                    user_id=user.user_id,
+                    user_id=user.id,
                     for_update=True,
                 )
 
