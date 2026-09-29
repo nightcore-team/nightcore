@@ -191,7 +191,7 @@ async def transfer(
                         outcome = "not_enough_coins"
 
                     else:
-                        if isinstance(dst, "Deposit"):
+                        if target == "deposit":
                             deposit_max_balance = (
                                 guild_config.deposit_max_balance
                             )
