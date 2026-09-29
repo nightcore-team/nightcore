@@ -24,8 +24,8 @@ class AwardNotificationEventDTO(BaseEventDTO):
     moderator_id: int
     item_name: str
     amount: int
-    duration: str | None
     reason: str | None
+    duration: str | None = None
 
     def build_component(self, bot: "Nightcore") -> Embed:
         """Build and return the log embed for the event."""
