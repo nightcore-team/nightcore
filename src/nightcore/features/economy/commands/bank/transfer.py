@@ -266,24 +266,13 @@ async def transfer(
         )
 
     elif outcome == "success":
-
-        def _account_desc(choice: str) -> str:
-            if choice == "main":
-                return "основного"
-            if choice == "deposit":
-                return "депозитного"
-            return "extra"
-
-        source_desc = _account_desc(source)
-        target_desc = _account_desc(target)
-
         await interaction.followup.send(
             view=SuccessViewV2(
                 "Перевод средств между счетами",
                 f"Вы успешно перевели {amount}"
-                f" <:nightcoreBanknoteDown:1545558909631201321> с {source_desc}"  # noqa: E501
-                f" счёта на {target_desc} счёт.\n"
-                f"> Текущий баланс {source} счёта: {new_source_balance}, баланс {target_desc} счёта: {new_target_balance} <:nightcoreBanknote:1540403146072002624>",  # noqa: E501
+                f" <:nightcoreBanknoteDown:1545558909631201321> с указанного"
+                f" счёта.\n"
+                f"> Текущий баланс счёта: {new_source_balance}, баланс целевого счёта: {new_target_balance} <:nightcoreBanknote:1540403146072002624>",  # noqa: E501
             )
         )
 
