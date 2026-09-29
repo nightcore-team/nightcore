@@ -321,6 +321,7 @@ async def format_single_case_reward(
                 else:
                     role = guild.get_role(color.role_id)
                     drop["name"] = role.name if role else "unknown"
+                    drop["role_id"] = color.role_id
 
                 if drop["is_color_compensation"]:
                     drop["name"] += " (Компенсация за цвет)"

@@ -20,6 +20,7 @@ from discord.ui import (
 )
 
 from src.nightcore.features.economy.utils.pages import build_case_reroll_pages
+from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.infra.db.models.case import CaseDropAnnot
@@ -190,9 +191,16 @@ class CaseOpenRerollViewV2(LayoutView):
 
         for reward in self.pages[self.current_page]:
             reroll_cost = 2 ** reward.get("rerolls_used", 0)
+            # a color is a role, not a stack of items, so it gets pinged
+            # instead of an amount like everything else does
+            if reward["type"] == CaseDropTypeEnum.COLOR.value and (
+                role_id := reward.get("role_id")
+            ):
+                title = f"<@&{role_id}>"
+            else:
+                title = f"{reward['amount']} {reward['name']}"
             reward_text = (
-                f"**{reward['name']}**\n"
-                f"> Шанс: **`{reward['chance_percent']:.2f}%`**"
+                f"**{title}**\n> Шанс: **`{reward['chance_percent']:.2f}%`**"
             )
             container.add_item(
                 Section[Self](

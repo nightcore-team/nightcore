@@ -46,6 +46,7 @@ class CaseDropAnnot(TypedDict):
     chance: int
     is_color_compensation: bool | None
     duration: NotRequired[int | None]
+    role_id: NotRequired[int | None]
 
 
 class FAQPageAnnot(TypedDict):
