@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 from discord import Guild, Member, app_commands
 from discord.interactions import Interaction
 
-from src.infra.db.loads import user_load_cases_and_colors
+from src.infra.db.loads import user_load_cases_colors_and_vips
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     create_case_open_session,
@@ -76,7 +76,7 @@ async def open_case(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
-                options=user_load_cases_and_colors,
+                options=user_load_cases_colors_and_vips,
                 for_update=True,
             )
 

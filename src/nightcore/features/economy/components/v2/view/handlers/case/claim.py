@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 from discord import Guild, Member
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_cases_colors_and_vips
 from src.infra.db.operations import (
     get_case_by_id,
     get_case_open_rewards_for_update,
@@ -51,6 +52,7 @@ async def handle_case_open_claim(
                 session,
                 guild_id=guild.id,
                 user_id=member.id,
+                options=user_load_cases_colors_and_vips,
                 for_update=True,
             )
             reward_rows = await get_case_open_rewards_for_update(

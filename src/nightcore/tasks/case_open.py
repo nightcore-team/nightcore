@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
+from src.infra.db.loads import user_load_cases_colors_and_vips
 from src.infra.db.operations import (
     delete_case_open_sessions,
     get_case_open_rewards_for_update,
@@ -49,6 +50,7 @@ class CaseOpenTask(Cog):
                         session,
                         guild_id=case_session.guild_id,
                         user_id=case_session.user_id,
+                        options=user_load_cases_colors_and_vips,
                         for_update=True,
                     )
                     rewards = await get_case_open_rewards_for_update(

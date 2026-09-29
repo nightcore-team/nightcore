@@ -1288,12 +1288,16 @@ async def get_user_for_update(
     *,
     guild_id: int,
     user_id: int,
+    options: list[Load] | None = None,
     for_update: bool = True,
 ) -> User | None:
     """Get user row with FOR UPDATE lock (no creation)."""
     stmt = select(User).where(
         User.guild_id == guild_id, User.user_id == user_id
     )
+
+    if options:
+        stmt = stmt.options(*options)
 
     if for_update:
         stmt = stmt.with_for_update()

@@ -43,6 +43,14 @@ user_load_casino_bets: Load = Load(User).selectinload(User.casino_bets)
 
 user_load_cases_and_colors: list[Load] = [user_load_cases, user_load_colors]
 
+# give_reward_by_type decides whether a drop is a duplicate by walking the
+# user's cases (with their item), colors and vip statuses, so every caller
+# has to eager load exactly these. A lazy load there is a MissingGreenlet.
+user_load_cases_colors_and_vips: list[Load] = [
+    *user_load_cases_and_colors,
+    user_load_vip_statuses,
+]
+
 
 user_load_all: list[Load] = [
     user_load_cases,
