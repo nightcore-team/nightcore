@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import discord
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase
 
 from src.infra.db.operations import (
@@ -28,6 +29,15 @@ if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
 from src.utils._enums import EntityTypeEnum
+
+# Readable text for the unique constraints declared on the entity models.
+ENTITY_CONFLICT_MESSAGES: dict[str | None, str] = {
+    "uv_guild_name_vip": "Название уже занято другим VIP-статусом",
+    "ux_guild_role_vip": "На эту роль уже назначен VIP-статус",
+    "ux_name_guild_case": "Название уже занято другим кейсом",
+    "ux_role_guild_color": "На эту роль уже назначен цвет",
+    "ux_level_guild_battlepasslevel": "Такой уровень уже есть",
+}
 
 
 class EntityStateService:
@@ -129,7 +139,7 @@ class EntityStateService:
                         EntityBatchError(
                             index=idx,
                             entity_id=item.entity_id,
-                            error="Entity not found",
+                            error="Сущность не найдена",
                         )
                     )
 
@@ -142,46 +152,93 @@ class EntityStateService:
                         EntityBatchError(
                             index=idx,
                             entity_id=item.entity_id,
-                            error="Entity not found",
+                            error="Сущность не найдена",
                         )
                     )
                     continue
 
-                await session.delete(entity)
+                try:
+                    async with session.begin_nested():
+                        await session.delete(entity)
+                        await session.flush()
+                except IntegrityError as e:
+                    errors.append(
+                        EntityBatchError(
+                            index=idx,
+                            entity_id=item.entity_id,
+                            error=self._describe_conflict(e),
+                        )
+                    )
+                    # Drop the row from the session, otherwise every later
+                    # flush retries the very delete that just failed.
+                    session.expunge(entity)
 
             # Process all validated items
-            for _idx, item, validated in validated_items:
+            for idx, item, validated in validated_items:
                 if item.entity_id > 0 and item.entity_id not in existing:
                     continue  # Already added to errors
 
-                dump = validated.model_dump(
-                    exclude_unset=True,
-                    exclude_computed_fields=True,
-                    # Response-only fields: a client must never be able to
-                    # reassign the primary key or the owner guild.
-                    exclude={"id", "guild_id"},
-                )
-                normalized = model.normalize_from_json(dump)
+                try:
+                    async with session.begin_nested():
+                        dump = validated.model_dump(
+                            exclude_unset=True,
+                            exclude_computed_fields=True,
+                            # Response-only fields: a client must never be
+                            # able to reassign the primary key or the owner
+                            # guild.
+                            exclude={"id", "guild_id"},
+                        )
+                        normalized = model.normalize_from_json(dump)
 
-                if item.entity_id > 0:
-                    # UPDATE
-                    entity = existing[item.entity_id]
-                else:
-                    # CREATE
-                    entity = model(guild_id=member.guild.id, **normalized)
-                    session.add(entity)
+                        if item.entity_id > 0:
+                            # UPDATE
+                            entity = existing[item.entity_id]
+                        else:
+                            # CREATE
+                            entity = model(
+                                guild_id=member.guild.id, **normalized
+                            )
+                            session.add(entity)
 
-                # Apply normalized fields
-                for k, v in normalized.items():
-                    setattr(entity, k, v)
+                        # Apply normalized fields
+                        for k, v in normalized.items():
+                            setattr(entity, k, v)
 
-                await session.flush()
+                        await session.flush()
+                except IntegrityError as e:
+                    errors.append(
+                        EntityBatchError(
+                            index=idx,
+                            entity_id=item.entity_id,
+                            error=self._describe_conflict(e),
+                        )
+                    )
+
+                    if item.entity_id > 0:
+                        # Rolling a savepoint back leaves mutated attributes
+                        # in memory, so reload the row before it is touched
+                        # by a later flush.
+                        await session.refresh(existing[item.entity_id])
+                    continue
 
                 new_data = self._serialize_entity(schema, entity)
 
                 updated_entities.append(new_data)
 
         return EntityBatchResult(updated=updated_entities, errors=errors)
+
+    @staticmethod
+    def _describe_conflict(error: IntegrityError) -> str:
+        """Turn a database constraint violation into a readable message."""
+
+        orig = getattr(error, "orig", None)
+        constraint = getattr(orig, "constraint_name", None)
+        readable = ENTITY_CONFLICT_MESSAGES.get(constraint)
+
+        if readable is not None:
+            return readable
+
+        return "Нарушено уникальное ограничение в базе данных"
 
     def _serialize_entity(
         self, schema: type[EntityBaseSchema], entity: DeclarativeBase
