@@ -33,6 +33,8 @@ class LevelUpViewV2(LayoutView):
                 f"<@{user_id}> повысил свой уровень до {new_level}!\n"
                 f"> До получения следующего осталось: **`{exp_to_level}`** опыта.\n"  # noqa: E501
                 f"> Вы получити дополнительных {coins_per_level_up} коинов за повышение уровня."  # noqa: E501
+                if coins_per_level_up > 0
+                else ""
             )
         )
 
