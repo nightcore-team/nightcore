@@ -14,6 +14,7 @@ from src.nightcore.api.dependencies import (
 )
 from src.nightcore.api.schemas import ChannelInfoSchema, RoleInfoSchema
 from src.nightcore.api.schemas.configuration import ConfigUpdateBody
+from src.nightcore.api.schemas.guild import EmojiInfoSchema
 from src.nightcore.api.schemas.logging_revision import (
     ListLoggingRevisionMetaResponseSchema,
     ListLoggingRevisionRequestSchema,
@@ -101,7 +102,7 @@ async def get_guild_roles(
 
 @router.get(
     "/{guild_id}/emojis",
-    response_model=list[ChannelInfoSchema],
+    response_model=list[EmojiInfoSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_guild_emojis(
@@ -111,7 +112,7 @@ async def get_guild_emojis(
     access_service: AccessServiceDependency,
     guild_state_service: GuildStateServiceDependency,
 ):
-    """Get channels for a specific guild."""
+    """Get emojis for a specific guild."""
 
     guild = bot.get_guild(guild_id)
 
@@ -138,7 +139,7 @@ async def get_guild_emojis(
             detail="You must have access to at least one configuration to get guild channels",  # noqa: E501
         )
 
-    return guild_state_service.get_channels(guild)
+    return guild_state_service.get_emojis(guild)
 
 
 @router.get(
