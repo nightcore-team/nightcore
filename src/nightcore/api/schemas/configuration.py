@@ -175,6 +175,7 @@ class GuildLevelsConfigSchema(BaseGuildConfig):
         max_length=MAX_LEVEL_ROLES, default=None
     )
     count_messages_type: MessageCountTypeEnum | None = None
+    coins_per_level_up: int = 0
 
 
 class GuildMultiplersConfigSchema(BaseGuildConfig):
