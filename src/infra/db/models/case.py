@@ -70,6 +70,10 @@ class Case(IdIntegerMixin, Base):
                     item["drop_id"] = int(item["drop_id"])
                 if "type" in item:
                     item["type"] = int(item["type"])
+                # duration feeds straight into timedelta(), so a hand edited
+                # string has to be coerced or the grant blows up on claim
+                if item.get("duration") is not None:
+                    item["duration"] = int(item["duration"])
         return config
 
     __version__ = 1

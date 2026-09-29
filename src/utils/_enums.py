@@ -138,14 +138,26 @@ class CaseDropTypeEnum(Enum):
                 return self.name
 
     def requires_id(self) -> bool:
-        return self == CaseDropTypeEnum.COLOR or self == CaseDropTypeEnum.CASE
+        return (
+            self == CaseDropTypeEnum.COLOR
+            or self == CaseDropTypeEnum.CASE
+            or self == CaseDropTypeEnum.VIP
+        )
 
     def requires_id_or_custom(self) -> bool:
         return (
             self == CaseDropTypeEnum.COLOR
             or self == CaseDropTypeEnum.CASE
+            or self == CaseDropTypeEnum.VIP
             or self == CaseDropTypeEnum.CUSTOM
         )
+
+    def supports_duration(self) -> bool:
+        """Tell whether the reward can expire, so it accepts a duration.
+
+        Only VIP statuses can, every other reward is granted in full.
+        """
+        return self == CaseDropTypeEnum.VIP
 
 
 class CaseOpenSessionStatus(StrEnum):

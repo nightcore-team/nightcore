@@ -52,13 +52,17 @@ async def reward_depends_on_type_autocomplete(
             result = await guild_cases_autocomplete(interaction, current)
         case CaseDropTypeEnum.COLOR.value:
             result = await guild_colors_autocomplete(interaction, current)
+        case CaseDropTypeEnum.VIP.value:
+            result = await guild_vip_statuses_autocomplete(
+                interaction, current
+            )
         case CaseDropTypeEnum.CUSTOM.value:
             result = await _custom_reward_autocomplete()
         case _:  # type: ignore
             result.append(
                 app_commands.Choice(
-                    name="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
-                    value="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
+                    name="Данный параметр используется только для типов кейс/цвет/VIP!",  # noqa: E501
+                    value="Данный параметр используется только для типов кейс/цвет/VIP!",  # noqa: E501
                 )
             )
 
