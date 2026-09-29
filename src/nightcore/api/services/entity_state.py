@@ -132,13 +132,16 @@ class EntityStateService:
                 )
                 normalized = model.normalize_from_json(dump)
 
-                if item.entity_id:
+                if item.entity_id > 0:
                     # UPDATE
                     entity = existing[item.entity_id]
-                else:
+                elif item.entity_id == 0:
                     # CREATE
                     entity = model(guild_id=member.guild.id, **normalized)
                     session.add(entity)
+                else:
+                    await session.delete(item)
+                    continue
 
                 # Apply normalized fields
                 for k, v in normalized.items():
