@@ -142,17 +142,19 @@ async def handle_vip_activate_button(
 
             old_roles_to_remove.append(old_role)
 
-        try:
-            await member.remove_roles(
-                *old_roles_to_remove, reason="Активация другого VIP-статуса."
-            )
-        except (Forbidden, HTTPException) as e:
-            logger.error(
-                "[vip/activate] Failed to remove old roles from user %s: %s",
-                member.id,
-                e,
-            )
-            additional_outcome = "role_not_removed"
+        if old_roles_to_remove:
+            try:
+                await member.remove_roles(
+                    *old_roles_to_remove,
+                    reason="Активация другого VIP-статуса.",
+                )
+            except (Forbidden, HTTPException) as e:
+                logger.error(
+                    "[vip/activate] Failed to remove old roles from user %s: %s",  # noqa: E501
+                    member.id,
+                    e,
+                )
+                additional_outcome = "role_not_removed"
 
     if outcome == "vip_not_found":
         await interaction.followup.send(
@@ -184,16 +186,12 @@ async def handle_vip_activate_button(
         )
         return
 
+    # the VIP is active either way, role problems are only reported
+    result_message = f"VIP-статус **{vip_name}** был успешно активирован."
     if outcome == "role_not_assigned":
-        role_error = SuccessViewV2(
-            "Активация VIP-статуса.",
-            "VIP-статус активирован, но не удалось выдать роль."
-            "\n> Не удалось снять роли предыдущих VIP-статусов."
-            if additional_outcome
-            else "",
-        )
-    else:
-        role_error = None
+        result_message += "\n> Не удалось выдать роль VIP-статуса."
+    if additional_outcome == "role_not_removed":
+        result_message += "\n> Не удалось снять роли предыдущих VIP-статусов."
 
     async with bot.uow.start() as session:
         user_vip_rows = await get_user_vip_statuses_for_update(
@@ -217,10 +215,6 @@ async def handle_vip_activate_button(
         view=view,
     )
     await interaction.followup.send(
-        view=role_error
-        or SuccessViewV2(
-            "VIP-статус активирован",
-            f"VIP-статус **{vip_name}** был успешно активирован.",
-        ),
+        view=SuccessViewV2("VIP-статус активирован", result_message),
         ephemeral=True,
     )
