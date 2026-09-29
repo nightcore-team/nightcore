@@ -108,12 +108,12 @@ class Reward(Cog):
 
         elif outcome == "success":
             base_text = (
-                f"Вы получили свою ежедневную награду: {base_bonus} {coin_name or 'коинов'}"  # type: ignore  # noqa: E501
+                f"Вы получили свою ежедневную награду: {base_bonus} {coin_name or 'коинов'}\n"  # type: ignore  # noqa: E501
                 if base_bonus > 0
-                else "Базовая ежеднавная награда не настроена."
+                else "Базовая ежеднавная награда не настроена.\n"
             )
-            bonus_text = "\n ".join(
-                f"> Дополнительный бонус в размере {total_bonuses[rid]} за наличие роли <@&{rid}>"  # noqa: E501
+            bonus_text = "".join(
+                f"> Дополнительный бонус в размере {total_bonuses[rid]} за наличие роли <@&{rid}>\n"  # noqa: E501
                 for rid in total_bonuses
             )
 
