@@ -10,6 +10,7 @@ from src.infra.db.loads import user_load_bank_account_only
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     accrue_deposit_interest_if_due,
+    get_effective_deposit_max_balance,
     get_or_create_user,
     get_user_deposit_for_update,
     get_user_extra_wallet_for_update,
@@ -192,11 +193,20 @@ async def transfer(
 
                     else:
                         if target == "deposit":
+                            # 0 means no ceiling, the same as in the accrual
                             deposit_max_balance = (
-                                guild_config.deposit_max_balance
+                                await get_effective_deposit_max_balance(
+                                    session,
+                                    config=guild_config,
+                                    guild_id=guild.id,
+                                    user_id=user.id,
+                                )
                             )
 
-                            if dst.coins + amount > deposit_max_balance:
+                            if (
+                                deposit_max_balance > 0
+                                and dst.coins + amount > deposit_max_balance
+                            ):
                                 outcome = "deposit_max_balance_reached"
 
                         if not outcome:
