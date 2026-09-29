@@ -50,3 +50,36 @@ def count_live_vip_statuses(
         for status in statuses
         if status.expires_at is None or status.expires_at > moment
     )
+
+
+def format_duration(seconds: int) -> str:
+    """Render a number of seconds as a compact duration, e.g. 7д or 1ч 30м."""
+    if seconds <= 0:
+        return "0с"
+
+    days, rest = divmod(seconds, 86400)
+    hours, rest = divmod(rest, 3600)
+    minutes = rest // 60
+
+    if days:
+        return f"{days}д" if not hours else f"{days}д {hours}ч"
+
+    if hours:
+        return f"{hours}ч" if not minutes else f"{hours}ч {minutes}м"
+
+    if minutes:
+        return f"{minutes}м"
+
+    return f"{seconds}с"
+
+
+def vip_reward_name(name: str, duration: int | None) -> str:
+    """Build the displayed name of a VIP reward, with its expiry when set.
+
+    A permanent VIP keeps the bare name, so only the temporary ones carry a
+    hint and the lists stay readable.
+    """
+    if duration is None:
+        return name
+
+    return f"{name} ({format_duration(duration)})"

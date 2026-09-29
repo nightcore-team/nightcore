@@ -21,6 +21,7 @@ from src.infra.db.operations import (
 from src.nightcore.features.economy.utils.vip import (
     count_live_vip_statuses,
     next_vip_expires_at,
+    vip_reward_name,
 )
 from src.utils._enums import CaseDropTypeEnum
 
@@ -266,7 +267,9 @@ async def format_cases_rewards(
                         vip_id=drop["drop_id"],
                     )
                     drop["name"] = (
-                        vip_status.name if vip_status else "unknown VIP-status"
+                        vip_reward_name(vip_status.name, drop.get("duration"))
+                        if vip_status
+                        else "unknown VIP-status"
                     )
                 case _:
                     ...
@@ -329,7 +332,9 @@ async def format_single_case_reward(
                     vip_id=drop["drop_id"],
                 )
                 drop["name"] = (
-                    vip_status.name if vip_status else "unknown VIP-status"
+                    vip_reward_name(vip_status.name, drop.get("duration"))
+                    if vip_status
+                    else "unknown VIP-status"
                 )
 
             case _:
@@ -382,7 +387,11 @@ async def format_battlepass_levels_rewards(
                     vip_id=level.reward["drop_id"],
                 )
                 level.reward["name"] = (
-                    vip_status.name if vip_status else "unknown VIP-status"
+                    vip_reward_name(
+                        vip_status.name, level.reward.get("duration")
+                    )
+                    if vip_status
+                    else "unknown VIP-status"
                 )
             case _:
                 ...
@@ -430,7 +439,9 @@ async def format_single_battlepass_level_reward(
                     vip_id=reward["drop_id"],
                 )
                 reward["name"] = (
-                    vip_status.name if vip_status else "unknown VIP-status"
+                    vip_reward_name(vip_status.name, reward.get("duration"))
+                    if vip_status
+                    else "unknown VIP-status"
                 )
             case _:
                 ...
