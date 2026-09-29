@@ -66,7 +66,7 @@ async def give_vip(
     duration: app_commands.Range[str, 1, 20] | None = None,
     reason: str | None = None,
 ):
-    """Give a case to user."""
+    """Give a VIP-status to user."""
 
     guild = cast(Guild, interaction.guild)
     bot = interaction.client
@@ -74,8 +74,8 @@ async def give_vip(
     if user == bot.user:
         await interaction.response.send_message(
             view=ErrorViewV2(
-                "Ошибка выдачи кейса",
-                "Невозможно выдать кейс боту.",
+                "Ошибка выдачи VIP-status'a",
+                "Невозможно выдать VIP-status боту.",
             ),
             ephemeral=True,
         )
@@ -254,8 +254,12 @@ async def give_vip(
 
     else:
         move = "продлили" if outcome == "success_with_extend" else "выдали"
+        # expires_at is None for a permanent grant, and also when a
+        # temporary VIP was extended by a permanent one
         time_to = (
-            "навсегда" if duration is None else f"до {discord_ts(expires_at)}",
+            "навсегда"
+            if expires_at is None
+            else f"до {discord_ts(expires_at)}"
         )
 
         await interaction.followup.send(
