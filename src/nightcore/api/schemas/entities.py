@@ -47,8 +47,17 @@ class GuildBattlepassLevelSchema(EntityBaseSchema):
 
 
 class EntityBatchItem(BaseModel):
+    """One entry of a batch.
+
+    `entity_id: 0` creates a new entity, `entity_id > 0` updates an existing
+    one. Deletion is marked with `delete: true`, where `entity_id` is the id
+    of the row to remove; its `data` is empty and is not validated against the
+    entity schema.
+    """
+
     entity_id: int = Field(default=0, ge=0)
     data: dict[str, Any]
+    delete: bool = False
 
 
 class EntityBatchUpdateBody(BaseModel):
