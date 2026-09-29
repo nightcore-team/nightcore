@@ -118,10 +118,13 @@ class CountMessageEvent(Cog):
         member: Member,
         new_level: int,
         exp_to_level: int,
+        coins_per_level_up: int,
     ) -> None:
         """Send level up notification message."""
 
-        view = LevelUpViewV2(self.bot, member.id, new_level, exp_to_level)
+        view = LevelUpViewV2(
+            self.bot, member.id, new_level, exp_to_level, coins_per_level_up
+        )
 
         await send_to_webhook(
             self.bot,
@@ -218,6 +221,7 @@ class CountMessageEvent(Cog):
                 user.current_exp + exp_multiplier + total_bonus_exp
             )
             exp_to_level = 0
+            coins_per_level_up = 0
 
             # keep total exp; exp_to_level is the threshold for next level
             while new_current_exp >= user.exp_to_level:
@@ -229,7 +233,10 @@ class CountMessageEvent(Cog):
                     new_level_int + 1
                 )
                 user.coins += total_coins
-                user.coins += user.level * levels_config.coins_per_level_up
+                coins_per_level_up = (
+                    user.level * levels_config.coins_per_level_up
+                )
+                user.coins += coins_per_level_up
                 user.battle_pass_points += (
                     100 + battlepass_multiplier + total_bonus_battlepass_points
                 )
@@ -280,6 +287,7 @@ class CountMessageEvent(Cog):
                         member=author,
                         new_level=new_level_int,
                         exp_to_level=exp_to_level,
+                        coins_per_level_up=coins_per_level_up,
                     )
                 )
 

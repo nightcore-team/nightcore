@@ -20,6 +20,7 @@ class LevelUpViewV2(LayoutView):
         user_id: int,
         new_level: int,
         exp_to_level: int,
+        coins_per_level_up: int,
     ) -> None:
         super().__init__(timeout=30)
 
@@ -30,7 +31,8 @@ class LevelUpViewV2(LayoutView):
         container.add_item(
             TextDisplay[Self](
                 f"<@{user_id}> повысил свой уровень до {new_level}!\n"
-                f"> До получения следующего осталось: **`{exp_to_level}`** опыта.\n",  # noqa: E501
+                f"> До получения следующего осталось: **`{exp_to_level}`** опыта.\n"  # noqa: E501
+                f"> Вы получити дополнительных {coins_per_level_up} коинов за повышение уровня."  # noqa: E501
             )
         )
 
