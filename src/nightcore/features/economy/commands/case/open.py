@@ -152,6 +152,7 @@ async def open_case(
                                         {
                                             **dict(row.reward),
                                             "reward_id": row.id,
+                                            "rerolls_used": row.reroll_count,
                                         }
                                         for row in reward_rows
                                     ],

@@ -198,7 +198,7 @@ class CaseOpenRerollViewV2(LayoutView):
                 Section[Self](
                     TextDisplay[Self](reward_text),
                     accessory=Button[Self](
-                        label=f"Реролл ({reroll_cost})",
+                        label=f"Reroll [{reroll_cost}]",
                         style=ButtonStyle.secondary,
                         custom_id=(
                             f"case:open:{self.session_id}:reroll:"
@@ -216,7 +216,7 @@ class CaseOpenRerollViewV2(LayoutView):
             ActionRow[Self](
                 Button[Self](
                     label="Забрать награды",
-                    style=ButtonStyle.success,
+                    style=ButtonStyle.secondary,
                     custom_id=f"case:open:{self.session_id}:claim",
                     disabled=self.disabled,
                 )

@@ -58,7 +58,10 @@ async def handle_case_open_reroll(
             reward_rows = await get_case_open_rewards_for_update(
                 session,
                 session_id=session_id,
-                reward_id=reward_id,
+            )
+            reward_row = next(
+                (row for row in reward_rows if row.id == reward_id),
+                None,
             )
             case = await get_case_by_id(
                 session,
@@ -66,11 +69,14 @@ async def handle_case_open_reroll(
                 case_id=case_session.case_id,
             )
 
-            if user is None or not reward_rows or case is None:
-                outcome = "not_found"
-            elif user.rerolls < (
-                reroll_cost := 2 ** reward_rows[0].reroll_count
+            if (
+                user is None
+                or not reward_rows
+                or reward_row is None
+                or case is None
             ):
+                outcome = "not_found"
+            elif user.rerolls < (reroll_cost := 2**reward_row.reroll_count):
                 outcome = "no_rerolls"
             else:
                 generated = case.open(amount=1)
@@ -84,8 +90,8 @@ async def handle_case_open_reroll(
                         coin_name=None,
                         guild=guild,
                     )
-                    reward_rows[0].reward = reward
-                    reward_rows[0].reroll_count += 1
+                    reward_row.reward = reward
+                    reward_row.reroll_count += 1
                     user.rerolls -= reroll_cost
                     case_session.rerolls_used += reroll_cost
 
