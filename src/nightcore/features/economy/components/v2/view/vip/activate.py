@@ -72,6 +72,7 @@ class VipStatusActivateViewV2(LayoutView):
                 Button(
                     label=label,
                     style=ButtonStyle.secondary,
+                    emoji=status["emoji_str"],
                     custom_id=f"vip:activate:{status['vip_id']}",
                     disabled=status["is_active"],
                 )

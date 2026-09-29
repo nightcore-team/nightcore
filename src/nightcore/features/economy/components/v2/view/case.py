@@ -208,6 +208,7 @@ class CaseOpenRerollViewV2(LayoutView):
                     accessory=Button[Self](
                         label=f"Reroll [{reroll_cost}]",
                         style=ButtonStyle.secondary,
+                        emoji="<:nightcoreReroll:1554576480007225445>",
                         custom_id=(
                             f"case:open:{self.session_id}:reroll:"
                             f"{reward['reward_id']}:{self.current_page}"
@@ -225,6 +226,7 @@ class CaseOpenRerollViewV2(LayoutView):
                 Button[Self](
                     label="Забрать награды",
                     style=ButtonStyle.secondary,
+                    emoji="<:nightcoreAccept:1540450035907436625>",
                     custom_id=f"case:open:{self.session_id}:claim",
                     disabled=self.disabled,
                 )
