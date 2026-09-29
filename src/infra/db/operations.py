@@ -643,7 +643,7 @@ async def get_case_open_session_for_update(
     stmt = select(CaseOpenSession).where(CaseOpenSession.id == session_id)
 
     if for_update:
-        stmt.with_for_update()
+        stmt = stmt.with_for_update()
 
     return await session.scalar(stmt)
 
