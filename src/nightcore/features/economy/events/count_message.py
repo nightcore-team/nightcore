@@ -229,6 +229,7 @@ class CountMessageEvent(Cog):
                     new_level_int + 1
                 )
                 user.coins += total_coins
+                user.coins += user.level * levels_config.coins_per_level_up
                 user.battle_pass_points += (
                     100 + battlepass_multiplier + total_bonus_battlepass_points
                 )
