@@ -155,7 +155,11 @@ class EntityStateService:
                     continue  # Already added to errors
 
                 dump = validated.model_dump(
-                    exclude_unset=True, exclude_computed_fields=True
+                    exclude_unset=True,
+                    exclude_computed_fields=True,
+                    # Response-only fields: a client must never be able to
+                    # reassign the primary key or the owner guild.
+                    exclude={"id", "guild_id"},
                 )
                 normalized = model.normalize_from_json(dump)
 

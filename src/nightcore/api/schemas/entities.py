@@ -13,11 +13,22 @@ from src.utils._enums import EntityTypeEnum
 
 
 class EntityBaseSchema(BaseModel):
+    """Base for both batch input validation and response serialization.
+
+    `id` and `guild_id` only exist on responses: a batch payload addresses the
+    row through `EntityBatchItem.entity_id` and never repeats them, so they
+    stay optional to keep create requests valid. They are stripped from the
+    dump that is applied back onto ORM rows.
+    """
+
     model_config = ConfigDict(
         from_attributes=True,
         populate_by_name=True,
         extra="ignore",
     )
+
+    id: int | None = None
+    guild_id: int | None = None
 
 
 class GuildCaseSchema(EntityBaseSchema):
