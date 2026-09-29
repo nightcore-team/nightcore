@@ -8,7 +8,6 @@ from typing import Any, Final, TypeVar, Union, cast
 from sqlalchemy import (
     Boolean,
     ColumnElement,
-    CursorResult,
     Integer,
     Numeric,
     asc,
@@ -925,21 +924,30 @@ async def close_out_deposits_before_rate_change(
 
     Same base/excess/cap formula as `accrue_deposit_interest_if_due`.
     Each deposit gets its own `hours_elapsed` (time since its own
-    `last_accrued_at`), so this is a bulk UPDATE per cap-group via
+    `last_accrued_at`), so this is a bulk UPDATE per settings group via
     bindparam/executemany, not a naive `WHERE id IN (...)` (which
     would incorrectly apply one shared hours_elapsed to every row).
+
+    The UPDATEs run on the Core connection: handed a list of parameter
+    sets, `session.execute` turns an ORM `update()` into "bulk UPDATE by
+    primary key", which refuses the custom WHERE and per-row bind names
+    used here. The deposits are read as plain columns for the same reason,
+    so no ORM object is left in the session with a balance the Core UPDATE
+    has already changed underneath it.
 
     Returns the number of deposits actually updated.
     """  # noqa: E501
 
     now = datetime.now(UTC)
 
-    deposit_rows = await session.execute(
-        select(Deposit, BankAccount.user_id)
-        .join(BankAccount, Deposit.bank_account_id == BankAccount.id)
-        .where(BankAccount.guild_id == guild_id)
-        .with_for_update()
-    )
+    deposit_rows = (
+        await session.execute(
+            select(Deposit.id, Deposit.last_accrued_at, BankAccount.user_id)
+            .join(BankAccount, Deposit.bank_account_id == BankAccount.id)
+            .where(BankAccount.guild_id == guild_id)
+            .with_for_update(of=Deposit)
+        )
+    ).all()
 
     active_vips_result = await session.execute(
         select(VipStatus, UserVipStatus.user_id)
@@ -958,17 +966,13 @@ async def close_out_deposits_before_rate_change(
     for vip_status, user_id in active_vips_result.all():
         active_vips_by_user.setdefault(user_id, []).append(vip_status)
 
-    params_with_cap: dict[tuple[Decimal, int, int], list[dict[str, int]]] = {}
-    params_without_cap: dict[
+    params_by_settings: dict[
         tuple[Decimal, int, int], list[dict[str, int]]
     ] = {}
+    no_rate_ids: list[int] = []
 
-    no_rate_updated = 0
-
-    for deposit, user_id in deposit_rows.all():
-        hours_elapsed = int(
-            (now - deposit.last_accrued_at).total_seconds() // 3600
-        )
+    for deposit_id, last_accrued_at, user_id in deposit_rows:
+        hours_elapsed = int((now - last_accrued_at).total_seconds() // 3600)
         if hours_elapsed <= 0:
             continue
 
@@ -981,97 +985,65 @@ async def close_out_deposits_before_rate_change(
             # them the same way, and leaving them here would hand the user
             # every hour of the unconfigured period as soon as a rate is
             # set again.
-            deposit.last_accrued_at = now
-            no_rate_updated += 1
+            no_rate_ids.append(deposit_id)
             continue
 
-        key = (rate, max_balance, cap)
-        row = {"deposit_id": deposit.id, "hours_p": hours_elapsed}
+        params_by_settings.setdefault((rate, max_balance, cap), []).append(
+            {"deposit_id": deposit_id, "hours_p": hours_elapsed}
+        )
 
+    connection = await session.connection()
+
+    if no_rate_ids:
+        await connection.execute(
+            update(Deposit)
+            .where(Deposit.id.in_(no_rate_ids))
+            .values(last_accrued_at=now)
+        )
+
+    for (rate, max_balance, cap), rows in params_by_settings.items():
+        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
+        cap_param = bindparam("cap_p", value=cap, type_=Integer)
+        if cap > 0:
+            base_expr = func.least(Deposit.coins, cap_param)
+            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
+        else:
+            base_expr = Deposit.coins
+            excess_expr = 0
+
+        grown_expr = func.floor(
+            base_expr
+            * func.power(
+                1 + rate_param,
+                bindparam("hours_p", type_=Integer),
+            )
+            + excess_expr
+        )
         if max_balance:
-            params_with_cap.setdefault(key, []).append(row)
-        else:
-            params_without_cap.setdefault(key, []).append(row)
-
-    total_updated = 0
-
-    for (rate, _max_balance, cap), rows in params_without_cap.items():
-        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
-        cap_param = bindparam("cap_p", value=cap, type_=Integer)
-        if cap > 0:
-            base_expr = func.least(Deposit.coins, cap_param)
-            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
-        else:
-            base_expr = Deposit.coins
-            excess_expr = 0
-        stmt = (
-            update(Deposit)
-            .where(Deposit.id == bindparam("deposit_id"))
-            .values(
-                coins=sa_cast(
-                    # greatest(...): never let the result fall below the
-                    # current balance (see _apply_deposit_max_balance)
-                    func.greatest(
-                        func.floor(
-                            base_expr
-                            * func.power(
-                                1 + rate_param,
-                                bindparam("hours_p", type_=Integer),
-                            )
-                            + excess_expr
-                        ),
-                        Deposit.coins,
-                    ),
-                    Integer,
-                ),
-                last_accrued_at=now,
+            grown_expr = func.least(
+                grown_expr,
+                bindparam("max_balance_p", value=max_balance, type_=Integer),
             )
-        )
-        result = await session.execute(stmt, rows)
-        total_updated += cast(CursorResult[Any], result).rowcount
-
-    for (rate, max_balance, cap), rows in params_with_cap.items():
-        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
-        cap_param = bindparam("cap_p", value=cap, type_=Integer)
-        if cap > 0:
-            base_expr = func.least(Deposit.coins, cap_param)
-            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
-        else:
-            base_expr = Deposit.coins
-            excess_expr = 0
 
         stmt = (
             update(Deposit)
             .where(Deposit.id == bindparam("deposit_id"))
             .values(
+                # greatest(...): never let the result fall below the
+                # current balance (see _apply_deposit_max_balance)
                 coins=sa_cast(
-                    func.greatest(
-                        func.least(
-                            func.floor(
-                                base_expr
-                                * func.power(
-                                    1 + rate_param,
-                                    bindparam("hours_p", type_=Integer),
-                                )
-                                + excess_expr
-                            ),
-                            bindparam(
-                                "max_balance_p",
-                                value=max_balance,
-                                type_=Integer,
-                            ),
-                        ),
-                        Deposit.coins,
-                    ),
-                    Integer,
+                    func.greatest(grown_expr, Deposit.coins), Integer
                 ),
                 last_accrued_at=now,
             )
         )
-        result = await session.execute(stmt, rows)
-        total_updated += cast(CursorResult[Any], result).rowcount
+        # executemany doesn't report a reliable rowcount on asyncpg, and
+        # every row here is a deposit locked above, so each one is updated
+        await connection.execute(stmt, rows)
 
-    return total_updated + no_rate_updated
+    return len(no_rate_ids) + sum(
+        len(rows) for rows in params_by_settings.values()
+    )
 
 
 async def get_or_create_bank_account(
