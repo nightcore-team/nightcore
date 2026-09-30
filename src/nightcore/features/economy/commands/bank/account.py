@@ -11,6 +11,7 @@ from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.bank import ExtraWallet
 from src.infra.db.operations import (
     accrue_deposit_interest_if_due,
+    get_effective_deposit_config,
     get_or_create_bank_account,
     get_or_create_user,
 )
@@ -95,6 +96,15 @@ async def account(
             config=guild_config,
         )
 
+        # The rate and the interest cap the deposit really accrues with:
+        # the active VIP of the account's owner can raise both.
+        rate, _, interest_cap = await get_effective_deposit_config(
+            session,
+            config=guild_config,
+            guild_id=guild.id,
+            user_id=dbuser.id,
+        )
+
         # extra_wallets is a lazy relationship and the account helper only
         # eager-loads the deposit, so the wallets have to be read here,
         # while the session is still open.
@@ -115,13 +125,13 @@ async def account(
 
     assert bank_account.deposit is not None
 
-    deposit_float_rate = float(guild_config.deposit_base_interest_rate) * 100
+    deposit_float_rate = float(rate) * 100
 
     view = BankAccountViewV2(
         user_id=member.id,
         coin_name=coin_name,
         deposit_balance=bank_account.deposit.coins,
-        deposit_interest_cap_amount=guild_config.deposit_interest_cap_amount,
+        deposit_interest_cap_amount=interest_cap,
         deposit_current_rate=deposit_float_rate,
         deposit_last_updated_at=bank_account.deposit.last_accrued_at,
         extra_wallets=extra_wallets,

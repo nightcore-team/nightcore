@@ -835,6 +835,29 @@ def _get_effective_deposit_config(
     return interest_rate, max_balance, interest_cap
 
 
+async def get_effective_deposit_config(
+    session: AsyncSession,
+    *,
+    config: GuildEconomyConfig | None,
+    guild_id: int,
+    user_id: int,
+) -> tuple[Decimal, int, int]:
+    """Get the deposit rate, ceiling and interest cap for the user.
+
+    Resolved the same way the accrual resolves them, from the guild config
+    and the active VIP, so what is shown to the user and checked against is
+    what the deposit actually accrues with.
+    """
+
+    active_vip_statuses = await get_active_user_vip_statuses(
+        session,
+        guild_id=guild_id,
+        user_id=user_id,
+    )
+
+    return _get_effective_deposit_config(config, active_vip_statuses)
+
+
 async def get_effective_deposit_max_balance(
     session: AsyncSession,
     *,
@@ -848,13 +871,11 @@ async def get_effective_deposit_max_balance(
     ceiling lets the user top the deposit up to it, not only accrue up to it.
     """
 
-    active_vip_statuses = await get_active_user_vip_statuses(
+    _, max_balance, _ = await get_effective_deposit_config(
         session,
+        config=config,
         guild_id=guild_id,
         user_id=user_id,
-    )
-    _, max_balance, _ = _get_effective_deposit_config(
-        config, active_vip_statuses
     )
 
     return max_balance

@@ -37,6 +37,9 @@ class BankAccountViewV2(LayoutView):
 
         container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
+        # 0 means the whole balance earns interest.
+        interest_cap = deposit_interest_cap_amount or "без лимита"
+
         container.add_item(
             TextDisplay[Self](
                 "### <:nightcoreBank:1545104845139218472> Банковский аккаунт\n"
@@ -48,7 +51,7 @@ class BankAccountViewV2(LayoutView):
             TextDisplay[Self](
                 "### <:nightcoreInfo:1540439225877528626> Состояние депозита\n"
                 f"> <:nightcoreLevelUp:1540402294275969024> Баланс: {deposit_balance} {coin_name}\n"  # noqa: E501
-                f"> <:nightcorePercent:1545112163742519349> Процентная ставка: {deposit_current_rate}% в час, лимит для начисления процентов: {deposit_interest_cap_amount}\n"  # noqa: E501
+                f"> <:nightcorePercent:1545112163742519349> Процентная ставка: {deposit_current_rate}% в час, лимит для начисления процентов: {interest_cap}\n"  # noqa: E501
                 f"> Последнее начисление: {discord_ts(deposit_last_updated_at)}"  # noqa: E501
             )
         )
