@@ -153,7 +153,7 @@ async def withdraw(
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка снятия средств со счёта",
-                "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+                "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank account",  # noqa: E501
             )
         )
 
@@ -161,7 +161,7 @@ async def withdraw(
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка пополнения счёта",
-                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank account",  # noqa: E501
             )
         )
 

@@ -175,7 +175,7 @@ async def top_up(
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка пополнения счёта",
-                "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+                "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank account",  # noqa: E501
             )
         )
 
@@ -183,7 +183,7 @@ async def top_up(
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка пополнения счёта",
-                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank account",  # noqa: E501
             )
         )
 

@@ -77,7 +77,7 @@ async def extra_create(interaction: Interaction["Nightcore"]):
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка создания дополнительного счёта",
-                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank account",  # noqa: E501
             )
         )
 
