@@ -18,6 +18,7 @@ from src.nightcore.features.economy.components.v2 import (
 from src.nightcore.features.economy.utils.case import (
     format_single_battlepass_level_reward,
 )
+from src.nightcore.features.economy.utils.vip import get_user_active_vip_ids
 from src.nightcore.services.config import specified_guild_config
 
 if TYPE_CHECKING:
@@ -64,6 +65,11 @@ async def send_battlepass_claim_view(
             )
             return
 
+        user_vip_ids = await get_user_active_vip_ids(
+            session, guild_id=guild.id, user_id=user_record.id
+        )
+        claimed_level = user_record.battle_pass_additional_reward_claimed_level
+
     level_index = user_level - 1
     disable_button = interaction.user.id != user_id
 
@@ -84,6 +90,8 @@ async def send_battlepass_claim_view(
     reward_name = current_level.reward["name"]
     reward_amount = current_level.reward["amount"]
 
+    additional_reward = current_level.additional_reward or {}
+
     target_member = guild.get_member(target_user_id) or bot.get_user(
         target_user_id
     )
@@ -103,6 +111,13 @@ async def send_battlepass_claim_view(
         reward_amount=reward_amount,
         avatar_url=avatar_url,
         disable_button=disable_button,
+        additional_reward_type=additional_reward.get("name"),
+        additional_reward_amount=additional_reward.get("amount"),
+        additional_reward_access_vip_id=additional_reward.get("vip_id_access"),
+        user_vip_ids=user_vip_ids,
+        additional_reward_claimed=(
+            claimed_level is not None and claimed_level >= user_level
+        ),
     )
 
     await interaction.response.send_message(

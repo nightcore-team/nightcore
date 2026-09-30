@@ -37,10 +37,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+MAX_CONCURRENT_GAMES = 5
+
 
 class MultiplayerRouletteTask(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
+        self._game_semaphore = asyncio.Semaphore(MAX_CONCURRENT_GAMES)
 
         self.end_multiplayer_roulette_game_task.start()
 
@@ -115,8 +118,6 @@ class MultiplayerRouletteTask(Cog):
                 channel_id = game.channel_id
 
             # Send Discord message outside transaction
-            await asyncio.sleep(0.2)  # to avoid rate limits
-
             view = MultiplayerRouletteViewV2(
                 bot=self.bot,
                 coin_name=coin_name or "коинов",
@@ -130,18 +131,16 @@ class MultiplayerRouletteTask(Cog):
                 disable_buttons=True,
             )
 
-            asyncio.create_task(
-                self.bot.http.edit_message(
-                    message_id=message_id,
-                    channel_id=channel_id,
-                    params=MultipartParameters(
-                        payload={
-                            "components": view.to_components(),
-                        },
-                        multipart=None,
-                        files=None,
-                    ),
-                )
+            await self.bot.http.edit_message(
+                message_id=message_id,
+                channel_id=channel_id,
+                params=MultipartParameters(
+                    payload={
+                        "components": view.to_components(),
+                    },
+                    multipart=None,
+                    files=None,
+                ),
             )
 
             logger.info(
@@ -160,7 +159,7 @@ class MultiplayerRouletteTask(Cog):
 
     @tasks.loop(seconds=15)
     async def end_multiplayer_roulette_game_task(self):
-        """Task to add reputation points to clans."""
+        """Task to end multiplayer roulette games."""
         try:
             logger.info("[task] - Running end multiplayer roulette task")
 
@@ -173,16 +172,27 @@ class MultiplayerRouletteTask(Cog):
                 logger.info("[task] - No multiplayer roulette games to end")
                 return
 
-            # Process each game in its own transaction
-            for game_id in game_ids:
-                await self._process_single_game(game_id)
+            # Process each game with concurrency limit
+            tasks: list[asyncio.Task[None]] = [
+                asyncio.create_task(self._process_game_with_limit(game_id))
+                for game_id in game_ids
+            ]
+
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
 
         except Exception as e:
             logger.exception(
-                "[task] - Error in end multiplayer roulette game task iteration: %s",  # noqa: E501
+                "[task] - Error in end multiplayer roulette game "
+                "task iteration: %s",
                 e,
                 exc_info=True,
             )
+
+    async def _process_game_with_limit(self, game_id: int) -> None:
+        """Process a single game with semaphore limiting."""
+        async with self._game_semaphore:
+            await self._process_single_game(game_id)
 
     @end_multiplayer_roulette_game_task.before_loop
     async def before_end_multiplayer_roulette_game_task(self):

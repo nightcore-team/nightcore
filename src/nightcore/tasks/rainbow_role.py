@@ -21,6 +21,7 @@ from src.nightcore.utils import (
 from src.utils._enums import RainbowColorChangeTypeEnum
 
 if TYPE_CHECKING:
+    from src.infra.db.models import RainbowRole
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
@@ -31,11 +32,13 @@ PALETTE_SIZE: Final[int] = 12
 HUE_OFFSET: Final[int] = 1
 MIN_HUE_SEPARATION: Final[float] = 0.12
 RANDOM_ATTEMPTS: Final[int] = 10
+MAX_CONCURRENT_UPDATES: Final[int] = 5
 
 
 class RainbowRoleTask(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
+        self._update_semaphore = asyncio.Semaphore(MAX_CONCURRENT_UPDATES)
 
         self.rainbow_role_task.start()
 
@@ -74,7 +77,8 @@ class RainbowRoleTask(Cog):
                 return True
             except (discord.Forbidden, discord.HTTPException) as e:
                 logger.warning(
-                    "[task] Gradient not available for role %s in guild %s: %s. Falling back to solid color.",  # noqa: E501
+                    "[task] Gradient not available for role %s in "
+                    "guild %s: %s. Falling back to solid color.",
                     role.id,
                     role.guild.id,
                     e,
@@ -96,6 +100,62 @@ class RainbowRoleTask(Cog):
             )
             return False
 
+    async def _update_single_role(
+        self, rainbow: "RainbowRole"
+    ) -> tuple[int, datetime, int | None] | None:
+        """Update a single rainbow role and return update data."""
+        guild = await ensure_guild_exists(self.bot, rainbow.guild_id)
+        if guild is None:
+            logger.info(
+                "[task] - Guild %s not found, skipping",
+                rainbow.guild_id,
+            )
+            return None
+
+        role = await ensure_role_exists(guild, rainbow.role_id)
+        if role is None:
+            logger.info(
+                "[task] - Role %s not found in guild %s, skipping",
+                rainbow.role_id,
+                guild.id,
+            )
+            return None
+
+        if rainbow.change_type == RainbowColorChangeTypeEnum.RANDOM:
+            hue1, hue2 = RainbowRoleTask._random_hue_pair()
+
+            primary = discord.Color.from_hsv(hue1, 1.0, 1.0)
+            secondary = discord.Color.from_hsv(hue2, 1.0, 1.0)
+            next_step = None
+        else:
+            step = (
+                rainbow.current_step
+                if rainbow.current_step is not None
+                else role.id % PALETTE_SIZE
+            )
+
+            primary_hue = step / PALETTE_SIZE
+            secondary_hue = ((step + HUE_OFFSET) % PALETTE_SIZE) / PALETTE_SIZE
+            primary = discord.Color.from_hsv(primary_hue, 1.0, 1.0)
+            secondary = discord.Color.from_hsv(secondary_hue, 1.0, 1.0)
+            next_step = (step + 1) % PALETTE_SIZE
+
+        if not await RainbowRoleTask._apply_color(role, primary, secondary):
+            return None
+
+        next_change_at = datetime.now(UTC) + timedelta(
+            seconds=random.randint(CHANGE_MIN_INTERVAL, CHANGE_MAX_INTERVAL)
+        )
+
+        logger.info(
+            "[task] - Updated rainbow role %s in guild %s (type=%s)",
+            rainbow.role_id,
+            guild.id,
+            rainbow.change_type.value,
+        )
+
+        return (rainbow.guild_id, next_change_at, next_step)
+
     @tasks.loop(seconds=180)
     async def rainbow_role_task(self):
         """Task to cycle rainbow role colors."""
@@ -109,68 +169,20 @@ class RainbowRoleTask(Cog):
                 logger.info("[task] - No due rainbow roles")
                 return
 
+            # Process with concurrency limit
+            tasks = [
+                self._update_role_with_limit(rainbow) for rainbow in due_roles
+            ]
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
             updates: dict[int, tuple[datetime, int | None]] = {}
-
-            for rainbow in due_roles:
-                guild = await ensure_guild_exists(self.bot, rainbow.guild_id)
-                if guild is None:
-                    logger.info(
-                        "[task] - Guild %s not found, skipping",
-                        rainbow.guild_id,
-                    )
-                    continue
-
-                role = await ensure_role_exists(guild, rainbow.role_id)
-                if role is None:
-                    logger.info(
-                        "[task] - Role %s not found in guild %s, skipping",
-                        rainbow.role_id,
-                        guild.id,
-                    )
-                    continue
-
-                if rainbow.change_type == RainbowColorChangeTypeEnum.RANDOM:
-                    hue1, hue2 = RainbowRoleTask._random_hue_pair()
-
-                    primary = discord.Color.from_hsv(hue1, 1.0, 1.0)
-                    secondary = discord.Color.from_hsv(hue2, 1.0, 1.0)
-                    next_step = None
-                else:
-                    step = (
-                        rainbow.current_step
-                        if rainbow.current_step is not None
-                        else role.id % PALETTE_SIZE
-                    )
-
-                    primary_hue = step / PALETTE_SIZE
-                    secondary_hue = (
-                        (step + HUE_OFFSET) % PALETTE_SIZE
-                    ) / PALETTE_SIZE
-                    primary = discord.Color.from_hsv(primary_hue, 1.0, 1.0)
-                    secondary = discord.Color.from_hsv(secondary_hue, 1.0, 1.0)
-                    next_step = (step + 1) % PALETTE_SIZE
-
-                if not await RainbowRoleTask._apply_color(
-                    role, primary, secondary
-                ):
-                    continue
-
-                updates[rainbow.guild_id] = (
-                    now
-                    + timedelta(
-                        seconds=random.randint(
-                            CHANGE_MIN_INTERVAL, CHANGE_MAX_INTERVAL
-                        )
-                    ),
-                    next_step,
-                )
-
-                logger.info(
-                    "[task] - Updated rainbow role %s in guild %s (type=%s)",
-                    rainbow.role_id,
-                    guild.id,
-                    rainbow.change_type.value,
-                )
+            for result in results:
+                if isinstance(result, tuple):
+                    guild_id, next_change_at, next_step = result
+                    updates[guild_id] = (next_change_at, next_step)
+                elif isinstance(result, Exception):
+                    logger.exception("[task] - Error updating rainbow role")
 
             if updates:
                 async with self.bot.uow.start() as session:
@@ -191,6 +203,11 @@ class RainbowRoleTask(Cog):
                 e,
                 exc_info=True,
             )
+
+    async def _update_role_with_limit(self, rainbow: "RainbowRole"):
+        """Update a single role with semaphore limiting."""
+        async with self._update_semaphore:
+            return await self._update_single_role(rainbow)
 
     @rainbow_role_task.before_loop
     async def before_rainbow_role_task(self):

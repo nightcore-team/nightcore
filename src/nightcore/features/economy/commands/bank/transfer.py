@@ -1,0 +1,304 @@
+"""Command to transfer money between user's own bank accounts (main/deposit/extra)."""  # noqa: E501
+
+import logging
+from typing import TYPE_CHECKING, cast
+
+from discord import Guild, app_commands
+from discord.interactions import Interaction
+
+from src.infra.db.loads import user_load_bank_account_only
+from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.operations import (
+    accrue_deposit_interest_if_due,
+    get_effective_deposit_max_balance,
+    get_or_create_user,
+    get_user_deposit_for_update,
+    get_user_extra_wallet_for_update,
+)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
+from src.nightcore.features.economy.utils.autocomplete import (
+    all_user_bank_accounts_autocomplete,
+)
+from src.nightcore.features.economy.utils.content import safe_split_wallet_id
+from src.nightcore.services.config import specified_guild_config
+
+if TYPE_CHECKING:
+    from src.infra.db.models import User
+    from src.infra.db.models.bank import Deposit, ExtraWallet
+    from src.nightcore.bot import Nightcore
+
+from src.nightcore.features.economy._groups import bank as bank_group
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def _sort_key(choice: str) -> tuple[int, int]:
+    """
+    Fixed ordering for locking multiple wallets: deposit first, then
+    extra wallets sorted by id. Prevents deadlocks between transfers
+    going in opposite directions between the same two wallets.
+    """  # noqa: D205
+
+    if choice == "deposit":
+        return (0, 0)
+    return (1, int(choice.split(":", 1)[1]))
+
+
+@bank_group.command(  # type: ignore
+    name="transfer",
+    description="Перевести деньги между своими счетами.",
+)
+@app_commands.guild_only()
+@app_commands.describe(
+    from_wallet="Счёт, с которого перевести деньги.",
+    to_wallet="Счёт, на который перевести деньги.",
+    amount="Сумма для перевода.",
+)
+@app_commands.autocomplete(
+    from_wallet=all_user_bank_accounts_autocomplete,
+    to_wallet=all_user_bank_accounts_autocomplete,
+)
+@app_commands.rename(from_wallet="from", to_wallet="to")
+@check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+async def transfer(
+    interaction: Interaction["Nightcore"],
+    from_wallet: str,
+    to_wallet: str,
+    amount: app_commands.Range[int, 1],
+):
+    """Transfer money between the user's own main balance / deposit / extra wallets."""  # noqa: E501
+
+    guild = cast(Guild, interaction.guild)
+    source = from_wallet
+    target = to_wallet
+
+    if source == target:
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Ошибка перевода",
+                "Счёт списания и счёт зачисления не могут совпадать.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    await interaction.response.defer(thinking=True, ephemeral=True)
+
+    outcome = ""
+    new_source_balance: int | None = None
+    new_target_balance: int | None = None
+
+    needs_main = "main" in (source, target)
+    wallet_choices = {c for c in (source, target) if c != "main"}
+
+    locked_wallets: dict[str, Deposit | ExtraWallet] = {}
+    missing_choice: str | None = None
+    account: Deposit | ExtraWallet | None = None
+
+    try:
+        async with specified_guild_config(
+            interaction.client,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+        ) as (guild_config, session):
+            user, _ = await get_or_create_user(
+                session,
+                guild_id=guild.id,
+                user_id=interaction.user.id,
+                options=[user_load_bank_account_only],
+            )
+
+            if user.bank_account is None:
+                outcome = "bank_account_not_found"
+            else:
+                assert user.bank_account.deposit is not None
+
+                locked_user: User | None = None
+                if needs_main:
+                    locked_user, _ = await get_or_create_user(
+                        session,
+                        guild_id=guild.id,
+                        user_id=interaction.user.id,
+                        for_update=True,
+                    )
+
+                await accrue_deposit_interest_if_due(
+                    session,
+                    deposit=user.bank_account.deposit,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    config=guild_config,
+                )
+
+                # lock wallets after the user, deposit first then extras
+                for choice in sorted(wallet_choices, key=_sort_key):
+                    if choice == "deposit":
+                        account = await get_user_deposit_for_update(
+                            session,
+                            bank_account_id=user.bank_account.id,
+                            config=guild_config,
+                            guild_id=guild.id,
+                            user_id=user.id,
+                        )
+
+                    elif choice.startswith("extra:"):
+                        wallet_id = safe_split_wallet_id(choice)
+
+                        if wallet_id is None:
+                            account = None
+                        else:
+                            account = await get_user_extra_wallet_for_update(
+                                session,
+                                bank_account_id=user.bank_account.id,
+                                wallet_id=wallet_id,
+                                for_update=True,
+                            )
+
+                    if account is None:
+                        missing_choice = choice
+                        break
+
+                    locked_wallets[choice] = account
+
+                if missing_choice is not None:
+                    outcome = (
+                        "deposit_not_found"
+                        if missing_choice == "deposit"
+                        else "extra_wallet_not_found"
+                    )
+
+                if not outcome:
+
+                    def _balance_holder(
+                        choice: str,
+                    ):
+                        return (
+                            locked_user
+                            if choice == "main"
+                            else locked_wallets[choice]
+                        )
+
+                    src = _balance_holder(source)
+                    dst = _balance_holder(target)
+
+                    if src is None or dst is None:
+                        outcome = "specified_not_found"
+
+                    elif src.coins < amount:
+                        outcome = "not_enough_coins"
+
+                    else:
+                        if target == "deposit":
+                            # 0 means no ceiling, the same as in the accrual
+                            deposit_max_balance = (
+                                await get_effective_deposit_max_balance(
+                                    session,
+                                    config=guild_config,
+                                    guild_id=guild.id,
+                                    user_id=user.id,
+                                )
+                            )
+
+                            if (
+                                deposit_max_balance > 0
+                                and dst.coins + amount > deposit_max_balance
+                            ):
+                                outcome = "deposit_max_balance_reached"
+
+                        if not outcome:
+                            src.coins -= amount
+                            dst.coins += amount
+
+                            new_source_balance = src.coins
+                            new_target_balance = dst.coins
+
+                            outcome = "success"
+
+    except Exception as e:
+        logger.error(
+            "Failed to transfer for user=%s guild=%s",
+            interaction.user.id,
+            guild.id,
+            exc_info=e,
+        )
+        outcome = "unexpected_error"
+
+    if outcome == "deposit_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка перевода",
+                "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "bank_account_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "extra_wallet_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка перевода",
+                "Extra счёт не был найден.\n> Создать его вы можете введя команду /bank extra create",  # noqa: E501
+            )
+        )
+
+    elif outcome == "specified_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка перевода",
+                "Один из указанных счетов не был найден.",
+            )
+        )
+
+    elif outcome == "not_enough_coins":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка перевода",
+                "Недостаточно средств на счёте списания.",
+            )
+        )
+
+    elif outcome == "deposit_max_balance_reached":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта.",
+                "Достигнут лимит количества средств на депозитном счёте.",
+            )
+        )
+
+    elif outcome == "success":
+        await interaction.followup.send(
+            view=SuccessViewV2(
+                "Перевод средств между счетами",
+                f"Вы успешно перевели {amount}"
+                f" <:nightcoreBanknoteDown:1545558909631201321> с указанного"
+                f" счёта.\n"
+                f"> Текущий баланс счёта: {new_source_balance}, баланс целевого счёта: {new_target_balance} <:nightcoreBanknote:1540403146072002624>",  # noqa: E501
+            )
+        )
+
+    elif outcome == "unexpected_error":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка перевода",
+                "Произошла ошибка при переводе средств.",
+            )
+        )
+
+    logger.info(
+        "[command transfer] invoked user=%s guild=%s amount=%s source=%s target=%s",  # noqa: E501
+        interaction.user.id,
+        guild.id,
+        amount,
+        source,
+        target,
+    )

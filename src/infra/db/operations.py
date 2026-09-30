@@ -2,12 +2,16 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any, Final, TypeVar, Union, cast
 
 from sqlalchemy import (
     Boolean,
     ColumnElement,
+    Integer,
+    Numeric,
     asc,
+    bindparam,
     delete,
     exists,
     extract,
@@ -18,12 +22,17 @@ from sqlalchemy import (
     type_coerce,
     update,
 )
+from sqlalchemy import (
+    cast as sa_cast,
+)
 from sqlalchemy.dialects.postgresql import array, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlalchemy.orm import InstrumentedAttribute, Load, selectinload
 
 from src.config.config import config
 from src.infra.db.models import (
+    CaseOpenReward,
+    CaseOpenSession,
     CasinoBet,
     CasinoGame,
     ChangeStat,
@@ -63,6 +72,7 @@ from src.infra.db.models import (
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
 )
+from src.infra.db.models.bank import BankAccount, Deposit, ExtraWallet
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
@@ -82,15 +92,18 @@ from src.infra.db.models.discord_webhook import DiscordWebhook
 from src.infra.db.models.processed_forum_thread import ProcessedForumThread
 from src.infra.db.models.rainbow import RainbowRole
 from src.infra.db.models.subscription import DiscordGuild
-from src.infra.db.models.user import UserCase
+from src.infra.db.models.user import UserVipStatus
+from src.infra.db.models.vip import VipStatus
 from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
 from src.utils._enums import (
+    CaseOpenSessionStatus,
     CasinoGameStateEnum,
     ChannelType,
     ClanMemberRoleEnum,
     ConfigTypeEnum,
+    EntityTypeEnum,
     MultiplierTypeEnum,
     NotifyStateEnum,
     RoleRequestStateEnum,
@@ -173,6 +186,96 @@ _ACCESS_COLUMNS: Final[
 }
 
 
+ENTITY_MODEL_MAP: dict[EntityTypeEnum, type[Any]] = {
+    EntityTypeEnum.VIP_STATUS: VipStatus,
+    EntityTypeEnum.CASE: Case,
+    EntityTypeEnum.COLOR: Color,
+    EntityTypeEnum.BATTLEPASS_LEVEL: BattlepassLevel,
+}
+
+ENTITY_ACCESS_COLUMNS: Final[
+    dict[EntityTypeEnum, InstrumentedAttribute[list[int] | None]]
+] = {
+    EntityTypeEnum.VIP_STATUS: (
+        GuildAccessConfig.economy_config_access_roles_ids
+    ),
+    EntityTypeEnum.CASE: (GuildAccessConfig.economy_config_access_roles_ids),
+    EntityTypeEnum.COLOR: (GuildAccessConfig.economy_config_access_roles_ids),
+    EntityTypeEnum.BATTLEPASS_LEVEL: (
+        GuildAccessConfig.economy_config_access_roles_ids
+    ),
+}
+
+
+async def get_specified_entity(
+    session: AsyncSession,
+    *,
+    entity_type: EntityTypeEnum,
+    guild_id: int,
+    entity_id: int,
+    for_update: bool = False,
+):
+    """Get a specific entity by ID."""
+    model = ENTITY_MODEL_MAP.get(entity_type)
+
+    if model is None:
+        raise ValueError(f"Unknown entity type: {entity_type}")
+
+    get_stmt = select(model).where(
+        model.guild_id == guild_id,
+        model.id == entity_id,
+    )
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
+
+    return await session.scalar(get_stmt)
+
+
+async def get_specified_entities(
+    session: AsyncSession,
+    *,
+    entity_type: EntityTypeEnum,
+    guild_id: int,
+    entity_ids: list[int],
+    for_update: bool = False,
+) -> Sequence[Any]:
+    """Get multiple entities by IDs in a single query."""
+    model = ENTITY_MODEL_MAP.get(entity_type)
+
+    if model is None:
+        raise ValueError(f"Unknown entity type: {entity_type}")
+
+    if not entity_ids:
+        return []
+
+    get_stmt = select(model).where(
+        model.guild_id == guild_id,
+        model.id.in_(entity_ids),
+    )
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
+
+    result = await session.execute(get_stmt)
+    return result.scalars().all()
+
+
+async def get_entities_by_type(
+    session: AsyncSession,
+    *,
+    entity_type: EntityTypeEnum,
+    guild_id: int,
+) -> Sequence[Any]:
+    """Get all entities of a specific type for a guild."""
+    model = ENTITY_MODEL_MAP.get(entity_type)
+
+    if model is None:
+        raise ValueError(f"Unknown entity type: {entity_type}")
+
+    get_stmt = select(model).where(model.guild_id == guild_id)
+    result = await session.execute(get_stmt)
+    return result.scalars().all()
+
+
 async def get_specified_guild_config(  # noqa: UP047
     session: AsyncSession,
     *,
@@ -184,6 +287,7 @@ async def get_specified_guild_config(  # noqa: UP047
     get_stmt = select(config_type).where(config_type.guild_id == guild_id)
     if for_update:
         get_stmt = get_stmt.with_for_update()
+
     config = await session.scalar(get_stmt)
 
     if config is not None:
@@ -404,10 +508,13 @@ async def get_or_create_user(
     *,
     guild_id: int,
     user_id: int,
-    with_relations: bool = False,
+    options: list[Load] | None = None,
     for_update: bool = False,
 ) -> tuple[User, bool]:
     """Get or create a user in the database.
+
+    When `options` is given, its eager-loading options are applied to the
+    SELECT so only the requested relations (e.g. cases, colors) are loaded.
 
     When `for_update` is True the selected row is locked with
     `SELECT ... FOR UPDATE` to prevent concurrent read-modify-write
@@ -417,11 +524,8 @@ async def get_or_create_user(
         User.guild_id == guild_id, User.user_id == user_id
     )
 
-    if with_relations:
-        get_stmt = get_stmt.options(
-            selectinload(User.cases).selectinload(UserCase.item),
-            selectinload(User.colors),
-        )
+    if options:
+        get_stmt = get_stmt.options(*options)
 
     if for_update:
         get_stmt = get_stmt.with_for_update()
@@ -449,33 +553,760 @@ async def get_or_create_user(
         user = await session.scalar(get_stmt)
         return user, False  # type: ignore[return-value]
 
-    # newly inserted row already has lock via insert
-    if for_update:
-        # re-select to acquire FOR UPDATE for R-M-W
-        locked_stmt = (
-            select(User)
-            .where(User.guild_id == guild_id, User.user_id == user_id)
-            .with_for_update()
+    # newly inserted row — RETURNING doesn't apply eager-load options,
+    # so re-select whenever options were requested, and/or lock if needed.
+    if options or for_update:
+        reselect_stmt = select(User).where(
+            User.guild_id == guild_id, User.user_id == user_id
         )
-        if with_relations:
-            locked_stmt = locked_stmt.options(
-                selectinload(User.cases).selectinload(UserCase.item),
-                selectinload(User.colors),
-            )
-        user = await session.scalar(locked_stmt)
+        if options:
+            reselect_stmt = reselect_stmt.options(*options)
+        if for_update:
+            reselect_stmt = reselect_stmt.with_for_update()
+
+        user = await session.scalar(reselect_stmt)
 
     return user, True  # type: ignore[return-value]
 
 
-async def get_user_for_update(
-    session: AsyncSession, *, guild_id: int, user_id: int
-) -> User | None:
-    """Get user row with FOR UPDATE lock (no creation)."""
+async def get_user_vip_statuses_for_update(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    options: list[Load] | None = None,
+    for_update: bool = True,
+) -> Sequence[UserVipStatus]:
+    """Get the user's all VIP statuses row.
+
+    `UserVipStatus.vip` is lazy, so a caller that reads it has to ask for
+    it through `options` - a lazy load on an AsyncSession raises
+    MissingGreenlet.
+
+    Locking the UserVipStatus row itself (not the parent User row) is what
+    lets this contend with the expiry task, which locks the same rows in
+    get_expired_user_vip_statuses_for_update when clearing expired
+    statuses — preventing a grant and an expiry cleanup from racing on the
+    same user. The caller must therefore filter the expired rows out when
+    it needs the ones the user actually holds.
+    """
+
+    stmt = select(UserVipStatus).where(
+        UserVipStatus.user_id == user_id, UserVipStatus.guild_id == guild_id
+    )
+
+    if options:
+        stmt = stmt.options(*options)
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def create_case_open_session(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    case_id: int,
+    expires_at: datetime,
+    rewards: Sequence[dict[str, Any]],
+) -> CaseOpenSession:
+    """Create a pending case session and bulk-insert its rewards."""
+
+    case_session = CaseOpenSession(
+        guild_id=guild_id,
+        user_id=user_id,
+        case_id=case_id,
+        expires_at=expires_at,
+    )
+    session.add(case_session)
+    await session.flush()
+
+    await session.execute(
+        insert(CaseOpenReward),
+        [
+            {
+                "session_id": case_session.id,
+                "position": position,
+                "reward": reward,
+                "reroll_count": 0,
+            }
+            for position, reward in enumerate(rewards)
+        ],
+    )
+
+    return case_session
+
+
+async def get_case_open_session_for_update(
+    session: AsyncSession, *, session_id: int, for_update: bool = True
+) -> CaseOpenSession | None:
+    """Get a case session with a row lock."""
+
+    stmt = select(CaseOpenSession).where(CaseOpenSession.id == session_id)
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    return await session.scalar(stmt)
+
+
+async def get_pending_case_open_session(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> CaseOpenSession | None:
+    """Get the user's pending case session."""
+
+    stmt = select(CaseOpenSession).where(
+        CaseOpenSession.guild_id == guild_id,
+        CaseOpenSession.user_id == user_id,
+        CaseOpenSession.status == CaseOpenSessionStatus.PENDING,
+    )
+    return await session.scalar(stmt)
+
+
+async def get_case_open_rewards_for_update(
+    session: AsyncSession,
+    *,
+    session_id: int,
+    reward_id: int | None = None,
+) -> Sequence[CaseOpenReward]:
+    """Get pending session rewards with row locks."""
+
+    stmt = select(CaseOpenReward).where(
+        CaseOpenReward.session_id == session_id
+    )
+    if reward_id is not None:
+        stmt = stmt.where(CaseOpenReward.id == reward_id)
+    stmt = stmt.order_by(CaseOpenReward.position).with_for_update()
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def get_expired_case_open_sessions_for_update(
+    session: AsyncSession,
+    *,
+    now: datetime,
+    limit: int = 100,
+) -> Sequence[CaseOpenSession]:
+    """Get expired pending case sessions in a bounded locked batch."""
+
     stmt = (
-        select(User)
-        .where(User.guild_id == guild_id, User.user_id == user_id)
+        select(CaseOpenSession)
+        .where(
+            CaseOpenSession.status == CaseOpenSessionStatus.PENDING,
+            CaseOpenSession.expires_at <= now,
+        )
+        .order_by(CaseOpenSession.expires_at)
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def delete_case_open_sessions(
+    session: AsyncSession,
+    *,
+    session_ids: Sequence[int],
+) -> None:
+    """Delete case sessions and their rewards cascade."""
+
+    stmt = delete(CaseOpenSession).where(CaseOpenSession.id.in_(session_ids))
+    await session.execute(stmt)
+
+
+async def get_expired_user_vip_statuses_for_update(
+    session: AsyncSession,
+    *,
+    now: datetime,
+    options: list[Load] | None = None,
+    limit: int = 100,
+) -> Sequence[UserVipStatus]:
+    """Get expired VIP statuses in a bounded locked batch.
+
+    Locks the very rows get_user_vip_statuses_for_update locks on the grant
+    path, so a grant that is extending an expired VIP either wins and the
+    cleanup skips the row, or the cleanup deletes it and the grant inserts a
+    fresh one.
+    """
+
+    stmt = (
+        select(UserVipStatus)
+        .where(
+            UserVipStatus.expires_at.is_not(None),
+            UserVipStatus.expires_at <= now,
+        )
+        .order_by(UserVipStatus.expires_at)
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+    )
+
+    if options:
+        stmt = stmt.options(*options)
+
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def delete_user_vip_statuses(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given VIP statuses by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(UserVipStatus).where(UserVipStatus.id.in_(status_ids))
+    await session.execute(stmt)
+
+
+async def get_active_user_vip_statuses(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+) -> Sequence[VipStatus]:
+    """Get the user's currently granted VIP configurations.
+
+    `is_active` says which of the user's VIPs is the one in use - the
+    activation handler moves the flag over when another is activated, and
+    the unique index on (guild_id, user_id) where is_active keeps it to a
+    single row - but it says nothing about the VIP still being valid. The
+    `expires_at` check is what actually ends the bonus.
+    """
+
+    stmt = (
+        select(VipStatus)
+        .join(
+            UserVipStatus,
+            UserVipStatus.vip_id == VipStatus.id,
+        )
+        .where(
+            UserVipStatus.guild_id == guild_id,
+            UserVipStatus.user_id == user_id,
+            UserVipStatus.is_active.is_(True),
+            or_(
+                UserVipStatus.expires_at.is_(None),
+                UserVipStatus.expires_at > func.now(),
+            ),
+        )
+    )
+
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+def _get_effective_deposit_config(
+    config: GuildEconomyConfig | None,
+    vip_statuses: Sequence[VipStatus],
+) -> tuple[Decimal, int, int]:
+    """Resolve deposit settings from guild config and active VIP statuses."""
+
+    if config is None:
+        interest_rate = Decimal("0")
+        max_balance = 0
+        interest_cap = 0
+    else:
+        interest_rate = config.deposit_base_interest_rate
+        max_balance = config.deposit_max_balance
+        interest_cap = config.deposit_interest_cap_amount
+
+    for vip_status in vip_statuses:
+        if vip_status.deposit_interest_rate:
+            interest_rate = max(
+                interest_rate, vip_status.deposit_interest_rate
+            )
+        if vip_status.deposit_max_balance:
+            max_balance = max(max_balance, vip_status.deposit_max_balance)
+        if vip_status.deposit_interest_cap_amount:
+            interest_cap = max(
+                interest_cap, vip_status.deposit_interest_cap_amount
+            )
+
+    return interest_rate, max_balance, interest_cap
+
+
+async def get_effective_deposit_max_balance(
+    session: AsyncSession,
+    *,
+    config: GuildEconomyConfig | None,
+    guild_id: int,
+    user_id: int,
+) -> int:
+    """Get the deposit ceiling for the user, 0 meaning there is none.
+
+    Resolved the same way the accrual resolves it, so a VIP that raises the
+    ceiling lets the user top the deposit up to it, not only accrue up to it.
+    """
+
+    active_vip_statuses = await get_active_user_vip_statuses(
+        session,
+        guild_id=guild_id,
+        user_id=user_id,
+    )
+    _, max_balance, _ = _get_effective_deposit_config(
+        config, active_vip_statuses
+    )
+
+    return max_balance
+
+
+def _apply_deposit_max_balance(
+    grown: Decimal, coins: int, max_balance: int
+) -> int:
+    """Cap a grown deposit at `max_balance` without ever destroying principal.
+
+    A deposit can legitimately end up above `max_balance`: the VIP that
+    raised the cap expired, or an admin lowered the guild cap. Clamping
+    unconditionally would silently delete the difference, so the balance
+    is only ever allowed to grow - over the cap it simply stops accruing.
+    """
+
+    if max_balance > 0 and grown > max_balance:
+        return max(coins, max_balance)
+
+    return int(grown)
+
+
+async def accrue_deposit_interest_if_due(
+    session: AsyncSession,
+    *,
+    deposit: Deposit,
+    guild_id: int,
+    user_id: int,
+    config: GuildEconomyConfig | None,
+) -> Deposit:
+    """Apply pending interest to a single deposit if at least one hour has passed since the last accrual.
+
+    Interest formula: only the portion of the balance up to
+    `deposit_interest_cap_amount` compounds each hour (the "base"); any
+    amount above that cap ("excess") is parked and doesn't itself grow,
+    but still receives the fixed hourly yield generated by the capped
+    base. `deposit_max_balance`, if set, is an outer ceiling applied to
+    the final result.
+
+        base     = min(coins, cap)
+        excess   = max(coins - cap, 0)
+        new_coins = base * (1 + rate) ** hours + excess
+        final     = min(new_coins, max_balance)   # if max_balance set
+
+    The balance and `last_accrued_at` are read from the row *after*
+    locking it, so `hours_elapsed` and `coins` always come from the same
+    locked snapshot. Deriving `hours_elapsed` from a value loaded before
+    the lock is what used to let two transactions accrue the same hour
+    twice: the transaction that lost the row-lock race re-ran the formula
+    on the already-grown balance with its own stale `hours_elapsed`.
+    """  # noqa: E501
+
+    locked_row = (
+        await session.execute(
+            select(Deposit.coins, Deposit.last_accrued_at)
+            .where(Deposit.id == deposit.id)
+            .with_for_update()
+        )
+    ).one_or_none()
+
+    if locked_row is None:
+        return deposit
+
+    coins, last_accrued_at = locked_row
+
+    now = datetime.now(UTC)
+    hours_elapsed = int((now - last_accrued_at).total_seconds() // 3600)
+
+    if hours_elapsed <= 0:
+        return deposit
+
+    active_vip_statuses = await get_active_user_vip_statuses(
+        session,
+        guild_id=guild_id,
+        user_id=user_id,
+    )
+    rate, max_balance, cap = _get_effective_deposit_config(
+        config, active_vip_statuses
+    )
+
+    if not rate:
+        deposit.last_accrued_at = now
+        return deposit
+
+    base = min(coins, cap) if cap > 0 else coins
+    excess = max(coins - cap, 0) if cap > 0 else 0
+
+    new_coins = base * (1 + rate) ** hours_elapsed + excess
+
+    deposit.coins = _apply_deposit_max_balance(new_coins, coins, max_balance)
+    deposit.last_accrued_at = now
+
+    return deposit
+
+
+async def close_out_deposits_before_rate_change(
+    session: AsyncSession, *, config: GuildEconomyConfig | None, guild_id: int
+) -> int:
+    """Force-accrue interest on every deposit in the guild, using the CURRENT config, right before it gets overwritten with a new rate.
+
+    Same base/excess/cap formula as `accrue_deposit_interest_if_due`.
+    Each deposit gets its own `hours_elapsed` (time since its own
+    `last_accrued_at`), so this is a bulk UPDATE per settings group via
+    bindparam/executemany, not a naive `WHERE id IN (...)` (which
+    would incorrectly apply one shared hours_elapsed to every row).
+
+    The UPDATEs run on the Core connection: handed a list of parameter
+    sets, `session.execute` turns an ORM `update()` into "bulk UPDATE by
+    primary key", which refuses the custom WHERE and per-row bind names
+    used here. The deposits are read as plain columns for the same reason,
+    so no ORM object is left in the session with a balance the Core UPDATE
+    has already changed underneath it.
+
+    Returns the number of deposits actually updated.
+    """  # noqa: E501
+
+    now = datetime.now(UTC)
+
+    deposit_rows = (
+        await session.execute(
+            select(Deposit.id, Deposit.last_accrued_at, BankAccount.user_id)
+            .join(BankAccount, Deposit.bank_account_id == BankAccount.id)
+            .where(BankAccount.guild_id == guild_id)
+            .with_for_update(of=Deposit)
+        )
+    ).all()
+
+    active_vips_result = await session.execute(
+        select(VipStatus, UserVipStatus.user_id)
+        .join(UserVipStatus, UserVipStatus.vip_id == VipStatus.id)
+        .where(
+            UserVipStatus.guild_id == guild_id,
+            UserVipStatus.is_active.is_(True),
+            # same expiry rule as get_active_user_vip_statuses
+            or_(
+                UserVipStatus.expires_at.is_(None),
+                UserVipStatus.expires_at > now,
+            ),
+        )
+    )
+    active_vips_by_user: dict[int, list[VipStatus]] = {}
+    for vip_status, user_id in active_vips_result.all():
+        active_vips_by_user.setdefault(user_id, []).append(vip_status)
+
+    params_by_settings: dict[
+        tuple[Decimal, int, int], list[dict[str, int]]
+    ] = {}
+    no_rate_ids: list[int] = []
+
+    for deposit_id, last_accrued_at, user_id in deposit_rows:
+        hours_elapsed = int((now - last_accrued_at).total_seconds() // 3600)
+        if hours_elapsed <= 0:
+            continue
+
+        rate, max_balance, cap = _get_effective_deposit_config(
+            config, active_vips_by_user.get(user_id, [])
+        )
+        if not rate:
+            # No rate configured means no interest at all, so the elapsed
+            # hours must not pile up: accrue_deposit_interest_if_due drops
+            # them the same way, and leaving them here would hand the user
+            # every hour of the unconfigured period as soon as a rate is
+            # set again.
+            no_rate_ids.append(deposit_id)
+            continue
+
+        params_by_settings.setdefault((rate, max_balance, cap), []).append(
+            {"deposit_id": deposit_id, "hours_p": hours_elapsed}
+        )
+
+    connection = await session.connection()
+
+    if no_rate_ids:
+        await connection.execute(
+            update(Deposit)
+            .where(Deposit.id.in_(no_rate_ids))
+            .values(last_accrued_at=now)
+        )
+
+    for (rate, max_balance, cap), rows in params_by_settings.items():
+        rate_param = bindparam("rate_p", value=rate, type_=Numeric(5, 4))
+        cap_param = bindparam("cap_p", value=cap, type_=Integer)
+        if cap > 0:
+            base_expr = func.least(Deposit.coins, cap_param)
+            excess_expr = func.greatest(Deposit.coins - cap_param, 0)
+        else:
+            base_expr = Deposit.coins
+            excess_expr = 0
+
+        grown_expr = func.floor(
+            base_expr
+            * func.power(
+                1 + rate_param,
+                bindparam("hours_p", type_=Integer),
+            )
+            + excess_expr
+        )
+        if max_balance:
+            grown_expr = func.least(
+                grown_expr,
+                bindparam("max_balance_p", value=max_balance, type_=Integer),
+            )
+
+        stmt = (
+            update(Deposit)
+            .where(Deposit.id == bindparam("deposit_id"))
+            .values(
+                # greatest(...): never let the result fall below the
+                # current balance (see _apply_deposit_max_balance)
+                coins=sa_cast(
+                    func.greatest(grown_expr, Deposit.coins), Integer
+                ),
+                last_accrued_at=now,
+            )
+        )
+        # executemany doesn't report a reliable rowcount on asyncpg, and
+        # every row here is a deposit locked above, so each one is updated
+        await connection.execute(stmt, rows)
+
+    return len(no_rate_ids) + sum(
+        len(rows) for rows in params_by_settings.values()
+    )
+
+
+async def get_or_create_bank_account(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    for_update: bool = False,
+) -> tuple[BankAccount, bool]:
+    """Get or create a bank account with its deposit.
+
+    The BankAccount and Deposit are created atomically within
+    the caller's transaction.
+
+    Returns:
+        tuple[BankAccount, bool]:
+            The bank account and whether it was newly created.
+    """
+
+    get_stmt = (
+        select(BankAccount)
+        .where(
+            BankAccount.guild_id == guild_id,
+            BankAccount.user_id == user_id,
+        )
+        .options(
+            selectinload(BankAccount.deposit),
+        )
+    )
+
+    if for_update:
+        get_stmt = get_stmt.with_for_update()
+
+    bank_account = await session.scalar(get_stmt)
+
+    if bank_account is not None:
+        return bank_account, False
+
+    # Try to create the BankAccount.
+    insert_account_stmt = (
+        insert(BankAccount)
+        .values(
+            guild_id=guild_id,
+            user_id=user_id,
+        )
+        .on_conflict_do_nothing(
+            constraint="ux_user_guild_bank_account",
+        )
+        .returning(BankAccount)
+    )
+
+    result = await session.execute(insert_account_stmt)
+    bank_account = result.scalar_one_or_none()
+
+    if bank_account is None:
+        # Another transaction created the account.
+        #
+        # Re-select it. If for_update=True, wait for and lock
+        # the committed account before using it.
+        if for_update:
+            get_stmt = get_stmt.with_for_update()
+
+        bank_account = await session.scalar(get_stmt)
+
+        return bank_account, False  # type: ignore[return-value]
+
+    # We created the account, so create its deposit
+    # in the same transaction.
+    await session.execute(
+        insert(Deposit).values(
+            bank_account_id=bank_account.id,
+            coins=0,
+        )
+    )
+
+    # Load the relationship before returning.
+    bank_account.deposit = await session.scalar(
+        select(Deposit).where(
+            Deposit.bank_account_id == bank_account.id,
+        )
+    )
+
+    return bank_account, True
+
+
+async def create_extra_wallet(
+    session: AsyncSession,
+    bank_account_id: int,
+    coins: int = 0,
+    max_wallets: int | None = None,
+) -> ExtraWallet | None:
+    """Create a new extra wallet, or return None if `max_wallets` is reached.
+
+    The limit is checked here, under the bank account row lock, because
+    a caller cannot check it reliably on its own: the count it would read
+    comes from a relationship loaded before this lock, so two concurrent
+    requests would both pass the check and both create a wallet.
+    """
+
+    await session.execute(
+        select(BankAccount.id)
+        .where(BankAccount.id == bank_account_id)
         .with_for_update()
     )
+
+    wallets_count, max_slot = (
+        await session.execute(
+            select(
+                func.count(ExtraWallet.id),
+                func.max(ExtraWallet.slot),
+            ).where(ExtraWallet.bank_account_id == bank_account_id)
+        )
+    ).one()
+
+    if max_wallets is not None and wallets_count >= max_wallets:
+        return None
+
+    wallet = ExtraWallet(
+        bank_account_id=bank_account_id,
+        coins=coins,
+        slot=max_slot + 1 if max_slot else 1,
+    )
+    session.add(wallet)
+
+    return wallet
+
+
+async def get_user_deposit_for_update(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    guild_id: int,
+    user_id: int,
+    config: GuildEconomyConfig | None = None,
+) -> Deposit | None:
+    """Get the deposit belonging to the given bank account, applying any pending interest accrual first.
+
+    Always locked: `accrue_deposit_interest_if_due` needs the row lock
+    regardless of whether the caller intends to mutate the balance.
+    """  # noqa: E501
+
+    stmt = (
+        select(Deposit)
+        .where(Deposit.bank_account_id == bank_account_id)
+        .with_for_update()
+    )
+
+    deposit = await session.scalar(stmt)
+    if deposit is None:
+        return None
+
+    if config is None:
+        config = await session.scalar(
+            select(GuildEconomyConfig).where(
+                GuildEconomyConfig.guild_id == guild_id
+            )
+        )
+
+    return await accrue_deposit_interest_if_due(
+        session,
+        deposit=deposit,
+        guild_id=guild_id,
+        user_id=user_id,
+        config=config,
+    )
+
+
+async def get_user_extra_wallet_for_update(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    wallet_id: int,
+    for_update: bool = True,
+) -> ExtraWallet | None:
+    """Get a specific extra wallet, scoped to its owning bank account.
+
+    Ownership is enforced via the WHERE clause (bank_account_id),
+    not just wallet_id — this prevents locking/using a wallet that
+    was passed in but belongs to a different account.
+    """
+
+    stmt = select(ExtraWallet).where(
+        ExtraWallet.id == wallet_id,
+        ExtraWallet.bank_account_id == bank_account_id,
+    )
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    return await session.scalar(stmt)
+
+
+async def delete_extra_wallet(
+    session: AsyncSession,
+    *,
+    bank_account_id: int,
+    wallet_id: int,
+) -> None:
+    """Delete an extra wallet scoped to its owning bank account.
+
+    Ownership is enforced via the WHERE clause, the same way
+    `get_user_extra_wallet_for_update` does it.
+    """
+
+    stmt = delete(ExtraWallet).where(
+        ExtraWallet.id == wallet_id,
+        ExtraWallet.bank_account_id == bank_account_id,
+    )
+    await session.execute(stmt)
+
+
+async def get_user_for_update(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    user_id: int,
+    options: list[Load] | None = None,
+    for_update: bool = True,
+) -> User | None:
+    """Get user row with FOR UPDATE lock (no creation)."""
+    stmt = select(User).where(
+        User.guild_id == guild_id, User.user_id == user_id
+    )
+
+    if options:
+        stmt = stmt.options(*options)
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
     return await session.scalar(stmt)
 
 
@@ -1562,6 +2393,20 @@ async def get_role_requests_to_delete(
     return result.all()
 
 
+async def delete_role_requests(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given role requests by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(RoleRequestState).where(RoleRequestState.id.in_(status_ids))
+    await session.execute(stmt)
+
+
 async def get_tickets_to_delete(
     session: AsyncSession,
 ) -> Sequence[TicketState]:
@@ -1583,6 +2428,20 @@ async def get_tickets_to_delete(
     return result.all()
 
 
+async def delete_tickets(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given tickets by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(TicketState).where(TicketState.id.in_(status_ids))
+    await session.execute(stmt)
+
+
 async def get_all_expired_temp_roles(
     session: AsyncSession,
 ) -> Sequence[TempRole]:
@@ -1595,6 +2454,20 @@ async def get_all_expired_temp_roles(
     result = await session.scalars(stmt)
 
     return result.all()
+
+
+async def delete_temp_roles(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given temporary roles by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(TempRole).where(TempRole.id.in_(status_ids))
+    await session.execute(stmt)
 
 
 async def get_total_users_count(session: AsyncSession) -> int:
@@ -1705,6 +2578,22 @@ async def get_all_expired_temp_multipliers(
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+async def delete_temp_multipliers(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given temporary multipliers by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(TempEconomyMultiplier).where(
+        TempEconomyMultiplier.id.in_(status_ids)
+    )
+    await session.execute(stmt)
 
 
 async def get_custom_components(
@@ -1883,6 +2772,16 @@ async def get_guild_cases(
     return result.scalars().all()
 
 
+async def get_guild_vip_statuses(
+    session: AsyncSession, *, guild_id: int
+) -> Sequence[VipStatus]:
+    """Get VIP-statuses by guild id."""
+    stmt = select(VipStatus).where(VipStatus.guild_id == guild_id)
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
+
+
 async def get_cases_by_input(
     session: AsyncSession, *, guild_id: int, user_input: str
 ) -> Sequence[Case]:
@@ -1901,6 +2800,47 @@ async def get_cases_by_input(
     result = await session.scalars(stmt)
 
     return result.all()
+
+
+async def get_vip_statuses_by_input(
+    session: AsyncSession, *, guild_id: int, user_input: str
+) -> Sequence[VipStatus]:
+    """Get the list of VIP-statuses for a guild by user input."""
+
+    a = 0.7
+    similarity = (len(user_input) / 100) ** a
+
+    stmt = (
+        select(VipStatus)
+        .where(
+            VipStatus.guild_id == guild_id,
+            func.similarity(VipStatus.name, user_input) >= similarity,
+        )
+        .limit(25)
+    )
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
+async def get_vip_status_by_id(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    vip_id: int,
+    for_update: bool = False,
+) -> VipStatus | None:
+    """Get a VIP-status by id for a guild."""
+
+    stmt = select(VipStatus).where(
+        VipStatus.guild_id == guild_id, VipStatus.id == vip_id
+    )
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
 
 
 async def get_case_by_id(
@@ -2199,6 +3139,7 @@ async def insert_moderation_message(
 async def get_guild_subscription(
     session: AsyncSession, *, guild_id: int
 ) -> DiscordGuild | None:
+    """Get guild subscription."""
     stmt = select(DiscordGuild).where(DiscordGuild.guild_id == guild_id)
 
     result = await session.execute(stmt)

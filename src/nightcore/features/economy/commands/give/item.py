@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, Role, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_cases, user_load_colors
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.models.user import UserCase
 from src.infra.db.operations import (
@@ -79,8 +80,9 @@ async def give_item(
         async with bot.uow.start() as session:
             selected_case = None
             selected_color = None
-            if item_type == CaseDropTypeEnum.CUSTOM:
-                outcome = "custom_type_not_supported"
+            if item_type in (CaseDropTypeEnum.CUSTOM, CaseDropTypeEnum.VIP):
+                outcome = "unsupported_bulk_type"
+
             elif item_type == CaseDropTypeEnum.CASE:
                 if reward_id is None:
                     outcome = "missing_reward_id"
@@ -130,16 +132,23 @@ async def give_item(
                 item_name = "опыт"
             elif item_type == CaseDropTypeEnum.BATTLEPASS_POINTS:
                 item_name = "очки батлпасса"
+            elif item_type == CaseDropTypeEnum.REROLL:
+                item_name = "рероллы"
 
             if not outcome:
                 # lock in sorted order to avoid deadlocks
                 for member in sorted(target_members, key=lambda m: m.id):
+                    if item_type == CaseDropTypeEnum.CASE:
+                        load_options = [user_load_cases]
+                    elif item_type == CaseDropTypeEnum.COLOR:
+                        load_options = [user_load_colors]
+                    else:
+                        load_options = None
                     user_record, _ = await get_or_create_user(
                         session,
                         guild_id=guild.id,
                         user_id=member.id,
-                        with_relations=item_type
-                        in {CaseDropTypeEnum.CASE, CaseDropTypeEnum.COLOR},
+                        options=load_options,
                         for_update=True,
                     )
 
@@ -149,6 +158,8 @@ async def give_item(
                         user_record.current_exp += amount
                     elif item_type == CaseDropTypeEnum.BATTLEPASS_POINTS:
                         user_record.battle_pass_points += amount
+                    elif item_type == CaseDropTypeEnum.REROLL:
+                        user_record.rerolls += amount
                     elif (
                         item_type == CaseDropTypeEnum.CASE
                         and selected_case is not None
@@ -186,11 +197,12 @@ async def give_item(
         )
         outcome = "give_item_error"
 
-    if outcome == "custom_type_not_supported":
+    if outcome == "unsupported_bulk_type":
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка выдачи",
-                "Выбранный тип не поддерживается для массовой выдачи.",
+                "Выбранный тип не поддерживается для массовой выдачи. "
+                "Используйте /give vip для выдачи VIP-status.",
             ),
         )
         return

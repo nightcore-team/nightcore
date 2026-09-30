@@ -13,6 +13,7 @@ from src.infra.db.operations import (
     get_battlepass_level,
     get_case_by_id,
     get_color_by_id,
+    get_vip_status_by_id,
 )
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
@@ -25,6 +26,7 @@ from src.nightcore.features.config._groups import (
 from src.nightcore.features.config.utils.autocomplete import (
     reward_depends_on_type_autocomplete,
 )
+from src.nightcore.utils.time_utils import parse_duration
 from src.utils._enums import CaseDropTypeEnum
 
 if TYPE_CHECKING:
@@ -45,7 +47,8 @@ logger = logging.getLogger(__name__)
     exp_required="Количество EXP для этого уровня",
     reward_type="Тип награды",
     reward_amount="Количество",
-    reward="Выбор кейса / цвета / ввод текста, в зависимости от типа награды",
+    reward="Выбор кейса / цвета / VIP / текста, в зависимости от типа награды",
+    duration="Срок действия награды. Формат: s/m/h/d (например, 1h, 1d, 7d). Только для VIP.",  # noqa: E501
     before_level="Номер уровня для добавления нового перед ним",
 )
 @app_commands.autocomplete(reward=reward_depends_on_type_autocomplete)
@@ -57,6 +60,7 @@ async def add_level(
     reward_amount: app_commands.Range[int, 1, 1000000],
     reward: str | None = None,
     before_level: app_commands.Range[int, 1, 10000] | None = None,
+    duration: app_commands.Range[str, 1, 20] | None = None,
 ):
     """Add new battle pass level."""
 
@@ -68,7 +72,7 @@ async def add_level(
     if reward is None and reward_type.requires_id_or_custom():
         await interaction.response.send_message(
             view=ValidationErrorViewV2(
-                "Для типов CASE, COLOR, CUSTOM ввод награды обязателен.",
+                "Для типов CASE, COLOR, VIP, CUSTOM ввод награды обязателен.",
             ),
             ephemeral=True,
         )
@@ -82,6 +86,29 @@ async def add_level(
             ephemeral=True,
         )
         return
+
+    parsed_duration: int | None = None
+
+    if duration is not None:
+        if not reward_type.supports_duration():
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Длительность используется только для VIP-статусов.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        parsed_duration = parse_duration(duration)
+
+        if not parsed_duration:
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+            return
 
     if reward_type.requires_id():
         try:
@@ -104,6 +131,7 @@ async def add_level(
         drop_id=-1,
         name=reward_type.to_str(),
         amount=reward_amount,
+        duration=parsed_duration,
     )  # type: ignore
 
     if not outcome:
@@ -143,6 +171,19 @@ async def add_level(
                         battlepass_level.reward["drop_id"] = color.id
                 case CaseDropTypeEnum.CUSTOM:
                     battlepass_level.reward["name"] = reward  # type: ignore
+                case CaseDropTypeEnum.VIP:
+                    vip_status = await get_vip_status_by_id(
+                        session,
+                        guild_id=guild.id,
+                        vip_id=reward_id,  # type: ignore
+                    )
+
+                    if vip_status is None:
+                        outcome = "unknown_vip_id"
+                    else:
+                        battlepass_level.reward["drop_id"] = vip_status.id
+                        battlepass_level.reward["name"] = vip_status.name
+                        battlepass_level.reward["amount"] = 1
                 case _:
                     ...
 
@@ -185,6 +226,16 @@ async def add_level(
             view=ErrorViewV2(
                 "Ошибка добавления уровня",
                 "Цвет с данным id не найден.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    if outcome == "unknown_vip_id":
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Ошибка добавления уровня",
+                "VIP-статус с данным id не найден.",
             ),
             ephemeral=True,
         )

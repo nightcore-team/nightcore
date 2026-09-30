@@ -1,4 +1,4 @@
-"""Task cog for unpunishing users."""
+"""Task cog for clan reputation payday."""
 
 import asyncio
 import logging
@@ -16,15 +16,19 @@ from src.nightcore.features.clans.components.v2 import ClansPaydayViewV2
 from src.nightcore.utils.webhook import send_to_webhook
 
 if TYPE_CHECKING:
+    from discord import Guild
+
     from src.nightcore.bot import Nightcore
 
 logger = logging.getLogger(__name__)
 
+MAX_CONCURRENT_GUILDS = 5
 
-# CRITICAL
+
 class ClansPayDayTask(Cog):
     def __init__(self, bot: "Nightcore") -> None:
         self.bot = bot
+        self._guild_semaphore = asyncio.Semaphore(MAX_CONCURRENT_GUILDS)
 
         self.add_clan_reputation_task.start()
 
@@ -44,58 +48,16 @@ class ClansPayDayTask(Cog):
             view = ClansPaydayViewV2(bot=self.bot)
             guilds = self.bot.guilds
 
-            for guild in guilds:
-                # Separate transaction per guild for better performance
-                async with self.bot.uow.start() as session:
-                    clans = await get_clans_by_spec(session, guild_id=guild.id)
-
-                    guild_config = await get_specified_guild_config(
-                        session,
-                        guild_id=guild.id,
-                        config_type=GuildClansConfig,
-                    )
-
-                    for clan in clans:
-                        # add reputation
-                        added = clan.payday_multipler * len(clan.members)
-                        clan.coins += added
-
-                    # Get channel_id before session closes
-                    webhook_url = (
-                        guild_config.clan_payday_webhook
-                        if guild_config
-                        else None
-                    )
-
-                for clan in clans:
-                    logger.info(
-                        "[task] - Added %s reputation to clan %s in guild %s",
-                        clan.payday_multipler * len(clan.members),
-                        clan.name,
-                        guild.id,
-                    )
-
-                if not webhook_url:
-                    logger.info(
-                        "[task] - Guild %s does not have clan payday webhook configured.",  # noqa: E501
-                        guild.id,
-                    )
-                    continue
-
-                if not webhook_url.valid:
-                    logger.info(
-                        "[task] - Guild %s has invalid clan payday webhook configured.",  # noqa: E501
-                        guild.id,
-                    )
-                    continue
-
-                await send_to_webhook(
-                    self.bot,
-                    webhook_url,
-                    view,
-                    context="clan_payday",
-                    guild_id=guild.id,
+            # Process guilds concurrently with semaphore
+            tasks: list[asyncio.Task[None]] = [
+                asyncio.create_task(
+                    self._process_guild_with_limit(guild, view)
                 )
+                for guild in guilds
+            ]
+
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
 
         except Exception as e:
             logger.exception(
@@ -103,6 +65,73 @@ class ClansPayDayTask(Cog):
                 e,
                 exc_info=True,
             )
+
+    async def _process_guild_with_limit(
+        self, guild: "Guild", view: ClansPaydayViewV2
+    ) -> None:
+        """Process a single guild with semaphore limiting."""
+        async with self._guild_semaphore:
+            try:
+                await self._process_guild(guild, view)
+            except Exception:
+                logger.exception(
+                    "[task] - Error processing guild %s", guild.id
+                )
+
+    async def _process_guild(
+        self, guild: "Guild", view: ClansPaydayViewV2
+    ) -> None:
+        """Process all clans in a single guild."""
+
+        async with self.bot.uow.start() as session:
+            clans = await get_clans_by_spec(session, guild_id=guild.id)
+
+            guild_config = await get_specified_guild_config(
+                session,
+                guild_id=guild.id,
+                config_type=GuildClansConfig,
+            )
+
+            for clan in clans:
+                # Add reputation
+                added = clan.payday_multipler * len(clan.members)
+                clan.coins += added
+
+            webhook_url = (
+                guild_config.clan_payday_webhook if guild_config else None
+            )
+
+        for clan in clans:
+            logger.info(
+                "[task] - Added %s reputation to clan %s in guild %s",
+                clan.payday_multipler * len(clan.members),
+                clan.name,
+                guild.id,
+            )
+
+        if not webhook_url:
+            logger.info(
+                "[task] - Guild %s does not have clan payday webhook "
+                "configured.",
+                guild.id,
+            )
+            return
+
+        if not webhook_url.valid:
+            logger.info(
+                "[task] - Guild %s has invalid clan payday webhook "
+                "configured.",
+                guild.id,
+            )
+            return
+
+        await send_to_webhook(
+            self.bot,
+            webhook_url,
+            view,
+            context="clan_payday",
+            guild_id=guild.id,
+        )
 
     @add_clan_reputation_task.before_loop
     async def before_add_clan_reputation_task(self):

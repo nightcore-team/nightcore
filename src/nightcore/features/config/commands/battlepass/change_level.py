@@ -12,6 +12,7 @@ from src.infra.db.operations import (
     get_battlepass_level,
     get_case_by_id,
     get_color_by_id,
+    get_vip_status_by_id,
 )
 from src.nightcore.components.view.v2 import (
     ErrorViewV2,
@@ -33,6 +34,7 @@ from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
 )
+from src.nightcore.utils.time_utils import parse_duration
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,8 @@ logger = logging.getLogger(__name__)
     new_required_exp="Новое количество EXP для этого уровня",
     new_reward_type="Новый тип награды",
     new_reward_amount="Новое количество",
+    new_reward="Выбор кейса / цвета / VIP / текста, в зависимости от типа награды",  # noqa: E501
+    duration="Срок действия награды. Формат: s/m/h/d (например, 1h, 1d, 7d). Только для VIP.",  # noqa: E501
 )
 @app_commands.autocomplete(new_reward=reward_depends_on_type_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
@@ -54,6 +58,7 @@ async def change_level(
     new_reward_type: CaseDropTypeEnum | None = None,
     new_reward_amount: app_commands.Range[int, 1, 1000000] | None = None,
     new_reward: str | None = None,
+    duration: app_commands.Range[str, 1, 20] | None = None,
 ):
     """Change battle pass level."""
 
@@ -64,6 +69,7 @@ async def change_level(
         new_required_exp is None
         and new_reward_type is None
         and new_reward_amount is None
+        and duration is None
     ):
         await interaction.response.send_message(
             view=ValidationErrorViewV2(
@@ -80,7 +86,7 @@ async def change_level(
     ):
         await interaction.response.send_message(
             view=ValidationErrorViewV2(
-                "Для типов CASE, COLOR, CUSTOM ввод новой награды обязателен.",
+                "Для типов CASE, COLOR, VIP, CUSTOM ввод новой награды обязателен.",  # noqa: E501
             ),
             ephemeral=True,
         )
@@ -97,6 +103,40 @@ async def change_level(
             ephemeral=True,
         )
         return
+
+    parsed_duration: int | None = None
+
+    if duration is not None:
+        # a duration only says something together with a type, and the type
+        # has to be one that can expire
+        if new_reward_type is None:
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Укажите новый тип награды вместе с длительностью.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        if not new_reward_type.supports_duration():
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Длительность используется только для VIP-статусов.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        parsed_duration = parse_duration(duration)
+
+        if not parsed_duration:
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+            return
 
     if new_reward_type is not None and new_reward_type.requires_id():
         try:
@@ -125,6 +165,14 @@ async def change_level(
             if new_reward_type is not None:
                 battlepass_level.reward["type"] = new_reward_type.value
 
+                # only a reward that can expire carries a duration, and a
+                # missing duration on VIP means granted forever
+                battlepass_level.reward["duration"] = (
+                    parsed_duration
+                    if new_reward_type.supports_duration()
+                    else None
+                )
+
                 match new_reward_type:
                     case CaseDropTypeEnum.CUSTOM:
                         battlepass_level.reward["name"] = new_reward  # type: ignore
@@ -151,8 +199,27 @@ async def change_level(
                             outcome = "drop_with_entered_id_not_found"
                         else:
                             battlepass_level.reward["drop_id"] = case.id
+                    case CaseDropTypeEnum.VIP:
+                        vip_status = await get_vip_status_by_id(
+                            session,
+                            guild_id=guild.id,
+                            vip_id=new_reward_id,  # type: ignore
+                        )
+
+                        if vip_status is None:
+                            outcome = "drop_with_entered_id_not_found"
+                        else:
+                            battlepass_level.reward["drop_id"] = vip_status.id
+                            battlepass_level.reward["name"] = vip_status.name
+                            battlepass_level.reward["amount"] = 1
                     case _:
-                        pass
+                        # the name is only ever written for CUSTOM and for the
+                        # types resolved by drop_id, so a plain type has to
+                        # refresh it here or it keeps the previous label
+                        battlepass_level.reward["name"] = (
+                            new_reward_type.to_str()
+                        )
+                        battlepass_level.reward["drop_id"] = -1
 
             if new_reward_amount is not None:
                 battlepass_level.reward["amount"] = new_reward_amount
@@ -188,11 +255,12 @@ async def change_level(
     )
 
     logger.info(
-        "[command] - invoked user=%s guild=%s change_level=%s required_exp=%s reward_type=%s reward_amount=%s",  # noqa: E501
+        "[command] - invoked user=%s guild=%s change_level=%s required_exp=%s reward_type=%s reward_amount=%s duration=%s",  # noqa: E501
         interaction.user.id,
         guild.id,
         level,
         new_required_exp,
         new_reward_type,
         new_reward_amount,
+        duration,
     )

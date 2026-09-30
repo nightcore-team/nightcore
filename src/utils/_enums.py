@@ -123,6 +123,8 @@ class CaseDropTypeEnum(Enum):
     CASE = 4
     CUSTOM = 5
     BATTLEPASS_POINTS = 6
+    VIP = 7
+    REROLL = 8
 
     def to_str(self):
         match self:
@@ -130,18 +132,38 @@ class CaseDropTypeEnum(Enum):
                 return "BP points"
             case CaseDropTypeEnum.EXP:
                 return "опыт"
+            case CaseDropTypeEnum.REROLL:
+                return "реролл"
             case _:
                 return self.name
 
     def requires_id(self) -> bool:
-        return self == CaseDropTypeEnum.COLOR or self == CaseDropTypeEnum.CASE
+        return (
+            self == CaseDropTypeEnum.COLOR
+            or self == CaseDropTypeEnum.CASE
+            or self == CaseDropTypeEnum.VIP
+        )
 
     def requires_id_or_custom(self) -> bool:
         return (
             self == CaseDropTypeEnum.COLOR
             or self == CaseDropTypeEnum.CASE
+            or self == CaseDropTypeEnum.VIP
             or self == CaseDropTypeEnum.CUSTOM
         )
+
+    def supports_duration(self) -> bool:
+        """Tell whether the reward can expire, so it accepts a duration.
+
+        Only VIP statuses can, every other reward is granted in full.
+        """
+        return self == CaseDropTypeEnum.VIP
+
+
+class CaseOpenSessionStatus(StrEnum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    EXPIRED = "expired"
 
 
 class ItemChangeActionEnum(StrEnum):
@@ -224,3 +246,12 @@ class GuildStatusEnum(StrEnum):
     EXPIRED = "expired"
     NOT_FOUND = "not_found"
     NOT_PAID = "not_paid"
+
+
+class EntityTypeEnum(StrEnum):
+    """Entity types for guild-scoped configurable entities."""
+
+    VIP_STATUS = "vip_status"
+    CASE = "case"
+    COLOR = "color"
+    BATTLEPASS_LEVEL = "battlepass_level"

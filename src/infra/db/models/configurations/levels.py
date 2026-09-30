@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -100,6 +101,9 @@ class GuildLevelsConfig(IdIntegerMixin, Base):  #
         ),
         nullable=True,
         default=MessageCountTypeEnum.ALL,
+    )
+    coins_per_level_up: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
     )
 
     @staticmethod

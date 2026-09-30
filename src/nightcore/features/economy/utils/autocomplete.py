@@ -11,10 +11,17 @@ from typing import TYPE_CHECKING, Final, cast
 from discord import Guild, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import (
+    user_load_bank_account_all,
+    user_load_bank_account_wallets,
+    user_load_cases,
+    user_load_colors,
+)
 from src.infra.db.operations import (
     get_cases_by_input,
     get_guild_colors,
     get_or_create_user,
+    get_vip_statuses_by_input,
 )
 from src.utils._enums import CaseDropTypeEnum
 
@@ -45,13 +52,17 @@ async def reward_depends_on_type_autocomplete(
             result = await guild_cases_autocomplete(interaction, current)
         case CaseDropTypeEnum.COLOR.value:
             result = await guild_colors_autocomplete(interaction, current)
+        case CaseDropTypeEnum.VIP.value:
+            result = await guild_vip_statuses_autocomplete(
+                interaction, current
+            )
         case CaseDropTypeEnum.CUSTOM.value:
             result = await _custom_reward_autocomplete()
         case _:  # type: ignore
             result.append(
                 app_commands.Choice(
-                    name="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
-                    value="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
+                    name="Данный параметр используется только для типов кейс/цвет/VIP!",  # noqa: E501
+                    value="Данный параметр используется только для типов кейс/цвет/VIP!",  # noqa: E501
                 )
             )
 
@@ -78,7 +89,7 @@ async def user_cases_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            with_relations=True,
+            options=[user_load_cases],
         )
 
     result: list[app_commands.Choice[str]] = []
@@ -115,7 +126,7 @@ async def user_colors_autocomplete(
             session,
             guild_id=guild.id,
             user_id=interaction.user.id,
-            with_relations=True,
+            options=[user_load_colors],
         )
 
     for color in user.colors:
@@ -223,3 +234,158 @@ async def _custom_reward_autocomplete() -> list[app_commands.Choice[str]]:
             value="Введите название вашей кастомной награды",
         )
     ]
+
+
+async def deposit_extra_wallets_autocomplete(
+    interaction: Interaction["Nightcore"], current: str
+):
+    """Autocomplete function to get user's deposit and extra wallets."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        user, _ = await get_or_create_user(
+            session,
+            guild_id=guild.id,
+            user_id=interaction.user.id,
+            options=[*user_load_bank_account_all],
+        )
+
+    result: list[app_commands.Choice[str]] = []
+
+    if user.bank_account and user.bank_account.deposit:
+        result.append(app_commands.Choice(name="Депозит", value="deposit"))
+    else:
+        return result
+
+    for wallet in user.bank_account.extra_wallets:
+        result.append(
+            app_commands.Choice(
+                name=f"Extra-счёт #{wallet.slot}",
+                value=f"extra:{wallet.id}",
+            )
+        )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[bank/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
+async def user_extra_wallets_autocomplete(
+    interaction: Interaction["Nightcore"], current: str
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get user's extra wallets."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        user, _ = await get_or_create_user(
+            session,
+            guild_id=guild.id,
+            user_id=interaction.user.id,
+            options=[user_load_bank_account_wallets],
+        )
+
+    if user.bank_account:
+        for wallet in user.bank_account.extra_wallets:
+            result.append(
+                app_commands.Choice(
+                    name=f"Extra-счёт #{wallet.slot} ({wallet.coins})",
+                    value=f"extra:{wallet.id}",
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[bank/extra_wallets/autocomplete] Autocomplete for guild %s took %.4f seconds",  # noqa: E501
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
+async def all_user_bank_accounts_autocomplete(
+    interaction: Interaction["Nightcore"], current: str
+):
+    """Autocomplete function to get user's main balance, deposit and extra wallets."""  # noqa: E501
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        user, _ = await get_or_create_user(
+            session,
+            guild_id=guild.id,
+            user_id=interaction.user.id,
+            options=[*user_load_bank_account_all],
+        )
+
+    result.append(app_commands.Choice(name="Основной", value="main"))
+
+    if user.bank_account and user.bank_account.deposit:
+        result.append(app_commands.Choice(name="Депозит", value="deposit"))
+
+    if user.bank_account:
+        for wallet in user.bank_account.extra_wallets:
+            result.append(
+                app_commands.Choice(
+                    name=f"Extra-счёт #{wallet.slot}",
+                    value=f"extra:{wallet.id}",
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[bank/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result[:25]
+
+
+async def guild_vip_statuses_autocomplete(
+    interaction: Interaction["Nightcore"],
+    user_input: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get all VIP-statuses for guild."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        guild_vip_statuses = await get_vip_statuses_by_input(
+            session, guild_id=guild.id, user_input=user_input
+        )
+
+        for vip_status in guild_vip_statuses:
+            result.append(
+                app_commands.Choice(
+                    name=vip_status.name,
+                    value=str(vip_status.id),
+                )
+            )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[vip_statuses/autocomplete] Autocomplete for guild %s took %.4f seconds",  # noqa: E501
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result

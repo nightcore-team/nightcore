@@ -1,0 +1,220 @@
+"""Command to withdraw money from user's bank wallet (deposit/extra)."""
+
+import logging
+from typing import TYPE_CHECKING, cast
+
+from discord import Guild, app_commands
+from discord.interactions import Interaction
+
+from src.infra.db.loads import user_load_bank_account_only
+from src.infra.db.models import GuildEconomyConfig
+from src.infra.db.models.bank import Deposit, ExtraWallet
+from src.infra.db.operations import (
+    accrue_deposit_interest_if_due,
+    get_or_create_user,
+    get_user_deposit_for_update,
+    get_user_extra_wallet_for_update,
+)
+from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
+from src.nightcore.features.economy.utils.autocomplete import (
+    deposit_extra_wallets_autocomplete,
+)
+from src.nightcore.features.economy.utils.content import safe_split_wallet_id
+from src.nightcore.services.config import specified_guild_config
+
+if TYPE_CHECKING:
+    from src.infra.db.models.bank import Deposit, ExtraWallet
+    from src.nightcore.bot import Nightcore
+
+from src.nightcore.features.economy._groups import bank as bank_group
+from src.nightcore.utils.permissions import (
+    PermissionsFlagEnum,
+    check_required_permissions,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@bank_group.command(  # type: ignore
+    name="withdraw",
+    description="Снять деньги с депозитного/дополнительного счёта.",
+)
+@app_commands.guild_only()
+@app_commands.describe(
+    from_wallet="Счёт, с которого снять деньги.",
+    amount="Сумма для снятия.",
+)
+@app_commands.autocomplete(from_wallet=deposit_extra_wallets_autocomplete)
+@app_commands.rename(from_wallet="from")
+@check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
+async def withdraw(
+    interaction: Interaction["Nightcore"],
+    from_wallet: str,
+    amount: app_commands.Range[int, 1],
+):
+    """Withdraw money from user's deposit/extra wallet to main."""
+
+    guild = cast(Guild, interaction.guild)
+    choice = from_wallet
+
+    await interaction.response.defer(thinking=True, ephemeral=True)
+
+    outcome = ""
+    new_user_balance: int | None = None
+    new_target_balance: int | None = None
+
+    try:
+        async with specified_guild_config(
+            interaction.client,
+            guild_id=guild.id,
+            config_type=GuildEconomyConfig,
+        ) as (guild_config, session):
+            user, _ = await get_or_create_user(
+                session,
+                guild_id=guild.id,
+                user_id=interaction.user.id,
+                options=[user_load_bank_account_only],
+            )
+
+            if user.bank_account is None:
+                outcome = "bank_account_not_found"
+            else:
+                assert user.bank_account.deposit is not None
+
+                locked_user, _ = await get_or_create_user(
+                    session,
+                    guild_id=guild.id,
+                    user_id=interaction.user.id,
+                    for_update=True,
+                )
+
+                await accrue_deposit_interest_if_due(
+                    session,
+                    deposit=user.bank_account.deposit,
+                    guild_id=guild.id,
+                    user_id=user.id,
+                    config=guild_config,
+                )
+
+                source: Deposit | ExtraWallet | None = None
+
+                if choice == "deposit":
+                    source = await get_user_deposit_for_update(
+                        session,
+                        bank_account_id=user.bank_account.id,
+                        guild_id=guild.id,
+                        user_id=user.id,
+                    )
+                    if source is None:
+                        outcome = "deposit_not_found"
+
+                elif choice.startswith("extra:"):
+                    wallet_id = safe_split_wallet_id(choice)
+
+                    if wallet_id is None:
+                        outcome = "extra_wallet_not_found"
+                    else:
+                        source = await get_user_extra_wallet_for_update(
+                            session,
+                            bank_account_id=user.bank_account.id,
+                            wallet_id=wallet_id,
+                            for_update=True,
+                        )
+
+                    if source is None:
+                        outcome = "extra_wallet_not_found"
+
+                else:
+                    source = None
+                    outcome = "specified_not_found"
+
+                if not outcome and source is not None:
+                    if source.coins < amount:
+                        outcome = "not_enough_coins"
+                    else:
+                        source.coins -= amount
+                        locked_user.coins += amount
+
+                        new_user_balance = locked_user.coins
+                        new_target_balance = source.coins
+
+                        outcome = "success"
+
+    except Exception as e:
+        logger.error(
+            "Failed to withdraw for user=%s guild=%s",
+            interaction.user.id,
+            guild.id,
+            exc_info=e,
+        )
+        outcome = "unexpected_error"
+
+    if outcome == "deposit_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка снятия средств со счёта",
+                "Депозитный счёт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "bank_account_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка пополнения счёта",
+                "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank profile",  # noqa: E501
+            )
+        )
+
+    elif outcome == "extra_wallet_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка снятия средств со счёта",
+                "Extra счёт не был найден.\n> Создать его вы можете введя команду /bank extra create",  # noqa: E501
+            )
+        )
+
+    elif outcome == "specified_not_found":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка снятия средств со счёта",
+                "Указанный счёт не был найден.\n> Убедитель, что депозитный/extra счёт существует.",  # noqa: E501
+            )
+        )
+
+    elif outcome == "not_enough_coins":
+        account_desc = "депозитном" if choice == "deposit" else "extra"
+
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка снятия средств со счёта",
+                f"Недостаточно средств на {account_desc} счёту.",
+            )
+        )
+
+    elif outcome == "unexpected_error":
+        await interaction.followup.send(
+            view=ErrorViewV2(
+                "Ошибка снятия средств со счёта",
+                "Произошла ошибка при снятии денег с указанного счёта.",
+            )
+        )
+
+    elif outcome == "success":
+        account_desc = "депозитного" if choice == "deposit" else "extra"
+
+        await interaction.followup.send(
+            view=SuccessViewV2(
+                "Снятие средств со счёта",
+                f"Вы успешно сняли {amount}"
+                f" <:nightcoreBanknoteDown:1545558909631201321> с {account_desc} счёта.\n"  # noqa: E501
+                f"> Ваш новый баланс: {new_user_balance}, баланс счёта: {new_target_balance} <:nightcoreBanknote:1540403146072002624>",  # noqa: E501
+            )
+        )
+
+    logger.info(
+        "[command] - invoked user=%s guild=%s amount=%s account=%s",
+        interaction.user.id,
+        guild.id,
+        amount,
+        choice,
+    )

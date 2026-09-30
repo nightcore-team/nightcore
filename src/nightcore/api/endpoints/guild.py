@@ -14,6 +14,7 @@ from src.nightcore.api.dependencies import (
 )
 from src.nightcore.api.schemas import ChannelInfoSchema, RoleInfoSchema
 from src.nightcore.api.schemas.configuration import ConfigUpdateBody
+from src.nightcore.api.schemas.guild import EmojiInfoSchema
 from src.nightcore.api.schemas.logging_revision import (
     ListLoggingRevisionMetaResponseSchema,
     ListLoggingRevisionRequestSchema,
@@ -97,6 +98,48 @@ async def get_guild_roles(
         )
 
     return guild_state_service.get_roles(guild)
+
+
+@router.get(
+    "/{guild_id}/emojis",
+    response_model=list[EmojiInfoSchema],
+    status_code=status.HTTP_200_OK,
+)
+async def get_guild_emojis(
+    guild_id: int,
+    user_id: UserIdDependency,
+    bot: BotDependency,
+    access_service: AccessServiceDependency,
+    guild_state_service: GuildStateServiceDependency,
+):
+    """Get emojis for a specific guild."""
+
+    guild = bot.get_guild(guild_id)
+
+    if guild is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Unknown guild"
+        )
+
+    member = await ensure_member_exists(guild, user_id)
+
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this guild",
+        )
+
+    available_configurations = (
+        await access_service.get_available_configurations(member=member)
+    )
+
+    if len(available_configurations) < 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must have access to at least one configuration to get guild channels",  # noqa: E501
+        )
+
+    return guild_state_service.get_emojis(guild)
 
 
 @router.get(

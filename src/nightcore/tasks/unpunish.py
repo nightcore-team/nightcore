@@ -1,5 +1,7 @@
 """Task cog for unpunishing users."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING
@@ -10,17 +12,24 @@ from discord.ext.commands import Cog  # type: ignore
 from src.infra.db.operations import get_expired_temp_infractions
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from src.infra.db.models import TempPunish
     from src.nightcore.bot import Nightcore
 
 from src.nightcore.tasks.utils import handle_infraction_type_event
 
 logger = logging.getLogger(__name__)
 
+MAX_CONCURRENT_PROCESSING = 10
 
-# CRITICAL
+
 class UnPunishTask(Cog):
-    def __init__(self, bot: "Nightcore") -> None:
+    def __init__(self, bot: Nightcore) -> None:
         self.bot = bot
+        self._processing_semaphore = asyncio.Semaphore(
+            MAX_CONCURRENT_PROCESSING
+        )
 
         self.un_punish_task.start()
 
@@ -37,27 +46,21 @@ class UnPunishTask(Cog):
         try:
             logger.info("[task] - Running unpunish task")
 
-            outcome = ""
             async with self.bot.uow.start() as session:
                 active_infractions = await get_expired_temp_infractions(
                     session
                 )
-                if not active_infractions:
-                    outcome = "no_expired_infractions"
-                else:
-                    for infraction in active_infractions:
-                        await session.delete(infraction)
 
-            if outcome == "no_expired_infractions":
+            if not active_infractions:
                 logger.info("[task] - No expired infractions found")
                 return
 
-            # Dispatch events after successful commit
-            for infraction in active_infractions:
-                handle_infraction_type_event(
-                    active_punish=infraction, bot=self.bot
-                )
-                logger.info("[task] - Unpunished user: %s", infraction.user_id)
+            processed = await self._process_infractions(active_infractions)
+
+            logger.info(
+                "[task] - Completed unpunish task: processed=%s",
+                processed,
+            )
 
         except Exception as e:
             logger.exception(
@@ -65,6 +68,49 @@ class UnPunishTask(Cog):
                 e,
                 exc_info=True,
             )
+
+    async def _process_infractions(
+        self, infractions: Sequence[TempPunish]
+    ) -> int:
+        """Process infractions with rate limiting."""
+        tasks: list[asyncio.Task[bool]] = []
+        for infraction in infractions:
+            tasks.append(
+                asyncio.create_task(
+                    self._process_single_with_limit(infraction)
+                )
+            )
+
+        if not tasks:
+            return 0
+
+        results: list[bool | BaseException] = await asyncio.gather(
+            *tasks, return_exceptions=True
+        )
+        processed = 0
+        for result in results:
+            if result is True:
+                processed += 1
+            elif isinstance(result, Exception):
+                logger.exception(
+                    "[task] - Unexpected error processing infraction"
+                )
+
+        return processed
+
+    async def _process_single_with_limit(self, infraction: TempPunish) -> bool:
+        """Process a single infraction with semaphore limiting."""
+        async with self._processing_semaphore:
+            try:
+                await self._process_single(infraction)
+                return True
+            except Exception:
+                return False
+
+    async def _process_single(self, infraction: TempPunish) -> None:
+        """Process a single infraction - dispatch event after DB commit."""
+        handle_infraction_type_event(active_punish=infraction, bot=self.bot)
+        logger.info("[task] - Unpunished user: %s", infraction.user_id)
 
     @un_punish_task.before_loop
     async def before_un_punish_task(self):
@@ -85,6 +131,6 @@ class UnPunishTask(Cog):
             self.un_punish_task.restart()
 
 
-async def setup(bot: "Nightcore"):
+async def setup(bot: Nightcore):
     """Setup the UnPunishTask cog."""
     await bot.add_cog(UnPunishTask(bot))

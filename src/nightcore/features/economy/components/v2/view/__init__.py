@@ -1,5 +1,11 @@
+from .bank import BankAccountViewV2
 from .battlepass import BattlepassClaimViewV2
-from .case import CaseHelpViewV2, CaseOpenViewV2
+from .case import (
+    CaseHelpViewV2,
+    CaseOpenRerollViewV2,
+    CaseOpenViewV2,
+    build_case_reroll_view,
+)
 from .item import AwardNotificationViewV2
 from .profile import (
     CasesCollectionViewV2,
@@ -15,11 +21,15 @@ from .shop import (
 )
 from .top import UsersListViewV2
 from .transfer import TransferCoinsViewV2
+from .vip.activate import VipStatusActivateViewV2
+from .vip.help import VipStatusHelpViewV2
 
 __all__ = (
     "AwardNotificationViewV2",
+    "BankAccountViewV2",
     "BattlepassClaimViewV2",
     "CaseHelpViewV2",
+    "CaseOpenRerollViewV2",
     "CaseOpenViewV2",
     "CasesCollectionViewV2",
     "CoinsShopOrderNotifyViewV2",
@@ -32,4 +42,7 @@ __all__ = (
     "UserProfileActionRow",
     "UserProfileViewV2",
     "UsersListViewV2",
+    "VipStatusActivateViewV2",
+    "VipStatusHelpViewV2",
+    "build_case_reroll_view",
 )

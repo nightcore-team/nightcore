@@ -48,6 +48,19 @@ class RoleInfoSchema(Base):
         )
 
 
+class EmojiInfoSchema(Base):
+    """Schema for a guild emoji."""
+
+    emoji_str: str
+    image_url: str
+
+    @staticmethod
+    def from_discord(emoji: discord.Emoji) -> "EmojiInfoSchema":
+        """Create a RoleInfoSchema from a discord.Role."""
+
+        return EmojiInfoSchema(emoji_str=str(emoji), image_url=emoji.url)
+
+
 class ChannelInfoSchema(Base):
     """Schema for a guild channel."""
 

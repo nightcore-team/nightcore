@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING, Any
 
 import discord
 
+from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     CONFIG_MODEL_MAP,
+    close_out_deposits_before_rate_change,
     get_specified_guild_config,
 )
 from src.infra.db.uow import UnitOfWork
@@ -16,7 +18,11 @@ from src.nightcore.api.domain.exceptions.base import LogicalError
 from src.nightcore.api.schemas.configuration import (
     CONFIG_SCHEMA_MODEL_MAP,
 )
-from src.nightcore.api.schemas.guild import ChannelInfoSchema, RoleInfoSchema
+from src.nightcore.api.schemas.guild import (
+    ChannelInfoSchema,
+    EmojiInfoSchema,
+    RoleInfoSchema,
+)
 from src.nightcore.api.utils.validators import (
     ValidationContext,
 )
@@ -53,6 +59,19 @@ class GuildStateService:
         """  # noqa: E501
 
         return [RoleInfoSchema.from_discord(role) for role in guild.roles]
+
+    def get_emojis(self, guild: discord.Guild) -> Sequence[EmojiInfoSchema]:
+        """
+        Get the emojis of a guild.
+
+        Args:
+            guild: The guild to get the emojis from.
+
+        Returns:
+            A list of EmojiInfoSchema objects representing the emoji of the guild.
+        """  # noqa: E501
+
+        return [EmojiInfoSchema.from_discord(emoji) for emoji in guild.emojis]
 
     def get_channels(self, guild: discord.Guild) -> list[ChannelInfoSchema]:
         """
@@ -163,6 +182,16 @@ class GuildStateService:
             old_data = {
                 field: current_state.get(field) for field in revision_data
             }
+
+            if (
+                isinstance(config, GuildEconomyConfig)
+                and "deposit_base_interest_rate" in nomalized
+                and nomalized["deposit_base_interest_rate"]
+                != config.deposit_base_interest_rate
+            ):
+                await close_out_deposits_before_rate_change(
+                    session, guild_id=member.guild.id, config=config
+                )
 
             for k, v in nomalized.items():
                 setattr(config, k, v)

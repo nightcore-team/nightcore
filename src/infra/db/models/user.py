@@ -18,10 +18,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.infra.db.models._mixins import IdIntegerMixin
+from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
 from src.infra.db.models.base import Base
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
+from src.infra.db.models.vip import VipStatus
+
+if TYPE_CHECKING:
+    from src.infra.db.models.bank import BankAccount
 
 user_colors = Table(
     "user_colors",
@@ -44,6 +48,10 @@ if TYPE_CHECKING:
 class User(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint("guild_id", "user_id", name="ux_user_guild_user"),
+        # the child tables point at (id, guild_id) rather than
+        # (guild_id, user_id), so the guild a row belongs to can never drift
+        # away from the guild of the user it references
+        UniqueConstraint("id", "guild_id", name="ux_user_id_guild"),
         # Performance indexes for leaderboard queries
         Index("ix_user_guild_coins", "guild_id", text("coins DESC")),
         Index(
@@ -66,6 +74,7 @@ class User(IdIntegerMixin, Base):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     guild_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     coins: Mapped[int] = mapped_column(nullable=False, default=0)
+    rerolls: Mapped[int] = mapped_column(nullable=False, default=0)
     level: Mapped[int] = mapped_column(nullable=False, default=0)
     messages_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
@@ -99,13 +108,19 @@ class User(IdIntegerMixin, Base):
         Integer, nullable=False, default=1
     )
     battle_pass_points: Mapped[int] = mapped_column(nullable=False, default=0)
-    cases: Mapped[list["UserCase"]] = relationship(
+    battle_pass_additional_reward_claimed_level: Mapped[int | None] = (
+        mapped_column(Integer, nullable=True)
+    )
+    vip_statuses: Mapped[list["UserVipStatus"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
         lazy="selectin",
+    )
+    cases: Mapped[list["UserCase"]] = relationship(
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
     colors: Mapped[list[Color]] = relationship(
-        lazy="selectin",
         secondary=user_colors,
         cascade="save-update, merge",
         passive_deletes=True,
@@ -115,6 +130,11 @@ class User(IdIntegerMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="selectin",
+    )
+    bank_account: Mapped["BankAccount | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     def get_case(self, case_id: int) -> Optional["UserCase"]:
@@ -131,7 +151,45 @@ class User(IdIntegerMixin, Base):
                 return color
 
 
-class UserCase(Base):
+class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):
+    __table_args__ = (
+        # a user may hold several VIPs, but only one of them is active at a
+        # time, so the active one is unique per user and per guild
+        Index(
+            "ux_user_vip_active_guild_user",
+            "guild_id",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+        ),
+        UniqueConstraint(
+            "vip_id", "user_id", "guild_id", name="ux_user_vip_guild"
+        ),
+        ForeignKeyConstraint(
+            ["user_id", "guild_id"],
+            ["user.id", "user.guild_id"],
+            ondelete="CASCADE",
+        ),
+    )
+
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    vip_id: Mapped[int] = mapped_column(
+        ForeignKey("vipstatus.id", ondelete="CASCADE"), nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(default=False, nullable=False)
+    # None = permanent VIP status; otherwise the expire_vip task deletes the
+    # row once the date passes, so a passed date never grants anything on
+    # its own - the read paths filter on expires_at as well
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    user: Mapped["User"] = relationship(back_populates="vip_statuses")
+    vip: Mapped["VipStatus"] = relationship()
+
+
+class UserCase(IdIntegerMixin, Base):
     __table_args__ = (
         UniqueConstraint(
             "case_id", "user_id", "guild_id", name="ux_user_case_guild_user"
@@ -142,9 +200,7 @@ class UserCase(Base):
             ondelete="CASCADE",
         ),
     )
-    id: Mapped[int] = mapped_column(
-        autoincrement=True, nullable=False, primary_key=True
-    )
+
     guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     case_id: Mapped[int] = mapped_column(

@@ -8,6 +8,8 @@ from src.nightcore.api.config import Config as ApiConfig
 from src.nightcore.api.security.config import Config as JWTConfig
 from src.nightcore.config import Config as BotConfig
 
+from .env import BaseEnvConfig
+
 
 class Config:
     @cached_property
@@ -28,14 +30,17 @@ class Config:
     @cached_property
     def api(self) -> ApiConfig:
         """Return the API configuration settings."""
-
         return ApiConfig()  # type: ignore
 
     @cached_property
     def jwt(self) -> JWTConfig:
         """Return the API jwt configuration settings."""
-
         return JWTConfig()  # type: ignore
+
+    @cached_property
+    def env(self) -> BaseEnvConfig:
+        """Return the environment configuration settings."""
+        return BaseEnvConfig()
 
 
 config = Config()

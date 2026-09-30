@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import user_load_colors
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
     get_color_by_id,
@@ -79,7 +80,7 @@ async def give_color(
                 session,
                 guild_id=guild.id,
                 user_id=user.id,
-                with_relations=True,
+                options=[user_load_colors],
                 for_update=True,
             )
             color = await get_color_by_id(

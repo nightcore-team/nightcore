@@ -1,19 +1,25 @@
 """Build transfers history pages."""
 
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from discord.ui import TextDisplay
 
 from src.config.config import config
+from src.infra.db.models._annot import UserVipStatusAnnot
 from src.infra.db.models.battlepass_level import BattlepassLevel
 
 if TYPE_CHECKING:
     from src.infra.db.models import TransferHistory
+    from src.infra.db.models.user import UserVipStatus
 
 from src.infra.db.models.case import Case
+from src.infra.db.models.vip import VipStatus
 from src.nightcore.utils import discord_ts
 from src.utils._enums import CaseDropTypeEnum
+
+VIP_STATUSES_PER_PAGE = 4
 
 
 def build_transfer_history_pages(
@@ -102,6 +108,148 @@ def build_cases_help_pages(
         pages = [[TextDisplay[Any]("Кейсы не настроены")]]
 
     return pages
+
+
+def build_case_reroll_pages(
+    rewards: Sequence[dict[str, Any]],
+    total_weight: int,
+    rewards_per_page: int = 10,
+) -> list[list[dict[str, Any]]]:
+    """Build paginated chunks of pending case rewards for the reroll view.
+
+    Args:
+        rewards: Pending case reward rows enriched with the ``reward_id``.
+        total_weight: Sum of the case drop chances to compute percentages.
+        rewards_per_page: Number of rewards shown on a single page.
+
+    Returns:
+        Reward data chunks, each item carrying the reward fields plus a
+        precomputed ``chance_percent`` value.
+    """
+
+    if not rewards:
+        return [[]]
+
+    pages: list[list[dict[str, Any]]] = []
+    for index in range(0, len(rewards), rewards_per_page):
+        page = [
+            {
+                **reward,
+                "chance_percent": reward["chance"] / total_weight * 100,
+            }
+            for reward in rewards[index : index + rewards_per_page]
+        ]
+        pages.append(page)
+
+    return pages
+
+
+def build_vip_statuses_content(
+    vip_statuses: Sequence[VipStatus],
+) -> list[TextDisplay[Any]]:
+    """Build the display content for VIP statuses."""
+    content: list[TextDisplay[Any]] = []
+    for vip in vip_statuses:
+        content.append(
+            TextDisplay(
+                f"### {vip.emoji_str if vip.emoji_str else ''} {vip.name}"
+            ),
+        )
+
+        perks: list[str] = []
+
+        if vip.deposit_max_balance:
+            perks.append(
+                f"> <:nightcoreInfinity:1551210202953547806> Лимит баланса депозитного счёта: **`{vip.deposit_max_balance}`**"  # noqa: E501
+            )
+
+        if vip.deposit_interest_rate:
+            rate = float(vip.deposit_interest_rate) * 100
+            perks.append(
+                f"> <:nightcorePercent:1545112163742519349> Процентная ставка по депозиту: **`{rate:.2f}%`**"  # noqa: E501
+            )
+
+        if vip.deposit_interest_cap_amount:
+            perks.append(
+                f"> <:nightcoreInfinity:1551210202953547806> Лимит начисления процентов: **`{vip.deposit_interest_cap_amount}`**"  # noqa: E501
+            )
+
+        if vip.shop_discount:
+            discount = float(vip.shop_discount) * 100
+            perks.append(
+                f"> <:nightcoreShopDiscount:1551212187614453820> Скидка в магазине: **`{discount:.2f}%`**"  # noqa: E501
+            )
+
+        if not perks:
+            content.append(
+                TextDisplay("> Преимущества данного VIP-статуса не настроены.")
+            )
+        else:
+            content.append(TextDisplay("\n".join(perks)))
+
+    return content
+
+
+def build_vip_statuses_help_pages(
+    vip_statuses: Sequence[VipStatus], vip_statuses_per_page: int = 3
+) -> list[list[TextDisplay[Any]]]:
+    """Build paginated pages for VIP-statuses help command."""
+
+    content = build_vip_statuses_content(vip_statuses)
+
+    pages = [
+        content[index : index + vip_statuses_per_page]
+        for index in range(0, len(content), vip_statuses_per_page)
+    ]
+
+    if not pages:
+        pages = [[TextDisplay[Any]("VIP-статусы не настроены")]]
+
+    return pages
+
+
+def build_user_vip_statuses_content(
+    user_vip_statuses: Sequence["UserVipStatus"],
+    guild_vip_statuses: Sequence[VipStatus],
+) -> tuple[list[TextDisplay[Any]], list[UserVipStatusAnnot]]:
+    """Build content and statuses for a user's own VIP-statuses.
+
+    Also used after activation to rebuild the view with updated button states.
+
+    Returns:
+        Tuple of display content and the matching list of statuses.
+    """
+
+    config_by_id = {status.id: status for status in guild_vip_statuses}
+
+    owned_configs: list[VipStatus] = []
+    statuses: list[UserVipStatusAnnot] = []
+
+    # only a live VIP can be activated - the user is the one who activates,
+    # never the grant - and a row that ran out is about to be dropped by the
+    # expire_vip task anyway, so listing it would offer a button that can
+    # only fail
+    now = datetime.now(UTC)
+
+    for user_vip in user_vip_statuses:
+        if user_vip.expires_at is not None and user_vip.expires_at <= now:
+            continue
+
+        config = config_by_id.get(user_vip.vip_id)
+        if config is None:
+            continue
+
+        owned_configs.append(config)
+        statuses.append(
+            {
+                "vip_id": user_vip.vip_id,
+                "name": config.name,
+                "emoji_str": config.emoji_str,
+                "is_active": user_vip.is_active,
+            }
+        )
+
+    return build_vip_statuses_content(owned_configs), statuses
 
 
 def build_battlepass_levels_pages(

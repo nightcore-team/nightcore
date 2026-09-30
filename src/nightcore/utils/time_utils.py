@@ -4,8 +4,11 @@ import re
 from datetime import UTC, datetime, timedelta
 
 
-def discord_ts(dt: datetime, style: str = "f") -> str:
+def discord_ts(dt: datetime | None, style: str = "f") -> str | None:
     """Convert a datetime to a Discord timestamp string."""
+    if dt is None:
+        return None
+
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)
     return f"<t:{int(dt.timestamp())}:{style}>"
@@ -116,12 +119,12 @@ def parse_duration(text: str) -> int | None:
     if not text:
         return None
 
-    if len(text) > 5:
-        return None
-
     text = text.strip().lower()
 
     if not text:
+        return None
+
+    if len(text) > 5:
         return None
 
     if text.isdigit():

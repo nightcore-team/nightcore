@@ -14,6 +14,7 @@ from src.infra.db.operations import (
     get_case_by_id,
     get_color_by_id,
     get_specified_webhook,
+    get_vip_status_by_id,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.components.view.v2.error import ValidationErrorViewV2
@@ -29,6 +30,11 @@ from src.nightcore.features.economy.utils.autocomplete import (
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
     check_required_permissions,
+)
+from src.nightcore.utils.time_utils import (
+    calculate_end_time,
+    discord_ts,
+    parse_duration,
 )
 from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 from src.utils._enums import (
@@ -49,7 +55,8 @@ logger = logging.getLogger(__name__)
     reward_type="Тип награды",
     amount="Количество",
     weight="Вес награды (не является шансом выпадения)",
-    reward="Выбор кейса / цвета / ввод текста, в зависимости от типа награды",
+    reward="Выбор кейса / цвета / VIP / текста, в зависимости от типа награды",
+    duration="Срок действия награды. Формат: s/m/h/d (например, 1h, 1d, 7d). Только для VIP.",  # noqa: E501
 )
 @app_commands.rename(case_id="case")
 @app_commands.autocomplete(
@@ -64,6 +71,7 @@ async def add_case_reward(
     weight: app_commands.Range[int, 1, 1000000],
     amount: app_commands.Range[int, 1, 1000000],
     reward: str | None = None,
+    duration: app_commands.Range[str, 1, 20] | None = None,
 ):
     """Add reward to case."""
 
@@ -76,7 +84,7 @@ async def add_case_reward(
     if reward is None and reward_type.requires_id_or_custom():
         await interaction.response.send_message(
             view=ValidationErrorViewV2(
-                "Для типов CASE, COLOR, CUSTOM ввод награды обязателен.",
+                "Для типов CASE, COLOR, VIP, CUSTOM ввод награды обязателен.",
             ),
             ephemeral=True,
         )
@@ -90,6 +98,29 @@ async def add_case_reward(
             ephemeral=True,
         )
         return
+
+    parsed_duration: int | None = None
+
+    if duration is not None:
+        if not reward_type.supports_duration():
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Длительность используется только для VIP-статусов.",
+                ),
+                ephemeral=True,
+            )
+            return
+
+        parsed_duration = parse_duration(duration)
+
+        if not parsed_duration:
+            await interaction.response.send_message(
+                view=ValidationErrorViewV2(
+                    "Неверная продолжительность. Используйте s/m/h/d (например, 1h, 1d, 7d).",  # noqa: E501
+                ),
+                ephemeral=True,
+            )
+            return
 
     if reward_type.requires_id():
         try:
@@ -120,6 +151,7 @@ async def add_case_reward(
                         amount=amount,
                         chance=weight,
                         name=reward_type.to_str(),
+                        duration=parsed_duration,
                     )  # type: ignore
 
                     match reward_type:
@@ -150,6 +182,19 @@ async def add_case_reward(
 
                         case CaseDropTypeEnum.CUSTOM:
                             new_reward["name"] = reward  # type: ignore
+                        case CaseDropTypeEnum.VIP:
+                            vip_status = await get_vip_status_by_id(
+                                session,
+                                guild_id=guild.id,
+                                vip_id=reward_id,  # type: ignore
+                            )
+
+                            if vip_status is None:
+                                outcome = "unknown_vip_id"
+                            else:
+                                new_reward["drop_id"] = vip_status.id
+                                new_reward["name"] = vip_status.name
+                                new_reward["amount"] = 1
                         case _:
                             ...
 
@@ -224,23 +269,43 @@ async def add_case_reward(
         )
         return
 
+    if outcome == "unknown_vip_id":
+        await interaction.response.send_message(
+            view=ErrorViewV2(
+                "Ошибка добавления награды",
+                "VIP-статус с данным id не найден.",
+            ),
+            ephemeral=True,
+        )
+        return
+
+    duration_hint = ""
+    if parsed_duration is not None:
+        # a preview for the moderator, the real expiry is computed from the
+        # claim time, not from the moment the reward was configured
+        duration_hint = (
+            " Срок действия: "
+            f"**{discord_ts(calculate_end_time(parsed_duration))}**."
+        )
+
     item = ChangedReward(after=new_reward)  # type: ignore
 
-    dto = ItemChangeNotifyEventDTO(
-        guild=guild,
-        event_type=ItemChangeActionEnum.ADD_REWARD,
-        logging_webhook=logging_webhook,
-        moderator_id=interaction.user.id,
-        item_name=case.name,  # type: ignore
-        item=item,
+    bot.dispatch(
+        "item_change_notify",
+        dto=ItemChangeNotifyEventDTO(
+            guild=guild,
+            event_type=ItemChangeActionEnum.ADD_REWARD,
+            logging_webhook=logging_webhook,
+            moderator_id=interaction.user.id,
+            item_name=case.name,  # type: ignore
+            item=item,
+        ),
     )
-
-    bot.dispatch("item_change_notify", dto)
 
     await interaction.response.send_message(
         view=SuccessViewV2(
             "Добавление награды успешно",
-            f"Вы добавили награду в кейс {case.name} ",  # type: ignore
+            f"Вы добавили награду в кейс {case.name} {duration_hint}",  # type: ignore
         ),
         ephemeral=True,
     )

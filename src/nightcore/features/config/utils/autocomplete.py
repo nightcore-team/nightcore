@@ -10,6 +10,7 @@ from discord.interactions import Interaction
 from src.infra.db.operations import (
     get_cases_by_input,
     get_guild_colors,
+    get_vip_statuses_by_input,
 )
 from src.utils._enums import CaseDropTypeEnum
 
@@ -43,13 +44,15 @@ async def reward_depends_on_type_autocomplete(
             result = await _cases_autocomplete(interaction, current)
         case CaseDropTypeEnum.COLOR.value:
             result = await _colors_autocomplete(interaction, current)
+        case CaseDropTypeEnum.VIP.value:
+            result = await _vip_statuses_autocomplete(interaction, current)
         case CaseDropTypeEnum.CUSTOM.value:
             result = await _custom_reward_autocomplete()
         case _:  # type: ignore
             result.append(
                 app_commands.Choice(
-                    name="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
-                    value="Данный параметр используется только для типов кейс/цвет!",  # noqa: E501
+                    name="Данный параметр используется только для типов кейс/цвет/VIP!",  # noqa: E501
+                    value="Данный параметр используется только для типов кейс/цвет/VIP!",  # noqa: E501
                 )
             )
 
@@ -90,6 +93,30 @@ async def _cases_autocomplete(
                 app_commands.Choice(
                     name=case.name,
                     value=str(case.id),
+                )
+            )
+
+    return result
+
+
+async def _vip_statuses_autocomplete(
+    interaction: Interaction["Nightcore"],
+    user_input: str,
+) -> list[app_commands.Choice[str]]:
+    result: list[app_commands.Choice[str]] = []
+
+    guild = cast(Guild, interaction.guild)
+
+    async with interaction.client.uow.start() as session:
+        guild_vip_statuses = await get_vip_statuses_by_input(
+            session, guild_id=guild.id, user_input=user_input
+        )
+
+        for vip_status in guild_vip_statuses:
+            result.append(
+                app_commands.Choice(
+                    name=vip_status.name,
+                    value=str(vip_status.id),
                 )
             )
 

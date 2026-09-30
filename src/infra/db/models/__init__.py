@@ -1,7 +1,10 @@
-from .battlepass_level import Base, BattlepassLevel
+from .bank import BankAccount, Base, Deposit, ExtraWallet
+from .battlepass_level import Base, BattlepassLevel  # noqa: F811
+from .case import Base, Case, CaseOpenReward, CaseOpenSession  # noqa: F811
 from .casino import Base, CasinoBet, CasinoGame  # noqa: F811
 from .changestat import Base, ChangeStat  # noqa: F811
 from .clan import Base, Clan, ClanMember  # noqa: F811
+from .color import Base, Color  # noqa: F811
 from .configurations import (
     Base,  # noqa: F811
     GuildAccessConfig,
@@ -37,16 +40,24 @@ from .temprole import Base, TempRole  # noqa: F811
 from .ticket import Base, TicketState  # noqa: F811
 from .transfer_history import Base, TransferHistory  # noqa: F811
 from .user import Base, User  # noqa: F811
+from .vip import Base, VipStatus  # noqa: F811
 
 __all__ = (
+    "BankAccount",
     "Base",
     "BattlepassLevel",
+    "Case",
+    "CaseOpenReward",
+    "CaseOpenSession",
     "CasinoBet",
     "CasinoGame",
     "ChangeStat",
     "Clan",
     "ClanMember",
+    "Color",
     "CustomComponent",
+    "Deposit",
+    "ExtraWallet",
     "GuildAccessConfig",
     "GuildClansConfig",
     "GuildEconomyConfig",
@@ -78,4 +89,5 @@ __all__ = (
     "TicketState",
     "TransferHistory",
     "User",
+    "VipStatus",
 )

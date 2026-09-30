@@ -35,9 +35,7 @@ class CoinsShopOrderNotifyViewV2(LayoutView):
         container = Container[Self](accent_color=Color.from_str("#5EC9B3"))
 
         container.add_item(
-            TextDisplay[Self](
-                "### <:nightcorepShopping:1540451786853191790> Уведомление о покупке товара\n"  # noqa: E501
-            )
+            TextDisplay[Self]("### Уведомление о покупке товара\n")
         )
 
         description = ""
