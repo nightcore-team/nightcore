@@ -160,7 +160,7 @@ async def withdraw(
     elif outcome == "bank_account_not_found":
         await interaction.followup.send(
             view=ErrorViewV2(
-                "Ошибка пополнения счёта",
+                "Ошибка снятия средств со счёта",
                 "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank account",  # noqa: E501
             )
         )

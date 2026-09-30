@@ -238,7 +238,7 @@ async def transfer(
     elif outcome == "bank_account_not_found":
         await interaction.followup.send(
             view=ErrorViewV2(
-                "Ошибка пополнения счёта",
+                "Ошибка перевода",
                 "Банковский аккаунт не был найден.\n> Создать его вы можете введя команду /bank account",  # noqa: E501
             )
         )
@@ -270,7 +270,7 @@ async def transfer(
     elif outcome == "deposit_max_balance_reached":
         await interaction.followup.send(
             view=ErrorViewV2(
-                "Ошибка пополнения счёта.",
+                "Ошибка перевода",
                 "Достигнут лимит количества средств на депозитном счёте.",
             )
         )
