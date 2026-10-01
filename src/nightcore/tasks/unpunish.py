@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING
 from discord.ext import tasks
 from discord.ext.commands import Cog  # type: ignore
 
-from src.infra.db.operations import get_expired_temp_infractions
+from src.infra.db.operations import (
+    delete_temp_punishes,
+    get_expired_temp_infractions,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -49,6 +52,11 @@ class UnPunishTask(Cog):
             async with self.bot.uow.start() as session:
                 active_infractions = await get_expired_temp_infractions(
                     session
+                )
+
+                await delete_temp_punishes(
+                    session,
+                    status_ids=[i.id for i in active_infractions],
                 )
 
             if not active_infractions:

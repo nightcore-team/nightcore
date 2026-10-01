@@ -1747,6 +1747,20 @@ async def get_expired_temp_infractions(
     return result.all()
 
 
+async def delete_temp_punishes(
+    session: AsyncSession,
+    *,
+    status_ids: Sequence[int],
+) -> None:
+    """Delete the given temporary punishments by primary key."""
+
+    if not status_ids:
+        return
+
+    stmt = delete(TempPunish).where(TempPunish.id.in_(status_ids))
+    await session.execute(stmt)
+
+
 async def get_latest_temp_punish(
     session: AsyncSession,
     *,
