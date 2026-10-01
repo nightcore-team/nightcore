@@ -65,22 +65,23 @@ class VipStatusActivateViewV2(LayoutView):
         container.add_item(Separator[Self]())
 
         activate_row = ActionRow[Self]()
+
         for status in self.statuses:
             label = f"Активировать {status['name']}"[:79]
 
-            activate_row.add_item(
-                Button(
-                    label=label,
-                    style=ButtonStyle.secondary,
-                    emoji=status["emoji_str"],
-                    custom_id=f"vip:activate:{status['vip_id']}",
-                    disabled=status["is_active"],
-                )
+            button = Button[Self](
+                label=label,
+                style=ButtonStyle.secondary,
+                emoji=status["emoji_str"],
+                custom_id=f"vip:activate:{status['vip_id']}",
+                disabled=status["is_active"],
             )
+            if status["emoji_str"] is not None:
+                button.emoji = status["emoji_str"]
+
+            activate_row.add_item(button)
 
         container.add_item(activate_row)
-
-        container.add_item(Separator())
 
         self.add_item(container)
 
