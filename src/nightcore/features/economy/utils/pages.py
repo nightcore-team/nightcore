@@ -149,12 +149,9 @@ def build_vip_statuses_content(
 ) -> list[TextDisplay[Any]]:
     """Build the display content for VIP statuses."""
     content: list[TextDisplay[Any]] = []
+
     for vip in vip_statuses:
-        content.append(
-            TextDisplay(
-                f"### {vip.emoji_str if vip.emoji_str else ''} {vip.name}"
-            ),
-        )
+        vip_name = f"### {vip.emoji_str if vip.emoji_str else ''} {vip.name}\n"
 
         perks: list[str] = []
 
@@ -181,11 +178,9 @@ def build_vip_statuses_content(
             )
 
         if not perks:
-            content.append(
-                TextDisplay("> Преимущества данного VIP-статуса не настроены.")
-            )
-        else:
-            content.append(TextDisplay("\n".join(perks)))
+            perks.append("> Преимущества данного VIP-статуса не настроены.")
+
+        content.append(TextDisplay[Any](vip_name + "\n".join(perks)))
 
     return content
 
