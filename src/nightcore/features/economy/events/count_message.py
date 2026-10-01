@@ -123,7 +123,7 @@ class CountMessageEvent(Cog):
         """Send level up notification message."""
 
         view = LevelUpViewV2(
-            self.bot, member.id, new_level, exp_to_level, coins_per_level_up
+            member.id, new_level, exp_to_level, coins_per_level_up
         )
 
         await send_to_webhook(

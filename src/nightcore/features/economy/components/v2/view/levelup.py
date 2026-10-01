@@ -4,19 +4,15 @@ Level Up View V2 Component.
 Used for displaying a notification when a user levels up in the levels system.
 """
 
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from discord import Color
 from discord.ui import Container, LayoutView, TextDisplay
-
-if TYPE_CHECKING:
-    from src.nightcore.bot import Nightcore
 
 
 class LevelUpViewV2(LayoutView):
     def __init__(
         self,
-        bot: "Nightcore",
         user_id: int,
         new_level: int,
         exp_to_level: int,
@@ -28,13 +24,18 @@ class LevelUpViewV2(LayoutView):
 
         container.add_item(TextDisplay[Self]("### Повышение уровня\n"))
 
+        coins_text = (
+            f"\n> Вы получили дополнительных {coins_per_level_up} "
+            f"коинов за повышение уровня."
+            if coins_per_level_up > 0
+            else ""
+        )
+
         container.add_item(
             TextDisplay[Self](
                 f"<@{user_id}> повысил свой уровень до {new_level}!\n"
-                f"> До получения следующего осталось: **`{exp_to_level}`** опыта.\n"  # noqa: E501
-                f"> Вы получили дополнительных {coins_per_level_up} коинов за повышение уровня."  # noqa: E501
-                if coins_per_level_up > 0
-                else ""
+                f"> До получения следующего осталось: **`{exp_to_level}`** опыта."  # noqa: E501
+                f"{coins_text}"
             )
         )
 
