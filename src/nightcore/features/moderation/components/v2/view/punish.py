@@ -116,7 +116,7 @@ class PunishViewV2(LayoutView):
             Formatted expired text
         """
         if server_name:
-            return "**Срок вашего наказания на истёк.**"
+            return "**Срок вашего наказания на сервере истёк.**"
         else:
             return "**Срок вашего наказания истёк.**"
 
