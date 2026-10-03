@@ -42,7 +42,7 @@ class GuildColorSchema(EntityBaseSchema):
 
 class GuildVipStatusSchema(EntityBaseSchema):
     name: str
-    emoji_str: str
+    emoji_str: str | None = None
     role_id: DiscordRoleNoAdmID | None = None
     deposit_max_balance: int = 0
     deposit_interest_rate: Decimal = Decimal("0.0000")
