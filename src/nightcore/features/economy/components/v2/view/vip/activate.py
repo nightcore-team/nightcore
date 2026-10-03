@@ -18,6 +18,7 @@ from discord.ui import (
 )
 
 from src.infra.db.models._annot import UserVipStatusAnnot
+from src.nightcore.utils.content import parse_emoji
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -72,12 +73,10 @@ class VipStatusActivateViewV2(LayoutView):
             button = Button[Self](
                 label=label,
                 style=ButtonStyle.secondary,
-                emoji=status["emoji_str"],
+                emoji=parse_emoji(status["emoji_str"]),
                 custom_id=f"vip:activate:{status['vip_id']}",
                 disabled=status["is_active"],
             )
-            if status["emoji_str"] is not None:
-                button.emoji = status["emoji_str"]
 
             activate_row.add_item(button)
 
