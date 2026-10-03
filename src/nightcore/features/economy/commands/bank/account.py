@@ -125,14 +125,12 @@ async def account(
 
     assert bank_account.deposit is not None
 
-    deposit_float_rate = float(rate) * 100
-
     view = BankAccountViewV2(
         user_id=member.id,
         coin_name=coin_name,
         deposit_balance=bank_account.deposit.coins,
         deposit_interest_cap_amount=interest_cap,
-        deposit_current_rate=deposit_float_rate,
+        deposit_current_rate=rate,
         deposit_last_updated_at=bank_account.deposit.last_accrued_at,
         extra_wallets=extra_wallets,
     )

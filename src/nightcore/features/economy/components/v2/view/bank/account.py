@@ -5,6 +5,7 @@ Used for displaying information about user's bank profile.
 """
 
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Self
 
 from discord import Color
@@ -29,7 +30,7 @@ class BankAccountViewV2(LayoutView):
         coin_name: str,
         deposit_balance: int,
         deposit_interest_cap_amount: int,
-        deposit_current_rate: float,
+        deposit_current_rate: Decimal,
         deposit_last_updated_at: datetime,
         extra_wallets: list["ExtraWalletAnnot"],
     ):
@@ -51,7 +52,7 @@ class BankAccountViewV2(LayoutView):
             TextDisplay[Self](
                 "### <:nightcoreInfo:1540439225877528626> Состояние депозита\n"
                 f"> <:nightcoreLevelUp:1540402294275969024> Баланс: {deposit_balance} {coin_name}\n"  # noqa: E501
-                f"> <:nightcorePercent:1545112163742519349> Процентная ставка: {deposit_current_rate}% в час, лимит для начисления процентов: {interest_cap}\n"  # noqa: E501
+                f"> <:nightcorePercent:1545112163742519349> Процентная ставка: {float(deposit_current_rate) * 100:.2f}% в час, лимит для начисления процентов: {interest_cap}\n"  # noqa: E501
                 f"> Последнее начисление: {discord_ts(deposit_last_updated_at)}"  # noqa: E501
             )
         )
