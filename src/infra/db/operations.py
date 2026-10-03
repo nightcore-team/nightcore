@@ -825,8 +825,10 @@ def _get_effective_deposit_config(
             interest_rate = max(
                 interest_rate, vip_status.deposit_interest_rate
             )
+
         if vip_status.deposit_max_balance:
             max_balance = max(max_balance, vip_status.deposit_max_balance)
+
         if vip_status.deposit_interest_cap_amount:
             interest_cap = max(
                 interest_cap, vip_status.deposit_interest_cap_amount
