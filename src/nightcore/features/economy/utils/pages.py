@@ -19,8 +19,6 @@ from src.infra.db.models.vip import VipStatus
 from src.nightcore.utils import discord_ts
 from src.utils._enums import CaseDropTypeEnum
 
-VIP_STATUSES_PER_PAGE = 4
-
 
 def build_transfer_history_pages(
     transfers: Sequence["TransferHistory"],

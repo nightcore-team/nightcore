@@ -113,7 +113,8 @@ class VipStatusHelpViewV2(LayoutView):
             self.pagination = VipHelpPaginationActionRow()
             container.add_item(self.pagination)
         else:
-            container.add_item(self.pages[0][0])
+            for item in self.pages[0]:
+                container.add_item(item)
 
         if len(self.pages) > 1:
             container.add_item(Separator())
