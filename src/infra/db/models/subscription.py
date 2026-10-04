@@ -1,3 +1,5 @@
+"""Subscription model for the Nightcore bot database."""
+
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, Enum, func, text
