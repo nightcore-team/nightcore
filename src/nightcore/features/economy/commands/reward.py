@@ -58,13 +58,15 @@ class Reward(Cog):
 
             now = datetime.now(UTC)
 
-            if user.reward_time is not None:
-                time_since_last_reward = now - user.reward_time
+            if (
+                user.reward_time is not None
+                and user.reward_time.date() == now.date()
+            ):
+                next_reward = datetime(
+                    now.year, now.month, now.day, tzinfo=UTC
+                ) + timedelta(days=1)
 
-                if time_since_last_reward < timedelta(hours=24):
-                    next_reward = user.reward_time + timedelta(hours=24)
-
-                    outcome = "reward_too_early"
+                outcome = "reward_too_early"
 
             if not outcome:
                 base_bonus = guild_config.base_reward_bonus
@@ -100,7 +102,7 @@ class Reward(Cog):
             await interaction.response.send_message(
                 view=ErrorViewV2(
                     "Ошибка получения ежедневной награды",
-                    f"Вы уже получали свою ежедневную награду. \n> Следующая награда: {discord_ts(next_reward)}",  # noqa: E501 # type: ignore
+                    f"Вы уже получали свою ежедневную награду. \n> Следующая награда: {discord_ts(next_reward, "R")}",  # noqa: E501 # type: ignore
                 ),
                 ephemeral=True,
             )
