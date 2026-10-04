@@ -41,8 +41,10 @@ class ChannelType(Enum):
     COUNT_MODERATION_MESSAGES = "count_moderator_messages_channel_id"
 
 
-class FieldTypeEnum(Enum):
-    CLANS_ACCESS = "clans_access_roles_ids"
+class BadgeTypeEnum(Enum):
+    LOCAL = "local"
+    GLOBAL = "global"
+    ALL = "all"
 
 
 class TicketStateEnum(Enum):

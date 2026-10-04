@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from src.infra.db.models import TransferHistory
     from src.infra.db.models.user import UserVipStatus
 
+from src.infra.db.models.badge import GlobalBadge, GuildBadge
 from src.infra.db.models.case import Case
 from src.infra.db.models.vip import VipStatus
 from src.nightcore.utils import discord_ts
@@ -302,5 +303,65 @@ def build_battlepass_levels_pages(
 
     if not pages:
         pages = ["Уровни боевого пропуска не настроены."]
+
+    return pages
+
+
+def build_badge_content(
+    global_badges: Sequence[GlobalBadge],
+    guild_badges: Sequence[GuildBadge],
+) -> list[TextDisplay[Any]]:
+    """Build the display content for badges."""
+    content: list[TextDisplay[Any]] = []
+
+    for badge in global_badges:
+        badge_title = f"### {badge.emoji_str} <:nightcoreDecline:1540450233417338960> {badge.name}\n".strip()  # noqa: E501
+        content_parts: list[str] = []
+
+        if badge.description:
+            content_parts.append(f"> {badge.description}")
+        else:
+            content_parts.append("> Описание отсутствует")
+
+        content_parts.append("> Тип значка: глобальный")
+
+        content.append(
+            TextDisplay[Any](badge_title + "\n".join(content_parts))
+        )
+
+    for badge in guild_badges:
+        badge_title = f"### {badge.emoji_str} <:nightcoreDecline:1540450233417338960> {badge.name}\n".strip()  # noqa: E501
+        content_parts: list[str] = []
+
+        if badge.description:
+            content_parts.append(f"> {badge.description}")
+        else:
+            content_parts.append("> Описание отсутствует")
+
+        content_parts.append("> Тип значка: серверный")
+
+        content.append(
+            TextDisplay[Any](badge_title + "\n".join(content_parts))
+        )
+
+    return content
+
+
+def build_badge_help_pages(
+    global_badges: Sequence[GlobalBadge],
+    guild_badges: Sequence[GuildBadge],
+    badges_per_page: int = 5,
+) -> list[list[TextDisplay[Any]]]:
+    """Build paginated pages for badges help command."""
+
+    content = build_badge_content(global_badges, guild_badges)
+
+    pages = [
+        content[index : index + badges_per_page]
+        for index in range(0, len(content), badges_per_page)
+    ]
+
+    if not pages:
+        pages = [[TextDisplay[Any]("Бейджи не настроены")]]
 
     return pages

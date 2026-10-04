@@ -41,6 +41,8 @@ class UserProfileViewV2(LayoutView):
         avatar_url: str,
         clan: "Clan | None" = None,
         vip_emoji: str | None = None,
+        global_badges: list[str] | None = None,
+        guild_badges: list[str] | None = None,
     ):
         super().__init__(timeout=None)
 
@@ -102,13 +104,21 @@ class UserProfileViewV2(LayoutView):
                 )
             )
 
-        container.add_item(
-            TextDisplay[Self](
-                "<:nightcoreBadge:1556219069537984542> **Значки: **\n"
-                "<:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732><:NIGHTCORECHROME:1554560217604165732>"
+        badge_lines: list[str] = []
+        if global_badges:
+            badge_lines.append(f"> {''.join(global_badges)}")
+        if guild_badges:
+            badge_lines.append(f"> {''.join(guild_badges)}")
+
+        if badge_lines:
+            container.add_item(
+                TextDisplay[Self](
+                    "<:nightcoreBadge:1556219069537984542> **Значки**\n"
+                    + "\n".join(badge_lines)
+                )
             )
-        )
-        container.add_item(Separator())
+
+        container.add_item(Separator[Self]())
 
         container.add_item(
             UserProfileActionRow(

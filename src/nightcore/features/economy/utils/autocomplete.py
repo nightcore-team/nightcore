@@ -18,12 +18,13 @@ from src.infra.db.loads import (
     user_load_colors,
 )
 from src.infra.db.operations import (
+    get_badges_by_user_input_and_type,
     get_cases_by_input,
     get_guild_colors,
     get_or_create_user,
     get_vip_statuses_by_input,
 )
-from src.utils._enums import CaseDropTypeEnum
+from src.utils._enums import BadgeTypeEnum, CaseDropTypeEnum
 
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
@@ -384,6 +385,46 @@ async def guild_vip_statuses_autocomplete(
     end_autocomplete = time.perf_counter()
     logger.info(
         "[vip_statuses/autocomplete] Autocomplete for guild %s took %.4f seconds",  # noqa: E501
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
+async def guild_global_badges_autocomplete(
+    interaction: Interaction["Nightcore"],
+    user_input: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get all cases for guild."""
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    badge_type = cast(
+        str,
+        interaction.data["options"][0]["options"][1]["value"],  # type: ignore
+    )
+
+    logger.info(f"BADGE TYPE IS {badge_type} ============")
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        badges = await get_badges_by_user_input_and_type(
+            session,
+            guild_id=guild.id,
+            badge_type=BadgeTypeEnum[badge_type],
+            user_input=user_input,
+        )
+
+    for badge in badges:
+        result.append(
+            app_commands.Choice(name=badge.name, value=str(badge.id))
+        )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[cases/autocomplete] Autocomplete for guild %s took %.4f seconds",
         guild.id,
         end_autocomplete - start_autocomplete,
     )

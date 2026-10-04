@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.nightcore.bot import Nightcore
 
+from ._groups import badge as badge_group
 from ._groups import bank as bank_group
 from ._groups import case as case_group
 from ._groups import casino as casino_group
@@ -14,6 +15,7 @@ from ._groups import temp as temp_group
 from ._groups import vip as vip_group
 
 # SIDE-EFFECT IMPORTS
+from .commands.badge import help as badge_help
 from .commands.bank import account, top_up, transfer, withdraw
 from .commands.bank.extra import create
 from .commands.bank.extra import delete as extra_delete
@@ -35,6 +37,7 @@ from .commands.color import change as color_change
 from .commands.color import create as color_create
 from .commands.color import delete as color_delete
 from .commands.give import (
+    badge,
     bp_exp,
     case,
     clanexp,
@@ -49,6 +52,7 @@ from .commands.give import (
 from .commands.rainbow import change as rainbow_change
 from .commands.rainbow import create as rainbow_create
 from .commands.rainbow import delete as rainbow_delete
+from .commands.remove import badge as remove_badge
 from .commands.remove import color as remove_color
 from .commands.remove import vip as remove_vip
 from .commands.temp import multiplier, role
@@ -58,6 +62,8 @@ from .commands.vip import help as vip_help
 __all__ = (
     "account",
     "add_reward",
+    "badge",
+    "badge_help",
     "bp_exp",
     "case",
     "case_change",
@@ -81,6 +87,7 @@ __all__ = (
     "rainbow_change",
     "rainbow_create",
     "rainbow_delete",
+    "remove_badge",
     "remove_color",
     "remove_vip",
     "reroll",
@@ -107,3 +114,4 @@ async def setup(bot: "Nightcore"):
     bot.tree.add_command(rainbow_group)
     bot.tree.add_command(bank_group)
     bot.tree.add_command(vip_group)
+    bot.tree.add_command(badge_group)

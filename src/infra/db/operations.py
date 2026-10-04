@@ -69,10 +69,13 @@ from src.infra.db.models import (
     TicketState,
     TransferHistory,
     User,
+    UserGlobalBadge,
+    UserGuildBadge,
 )
 from src.infra.db.models._annot import (
     ModerationStatsResultAnnot,
 )
+from src.infra.db.models.badge import GlobalBadge, GuildBadge
 from src.infra.db.models.bank import BankAccount, Deposit, ExtraWallet
 from src.infra.db.models.battlepass_level import BattlepassLevel
 from src.infra.db.models.case import Case
@@ -99,6 +102,7 @@ from src.infra.db.utils import (
     build_base_filters as _build_base_moderstats_filters,
 )
 from src.utils._enums import (
+    BadgeTypeEnum,
     CaseOpenSessionStatus,
     CasinoGameStateEnum,
     ChannelType,
@@ -3289,3 +3293,125 @@ async def get_guild_subscription(
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
+
+
+async def get_badges(
+    session: AsyncSession,
+    *,
+    guild_id: int,
+    badge_type: BadgeTypeEnum = BadgeTypeEnum.ALL,
+    for_update: bool = False,
+) -> tuple[Sequence[GlobalBadge], Sequence[GuildBadge]]:
+    """Get badges based on type.
+
+    Returns:
+        (global_badges, guild_badges)
+    """
+    global_badges: Sequence[GlobalBadge] = []
+    guild_badges: Sequence[GuildBadge] = []
+
+    if badge_type in (BadgeTypeEnum.GLOBAL, BadgeTypeEnum.ALL):
+        stmt = select(GlobalBadge)
+
+        if for_update:
+            stmt.with_for_update()
+
+        result = await session.execute(stmt)
+        global_badges = result.scalars().all()
+
+    if badge_type in (BadgeTypeEnum.LOCAL, BadgeTypeEnum.ALL):
+        stmt = select(GuildBadge).where(GuildBadge.guild_id == guild_id)
+
+        if for_update:
+            stmt.with_for_update()
+
+        result = await session.execute(stmt)
+        guild_badges = result.scalars().all()
+
+    return global_badges, guild_badges
+
+
+async def get_badges_by_user_input_and_type(
+    session: AsyncSession,
+    *,
+    badge_type: BadgeTypeEnum,
+    guild_id: int,
+    user_input: str,
+) -> Sequence[GuildBadge | GlobalBadge]:
+    """Get the list of guild/global badges  by user input."""
+    a = 0.7
+    similarity = (len(user_input) / 100) ** a
+
+    model = GlobalBadge
+
+    where_clauses = [
+        func.similarity(model.name, user_input) >= similarity,
+    ]
+    if badge_type == BadgeTypeEnum.LOCAL:
+        model = GuildBadge
+        where_clauses.append(model.guild_id == guild_id)  # type: ignore
+
+    stmt = select(model).limit(25)
+    stmt.where(*where_clauses)
+
+    result = await session.scalars(stmt)
+
+    return result.all()
+
+
+async def get_badge_by_id(
+    session: AsyncSession,
+    *,
+    badge_type: BadgeTypeEnum,
+    badge_id: int,
+    guild_id: int,
+) -> GuildBadge | GlobalBadge | None:
+    """Get a VIP-status by id for a guild."""
+
+    model = GlobalBadge
+
+    where_clauses = [model.id == badge_id]
+    if badge_type == BadgeTypeEnum.LOCAL:
+        model = GuildBadge
+        where_clauses.append(model.guild_id == guild_id)  # type: ignore
+
+    stmt = select(model).limit(25)
+    stmt.where(*where_clauses)
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+
+async def get_user_badges_for_update(
+    session: AsyncSession,
+    *,
+    badge_type: BadgeTypeEnum,
+    user_id: int,
+    guild_id: int,
+    for_update: bool = True,
+    options: list[Load] | None = None,
+) -> Sequence[UserGuildBadge | UserGlobalBadge]:
+    """Get the user's all badges row."""
+
+    model = UserGlobalBadge
+
+    where_clauses = [model.user_id == user_id]
+    if badge_type == BadgeTypeEnum.LOCAL:
+        model = UserGuildBadge
+        where_clauses.append(model.guild_id == guild_id)  # type: ignore
+
+    stmt = select(model).limit(25)
+    stmt.where(*where_clauses)
+
+    result = await session.scalars(stmt)
+
+    if options:
+        stmt = stmt.options(*options)
+
+    if for_update:
+        stmt = stmt.with_for_update()
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()

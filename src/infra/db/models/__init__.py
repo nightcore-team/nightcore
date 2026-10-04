@@ -1,4 +1,5 @@
-from .bank import BankAccount, Base, Deposit, ExtraWallet
+from .badge import Base, GlobalBadge, GuildBadge
+from .bank import BankAccount, Base, Deposit, ExtraWallet  # noqa: F811
 from .battlepass_level import Base, BattlepassLevel  # noqa: F811
 from .case import Base, Case, CaseOpenReward, CaseOpenSession  # noqa: F811
 from .casino import Base, CasinoBet, CasinoGame  # noqa: F811
@@ -39,7 +40,7 @@ from .tempmultiplier import Base, TempEconomyMultiplier  # noqa: F811
 from .temprole import Base, TempRole  # noqa: F811
 from .ticket import Base, TicketState  # noqa: F811
 from .transfer_history import Base, TransferHistory  # noqa: F811
-from .user import Base, User  # noqa: F811
+from .user import Base, User, UserGlobalBadge, UserGuildBadge  # noqa: F811
 from .vip import Base, VipStatus  # noqa: F811
 
 __all__ = (
@@ -58,7 +59,9 @@ __all__ = (
     "CustomComponent",
     "Deposit",
     "ExtraWallet",
+    "GlobalBadge",
     "GuildAccessConfig",
+    "GuildBadge",
     "GuildClansConfig",
     "GuildEconomyConfig",
     "GuildFaqConfig",
@@ -89,5 +92,7 @@ __all__ = (
     "TicketState",
     "TransferHistory",
     "User",
+    "UserGlobalBadge",
+    "UserGuildBadge",
     "VipStatus",
 )

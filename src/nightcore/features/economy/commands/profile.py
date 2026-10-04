@@ -10,6 +10,7 @@ from discord.interactions import Interaction
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     get_active_user_vip_statuses,
+    get_badges,
     get_clan_member,
     get_or_create_user,
 )
@@ -73,6 +74,10 @@ class Profile(Cog):
                 with_relations=True,
             )
 
+            global_badges, guild_badges = await get_badges(
+                session, guild_id=guild.id, for_update=True
+            )
+
             # the unique index on (guild_id, user_id) where is_active keeps
             # this to a single row, so the first one is the active status
             active_vip_statuses = await get_active_user_vip_statuses(
@@ -97,6 +102,8 @@ class Profile(Cog):
             avatar_url=member.display_avatar.url,
             clan=user_clan_member.clan if user_clan_member else None,
             vip_emoji=active_vip.emoji_str if active_vip else None,
+            global_badges=[b.emoji_str for b in global_badges],
+            guild_badges=[b.emoji_str for b in guild_badges],
         )
 
         await interaction.response.send_message(view=view, ephemeral=True)
