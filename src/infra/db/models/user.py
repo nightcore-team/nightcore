@@ -192,7 +192,9 @@ class UserGlobalBadge(IdIntegerMixin, Base):
         UniqueConstraint("user_id", "badge_id", name="ux_user_global_badge"),
     )
 
-    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
     badge_id: Mapped[int] = mapped_column(
         ForeignKey("globalbadge.id", ondelete="CASCADE"), nullable=False
     )
