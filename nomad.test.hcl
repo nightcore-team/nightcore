@@ -93,7 +93,7 @@ job "nightcore-bot-test" {
   constraint {
     attribute = "${meta.roles}"
     operator = "set_contains"
-    value = "grafana"
+    value = "apps"
   }
 
   update {
