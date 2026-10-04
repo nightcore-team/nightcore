@@ -1,4 +1,4 @@
-"""Model for the Nightcore subscription service guild table."""
+"""Subscription model for the Nightcore bot database."""
 
 from datetime import datetime
 
