@@ -2569,6 +2569,23 @@ async def delete_tickets(
     await session.execute(stmt)
 
 
+async def delete_expired_deleted_tickets(
+    session: AsyncSession,
+) -> int:
+    """Delete records of deleted tickets that are older than retention."""
+    boundary = datetime.now(UTC) - timedelta(
+        days=config.bot.DELETED_TICKET_RECORD_ALIVE_DAYS
+    )
+
+    stmt = delete(TicketState).where(
+        TicketState.state == TicketStateEnum.DELETED,
+        TicketState.updated_at <= boundary,
+    )
+    result = await session.execute(stmt)
+
+    return result.rowcount or 0  # type: ignore
+
+
 async def get_all_expired_temp_roles(
     session: AsyncSession,
 ) -> Sequence[TempRole]:

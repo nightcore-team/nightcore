@@ -11,6 +11,7 @@ from discord.ext.commands import Cog  # type: ignore
 
 from src.infra.db.models import GuildLoggingConfig
 from src.infra.db.operations import (
+    delete_expired_deleted_tickets,
     get_specified_webhook,
     get_tickets_to_delete,
 )
@@ -51,6 +52,15 @@ class DeleteTicketTask(Cog):
         """Task to delete tickets when their duration ends."""
         try:
             logger.info("[task] - Running delete ticket task")
+
+            async with self.bot.uow.start() as session:
+                purged = await delete_expired_deleted_tickets(session)
+
+            if purged:
+                logger.info(
+                    "[task] - Purged expired deleted ticket records: %s",
+                    purged,
+                )
 
             async with self.bot.uow.start() as session:
                 closed_tickets = await get_tickets_to_delete(session)
@@ -113,7 +123,7 @@ class DeleteTicketTask(Cog):
                 "[task] - Guild %s not found",
                 ticket.guild_id,
             )
-            await self._delete_ticket(ticket)
+            await self._mark_ticket_deleted(ticket)
             return
 
         async with self.bot.uow.start() as session:
@@ -137,9 +147,7 @@ class DeleteTicketTask(Cog):
         )
 
         try:
-            async with self.bot.uow.start() as session:
-                _ticket = await session.merge(ticket)
-                _ticket.state = TicketStateEnum.DELETED
+            await self._mark_ticket_deleted(ticket)
 
         except Exception as e:
             logger.exception(
@@ -150,18 +158,19 @@ class DeleteTicketTask(Cog):
             )
             return
 
-        await self._delete_ticket(ticket)
-
         logger.info(
             "[task] - Deleted ticket in guild %s",
             ticket.guild_id,
         )
 
-    async def _delete_ticket(self, ticket_state: TicketState) -> None:
-        """Delete a ticket from the database."""
+    async def _mark_ticket_deleted(self, ticket_state: TicketState) -> None:
+        """Mark a ticket as deleted.
+
+        The record itself is purged after the retention period.
+        """
         async with self.bot.uow.start() as session:
             _ticket = await session.merge(ticket_state)
-            await session.delete(_ticket)
+            _ticket.state = TicketStateEnum.DELETED
 
     @delete_ticket_task.before_loop
     async def before_delete_ticket_task(self):
