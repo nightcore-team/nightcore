@@ -266,7 +266,7 @@ async def give_vip(
             view=SuccessViewV2(
                 "Выдача VIP-статуса",
                 f"Вы успешно {move} пользователю <@{user.id}> "
-                f"VIP-статус **{vip_status_to_give.name}** {time_to}.",  # type: ignore
+                f"VIP-статус: **{vip_status_to_give.name}** {time_to}.",  # type: ignore
             ),
         )
 

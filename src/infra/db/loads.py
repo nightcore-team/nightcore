@@ -53,11 +53,5 @@ user_load_cases_colors_and_vips: list[Load] = [
     user_load_vip_statuses,
 ]
 
-
-user_load_all: list[Load] = [
-    user_load_cases,
-    user_load_colors,
-    *user_load_bank_account_all,
-    user_load_casino_bets,
-    user_load_vip_statuses,
-]
+user_load_guild_badges: Load = Load(User).selectinload(User.guild_badges)
+user_load_global_badges: Load = Load(User).selectinload(User.global_badges)

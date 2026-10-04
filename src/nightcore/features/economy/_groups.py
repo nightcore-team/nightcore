@@ -60,3 +60,9 @@ vip = app_commands.Group(
     description="Команды связанные с VIP-статусами.",
     guild_only=True,
 )
+
+badge = app_commands.Group(
+    name="badge",
+    description="Команды связанные со значками.",
+    guild_only=True,
+)

@@ -103,7 +103,7 @@ def check_required_permissions(
                     f"Interaction not found in {func.__class__.__qualname__} arguments"  # noqa: E501
                 )
 
-            has_permission = await _check_user_permission(
+            has_permission = await check_user_permission(
                 interaction, permissions_flag
             )
 
@@ -180,7 +180,7 @@ async def has_specified_permission(
     return bool(has_any_role_from_sequence(user, roles_access_ids))
 
 
-async def _check_user_permission(
+async def check_user_permission(
     interaction: Interaction[Nightcore],
     permissions: PermissionsFlagEnum,
 ) -> bool:

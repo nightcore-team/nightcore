@@ -11,6 +11,7 @@ from src.nightcore.bot import Nightcore
 from src.nightcore.components.view.v2 import (
     EntityNotFoundViewV2,
     ErrorViewV2,
+    MissingPermissionsViewV2,
     NoConfigFoundButCreatedViewV2,
     NoConfigFoundViewV2,
     StrToIntTransformFailedViewV2,
@@ -60,6 +61,25 @@ async def setup(bot: "Nightcore") -> None:
         """Handle application command errors."""
 
         original = getattr(error, "original", error)
+
+        if isinstance(original, app_commands.MissingPermissions):
+            logger.info(
+                "%s handled guild=%s user=%s",
+                original.__class__.__name__,
+                cast(Guild, interaction.guild).id,
+                interaction.user.id,
+            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    view=MissingPermissionsViewV2(),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.followup.send(
+                    view=MissingPermissionsViewV2(),
+                    ephemeral=True,
+                )
+            return
 
         if isinstance(original, ConfigMissingButCreatingError):
             logger.info(

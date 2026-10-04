@@ -19,6 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infra.db.models._mixins import CreatedAtMixin, IdIntegerMixin
+from src.infra.db.models.badge import GlobalBadge, GuildBadge
 from src.infra.db.models.base import Base
 from src.infra.db.models.case import Case
 from src.infra.db.models.color import Color
@@ -116,6 +117,16 @@ class User(IdIntegerMixin, Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    guild_badges: Mapped[list["UserGuildBadge"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    global_badges: Mapped[list["UserGlobalBadge"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
     cases: Mapped[list["UserCase"]] = relationship(
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -149,6 +160,45 @@ class User(IdIntegerMixin, Base):
         for color in self.colors:
             if color.id == color_id:
                 return color
+
+
+class UserGuildBadge(IdIntegerMixin, Base):
+    __table_args__ = (
+        UniqueConstraint(
+            "badge_id",
+            "user_id",
+            "guild_id",
+            name="ux_user_guild_badge",
+        ),
+        ForeignKeyConstraint(
+            ["user_id", "guild_id"],
+            ["user.id", "user.guild_id"],
+            ondelete="CASCADE",
+        ),
+    )
+
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    badge_id: Mapped[int] = mapped_column(
+        ForeignKey("guildbadge.id", ondelete="CASCADE"), nullable=False
+    )
+
+    user: Mapped["User"] = relationship(back_populates="guild_badges")
+    badge: Mapped["GuildBadge"] = relationship()
+
+
+class UserGlobalBadge(IdIntegerMixin, Base):
+    __table_args__ = (
+        UniqueConstraint("user_id", "badge_id", name="ux_user_global_badge"),
+    )
+
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    badge_id: Mapped[int] = mapped_column(
+        ForeignKey("globalbadge.id", ondelete="CASCADE"), nullable=False
+    )
+
+    user: Mapped["User"] = relationship(back_populates="global_badges")
+    badge: Mapped["GlobalBadge"] = relationship()
 
 
 class UserVipStatus(IdIntegerMixin, CreatedAtMixin, Base):

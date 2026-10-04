@@ -1,3 +1,4 @@
+from .badge.help import BadgeHelpViewV2
 from .bank import BankAccountViewV2
 from .battlepass import BattlepassClaimViewV2
 from .case import (
@@ -26,6 +27,7 @@ from .vip.help import VipStatusHelpViewV2
 
 __all__ = (
     "AwardNotificationViewV2",
+    "BadgeHelpViewV2",
     "BankAccountViewV2",
     "BattlepassClaimViewV2",
     "CaseHelpViewV2",
