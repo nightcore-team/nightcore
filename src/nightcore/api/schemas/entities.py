@@ -31,6 +31,18 @@ class EntityBaseSchema(BaseModel):
     guild_id: int | None = None
 
 
+class GlobalBadge(EntityBaseSchema):
+    name: str
+    emoji_str: str
+    description: str | None = None
+
+
+class GuildBadge(EntityBaseSchema):
+    name: str
+    emoji_str: str
+    description: str | None = None
+
+
 class GuildCaseSchema(EntityBaseSchema):
     name: str
     drop: list[dict[str, Any]] = Field(default_factory=list[dict[str, Any]])
