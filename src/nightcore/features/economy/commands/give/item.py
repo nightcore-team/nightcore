@@ -168,12 +168,13 @@ async def give_item(
                         if user_case:
                             user_case.amount += amount
                         else:
-                            session.add(
+                            user_record.cases.append(
                                 UserCase(
                                     case_id=selected_case.id,
                                     amount=amount,
                                     user_id=member.id,
                                     guild_id=guild.id,
+                                    item=selected_case,
                                 )
                             )
                     elif (

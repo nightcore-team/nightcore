@@ -108,9 +108,13 @@ async def give_case(
                                 amount=amount,
                                 user_id=user.id,
                                 guild_id=guild.id,
+                                item=case,
                             )
 
-                            session.add(new_case)
+                            # append so get_case sees it for the rest
+                            # of the transaction, the cascade on
+                            # User.cases is what puts it in the session
+                            user_record.cases.append(new_case)
 
                     if not outcome:
                         outcome = "success"

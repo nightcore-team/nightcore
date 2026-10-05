@@ -134,13 +134,20 @@ async def give_reward_by_type(
                 if (user_case := user.get_case(case.id)) is not None:
                     user_case.amount += amount
                 else:
-                    new_case = UserCase(
-                        user_id=user.user_id,
-                        case_id=case.id,
-                        amount=amount,
-                        guild_id=user.guild_id,
+                    # append instead of session.add: drops are drawn with
+                    # replacement, so the same case can be won several times
+                    # in one batch. Only a collection append is visible to
+                    # get_case, otherwise the next drop of that case adds a
+                    # second row and the flush trips the unique constraint
+                    user.cases.append(
+                        UserCase(
+                            user_id=user.user_id,
+                            case_id=case.id,
+                            amount=amount,
+                            guild_id=user.guild_id,
+                            item=case,
+                        )
                     )
-                    session.add(new_case)
 
             case CaseDropTypeEnum.VIP.value:
                 vip_status = await get_vip_status_by_id(
