@@ -196,20 +196,22 @@ ENTITY_MODEL_MAP: dict[EntityTypeEnum, type[Any]] = {
     EntityTypeEnum.CASE: Case,
     EntityTypeEnum.COLOR: Color,
     EntityTypeEnum.BATTLEPASS_LEVEL: BattlepassLevel,
+    EntityTypeEnum.GLOBAL_BADGE: GlobalBadge,
+    EntityTypeEnum.GUILD_BADGE: GuildBadge,
 }
 
-ENTITY_ACCESS_COLUMNS: Final[
-    dict[EntityTypeEnum, InstrumentedAttribute[list[int] | None]]
-] = {
-    EntityTypeEnum.VIP_STATUS: (
-        GuildAccessConfig.economy_config_access_roles_ids
-    ),
-    EntityTypeEnum.CASE: (GuildAccessConfig.economy_config_access_roles_ids),
-    EntityTypeEnum.COLOR: (GuildAccessConfig.economy_config_access_roles_ids),
-    EntityTypeEnum.BATTLEPASS_LEVEL: (
-        GuildAccessConfig.economy_config_access_roles_ids
-    ),
-}
+# ENTITY_ACCESS_COLUMNS: Final[
+#     dict[EntityTypeEnum, InstrumentedAttribute[list[int] | None]]
+# ] = {
+#     EntityTypeEnum.VIP_STATUS: (
+#         GuildAccessConfig.economy_config_access_roles_ids
+#     ),
+#     EntityTypeEnum.CASE: (GuildAccessConfig.economy_config_access_roles_ids),
+#     EntityTypeEnum.COLOR: (GuildAccessConfig.economy_config_access_roles_ids),  # noqa: E501
+#     EntityTypeEnum.BATTLEPASS_LEVEL: (
+#         GuildAccessConfig.economy_config_access_roles_ids
+#     ),
+# }
 
 
 async def get_specified_entity(
