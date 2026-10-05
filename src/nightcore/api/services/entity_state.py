@@ -30,15 +30,6 @@ if TYPE_CHECKING:
 
 from src.utils._enums import EntityTypeEnum
 
-# Readable text for the unique constraints declared on the entity models.
-ENTITY_CONFLICT_MESSAGES: dict[str | None, str] = {
-    "uv_guild_name_vip": "Название уже занято другим VIP-статусом",
-    "ux_guild_role_vip": "На эту роль уже назначен VIP-статус",
-    "ux_name_guild_case": "Название уже занято другим кейсом",
-    "ux_role_guild_color": "На эту роль уже назначен цвет",
-    "ux_level_guild_battlepasslevel": "Такой уровень уже есть",
-}
-
 
 class EntityStateService:
     def __init__(
@@ -89,7 +80,9 @@ class EntityStateService:
 
         for idx, item in upsert_items:
             try:
-                validated = schema.model_validate(item.data, context=context)
+                validated = schema.model_validate(
+                    item.data, extra="ignore", context=context
+                )
                 validated_items.append((idx, item, validated))
             except Exception as e:
                 errors.append(
@@ -230,13 +223,6 @@ class EntityStateService:
     @staticmethod
     def _describe_conflict(error: IntegrityError) -> str:
         """Turn a database constraint violation into a readable message."""
-
-        orig = getattr(error, "orig", None)
-        constraint = getattr(orig, "constraint_name", None)
-        readable = ENTITY_CONFLICT_MESSAGES.get(constraint)
-
-        if readable is not None:
-            return readable
 
         return "Нарушено уникальное ограничение в базе данных"
 
