@@ -30,6 +30,7 @@ router = APIRouter(prefix="/guilds", tags=["Guild Entities"])
 async def get_entities(
     guild_id: int,
     entity_type: EntityTypeEnum,
+    config_type: ConfigTypeEnum,
     user_id: UserIdDependency,
     bot: BotDependency,
     access_service: AccessServiceDependency,
@@ -53,7 +54,7 @@ async def get_entities(
         )
 
     has_access = await access_service.has_config_access(
-        member=member, config_type=ConfigTypeEnum.ECONOMY
+        member=member, config_type=config_type
     )
 
     if not has_access:
@@ -76,6 +77,7 @@ async def get_entities(
 async def update_entities(
     guild_id: int,
     body: EntityBatchUpdateBody,
+    config_type: ConfigTypeEnum,
     user_id: UserIdDependency,
     bot: BotDependency,
     access_service: AccessServiceDependency,
@@ -107,7 +109,7 @@ async def update_entities(
 
     # Check access
     has_access = await access_service.has_config_access(
-        member=member, config_type=ConfigTypeEnum.ECONOMY
+        member=member, config_type=config_type
     )
 
     if not has_access:

@@ -213,6 +213,7 @@ class ConfigTypeEnum(Enum):
     MULTIPLERS = "multiplers"
     TICKETS = "tickets"
     ACCESS = "access"
+    BOT = "bot"
 
 
 class ConfigMuteTypeEnum(Enum):
@@ -257,3 +258,5 @@ class EntityTypeEnum(StrEnum):
     CASE = "case"
     COLOR = "color"
     BATTLEPASS_LEVEL = "battlepass_level"
+    GUILD_BADGE = "guild_badge"
+    GLOBAL_BADGE = "global_badge"

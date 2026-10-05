@@ -1,15 +1,21 @@
 """Access service implementation."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import discord
 
 from src.infra.db.operations import (
     get_available_guild_configs,
     has_guild_config_access,
 )
-from src.infra.db.uow import UnitOfWork
 from src.nightcore.api.schemas.guild import GuildInfoSchema
-from src.nightcore.bot import Nightcore
 from src.utils._enums import ConfigTypeEnum
+
+if TYPE_CHECKING:
+    from src.infra.db.uow import UnitOfWork
+    from src.nightcore.bot import Nightcore
 
 
 class AccessService:
@@ -87,6 +93,9 @@ class AccessService:
 
         if config_type == ConfigTypeEnum.ACCESS:
             return self._has_administrator_access(member=member)
+
+        if config_type == ConfigTypeEnum.BOT:
+            return member.id in self._bot.config.bot.DEVELOPER_IDS
 
         async with self._uow.start() as session:
             return await has_guild_config_access(
