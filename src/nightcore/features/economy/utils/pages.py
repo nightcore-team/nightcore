@@ -111,7 +111,7 @@ def build_cases_help_pages(
 def build_case_reroll_pages(
     rewards: Sequence[dict[str, Any]],
     total_weight: int,
-    rewards_per_page: int = 10,
+    rewards_per_page: int = 8,
 ) -> list[list[dict[str, Any]]]:
     """Build paginated chunks of pending case rewards for the reroll view.
 
