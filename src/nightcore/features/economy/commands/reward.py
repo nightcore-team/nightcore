@@ -102,7 +102,7 @@ class Reward(Cog):
             await interaction.response.send_message(
                 view=ErrorViewV2(
                     "Ошибка получения ежедневной награды",
-                    f"Вы уже получали свою ежедневную награду. \n> Следующая награда: {discord_ts(next_reward, "R")}",  # noqa: E501 # type: ignore
+                    f"Вы уже получали свою ежедневную награду. \n> Следующая награда: {discord_ts(next_reward, 'R')}",  # noqa: E501 # type: ignore
                 ),
                 ephemeral=True,
             )
