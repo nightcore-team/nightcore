@@ -241,7 +241,7 @@ class CaseOpenRerollViewV2(LayoutView):
         container.add_item(Separator[Self]())
         container.add_item(
             TextDisplay[Self](
-                f"-# Страница {self.current_page + 1} из {self.page_count}"
+                f"-# Page {self.current_page + 1} of {self.page_count}"
             )
         )
 
