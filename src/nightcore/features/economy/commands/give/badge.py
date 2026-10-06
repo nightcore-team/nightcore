@@ -1,7 +1,5 @@
 """Command to give badges."""
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -62,7 +60,7 @@ logger = logging.getLogger(__name__)
 @app_commands.autocomplete(badge_id=guild_global_badges_autocomplete)
 @check_required_permissions(PermissionsFlagEnum.UNSAFE)
 async def give_badge(
-    interaction: Interaction[Nightcore],
+    interaction: Interaction["Nightcore"],
     user: User,
     type: str,
     badge_id: app_commands.Transform[int, StrToIntTransformer],
