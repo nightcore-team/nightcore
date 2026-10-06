@@ -7,31 +7,33 @@ from logging.handlers import QueueHandler, QueueListener
 from queue import Queue
 
 from src.utils.logging.config import (
-    # COLOR_FORMATTER,
     DEFAULT_LOGGING_LEVEL_DICT,
     FILE_FORMATTER,
 )
 
-_queue = Queue()  # pyright: ignore[reportUnknownVariableType]
+_queue: "Queue[logging.LogRecord]" = Queue()
 _listener: QueueListener | None = None
+_queue_handler: QueueHandler | None = None
+_handlers: list[Handler] = []
 
 
 def setup_logging() -> logging.Logger:
     """Set up and configure logging for the entire application."""
-    handlers: list[Handler] = []
+    global _listener, _queue_handler
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(DEFAULT_LOGGING_LEVEL_DICT.get("main", logging.INFO))
+
+    if _listener is not None:
+        return root_logger
+
+    level = DEFAULT_LOGGING_LEVEL_DICT.get("main", logging.INFO)
+    root_logger.setLevel(level)
 
     # --- Console handler ---
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(
-        DEFAULT_LOGGING_LEVEL_DICT.get("main", logging.INFO)
-    )
-    # # console_handler.setFormatter(COLOR_FORMATTER)
+    console_handler.setLevel(level)
     console_handler.setFormatter(FILE_FORMATTER)
-
-    handlers.append(console_handler)
+    _handlers.append(console_handler)
 
     # --- Discord ---
     discord_logger = logging.getLogger("discord")
@@ -40,13 +42,6 @@ def setup_logging() -> logging.Logger:
     )
     discord_logger.propagate = True
 
-    # --- SQLAlchemy ---
-    # for name in ("sqlalchemy.engine", "sqlalchemy.pool"):
-    #     sa_logger = logging.getLogger(name)
-    #     sa_logger.handlers.clear()
-    #     sa_logger.setLevel(DEFAULT_LOGGING_LEVEL_DICT.get(name, logging.INFO))  # noqa: E501
-    #     sa_logger.propagate = True
-
     # --- asyncio та aiohttp ---
     for name in ("asyncio", "aiohttp.client"):
         sub_logger = logging.getLogger(name)
@@ -54,24 +49,37 @@ def setup_logging() -> logging.Logger:
         sub_logger.propagate = True
 
     # --- Queue handler ---
-    queue_handler = QueueHandler(queue=_queue)  # pyright: ignore[reportUnknownArgumentType]
-    queue_handler.setLevel(
-        DEFAULT_LOGGING_LEVEL_DICT.get("main", logging.INFO)
-    )
+    _queue_handler = QueueHandler(_queue)
+    _queue_handler.setLevel(level)
+    root_logger.addHandler(_queue_handler)
 
-    root_logger.addHandler(queue_handler)
-
-    _listener = QueueListener(
-        _queue,  # pyright: ignore[reportUnknownArgumentType]
-        *handlers,
-        respect_handler_level=True,
-    )
+    _listener = QueueListener(_queue, *_handlers, respect_handler_level=True)
     _listener.start()
 
     return root_logger
 
 
-def stop_logging():
-    """Stop the logging QueueListener and flush pending records."""
+def stop_logging() -> None:
+    """Stop the listener, drain the queue and flush handlers."""
 
-    _listener.stop() if _listener else None
+    global _listener, _queue_handler
+
+    if _listener is None:
+        return
+
+    root_logger = logging.getLogger()
+
+    _listener.stop()
+    _listener = None
+
+    if _queue_handler is not None:
+        root_logger.removeHandler(_queue_handler)
+        _queue_handler = None
+
+    for handler in _handlers:
+        root_logger.addHandler(handler)
+
+    for handler in _handlers:
+        handler.flush()
+
+    logging.shutdown()
