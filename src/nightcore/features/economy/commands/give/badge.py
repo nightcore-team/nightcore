@@ -32,6 +32,7 @@ from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import has_any_role_from_sequence
 from src.nightcore.utils.permissions import (
     PermissionsFlagEnum,
+    check_required_permissions,
     check_user_permission,
 )
 from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
@@ -59,6 +60,7 @@ logger = logging.getLogger(__name__)
     ]
 )
 @app_commands.autocomplete(badge_id=guild_global_badges_autocomplete)
+@check_required_permissions(PermissionsFlagEnum.UNSAFE)
 async def give_badge(
     interaction: Interaction[Nightcore],
     user: User,
