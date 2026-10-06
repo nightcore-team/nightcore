@@ -81,8 +81,8 @@ async def remove_badge(
         return
 
     try:
-        badge_type = BadgeTypeEnum[type]
-    except KeyError:
+        badge_type = BadgeTypeEnum(type)
+    except ValueError:
         await interaction.response.send_message(
             view=ErrorViewV2(
                 "Ошибка удаления значка", "Укажите валидный тип значка."

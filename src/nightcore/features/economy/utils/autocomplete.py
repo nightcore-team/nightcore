@@ -407,13 +407,19 @@ async def guild_global_badges_autocomplete(
 
     logger.info(f"BADGE TYPE IS {badge_type} ============")
 
+    try:
+        badge_type_enum = BadgeTypeEnum(badge_type)
+    except ValueError:
+        logger.warning("Unknown badge type in autocomplete: %r", badge_type)
+        return []
+
     result: list[app_commands.Choice[str]] = []
 
     async with interaction.client.uow.start() as session:
         badges = await get_badges_by_user_input_and_type(
             session,
             guild_id=guild.id,
-            badge_type=BadgeTypeEnum[badge_type],
+            badge_type=badge_type_enum,
             user_input=user_input,
         )
 

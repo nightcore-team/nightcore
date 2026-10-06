@@ -84,8 +84,8 @@ async def give_badge(
         return
 
     try:
-        badge_type = BadgeTypeEnum[type]
-    except KeyError:
+        badge_type = BadgeTypeEnum(type)
+    except ValueError:
         await interaction.response.send_message(
             view=ErrorViewV2(
                 "Ошибка выдачи значка", "Укажите валидный тип значка."
