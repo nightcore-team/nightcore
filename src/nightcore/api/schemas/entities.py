@@ -106,4 +106,6 @@ ENTITY_SCHEMA_MODEL_MAP: dict[EntityTypeEnum, type[EntityBaseSchema]] = {
     EntityTypeEnum.CASE: GuildCaseSchema,
     EntityTypeEnum.COLOR: GuildColorSchema,
     EntityTypeEnum.BATTLEPASS_LEVEL: GuildBattlepassLevelSchema,
+    EntityTypeEnum.GUILD_BADGE: GuildBadge,
+    EntityTypeEnum.GLOBAL_BADGE: GlobalBadge,
 }
