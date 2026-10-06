@@ -369,6 +369,6 @@ def build_badge_help_pages(
     ]
 
     if not pages:
-        pages = [[TextDisplay[Any]("Бейджи не настроены")]]
+        pages = [[TextDisplay[Any]("Значки не настроены.")]]
 
     return pages
