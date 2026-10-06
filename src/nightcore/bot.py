@@ -252,9 +252,7 @@ class Nightcore(Bot):
         logger.info("[setup] Setup hook started...")
 
         logger.info("[healthcheck] Running discord health check...")
-        self.healthcheck_server = await discordhealthcheck.start(
-            self, port=40405
-        )
+        self.healthcheck_server = await discordhealthcheck.start(self)
 
         await self.load_extensions()
 
