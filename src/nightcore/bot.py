@@ -6,8 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 import discord
-
-# import discordhealthcheck  # type: ignore
+import discordhealthcheck  # type: ignore
 from discord import ClientUser, app_commands
 from discord.ext.commands import Bot  # type: ignore
 from nightforo import Client as XenforoClient
@@ -253,9 +252,9 @@ class Nightcore(Bot):
         logger.info("[setup] Setup hook started...")
 
         logger.info("[healthcheck] Running discord health check...")
-        # self.healthcheck_server = await discordhealthcheck.start(
-        #     self, port=40405
-        # )
+        self.healthcheck_server = await discordhealthcheck.start(
+            self, port=40405
+        )
 
         await self.load_extensions()
 
