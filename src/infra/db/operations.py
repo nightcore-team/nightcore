@@ -28,7 +28,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import array, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute, Load, selectinload
+from sqlalchemy.orm import (
+    InstrumentedAttribute,
+    Load,
+    joinedload,
+    selectinload,
+)
 
 from src.config.config import config
 from src.infra.db.models import (
@@ -3388,32 +3393,48 @@ async def get_badge_by_id(
 async def get_user_badges_for_update(
     session: AsyncSession,
     *,
-    badge_type: BadgeTypeEnum,
+    badge_type: BadgeTypeEnum = BadgeTypeEnum.ALL,
     user_id: int,
     guild_id: int,
-    for_update: bool = True,
-    options: list[Load] | None = None,
-) -> Sequence[UserGuildBadge | UserGlobalBadge]:
-    """Get the user's all badges row."""
+    for_update: bool = False,
+) -> tuple[Sequence[UserGlobalBadge], Sequence[UserGuildBadge]]:
+    """Get user badges based on type.
 
-    model = UserGlobalBadge
+    Returns:
+        global_badges: Sequence of UserGlobalBadge
+        guild_badges: Sequence of UserGuildBadge
+    """
 
-    where_clauses = [model.user_id == user_id]
-    if badge_type == BadgeTypeEnum.LOCAL:
-        model = UserGuildBadge
-        where_clauses.append(model.guild_id == guild_id)  # type: ignore
+    global_badges: Sequence[UserGlobalBadge] = []
+    guild_badges: Sequence[UserGuildBadge] = []
 
-    stmt = select(model).limit(25)
-    stmt.where(*where_clauses)
+    if badge_type in (BadgeTypeEnum.GLOBAL, BadgeTypeEnum.ALL):
+        stmt = (
+            select(UserGlobalBadge)
+            .where(UserGlobalBadge.user_id == user_id)
+            .options(joinedload(UserGlobalBadge.badge))
+        )
 
-    result = await session.scalars(stmt)
+        if for_update:
+            stmt.with_for_update()
 
-    if options:
-        stmt = stmt.options(*options)
+        result = await session.scalars(stmt)
+        global_badges = result.all()
 
-    if for_update:
-        stmt = stmt.with_for_update()
+    if badge_type in (BadgeTypeEnum.LOCAL, BadgeTypeEnum.ALL):
+        stmt = (
+            select(UserGuildBadge)
+            .where(
+                UserGuildBadge.guild_id == guild_id,
+                UserGuildBadge.user_id == user_id,
+            )
+            .options(joinedload(UserGuildBadge.badge))
+        )
 
-    result = await session.execute(stmt)
+        if for_update:
+            stmt.with_for_update()
 
-    return result.scalars().all()
+        result = await session.scalars(stmt)
+        guild_badges = result.all()
+
+    return global_badges, guild_badges
