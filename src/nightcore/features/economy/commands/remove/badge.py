@@ -146,7 +146,7 @@ async def remove_badge(
                         session, guild_id=guild.id, user_id=user.id
                     )
 
-                    user_badges = await get_user_badges_for_update(
+                    user_all_badges = await get_user_badges_for_update(
                         session,
                         badge_type=badge_type,
                         user_id=user_record.id,
@@ -155,7 +155,8 @@ async def remove_badge(
                     target = next(
                         (
                             user_badge
-                            for user_badge in user_badges
+                            for user_type_badges in user_all_badges
+                            for user_badge in user_type_badges
                             if user_badge.badge_id == badge_id
                         ),
                         None,
