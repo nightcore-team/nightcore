@@ -152,7 +152,10 @@ async def handle_battlepass_claim_reward_button(
                         RewardOutcomeEnum.COLOR_WITH_COMPENSATION not in result
                         and RewardOutcomeEnum.SUCCESS not in result
                     ):
-                        outcome = "error"
+                        if result[0] == RewardOutcomeEnum.UNKNOWN_REWARD:
+                            outcome = "unknown_reward"
+                        elif result[0] == RewardOutcomeEnum.REWARD_NOT_FOUND:
+                            outcome = "reward_not_found"
 
                     if not outcome:
                         overflow_points = (
@@ -232,11 +235,11 @@ async def handle_battlepass_claim_reward_button(
         )
         return
 
-    if outcome.startswith("error"):
+    if outcome in ("reward_not_found", "unknown_reward"):
         await interaction.followup.send(
             view=ErrorViewV2(
                 "Ошибка при получении награды",
-                "Произошла ошибка при получении награды.",
+                "Награда не была найдена на сервере или является неизвестной.\n> Уведомите руководство о данной ошибке для дальнейшего изменения награды.",  # noqa: E501
             ),
             ephemeral=True,
         )
