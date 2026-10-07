@@ -3321,7 +3321,7 @@ async def get_badges(
         stmt = select(GlobalBadge)
 
         if for_update:
-            stmt.with_for_update()
+            stmt = stmt.with_for_update()
 
         result = await session.execute(stmt)
         global_badges = result.scalars().all()
@@ -3330,7 +3330,7 @@ async def get_badges(
         stmt = select(GuildBadge).where(GuildBadge.guild_id == guild_id)
 
         if for_update:
-            stmt.with_for_update()
+            stmt = stmt.with_for_update()
 
         result = await session.execute(stmt)
         guild_badges = result.scalars().all()
@@ -3358,8 +3358,7 @@ async def get_badges_by_user_input_and_type(
         model = GuildBadge
         where_clauses.append(model.guild_id == guild_id)  # type: ignore
 
-    stmt = select(model).limit(25)
-    stmt.where(*where_clauses)
+    stmt = select(model).where(*where_clauses).limit(25)
 
     result = await session.scalars(stmt)
 
@@ -3382,8 +3381,7 @@ async def get_badge_by_id(
         model = GuildBadge
         where_clauses.append(model.guild_id == guild_id)  # type: ignore
 
-    stmt = select(model).limit(25)
-    stmt.where(*where_clauses)
+    stmt = select(model).where(*where_clauses)
 
     result = await session.execute(stmt)
 
@@ -3416,7 +3414,7 @@ async def get_user_badges_for_update(
         )
 
         if for_update:
-            stmt.with_for_update()
+            stmt = stmt.with_for_update()
 
         result = await session.scalars(stmt)
         global_badges = result.all()
@@ -3432,7 +3430,7 @@ async def get_user_badges_for_update(
         )
 
         if for_update:
-            stmt.with_for_update()
+            stmt = stmt.with_for_update()
 
         result = await session.scalars(stmt)
         guild_badges = result.all()
