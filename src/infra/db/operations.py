@@ -3349,14 +3349,14 @@ async def get_badges_by_user_input_and_type(
     a = 0.7
     similarity = (len(user_input) / 100) ** a
 
-    model = GlobalBadge
+    model: type[GlobalBadge] | type[GuildBadge] = GlobalBadge
+    where_clauses = []
 
-    where_clauses = [
-        func.similarity(model.name, user_input) >= similarity,
-    ]
     if badge_type == BadgeTypeEnum.LOCAL:
         model = GuildBadge
         where_clauses.append(model.guild_id == guild_id)  # type: ignore
+
+    where_clauses.append(func.similarity(model.name, user_input) >= similarity)
 
     stmt = select(model).where(*where_clauses).limit(25)
 
@@ -3372,14 +3372,16 @@ async def get_badge_by_id(
     badge_id: int,
     guild_id: int,
 ) -> GuildBadge | GlobalBadge | None:
-    """Get a VIP-status by id for a guild."""
+    """Get a badge by id for a guild."""
 
-    model = GlobalBadge
+    model: type[GlobalBadge] | type[GuildBadge] = GlobalBadge
+    where_clauses = []
 
-    where_clauses = [model.id == badge_id]
     if badge_type == BadgeTypeEnum.LOCAL:
         model = GuildBadge
         where_clauses.append(model.guild_id == guild_id)  # type: ignore
+
+    where_clauses.append(model.id == badge_id)  # type: ignore
 
     stmt = select(model).where(*where_clauses)
 
