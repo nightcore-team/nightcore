@@ -3414,7 +3414,7 @@ async def get_user_badges_for_update(
         )
 
         if for_update:
-            stmt = stmt.with_for_update()
+            stmt = stmt.with_for_update(of=UserGlobalBadge)
 
         result = await session.scalars(stmt)
         global_badges = result.all()
@@ -3430,7 +3430,7 @@ async def get_user_badges_for_update(
         )
 
         if for_update:
-            stmt = stmt.with_for_update()
+            stmt = stmt.with_for_update(of=UserGuildBadge)
 
         result = await session.scalars(stmt)
         guild_badges = result.all()
