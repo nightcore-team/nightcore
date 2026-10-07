@@ -322,13 +322,13 @@ def build_badge_content(
     content: list[TextDisplay[Any]] = []
 
     for badge in global_badges:
-        badge_title = f"### {badge.emoji_str} <:nightcoreDecline:1540450233417338960> {badge.name}\n".strip()  # noqa: E501
+        badge_title = f"### {badge.emoji_str} <:nightcoreDecline:1540450233417338960> {badge.name}"  # noqa: E501
         content_parts: list[str] = []
 
         if badge.description:
-            content_parts.append(f"> {badge.description}")
+            content_parts.append(f"\n> {badge.description}")
         else:
-            content_parts.append("> Описание отсутствует")
+            content_parts.append("\n> Описание отсутствует")
 
         content_parts.append("> Тип значка: глобальный")
 
@@ -337,13 +337,13 @@ def build_badge_content(
         )
 
     for badge in guild_badges:
-        badge_title = f"### {badge.emoji_str} <:nightcoreDecline:1540450233417338960> {badge.name}\n".strip()  # noqa: E501
+        badge_title = f"### {badge.emoji_str} <:nightcoreDecline:1540450233417338960> {badge.name}"  # noqa: E501
         content_parts: list[str] = []
 
         if badge.description:
-            content_parts.append(f"> {badge.description}")
+            content_parts.append(f"\n> {badge.description}")
         else:
-            content_parts.append("> Описание отсутствует")
+            content_parts.append("\n> Описание отсутствует")
 
         content_parts.append("> Тип значка: серверный")
 
