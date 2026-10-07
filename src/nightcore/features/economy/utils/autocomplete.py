@@ -405,8 +405,6 @@ async def guild_global_badges_autocomplete(
         interaction.data["options"][0]["options"][1]["value"],  # type: ignore
     )
 
-    logger.info(f"BADGE TYPE IS {badge_type} ============")
-
     try:
         badge_type_enum = BadgeTypeEnum(badge_type)
     except ValueError:

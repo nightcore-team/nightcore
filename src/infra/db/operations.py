@@ -3356,9 +3356,9 @@ async def get_badges_by_user_input_and_type(
         model = GuildBadge
         where_clauses.append(model.guild_id == guild_id)  # type: ignore
 
-    where_clauses.append(func.similarity(model.name, user_input) >= similarity)
+    where_clauses.append(func.similarity(model.name, user_input) >= similarity)  # type: ignore
 
-    stmt = select(model).where(*where_clauses).limit(25)
+    stmt = select(model).where(*where_clauses).limit(25)  # type: ignore
 
     result = await session.scalars(stmt)
 
@@ -3383,7 +3383,7 @@ async def get_badge_by_id(
 
     where_clauses.append(model.id == badge_id)  # type: ignore
 
-    stmt = select(model).where(*where_clauses)
+    stmt = select(model).where(*where_clauses)  # type: ignore
 
     result = await session.execute(stmt)
 
