@@ -153,20 +153,21 @@ async def give_badge(
                         user_id=user.id,
                     )
 
-                    user_badges = await get_user_badges_for_update(
+                    user_all_badges = await get_user_badges_for_update(
                         session,
                         badge_type=badge_type,
                         user_id=user_record.id,
                         guild_id=guild.id,
                     )
 
-                    if len(user_badges) >= bot.config.bot.MAX_USER_BADGES:
+                    if len(user_all_badges) >= bot.config.bot.MAX_USER_BADGES:
                         outcome = "max_badges_limit_exceeded"
                     else:
                         existing = next(
                             (
                                 user_badge
-                                for user_badge in user_badges
+                                for user_type_badges in user_all_badges
+                                for user_badge in user_type_badges
                                 if user_badge.badge_id == badge_id
                             ),
                             None,
