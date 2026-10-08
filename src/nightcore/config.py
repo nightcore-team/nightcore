@@ -5,6 +5,8 @@ from src.config.env import BaseEnvConfig
 
 class Config(BaseEnvConfig):
     BOT_TOKEN: str
+    HEALTHCHECK_PORT: int = 40404
+    HEALTHCHECK_MAX_LATENCY: float = 2
     EMBED_DESCRIPTION_LIMIT: int = 4096
     VIEW_V2_DESCRIPTION_LIMIT: int = 3000
     VIEW_V2_COMPONENTS_LIMIT: int = 40
