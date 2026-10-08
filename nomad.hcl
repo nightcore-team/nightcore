@@ -80,7 +80,7 @@ job "nightcore-bot" {
       check {
         type     = "script"
         command  = "/app/.venv/bin/python"
-        args     = ["-c", "import socket,sys;s=socket.create_connection(('127.0.0.1',40405),10);sys.exit(0 if s.recv(1024)==b'healthy' else 1)"]
+        args     = ["-c", "import socket,sys;s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),10);sys.exit(0 if s.recv(1024)==b'healthy' else 1)", "${NOMAD_PORT_healthcheck}"]
         interval = "30s"
         timeout  = "15s"
 
