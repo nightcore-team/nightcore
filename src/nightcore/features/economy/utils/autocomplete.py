@@ -8,7 +8,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Final, cast
 
-from discord import Guild, User, app_commands
+from discord import Guild, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.loads import (
@@ -129,15 +129,17 @@ async def get_user_colors_autocomplete(
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
-    target = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
-
+    target_id = cast(
+        str,
+        interaction.data["options"][0]["options"][0]["value"],  # type: ignore
+    )
     result: list[app_commands.Choice[str]] = []
 
     async with interaction.client.uow.start() as session:
         user, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
-            user_id=target.id,
+            user_id=int(target_id),
             options=[user_load_colors],
         )
 
@@ -417,13 +419,15 @@ async def get_user_vip_statuses_autocomplete(
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
-    target = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
-
+    target_id = cast(
+        str,
+        interaction.data["options"][0]["options"][0]["value"],  # type: ignore
+    )
     result: list[app_commands.Choice[str]] = []
 
     async with interaction.client.uow.start() as session:
         user_record, _ = await get_or_create_user(
-            session, guild_id=guild.id, user_id=target.id
+            session, guild_id=guild.id, user_id=int(target_id)
         )
 
         user_vip_statuses = await get_user_vip_statuses_for_update(
@@ -461,7 +465,10 @@ async def get_user_badges_autocomplete(
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
-    target = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
+    target_id = cast(
+        str,
+        interaction.data["options"][0]["options"][0]["value"],  # type: ignore
+    )
 
     badge_type = cast(
         str,
@@ -478,7 +485,7 @@ async def get_user_badges_autocomplete(
 
     async with interaction.client.uow.start() as session:
         user_record, _ = await get_or_create_user(
-            session, guild_id=guild.id, user_id=target.id
+            session, guild_id=guild.id, user_id=int(target_id)
         )
 
         options = []
