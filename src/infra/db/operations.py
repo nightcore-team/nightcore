@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import (
     InstrumentedAttribute,
     Load,
+    class_mapper,
     selectinload,
 )
 
@@ -3389,6 +3390,40 @@ async def get_badge_by_id(
     return result.scalar_one_or_none()
 
 
+def _split_badge_loads(
+    options: Sequence[Load] | None,
+) -> tuple[list[Load], list[Load]]:
+    """Split load options by their root entity.
+
+    Returns:
+        (global_badge_loads, guild_badge_loads)
+
+    Raises:
+        ValueError: if an option is rooted at neither UserGlobalBadge nor
+            UserGuildBadge.
+    """
+    global_root = class_mapper(UserGlobalBadge)
+    guild_root = class_mapper(UserGuildBadge)
+
+    global_loads: list[Load] = []
+    guild_loads: list[Load] = []
+
+    for option in options or ():
+        root = option.path.odd_element(0)
+
+        if root is global_root:
+            global_loads.append(option)
+        elif root is guild_root:
+            guild_loads.append(option)
+        else:
+            raise ValueError(
+                f"load option {option!r} is rooted at {root!r}, expected "
+                "UserGlobalBadge or UserGuildBadge"
+            )
+
+    return global_loads, guild_loads
+
+
 async def get_user_badges_for_update(
     session: AsyncSession,
     *,
@@ -3400,6 +3435,11 @@ async def get_user_badges_for_update(
 ) -> tuple[Sequence[UserGlobalBadge], Sequence[UserGuildBadge]]:
     """Get user badges based on type.
 
+    `options` may contain loads rooted at UserGlobalBadge and/or
+    UserGuildBadge; each SELECT only receives the loads matching its own
+    entity, so both loads (or just one) can be passed regardless of
+    `badge_type`.
+
     Returns:
         global_badges: Sequence of UserGlobalBadge
         guild_badges: Sequence of UserGuildBadge
@@ -3407,6 +3447,8 @@ async def get_user_badges_for_update(
 
     global_badges: Sequence[UserGlobalBadge] = []
     guild_badges: Sequence[UserGuildBadge] = []
+
+    global_options, guild_options = _split_badge_loads(options)
 
     if badge_type in (BadgeTypeEnum.GLOBAL, BadgeTypeEnum.ALL):
         stmt = select(UserGlobalBadge).where(
@@ -3416,8 +3458,8 @@ async def get_user_badges_for_update(
         if for_update:
             stmt = stmt.with_for_update(of=UserGlobalBadge)
 
-        if options:
-            stmt = stmt.options(*options)
+        if global_options:
+            stmt = stmt.options(*global_options)
 
         result = await session.scalars(stmt)
         global_badges = result.all()
@@ -3431,8 +3473,8 @@ async def get_user_badges_for_update(
         if for_update:
             stmt = stmt.with_for_update(of=UserGuildBadge)
 
-        if options:
-            stmt = stmt.options(*options)
+        if guild_options:
+            stmt = stmt.options(*guild_options)
 
         result = await session.scalars(stmt)
         guild_badges = result.all()

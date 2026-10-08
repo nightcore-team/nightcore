@@ -139,18 +139,15 @@ async def remove_badge(
                     session, guild_id=guild.id, user_id=user.id
                 )
 
-                options = []
-                if badge_type == BadgeTypeEnum.GLOBAL:
-                    options = [user_global_badge_load_badge]
-                elif badge_type == BadgeTypeEnum.LOCAL:
-                    options = [user_guild_badge_load_badge]
-
                 user_all_badges = await get_user_badges_for_update(
                     session,
                     badge_type=badge_type,
                     user_id=user_record.id,
                     guild_id=guild.id,
-                    options=options,
+                    options=[
+                        user_global_badge_load_badge,
+                        user_guild_badge_load_badge,
+                    ],
                 )
                 target = next(
                     (

@@ -129,6 +129,8 @@ async def get_user_colors_autocomplete(
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
+    result: list[app_commands.Choice[str]] = []
+
     try:
         target_id = cast(
             str,
@@ -137,7 +139,12 @@ async def get_user_colors_autocomplete(
     except KeyError:
         target_id = interaction.user.id
 
-    result: list[app_commands.Choice[str]] = []
+        result.append(
+            app_commands.Choice(
+                name="Сбросить цвет",
+                value=str(CLEAR_COLOR_ID),
+            )
+        )
 
     async with interaction.client.uow.start() as session:
         user, _ = await get_or_create_user(
@@ -164,13 +171,6 @@ async def get_user_colors_autocomplete(
                 value=str(color.id),
             )
         )
-
-    result.append(
-        app_commands.Choice(
-            name="Сбросить цвет",
-            value=str(CLEAR_COLOR_ID),
-        )
-    )
 
     end_autocomplete = time.perf_counter()
     logger.info(
@@ -492,18 +492,15 @@ async def get_user_badges_autocomplete(
             session, guild_id=guild.id, user_id=int(target_id)
         )
 
-        options = []
-        if badge_type_enum == BadgeTypeEnum.GLOBAL:
-            options = [user_global_badge_load_badge]
-        elif badge_type_enum == BadgeTypeEnum.LOCAL:
-            options = [user_guild_badge_load_badge]
-
         global_badges, guild_badges = await get_user_badges_for_update(
             session,
             badge_type=badge_type_enum,
             user_id=user_record.id,
             guild_id=guild.id,
-            options=options,
+            options=[
+                user_global_badge_load_badge,
+                user_guild_badge_load_badge,
+            ],
         )
 
     badges: "Sequence[UserGlobalBadge | UserGuildBadge]" = []  # noqa: UP037
@@ -518,7 +515,8 @@ async def get_user_badges_autocomplete(
     for user_badge in badges:
         result.append(
             app_commands.Choice(
-                name=user_badge.badge.name, value=str(user_badge.id)
+                name=user_badge.badge.name,
+                value=str(user_badge.badge_id),
             )
         )
 

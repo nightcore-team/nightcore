@@ -7,6 +7,10 @@ from discord import Guild, User, app_commands
 from discord.ext.commands import Cog  # type: ignore
 from discord.interactions import Interaction
 
+from src.infra.db.loads import (
+    user_global_badge_load_badge,
+    user_guild_badge_load_badge,
+)
 from src.infra.db.models import GuildEconomyConfig
 from src.infra.db.operations import (
     get_active_user_vip_statuses,
@@ -79,6 +83,10 @@ class Profile(Cog):
                 guild_id=guild.id,
                 user_id=user_record.id,
                 for_update=True,
+                options=[
+                    user_global_badge_load_badge,
+                    user_guild_badge_load_badge,
+                ],
             )
 
             # the unique index on (guild_id, user_id) where is_active keeps
