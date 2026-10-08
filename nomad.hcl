@@ -33,6 +33,7 @@ job "nightcore-bot" {
 
     network {
       port "http" {}
+      port "healthcheck" {}
     }
 
     service {
@@ -69,6 +70,27 @@ job "nightcore-bot" {
         port     = "http"
         interval = "10s"
         timeout  = "2s"
+      }
+    }
+
+    # Отдельный сервис без тегов Traefik: падение проверки Discord не должно
+    # снимать API с маршрутов. discordhealthcheck выходит с 1 (warning в
+    # Nomad), check_restart по умолчанию считает warning нездоровым.
+    service {
+      name = "nightcore-bot"
+      task = "nightcore-bot"
+
+      check {
+        type     = "script"
+        command  = "/app/.venv/bin/discordhealthcheck"
+        args     = ["--port", "${NOMAD_PORT_healthcheck}"]
+        interval = "30s"
+        timeout  = "15s"
+
+        check_restart {
+          limit = 3
+          grace = "30s"
+        }
       }
     }
 
@@ -133,7 +155,8 @@ EOT
       }
 
       env {
-        API_PORT = "${NOMAD_PORT_http}"
+        API_PORT         = "${NOMAD_PORT_http}"
+        HEALTHCHECK_PORT = "${NOMAD_PORT_healthcheck}"
       }
 
       logs {

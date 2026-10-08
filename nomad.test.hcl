@@ -118,6 +118,7 @@ job "nightcore-bot-test" {
     network {
       port "postgres" {}
       port "redis" {}
+      port "healthcheck" {}
     }
 
     service {
@@ -308,6 +309,7 @@ EOT
 
       env {
         BOT_TOKEN              = var.bot_token
+        HEALTHCHECK_PORT       = "${NOMAD_PORT_healthcheck}"
         DISABLE_FORUM_TASK     = var.disable_forum_task
         FORUM_API_KEY          = var.forum_api_key
         FORUM_API_URL          = var.forum_api_url
