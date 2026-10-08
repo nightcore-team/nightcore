@@ -274,7 +274,7 @@ async def give_badge(
             user_id=user.id,
             moderator_id=interaction.user.id,
             item_name=item_name,
-            amount=-1,
+            amount=1,
             duration=None,
             reason=reason,
         ),
