@@ -2,6 +2,7 @@
 
 from sqlalchemy.orm import Load, selectinload
 
+from src.infra.db.models import UserGlobalBadge, UserGuildBadge
 from src.infra.db.models.bank import BankAccount
 from src.infra.db.models.user import User, UserCase, UserVipStatus
 
@@ -54,4 +55,10 @@ user_load_cases_colors_and_vips: list[Load] = [
 ]
 
 user_load_guild_badges: Load = Load(User).selectinload(User.guild_badges)
+user_guild_badge_load_badge: Load = Load(UserGuildBadge).selectinload(
+    UserGuildBadge.badge
+)
+user_global_badge_load_badge: Load = Load(UserGlobalBadge).selectinload(
+    UserGlobalBadge.badge
+)
 user_load_global_badges: Load = Load(User).selectinload(User.global_badges)

@@ -31,7 +31,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import (
     InstrumentedAttribute,
     Load,
-    joinedload,
     selectinload,
 )
 
@@ -3396,7 +3395,8 @@ async def get_user_badges_for_update(
     badge_type: BadgeTypeEnum = BadgeTypeEnum.ALL,
     user_id: int,
     guild_id: int,
-    for_update: bool = False,
+    options: list[Load] | None = None,
+    for_update: bool = True,
 ) -> tuple[Sequence[UserGlobalBadge], Sequence[UserGuildBadge]]:
     """Get user badges based on type.
 
@@ -3409,30 +3409,30 @@ async def get_user_badges_for_update(
     guild_badges: Sequence[UserGuildBadge] = []
 
     if badge_type in (BadgeTypeEnum.GLOBAL, BadgeTypeEnum.ALL):
-        stmt = (
-            select(UserGlobalBadge)
-            .where(UserGlobalBadge.user_id == user_id)
-            .options(joinedload(UserGlobalBadge.badge))
+        stmt = select(UserGlobalBadge).where(
+            UserGlobalBadge.user_id == user_id
         )
 
         if for_update:
             stmt = stmt.with_for_update(of=UserGlobalBadge)
 
+        if options:
+            stmt = stmt.options(*options)
+
         result = await session.scalars(stmt)
         global_badges = result.all()
 
     if badge_type in (BadgeTypeEnum.LOCAL, BadgeTypeEnum.ALL):
-        stmt = (
-            select(UserGuildBadge)
-            .where(
-                UserGuildBadge.guild_id == guild_id,
-                UserGuildBadge.user_id == user_id,
-            )
-            .options(joinedload(UserGuildBadge.badge))
+        stmt = select(UserGuildBadge).where(
+            UserGuildBadge.guild_id == guild_id,
+            UserGuildBadge.user_id == user_id,
         )
 
         if for_update:
             stmt = stmt.with_for_update(of=UserGuildBadge)
+
+        if options:
+            stmt = stmt.options(*options)
 
         result = await session.scalars(stmt)
         guild_badges = result.all()

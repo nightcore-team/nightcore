@@ -12,10 +12,13 @@ from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.loads import (
+    user_global_badge_load_badge,
+    user_guild_badge_load_badge,
     user_load_bank_account_all,
     user_load_bank_account_wallets,
     user_load_cases,
     user_load_colors,
+    vip_status_load_vip,
 )
 from src.infra.db.operations import (
     get_badges_by_user_input_and_type,
@@ -23,6 +26,7 @@ from src.infra.db.operations import (
     get_guild_colors,
     get_or_create_user,
     get_user_badges_for_update,
+    get_user_vip_statuses_for_update,
     get_vip_statuses_by_input,
 )
 from src.utils._enums import BadgeTypeEnum, CaseDropTypeEnum
@@ -396,6 +400,50 @@ async def guild_vip_statuses_autocomplete(
     return result
 
 
+async def get_user_vip_statuses_autocomplete(
+    interaction: Interaction["Nightcore"],
+    user_input: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get user's VIP-statuses for guild."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    target = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        user_record, _ = await get_or_create_user(
+            session, guild_id=guild.id, user_id=target.id
+        )
+
+        user_vip_statuses = await get_user_vip_statuses_for_update(
+            session,
+            guild_id=guild.id,
+            user_id=user_record.id,
+            options=[vip_status_load_vip],
+            for_update=True,
+        )
+
+    for user_vip_status in user_vip_statuses:
+        result.append(
+            app_commands.Choice(
+                name=user_vip_status.vip.name,
+                value=str(user_vip_status.id),
+            )
+        )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[vip_statuses/autocomplete] Autocomplete for guild %s took %.4f seconds",  # noqa: E501
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
 async def get_user_badges_autocomplete(
     interaction: Interaction["Nightcore"],
     user_input: str,
@@ -405,7 +453,7 @@ async def get_user_badges_autocomplete(
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
-    user = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
+    target = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
 
     badge_type = cast(
         str,
@@ -421,11 +469,22 @@ async def get_user_badges_autocomplete(
     result: list[app_commands.Choice[str]] = []
 
     async with interaction.client.uow.start() as session:
+        user_record, _ = await get_or_create_user(
+            session, guild_id=guild.id, user_id=target.id
+        )
+
+        options = []
+        if badge_type_enum == BadgeTypeEnum.GLOBAL:
+            options = [user_global_badge_load_badge]
+        elif badge_type_enum == BadgeTypeEnum.LOCAL:
+            options = [user_guild_badge_load_badge]
+
         global_badges, guild_badges = await get_user_badges_for_update(
             session,
             badge_type=badge_type_enum,
-            user_id=user.id,
+            user_id=user_record.id,
             guild_id=guild.id,
+            options=options,
         )
 
     badges: "Sequence[UserGlobalBadge | UserGuildBadge]" = []  # noqa: UP037
@@ -437,9 +496,11 @@ async def get_user_badges_autocomplete(
     else:
         return []
 
-    for badge in badges:
+    for user_badge in badges:
         result.append(
-            app_commands.Choice(name=badge.badge.name, value=str(badge.id))
+            app_commands.Choice(
+                name=user_badge.badge.name, value=str(user_badge.id)
+            )
         )
 
     end_autocomplete = time.perf_counter()

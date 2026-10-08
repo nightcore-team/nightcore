@@ -6,9 +6,12 @@ from typing import TYPE_CHECKING, cast
 from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import (
+    user_global_badge_load_badge,
+    user_guild_badge_load_badge,
+)
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
-    get_badge_by_id,
     get_or_create_user,
     get_specified_field,
     get_specified_webhook,
@@ -132,45 +135,42 @@ async def remove_badge(
                     channel_type=ChannelType.LOGGING_ECONOMY,
                 )
 
-                badge = await get_badge_by_id(
-                    session,
-                    badge_type=badge_type,
-                    badge_id=badge_id,
-                    guild_id=guild.id,
+                user_record, _ = await get_or_create_user(
+                    session, guild_id=guild.id, user_id=user.id
                 )
 
-                if badge is None:
-                    outcome = "unknown_badge"
+                options = []
+                if badge_type == BadgeTypeEnum.GLOBAL:
+                    options = [user_global_badge_load_badge]
+                elif badge_type == BadgeTypeEnum.LOCAL:
+                    options = [user_guild_badge_load_badge]
+
+                user_all_badges = await get_user_badges_for_update(
+                    session,
+                    badge_type=badge_type,
+                    user_id=user_record.id,
+                    guild_id=guild.id,
+                    options=options,
+                )
+                target = next(
+                    (
+                        user_badge
+                        for user_type_badges in user_all_badges
+                        for user_badge in user_type_badges
+                        if user_badge.badge_id == badge_id
+                    ),
+                    None,
+                )
+
+                if target is None:
+                    outcome = "does_not_have_badge"
                 else:
-                    user_record, _ = await get_or_create_user(
-                        session, guild_id=guild.id, user_id=user.id
-                    )
+                    badge_name = target.badge.name
+                    badge_emoji = target.badge.emoji_str
 
-                    user_all_badges = await get_user_badges_for_update(
-                        session,
-                        badge_type=badge_type,
-                        user_id=user_record.id,
-                        guild_id=guild.id,
-                    )
-                    target = next(
-                        (
-                            user_badge
-                            for user_type_badges in user_all_badges
-                            for user_badge in user_type_badges
-                            if user_badge.badge_id == badge_id
-                        ),
-                        None,
-                    )
+                    await session.delete(target)
 
-                    if target is None:
-                        outcome = "does_not_have_badge"
-                    else:
-                        badge_name = badge.name
-                        badge_emoji = badge.emoji_str
-
-                        await session.delete(target)
-
-                        outcome = "success"
+                    outcome = "success"
 
     except Exception as e:
         logger.exception(
@@ -189,15 +189,6 @@ async def remove_badge(
         raise app_commands.MissingPermissions(
             missing_permissions=["economy_access"]
         )
-
-    if outcome == "unknown_badge":
-        await interaction.followup.send(
-            view=ErrorViewV2(
-                "Ошибка удаления значка",
-                "Значок не найден.",
-            ),
-        )
-        return
 
     if outcome == "does_not_have_badge":
         await interaction.followup.send(

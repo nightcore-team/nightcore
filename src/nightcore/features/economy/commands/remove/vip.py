@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 from discord import Forbidden, Guild, HTTPException, User, app_commands
 from discord.interactions import Interaction
 
+from src.infra.db.loads import vip_status_load_vip
 from src.infra.db.models import GuildEconomyConfig, GuildLoggingConfig
 from src.infra.db.operations import (
     accrue_deposit_interest_if_due,
@@ -13,13 +14,12 @@ from src.infra.db.operations import (
     get_or_create_user,
     get_specified_webhook,
     get_user_vip_statuses_for_update,
-    get_vip_status_by_id,
 )
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
 from src.nightcore.features.economy._groups import remove as remove_group
 from src.nightcore.features.economy.events.dto import AwardNotificationEventDTO
 from src.nightcore.features.economy.utils.autocomplete import (
-    guild_vip_statuses_autocomplete,
+    get_user_vip_statuses_autocomplete,
 )
 from src.nightcore.services.config import specified_guild_config
 from src.nightcore.utils import ensure_member_exists, ensure_role_exists
@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
     vip_id="VIP-status для удаления.",
     reason="Причина удаления VIP-status (необязательно).",
 )
-@app_commands.autocomplete(vip_id=guild_vip_statuses_autocomplete)
+@app_commands.autocomplete(vip_id=get_user_vip_statuses_autocomplete)
 @app_commands.rename(vip_id="vip")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def remove_vip(
@@ -88,66 +88,59 @@ async def remove_vip(
                 config_type=GuildLoggingConfig,
                 channel_type=ChannelType.LOGGING_ECONOMY,
             )
-
-            vip_status = await get_vip_status_by_id(
-                session, guild_id=guild.id, vip_id=vip_id
+            user_record, _ = await get_or_create_user(
+                session, guild_id=guild.id, user_id=user.id
             )
 
-            if vip_status is None:
-                outcome = "unknown_vip_status"
+            # lock order: bankaccount -> deposit -> vip status rows.
+            # The deposit is accrued before the VIP rows are locked so
+            # this path doesn't invert the order used by every other
+            # one, and the accrual still sees the VIP that is about to
+            # be removed. user is a discord.User here, so the row id has
+            # to be resolved before it can be used against bankaccount
+            # and uservipstatus.
+            bank_account, _ = await get_or_create_bank_account(
+                session,
+                guild_id=guild.id,
+                user_id=user_record.id,
+                for_update=True,
+            )
+
+            assert bank_account.deposit is not None
+
+            await accrue_deposit_interest_if_due(
+                session,
+                deposit=bank_account.deposit,
+                guild_id=guild.id,
+                user_id=user_record.id,
+                config=guild_config,
+            )
+
+            user_vip_statuses = await get_user_vip_statuses_for_update(
+                session,
+                guild_id=guild.id,
+                user_id=user_record.id,
+                options=[vip_status_load_vip],
+                for_update=True,
+            )
+            target = next(
+                (
+                    status
+                    for status in user_vip_statuses
+                    if status.vip_id == vip_id
+                ),
+                None,
+            )
+
+            if target is None:
+                outcome = "does_not_have_vip"
             else:
-                user_record, _ = await get_or_create_user(
-                    session, guild_id=guild.id, user_id=user.id
-                )
+                vip_name = target.vip.name
+                role_id = target.vip.role_id
 
-                # lock order: bankaccount -> deposit -> vip status rows.
-                # The deposit is accrued before the VIP rows are locked so
-                # this path doesn't invert the order used by every other
-                # one, and the accrual still sees the VIP that is about to
-                # be removed. user is a discord.User here, so the row id has
-                # to be resolved before it can be used against bankaccount
-                # and uservipstatus.
-                bank_account, _ = await get_or_create_bank_account(
-                    session,
-                    guild_id=guild.id,
-                    user_id=user_record.id,
-                    for_update=True,
-                )
+                await session.delete(target)
 
-                assert bank_account.deposit is not None
-
-                await accrue_deposit_interest_if_due(
-                    session,
-                    deposit=bank_account.deposit,
-                    guild_id=guild.id,
-                    user_id=user_record.id,
-                    config=guild_config,
-                )
-
-                user_vip_statuses = await get_user_vip_statuses_for_update(
-                    session,
-                    guild_id=guild.id,
-                    user_id=user_record.id,
-                    for_update=True,
-                )
-                target = next(
-                    (
-                        status
-                        for status in user_vip_statuses
-                        if status.vip_id == vip_id
-                    ),
-                    None,
-                )
-
-                if target is None:
-                    outcome = "does_not_have_vip"
-                else:
-                    vip_name = vip_status.name
-                    role_id = vip_status.role_id
-
-                    await session.delete(target)
-
-                    outcome = "success"
+                outcome = "success"
 
     except Exception as e:
         logger.exception(
@@ -158,15 +151,6 @@ async def remove_vip(
             e,
         )
         outcome = "remove_vip_error"
-
-    if outcome == "unknown_vip_status":
-        await interaction.followup.send(
-            view=ErrorViewV2(
-                "Ошибка удаления VIP-status'a",
-                "VIP-status не найден.",
-            ),
-        )
-        return
 
     if outcome == "does_not_have_vip":
         await interaction.followup.send(
