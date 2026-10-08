@@ -115,17 +115,14 @@ class User(IdIntegerMixin, Base):
     vip_statuses: Mapped[list["UserVipStatus"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
-        lazy="selectin",
     )
     guild_badges: Mapped[list["UserGuildBadge"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
-        lazy="selectin",
     )
     global_badges: Mapped[list["UserGlobalBadge"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
-        lazy="selectin",
     )
     cases: Mapped[list["UserCase"]] = relationship(
         cascade="all, delete-orphan",
@@ -140,7 +137,6 @@ class User(IdIntegerMixin, Base):
         back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True,
-        lazy="selectin",
     )
     bank_account: Mapped["BankAccount | None"] = relationship(
         back_populates="user",

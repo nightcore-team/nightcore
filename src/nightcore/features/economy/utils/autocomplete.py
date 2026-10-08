@@ -129,10 +129,14 @@ async def get_user_colors_autocomplete(
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
-    target_id = cast(
-        str,
-        interaction.data["options"][0]["options"][0]["value"],  # type: ignore
-    )
+    try:
+        target_id = cast(
+            str,
+            interaction.data["options"][0]["options"][0]["value"],  # type: ignore
+        )
+    except KeyError:
+        target_id = interaction.user.id
+
     result: list[app_commands.Choice[str]] = []
 
     async with interaction.client.uow.start() as session:
