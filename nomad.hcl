@@ -73,17 +73,14 @@ job "nightcore-bot" {
       }
     }
 
-    # Отдельный сервис без тегов Traefik: падение проверки Discord не должно
-    # снимать API с маршрутов. discordhealthcheck выходит с 1 (warning в
-    # Nomad), check_restart по умолчанию считает warning нездоровым.
     service {
       name = "nightcore-bot"
       task = "nightcore-bot"
 
       check {
         type     = "script"
-        command  = "/app/.venv/bin/discordhealthcheck"
-        args     = ["--port", "${NOMAD_PORT_healthcheck}"]
+        command  = "/app/.venv/bin/python"
+        args     = ["-c", "import socket,sys;s=socket.create_connection(('127.0.0.1',40405),10);sys.exit(0 if s.recv(1024)==b'healthy' else 1)"]
         interval = "30s"
         timeout  = "15s"
 
