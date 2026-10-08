@@ -8,7 +8,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Final, cast
 
-from discord import Guild, app_commands
+from discord import Guild, User, app_commands
 from discord.interactions import Interaction
 
 from src.infra.db.loads import (
@@ -22,11 +22,15 @@ from src.infra.db.operations import (
     get_cases_by_input,
     get_guild_colors,
     get_or_create_user,
+    get_user_badges_for_update,
     get_vip_statuses_by_input,
 )
 from src.utils._enums import BadgeTypeEnum, CaseDropTypeEnum
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from src.infra.db.models.user import UserGlobalBadge, UserGuildBadge
     from src.nightcore.bot import Nightcore
 
 
@@ -392,11 +396,68 @@ async def guild_vip_statuses_autocomplete(
     return result
 
 
+async def get_user_badges_autocomplete(
+    interaction: Interaction["Nightcore"],
+    user_input: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete function to get all user badges based on type."""
+
+    start_autocomplete = time.perf_counter()
+    guild = cast(Guild, interaction.guild)
+
+    user = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
+
+    badge_type = cast(
+        str,
+        interaction.data["options"][0]["options"][1]["value"],  # type: ignore
+    )
+
+    try:
+        badge_type_enum = BadgeTypeEnum(badge_type)
+    except ValueError:
+        logger.warning("Unknown badge type in autocomplete: %r", badge_type)
+        return []
+
+    result: list[app_commands.Choice[str]] = []
+
+    async with interaction.client.uow.start() as session:
+        global_badges, guild_badges = await get_user_badges_for_update(
+            session,
+            badge_type=badge_type_enum,
+            user_id=user.id,
+            guild_id=guild.id,
+        )
+
+    badges: "Sequence[UserGlobalBadge | UserGuildBadge]" = []  # noqa: UP037
+
+    if badge_type_enum == BadgeTypeEnum.GLOBAL:
+        badges = global_badges
+    elif badge_type_enum == BadgeTypeEnum.LOCAL:
+        badges = guild_badges
+    else:
+        return []
+
+    for badge in badges:
+        result.append(
+            app_commands.Choice(name=badge.badge.name, value=str(badge.id))
+        )
+
+    end_autocomplete = time.perf_counter()
+    logger.info(
+        "[cases/autocomplete] Autocomplete for guild %s took %.4f seconds",
+        guild.id,
+        end_autocomplete - start_autocomplete,
+    )
+
+    return result
+
+
 async def guild_global_badges_autocomplete(
     interaction: Interaction["Nightcore"],
     user_input: str,
 ) -> list[app_commands.Choice[str]]:
-    """Autocomplete function to get all cases for guild."""
+    """Autocomplete function to get all badges."""
+
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
 
