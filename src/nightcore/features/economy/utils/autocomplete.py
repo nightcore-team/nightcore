@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-CLEAR_COLOR_ID: Final[int] = -1
+CLEAR_COLOR_ID: int = -1
 
 _commands: Final[dict[str, int]] = {"add_reward": 1, "item": 1}
 
@@ -121,22 +121,28 @@ async def user_cases_autocomplete(
     return result
 
 
-async def user_colors_autocomplete(
+async def get_user_colors_autocomplete(
     interaction: Interaction["Nightcore"],
     current: str,
 ) -> list[app_commands.Choice[str]]:
     """Autocomplete function to get colors for user."""
     start_autocomplete = time.perf_counter()
     guild = cast(Guild, interaction.guild)
+
+    target = cast(User, interaction.data["options"][0]["options"][0]["value"])  # type: ignore
+
     result: list[app_commands.Choice[str]] = []
 
     async with interaction.client.uow.start() as session:
         user, _ = await get_or_create_user(
             session,
             guild_id=guild.id,
-            user_id=interaction.user.id,
+            user_id=target.id,
             options=[user_load_colors],
         )
+
+    if not user.colors:
+        return []
 
     for color in user.colors:
         role = guild.get_role(color.role_id)
@@ -145,12 +151,14 @@ async def user_colors_autocomplete(
             value = f"Цвет не найден. id: {color.id}"
         else:
             value = role.name
+
         result.append(
             app_commands.Choice(
                 name=value,
                 value=str(color.id),
             )
         )
+
     result.append(
         app_commands.Choice(
             name="Сбросить цвет",

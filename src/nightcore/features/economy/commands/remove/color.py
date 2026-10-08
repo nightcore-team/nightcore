@@ -20,7 +20,7 @@ from src.nightcore.features.economy.events.dto import (
     AwardNotificationEventDTO,
 )
 from src.nightcore.features.economy.utils.autocomplete import (
-    user_colors_autocomplete,
+    get_user_colors_autocomplete,
 )
 from src.nightcore.utils import ensure_member_exists
 from src.nightcore.utils.permissions import (
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
     color_id="Цвет для удаления",
     reason="Причина удаления цвета (необязательно)",
 )
-@app_commands.autocomplete(color_id=user_colors_autocomplete)
+@app_commands.autocomplete(color_id=get_user_colors_autocomplete)
 @app_commands.rename(color_id="color")
 @check_required_permissions(PermissionsFlagEnum.ECONOMY_ACCESS)
 async def remove_color(

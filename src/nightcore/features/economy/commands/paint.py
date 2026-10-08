@@ -14,9 +14,9 @@ from src.infra.db.models.color import Color
 from src.infra.db.models.user import User
 from src.infra.db.operations import get_guild_colors, get_or_create_user
 from src.nightcore.components.view.v2 import ErrorViewV2, SuccessViewV2
-from src.nightcore.features.economy.utils import (
-    CLEAR_COLOR_ID,
-    user_colors_autocomplete,
+from src.nightcore.features.economy.utils import CLEAR_COLOR_ID
+from src.nightcore.features.economy.utils.autocomplete import (
+    get_user_colors_autocomplete,
 )
 from src.nightcore.utils.transformers.str_to_int import StrToIntTransformer
 
@@ -36,7 +36,7 @@ class Paint(Cog):
         self.bot = bot
 
     @app_commands.command(name="paint", description="Применить на себя цвет")  # type: ignore
-    @app_commands.autocomplete(color_id=user_colors_autocomplete)
+    @app_commands.autocomplete(color_id=get_user_colors_autocomplete)
     @app_commands.describe(color_id="Цвет, который вы хотите применить")
     @app_commands.rename(color_id="color")
     @check_required_permissions(PermissionsFlagEnum.NONE)  # type: ignore
