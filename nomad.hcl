@@ -31,8 +31,13 @@ job "nightcore-bot" {
       lost_after = "40s"
     }
 
+    network {
+      port "http" {}
+    }
+
     service {
       name = "dashboard-backend"
+      port = "http"
 
       tags = [
           "traefik.enable=true",
@@ -40,7 +45,6 @@ job "nightcore-bot" {
           "traefik.http.routers.dashboard-backend.priority=10",
           "traefik.http.routers.dashboard-backend.entrypoints=tunnel",
           "traefik.http.routers.dashboard-backend.service=dashboard-backend",
-          "traefik.http.services.dashboard-backend.loadbalancer.server.port=5000",
 
           "traefik.http.middlewares.backend-ratelimit.ratelimit.average=2",
           "traefik.http.middlewares.backend-ratelimit.ratelimit.period=1s",
@@ -55,10 +59,17 @@ job "nightcore-bot" {
           "traefik.http.routers.dashboard-backend-patch.middlewares=patch-ratelimit",
 
           "traefik.http.middlewares.patch-ratelimit.ratelimit.average=1",
-          "traefik.http.middlewares.patch-ratelimit.ratelimit.period=10s",
+          "traefik.http.middlewares.patch-ratelimit.ratelimit.period=3s",
           "traefik.http.middlewares.patch-ratelimit.ratelimit.burst=2",
           "traefik.http.middlewares.patch-ratelimit.ratelimit.sourcecriterion.requestheadername=CF-Connecting-IP"
       ]
+
+      check {
+        type     = "tcp"
+        port     = "http"
+        interval = "10s"
+        timeout  = "2s"
+      }
     }
 
     task "nightcore-bot" {
@@ -110,7 +121,6 @@ DISABLE_FORUM_TASK={{ .Data.data.DISABLE_FORUM_TASK }}
 FORUM_API_KEY={{ .Data.data.FORUM_API_KEY }}
 FORUM_API_URL={{ .Data.data.FORUM_API_URL }}
 POSTGRES_URL={{ .Data.data.POSTGRES_URL }}
-API_PORT={{ .Data.data.API_PORT }}
 API_HOST={{ .Data.data.API_HOST }}
 API_DOMAIN={{ .Data.data.API_DOMAIN }}
 DASHBOARD_FRONTEND_URI={{ .Data.data.DASHBOARD_FRONTEND_URI }}
@@ -120,6 +130,10 @@ JWT_ALGORITHM={{ .Data.data.JWT_ALGORITHM }}
 EOT
         destination = "secrets/bot.env"
         env         = true
+      }
+
+      env {
+        API_PORT = "${NOMAD_PORT_http}"
       }
 
       logs {
